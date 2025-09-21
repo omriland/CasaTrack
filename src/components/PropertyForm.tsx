@@ -37,6 +37,15 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   const [formattedPrice, setFormattedPrice] = useState<string>(
     property?.asked_price ? property.asked_price.toLocaleString('en-US') : ''
   )
+  
+  // State for URL extraction
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [extractionResult, setExtractionResult] = useState<{
+    show: boolean
+    success: boolean
+    message: string
+    fieldsCount?: number
+  }>({ show: false, success: false, message: '' })
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -91,6 +100,135 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
       ...prev,
       [name]: checked
     }))
+  }
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Handle Cmd+B for bold
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+      e.preventDefault()
+      document.execCommand('bold', false)
+      // Update form data with the new HTML content
+      const element = e.currentTarget
+      setFormData(prev => ({
+        ...prev,
+        description: element.innerHTML
+      }))
+    }
+    
+    // Handle Enter for line breaks
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      document.execCommand('insertHTML', false, '<br>')
+      // Update form data with the new HTML content
+      const element = e.currentTarget
+      setFormData(prev => ({
+        ...prev,
+        description: element.innerHTML
+      }))
+    }
+  }
+
+  const handleDescriptionInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const element = e.currentTarget
+    let content = element.innerHTML
+    
+    // Remove placeholder content if it exists
+    if (content.includes('Additional details about the property')) {
+      content = ''
+      element.innerHTML = ''
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      description: content
+    }))
+  }
+
+  const handleDescriptionFocus = (e: React.FocusEvent<HTMLDivElement>) => {
+    const element = e.currentTarget
+    // Clear placeholder on focus
+    if (element.innerHTML.includes('Additional details about the property')) {
+      element.innerHTML = ''
+      setFormData(prev => ({
+        ...prev,
+        description: ''
+      }))
+    }
+  }
+
+  const handleExtractFromURL = async () => {
+    if (!formData.url || !formData.url.includes('yad2.co.il')) {
+      setExtractionResult({
+        show: true,
+        success: false,
+        message: 'Please enter a valid Yad2 URL first'
+      })
+      return
+    }
+
+    try {
+      setIsExtracting(true)
+      
+      const response = await fetch('/api/extract-property', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: formData.url })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to extract property data')
+      }
+
+      if (result.success && result.data) {
+        const extractedData = result.data
+        console.log('Received extracted data:', extractedData)
+        
+        // Count how many fields were extracted
+        const extractedFields = Object.entries(extractedData).filter(([key, value]) => 
+          value !== null && value !== 0 && value !== '' && value !== false
+        ).length
+
+        // Update form data with extracted information (only non-empty values)
+        setFormData(prev => ({
+          ...prev,
+          address: extractedData.address || prev.address,
+          rooms: extractedData.rooms > 0 ? extractedData.rooms : prev.rooms,
+          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : prev.square_meters,
+          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : prev.asked_price,
+          contact_name: extractedData.contact_name || prev.contact_name,
+          contact_phone: extractedData.contact_phone || prev.contact_phone,
+          property_type: extractedData.property_type || prev.property_type,
+          description: extractedData.description || prev.description,
+          apartment_broker: extractedData.apartment_broker ?? prev.apartment_broker
+        }))
+
+        // Update formatted price
+        if (extractedData.asked_price > 0) {
+          setFormattedPrice(extractedData.asked_price.toLocaleString('en-US'))
+        }
+
+        setExtractionResult({
+          show: true,
+          success: true,
+          message: `Property data extracted successfully! Found ${extractedFields} fields. Please review and complete any missing information.`,
+          fieldsCount: extractedFields
+        })
+      }
+
+    } catch (error) {
+      console.error('Extraction error:', error)
+      setExtractionResult({
+        show: true,
+        success: false,
+        message: `Failed to extract data: ${error instanceof Error ? error.message : 'Unknown error'}`
+      })
+    } finally {
+      setIsExtracting(false)
+    }
   }
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,15 +302,51 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Property URL
               </label>
-              <input
-                type="url"
-                name="url"
-                value={formData.url || ''}
-                onChange={handleChange}
-                placeholder="https://www.yad2.co.il/..."
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                tabIndex={2}
-              />
+              <div className="flex space-x-3">
+                <input
+                  type="url"
+                  name="url"
+                  value={formData.url || ''}
+                  onChange={handleChange}
+                  placeholder="https://www.yad2.co.il/..."
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={2}
+                />
+                <button
+                  type="button"
+                  onClick={handleExtractFromURL}
+                  disabled={isExtracting || !formData.url || !formData.url.includes('yad2.co.il')}
+                  className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+                  title="Extract property data from Yad2 URL using AI"
+                >
+                  {isExtracting ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Extracting...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span>Extract Data</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+              {formData.url && formData.url.includes('yad2.co.il') && (
+                <div className="mt-2 text-xs text-slate-600 bg-primary/5 rounded-lg p-3 border border-primary/20">
+                  <div className="flex items-start space-x-2">
+                    <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="font-medium text-slate-700 mb-1">AI Data Extraction Available</p>
+                      <p className="text-slate-600">Click "Extract Data" to automatically fill property details from this Yad2 listing using ChatGPT.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
@@ -356,15 +530,27 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Description
               </label>
-              <textarea
-                name="description"
-                rows={4}
-                value={formData.description || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all resize-none"
-                placeholder="Additional details about the property"
-                tabIndex={11}
-              />
+              <div className="space-y-2">
+                <div
+                  contentEditable
+                  onInput={handleDescriptionInput}
+                  onFocus={handleDescriptionFocus}
+                  onKeyDown={handleDescriptionKeyDown}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right min-h-[100px] max-h-[200px] overflow-y-auto"
+                  dir="rtl"
+                  style={{ unicodeBidi: 'plaintext' }}
+                  dangerouslySetInnerHTML={{ __html: formData.description || '<span style="color: #94a3b8; font-style: italic;">Additional details about the property</span>' }}
+                  suppressContentEditableWarning={true}
+                  tabIndex={11}
+                />
+                <div className="flex justify-end space-x-2 text-xs text-slate-500">
+                  <span>Cmd+B for bold</span>
+                  <span>•</span>
+                  <span>Enter for line break</span>
+                  <span>•</span>
+                  <span>Shift+Enter for new paragraph</span>
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
@@ -437,6 +623,64 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           </form>
         </div>
       </div>
+
+      {/* Extraction Result Modal */}
+      {extractionResult.show && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-[60]"
+          onClick={() => setExtractionResult({ show: false, success: false, message: '' })}
+        >
+          <div 
+            className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl max-w-md w-full p-6 animate-fade-in border border-white/20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center space-x-3 mb-4">
+              <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                extractionResult.success 
+                  ? 'bg-primary/10' 
+                  : 'bg-red-100'
+              }`}>
+                {extractionResult.success ? (
+                  <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {extractionResult.success ? 'Data Extracted!' : 'Extraction Failed'}
+                </h3>
+                {extractionResult.success && extractionResult.fieldsCount && (
+                  <p className="text-sm text-slate-500">
+                    Found {extractionResult.fieldsCount} property fields
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+              {extractionResult.message}
+            </p>
+            
+            <div className="flex justify-end">
+              <button
+                onClick={() => setExtractionResult({ show: false, success: false, message: '' })}
+                className={`px-6 py-2.5 rounded-xl font-medium transition-all ${
+                  extractionResult.success
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {extractionResult.success ? 'Continue Editing' : 'Try Again'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

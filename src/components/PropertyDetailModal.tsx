@@ -45,6 +45,20 @@ export default function PropertyDetailModal({
     setIsMac(typeof navigator !== 'undefined' && navigator.platform.includes('Mac'))
   }, [])
 
+  // Focus the contentEditable div when editing starts
+  useEffect(() => {
+    if (editingDescription) {
+      const editableDiv = document.querySelector('[contenteditable="true"]') as HTMLDivElement
+      if (editableDiv) {
+        editableDiv.focus()
+        // Clear placeholder if it exists
+        if (editableDiv.innerHTML.includes('Add a description for this property')) {
+          editableDiv.innerHTML = tempDescription || ''
+        }
+      }
+    }
+  }, [editingDescription, tempDescription])
+
   // Handle click outside for status dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -216,6 +230,48 @@ export default function PropertyDetailModal({
   const handleDescriptionCancel = () => {
     setEditingDescription(false)
     setTempDescription(property.description || '')
+  }
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Handle Cmd+B for bold
+    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+      e.preventDefault()
+      document.execCommand('bold', false)
+      // Update the temp description with the new HTML content
+      const element = e.currentTarget
+      setTempDescription(element.innerHTML)
+    }
+    
+    // Handle Enter for line breaks
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      document.execCommand('insertHTML', false, '<br>')
+      // Update the temp description with the new HTML content
+      const element = e.currentTarget
+      setTempDescription(element.innerHTML)
+    }
+  }
+
+  const handleDescriptionInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const element = e.currentTarget
+    let content = element.innerHTML
+    
+    // Remove placeholder content if it exists
+    if (content.includes('Add a description for this property')) {
+      content = ''
+      element.innerHTML = ''
+    }
+    
+    setTempDescription(content)
+  }
+
+  const handleDescriptionFocus = (e: React.FocusEvent<HTMLDivElement>) => {
+    const element = e.currentTarget
+    // Clear placeholder on focus
+    if (element.innerHTML.includes('Add a description for this property')) {
+      element.innerHTML = ''
+      setTempDescription('')
+    }
   }
 
   const handleNoteKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -425,40 +481,55 @@ export default function PropertyDetailModal({
 
                   {editingDescription ? (
                     <div className="space-y-4">
-                      <textarea
-                        value={tempDescription}
-                        onChange={(e) => setTempDescription(e.target.value)}
-                        rows={6}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
-                        placeholder="Add a description for this property..."
-                        dir="auto"
+                      <div
+                        contentEditable
+                        onInput={handleDescriptionInput}
+                        onFocus={handleDescriptionFocus}
+                        onKeyDown={handleDescriptionKeyDown}
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-base text-right min-h-[150px] max-h-[300px] overflow-y-auto"
+                        dir="rtl"
+                        style={{ unicodeBidi: 'plaintext' }}
+                        dangerouslySetInnerHTML={{ __html: tempDescription || '<span style="color: #94a3b8; font-style: italic;">Add a description for this property...</span>' }}
+                        suppressContentEditableWarning={true}
                       />
-                      <div className="flex justify-end space-x-3">
-                        <button
-                          onClick={handleDescriptionCancel}
-                          className="px-4 py-2 text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleDescriptionSave}
-                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          Save
-                        </button>
+                      <div className="flex justify-between items-center">
+                        <div className="flex space-x-2 text-xs text-slate-500">
+                          <span>Cmd+B for bold</span>
+                          <span>•</span>
+                          <span>Enter for line break</span>
+                          <span>•</span>
+                          <span>Shift+Enter for new paragraph</span>
+                        </div>
+                        <div className="flex space-x-3">
+                          <button
+                            onClick={handleDescriptionCancel}
+                            className="px-4 py-2 text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleDescriptionSave}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                          >
+                            Save
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ) : (
                     <div
                       onDoubleClick={handleDescriptionEdit}
-                      className="cursor-pointer hover:bg-slate-100 rounded-lg p-3 -m-3 transition-colors min-h-[100px] flex items-start"
+                      className="cursor-pointer hover:bg-slate-100 rounded-lg p-3 -m-3 transition-colors min-h-[100px] flex items-start w-full"
                     >
                       {property.description ? (
-                        <p className="text-slate-700 leading-relaxed whitespace-pre-wrap text-base" dir="auto">
-                          {property.description}
-                        </p>
+                        <div 
+                          className="text-slate-700 leading-relaxed text-base w-full text-right" 
+                          dir="rtl" 
+                          style={{ unicodeBidi: 'plaintext' }}
+                          dangerouslySetInnerHTML={{ __html: property.description }}
+                        />
                       ) : (
-                        <p className="text-slate-400 italic">
+                        <p className="text-slate-400 italic text-left">
                           No description yet. Double-click to add one.
                         </p>
                       )}

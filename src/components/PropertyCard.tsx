@@ -355,7 +355,12 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       {property.description && (
         <div className="mt-4 pt-4 border-t border-slate-100">
           <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Description</h4>
-          <p className="text-sm text-slate-600 leading-relaxed line-clamp-3" dir="auto">{property.description}</p>
+          <div 
+            className="text-sm text-slate-600 leading-relaxed line-clamp-3 text-right" 
+            dir="rtl" 
+            style={{ unicodeBidi: 'plaintext' }}
+            dangerouslySetInnerHTML={{ __html: property.description }}
+          />
         </div>
       )}
 
