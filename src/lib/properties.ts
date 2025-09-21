@@ -23,17 +23,26 @@ export async function getProperty(id: string): Promise<Property | null> {
 }
 
 export async function createProperty(property: PropertyInsert): Promise<Property> {
+  console.log('💾 Creating property with data:', property)
+  
   const { data, error } = await supabase
     .from('properties')
     .insert(property)
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error creating property:', error)
+    throw error
+  }
+  
+  console.log('✅ Property created successfully:', data)
   return data
 }
 
 export async function updateProperty(id: string, updates: Partial<PropertyInsert>): Promise<Property> {
+  console.log('🔄 Updating property', id, 'with data:', updates)
+  
   const { data, error } = await supabase
     .from('properties')
     .update(updates)
@@ -41,7 +50,12 @@ export async function updateProperty(id: string, updates: Partial<PropertyInsert
     .select()
     .single()
 
-  if (error) throw error
+  if (error) {
+    console.error('❌ Error updating property:', error)
+    throw error
+  }
+  
+  console.log('✅ Property updated successfully:', data)
   return data
 }
 

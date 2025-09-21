@@ -27,6 +27,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     property_type: property?.property_type || 'Existing apartment',
     description: property?.description || '',
     status: property?.status || 'Seen',
+    url: property?.url || '',
     latitude: property?.latitude || null,
     longitude: property?.longitude || null
   })
@@ -47,12 +48,18 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
-    setFormData(prev => ({
-      ...prev,
+    console.log('🏠 Address changed:', address)
+    console.log('📍 Coordinates received:', coordinates)
+    
+    const newFormData = {
+      ...formData,
       address,
       latitude: coordinates?.lat || null,
       longitude: coordinates?.lng || null
-    }))
+    }
+    
+    console.log('📝 Updated form data:', newFormData)
+    setFormData(newFormData)
   }
 
 
@@ -87,6 +94,20 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 value={formData.address}
                 onChange={handleAddressChange}
                 placeholder="Enter property address"
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/70 backdrop-blur-sm transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Property URL
+              </label>
+              <input
+                type="url"
+                name="url"
+                value={formData.url || ''}
+                onChange={handleChange}
+                placeholder="https://www.yad2.co.il/..."
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/70 backdrop-blur-sm transition-all"
               />
             </div>

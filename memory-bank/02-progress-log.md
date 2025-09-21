@@ -171,6 +171,30 @@
      - Intuitive expand/collapse controls with arrow indicators
      - Preserves all existing functionality (edit, delete, view notes)
 
+16. **Property Form Redesign & URL Field Addition**
+   - **Modern Form Design**: Complete redesign of PropertyForm with glassmorphism effect
+     - Replaced black background with blurred light background (backdrop-blur-sm)
+     - Semi-transparent white modal with backdrop blur and shadow
+     - Enhanced typography with Inter font and better spacing
+     - Rounded corners (rounded-xl) and improved visual hierarchy
+   - **Circular Room Selector**: Intuitive room selection interface
+     - Circular buttons for room selection (3, 3.5, 4, 4.5, 5, 5.5, 6)
+     - Full-width row layout for optimal spacing
+     - Selected state with blue background and hover effects
+     - Responsive design with proper touch targets
+   - **Optimized Form Layout**: Better organization of form fields
+     - Address and URL fields in full-width rows
+     - Rooms selector gets dedicated full-width space
+     - Square meters and price grouped together logically
+     - Enhanced price per m² calculation display with gradient background
+   - **URL Field Implementation**: Complete property listing URL management
+     - Database schema updated with URL column (TEXT type)
+     - TypeScript interfaces updated for Property and PropertyInsert
+     - URL input field in PropertyForm with validation (type="url")
+     - PropertyCard displays clickable "View Listing" link with external icon
+     - Secure external links with proper rel attributes
+     - Conditional display - only shows when URL exists
+
 ### 🎯 Next Priorities
 1. **Search & Filters**: Enhanced property discovery and filtering
 2. **Real-time Updates**: Leverage Supabase real-time capabilities

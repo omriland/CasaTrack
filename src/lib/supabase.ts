@@ -22,6 +22,7 @@ export type Database = {
           property_type: 'New' | 'Existing apartment'
           description: string | null
           status: 'Seen' | 'Interested' | 'Contacted Realtor' | 'Visited' | 'On Hold' | 'Irrelevant' | 'Purchased'
+          url: string | null
           latitude: number | null
           longitude: number | null
           created_at: string
@@ -40,6 +41,7 @@ export type Database = {
           property_type: 'New' | 'Existing apartment'
           description?: string | null
           status?: 'Seen' | 'Interested' | 'Contacted Realtor' | 'Visited' | 'On Hold' | 'Irrelevant' | 'Purchased'
+          url?: string | null
           latitude?: number | null
           longitude?: number | null
           created_at?: string
@@ -58,6 +60,7 @@ export type Database = {
           property_type?: 'New' | 'Existing apartment'
           description?: string | null
           status?: 'Seen' | 'Interested' | 'Contacted Realtor' | 'Visited' | 'On Hold' | 'Irrelevant' | 'Purchased'
+          url?: string | null
           latitude?: number | null
           longitude?: number | null
           created_at?: string

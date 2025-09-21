@@ -131,7 +131,6 @@ export default function AddressAutocomplete({
     if (inputRef.current) {
       const domValue = inputRef.current.value
       if (domValue !== lastKnownValue.current) {
-        console.log('📍 Syncing DOM value on blur:', domValue)
         lastKnownValue.current = domValue
 
         // Try to get coordinates for the address
@@ -149,10 +148,9 @@ export default function AddressAutocomplete({
                 lat: parseFloat(data[0].lat),
                 lng: parseFloat(data[0].lon)
               }
-              console.log('📍 Got coordinates for synced address:', coordinates)
             }
           } catch {
-            console.log('📍 Could not get coordinates for synced address')
+            // Silently handle geocoding errors
           }
         }
 

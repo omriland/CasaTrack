@@ -17,6 +17,7 @@ export interface Property {
   property_type: PropertyType
   description: string | null
   status: PropertyStatus
+  url: string | null
   latitude: number | null
   longitude: number | null
   created_at: string
@@ -34,6 +35,7 @@ export interface PropertyInsert {
   property_type: PropertyType
   description?: string | null
   status?: PropertyStatus
+  url?: string | null
   latitude?: number | null
   longitude?: number | null
 }

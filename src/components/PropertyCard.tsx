@@ -274,6 +274,27 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
       </div>
 
+      {/* Property URL */}
+      {property.url && (
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Property Link</span>
+            <a
+              href={property.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors group"
+              title="Open property listing"
+            >
+              <span className="text-sm font-medium">View Listing</span>
+              <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Contact Information */}
       {property.contact_name && (
         <div className="mt-4 pt-4 border-t border-slate-100">
