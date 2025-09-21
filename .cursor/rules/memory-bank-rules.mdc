@@ -1,0 +1,75 @@
+---
+alwaysApply: true
+---
+
+# Memory Bank Rules for CasaTrack
+
+## Session Initialization Protocol
+
+At the start of each conversation, the AI assistant MUST:
+
+1. **Read and Review Memory Bank Files**:
+   - Check `/memory-bank/00-project-overview.md` for current project state
+   - Review `/memory-bank/01-architecture.md` for system design
+   - Scan `/memory-bank/02-progress-log.md` for recent development history
+   - Check `/memory-bank/03-active-context.md` for current priorities
+
+2. **Update Memory Bank**:
+   - Update progress log with any completed tasks
+   - Refresh active context with current development status
+   - Note any architectural changes or decisions made
+   - Update project overview if scope has changed
+
+3. **Context Awareness**:
+   - Reference previous decisions and patterns
+   - Maintain consistency with established coding standards
+   - Build upon existing functionality rather than recreating
+   - Acknowledge completed features and avoid redundant work
+
+## Development Guidelines
+
+- Always check memory bank before suggesting new implementations
+- Update memory bank files after significant changes
+- Reference previous decisions when making new choices
+- Maintain project continuity across sessions
+
+## Memory Bank File Priorities
+
+1. **Critical**: Project overview, active context
+2. **Important**: Architecture, progress log
+3. **Reference**: Development standards, feature plans# Memory Bank Rules for CasaTrack
+
+## Session Initialization Protocol
+
+At the start of each conversation, the AI assistant MUST:
+
+1. **Read and Review Memory Bank Files**:
+   - Check `/memory-bank/00-project-overview.md` for current project state
+   - Review `/memory-bank/01-architecture.md` for system design
+   - Scan `/memory-bank/02-progress-log.md` for recent development history
+   - Check `/memory-bank/03-active-context.md` for current priorities
+
+2. **Update Memory Bank**:
+   - Update progress log with any completed tasks
+   - Refresh active context with current development status
+   - Note any architectural changes or decisions made
+   - Update project overview if scope has changed
+
+3. **Context Awareness**:
+   - Reference previous decisions and patterns
+   - Maintain consistency with established coding standards
+   - Build upon existing functionality rather than recreating
+   - Acknowledge completed features and avoid redundant work
+
+## Development Guidelines
+
+- Always check memory bank before suggesting new implementations
+- Update memory bank files after significant changes
+- Reference previous decisions when making new choices
+- Maintain project continuity across sessions
+
+## Memory Bank File Priorities
+
+1. **Critical**: Project overview, active context
+2. **Important**: Architecture, progress log
+3. **Reference**: Development standards, feature plans
