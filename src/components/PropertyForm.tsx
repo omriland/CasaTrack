@@ -33,6 +33,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     apartment_broker: property?.apartment_broker || false
   })
 
+  // State for formatted price display
+  const [formattedPrice, setFormattedPrice] = useState<string>(
+    property?.asked_price ? property.asked_price.toLocaleString('en-US') : ''
+  )
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
@@ -63,6 +68,25 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
       ...prev,
       [name]: checked
     }))
+  }
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value
+    
+    // Remove all non-digit characters
+    const numericValue = inputValue.replace(/[^\d]/g, '')
+    
+    // Convert to number
+    const numberValue = numericValue === '' ? 0 : parseInt(numericValue, 10)
+    
+    // Update form data with the numeric value
+    setFormData(prev => ({
+      ...prev,
+      asked_price: numberValue
+    }))
+    
+    // Update formatted display value
+    setFormattedPrice(numberValue === 0 ? '' : numberValue.toLocaleString('en-US'))
   }
 
 
@@ -168,15 +192,23 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Asked Price (ILS) *
                 </label>
-                <input
-                  type="number"
-                  name="asked_price"
-                  required
-                  min="0"
-                  value={formData.asked_price}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    name="asked_price"
+                    required
+                    value={formattedPrice}
+                    onChange={handlePriceChange}
+                    placeholder="0"
+                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  />
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <span className="text-slate-500 text-sm font-medium">₪</span>
+                  </div>
+                  <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
+                    <div className="w-px h-6 bg-slate-300"></div>
+                  </div>
+                </div>
               </div>
             </div>
 

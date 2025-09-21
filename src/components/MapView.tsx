@@ -126,6 +126,11 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
     propertiesWithCoords.forEach(property => {
       if (!mapInstanceRef.current) return
 
+      // Determine marker color based on property status
+      const isIrrelevant = property.status === 'Irrelevant'
+      const markerColor = isIrrelevant ? '#64748b' : 'oklch(0.8348 0.1302 160.9080)'
+      const textColor = isIrrelevant ? '#64748b' : 'oklch(0.8348 0.1302 160.9080)'
+
       const marker = new google.maps.Marker({
         position: { lat: property.latitude!, lng: property.longitude! },
         map: mapInstanceRef.current,
@@ -133,9 +138,9 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         icon: {
           url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
             <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="oklch(0.8348 0.1302 160.9080)"/>
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="${markerColor}"/>
               <circle cx="16" cy="16" r="8" fill="white"/>
-              <text x="16" y="20" text-anchor="middle" fill="oklch(0.8348 0.1302 160.9080)" font-family="Outfit, sans-serif" font-size="12" font-weight="600">₪</text>
+              <text x="16" y="20" text-anchor="middle" fill="${textColor}" font-family="Outfit, sans-serif" font-size="12" font-weight="600">₪</text>
             </svg>
           `)}`
         }
@@ -160,9 +165,9 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         marker.setIcon({
           url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
             <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="oklch(0.8348 0.1302 160.9080)"/>
+              <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="${markerColor}"/>
               <circle cx="18" cy="18" r="10" fill="white"/>
-              <text x="18" y="23" text-anchor="middle" fill="oklch(0.8348 0.1302 160.9080)" font-family="Outfit, sans-serif" font-size="14" font-weight="700">₪</text>
+              <text x="18" y="23" text-anchor="middle" fill="${textColor}" font-family="Outfit, sans-serif" font-size="14" font-weight="700">₪</text>
             </svg>
           `)}`
         })
@@ -172,9 +177,9 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         marker.setIcon({
           url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
             <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="oklch(0.8348 0.1302 160.9080)"/>
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="${markerColor}"/>
               <circle cx="16" cy="16" r="8" fill="white"/>
-              <text x="16" y="20" text-anchor="middle" fill="oklch(0.8348 0.1302 160.9080)" font-family="Outfit, sans-serif" font-size="12" font-weight="600">₪</text>
+              <text x="16" y="20" text-anchor="middle" fill="${textColor}" font-family="Outfit, sans-serif" font-size="12" font-weight="600">₪</text>
             </svg>
           `)}`
         })
