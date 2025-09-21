@@ -49,18 +49,12 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
-    console.log('🏠 Address changed:', address)
-    console.log('📍 Coordinates received:', coordinates)
-    
-    const newFormData = {
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       address,
       latitude: coordinates?.lat || null,
       longitude: coordinates?.lng || null
-    }
-    
-    console.log('📝 Updated form data:', newFormData)
-    setFormData(newFormData)
+    }))
   }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,12 +93,23 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Address *
               </label>
-              <AddressAutocomplete
-                value={formData.address}
-                onChange={handleAddressChange}
-                placeholder="Enter property address"
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-              />
+              <div className="relative">
+                <AddressAutocomplete
+                  value={formData.address}
+                  onChange={handleAddressChange}
+                  placeholder="Enter property address"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                />
+                {formData.latitude && formData.longitude && (
+                  <div className="absolute -bottom-6 left-0 flex items-center space-x-1 text-xs text-primary">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Location found</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>

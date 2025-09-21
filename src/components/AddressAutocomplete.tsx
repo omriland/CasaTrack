@@ -22,8 +22,10 @@ export default function AddressAutocomplete({
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isFetchingCoordinates, setIsFetchingCoordinates] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const lastKnownValue = useRef(value || '')
+  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const initializeAutocomplete = () => {
@@ -117,16 +119,68 @@ export default function AddressAutocomplete({
       if (autocompleteRef.current) {
         google.maps?.event?.clearInstanceListeners(autocompleteRef.current)
       }
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
     }
   }, [onChange])
+
+  // Function to fetch coordinates for an address
+  const fetchCoordinatesForAddress = async (address: string): Promise<{ lat: number; lng: number } | undefined> => {
+    if (!address.trim()) return undefined
+
+    try {
+      setIsFetchingCoordinates(true)
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=IL&limit=1`
+      const response = await fetch(nominatimUrl)
+      const data = await response.json()
+
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching coordinates:', error)
+    } finally {
+      setIsFetchingCoordinates(false)
+    }
+
+    return undefined
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value
     lastKnownValue.current = newValue
+    
+    // Clear existing timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
+
+    // Immediately update the address (without coordinates)
     onChange(newValue)
+
+    // Debounce coordinate fetching for manual typing (only if not empty)
+    if (newValue.trim()) {
+      debounceTimer.current = setTimeout(async () => {
+        const coordinates = await fetchCoordinatesForAddress(newValue)
+        if (coordinates && lastKnownValue.current === newValue) {
+          // Only update if the address hasn't changed since we started fetching
+          onChange(newValue, coordinates)
+        }
+      }, 1000) // 1 second delay
+    }
   }
 
   const handleBlur = async () => {
+    // Clear any pending debounced coordinate fetch
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
+    }
+
     // When input loses focus, check if DOM value differs from our tracked value
     if (inputRef.current) {
       const domValue = inputRef.current.value
@@ -134,26 +188,7 @@ export default function AddressAutocomplete({
         lastKnownValue.current = domValue
 
         // Try to get coordinates for the address
-        let coordinates: { lat: number; lng: number } | undefined
-
-        if (domValue.trim()) {
-          try {
-            // Use OpenStreetMap Nominatim to get coordinates
-            const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(domValue)}&countrycodes=IL&limit=1`
-            const response = await fetch(nominatimUrl)
-            const data = await response.json()
-
-            if (data && data.length > 0) {
-              coordinates = {
-                lat: parseFloat(data[0].lat),
-                lng: parseFloat(data[0].lon)
-              }
-            }
-          } catch {
-            // Silently handle geocoding errors
-          }
-        }
-
+        const coordinates = await fetchCoordinatesForAddress(domValue)
         onChange(domValue, coordinates)
       }
     }
@@ -199,9 +234,14 @@ export default function AddressAutocomplete({
         className={`${className} ${isLoading ? 'bg-slate-50' : ''}`}
         disabled={disabled || isLoading}
       />
-      {isLoading && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <div className="w-4 h-4 border-2 border-slate-300 border-t-blue-600 rounded-full animate-spin"></div>
+      {(isLoading || isFetchingCoordinates) && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+          <div className="w-4 h-4 border-2 border-slate-300 border-t-primary rounded-full animate-spin"></div>
+          {isFetchingCoordinates && (
+            <div className="text-xs text-slate-500 whitespace-nowrap">
+              Getting location...
+            </div>
+          )}
         </div>
       )}
     </div>
