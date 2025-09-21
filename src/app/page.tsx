@@ -63,6 +63,8 @@ export default function Home() {
       const newProperty = await createProperty(propertyData)
       setProperties(prev => [newProperty, ...prev])
       setShowForm(false)
+      // Refresh data to ensure consistency
+      await loadProperties()
     } catch (error) {
       console.error('Error creating property:', error)
       alert('Error creating property. Please try again.')
@@ -80,6 +82,8 @@ export default function Home() {
       setProperties(prev => prev.map(p => p.id === updatedProperty.id ? updatedProperty : p))
       setEditingProperty(null)
       setShowForm(false)
+      // Refresh data to ensure consistency
+      await loadProperties()
     } catch (error) {
       console.error('Error updating property:', error)
       alert('Error updating property. Please try again.')
@@ -92,6 +96,8 @@ export default function Home() {
     try {
       await deleteProperty(id)
       setProperties(prev => prev.filter(p => p.id !== id))
+      // Refresh data to ensure consistency
+      await loadProperties()
     } catch (error) {
       console.error('Error deleting property:', error)
       alert('Error deleting property. Please try again.')
@@ -121,18 +127,22 @@ export default function Home() {
       if (selectedProperty && selectedProperty.id === propertyId) {
         setSelectedProperty(updatedProperty)
       }
+      // Refresh data to ensure consistency
+      await loadProperties()
     } catch (error) {
       console.error('Error updating property status:', error)
       throw error
     }
   }
 
-  const handlePropertyUpdate = (updatedProperty: Property) => {
+  const handlePropertyUpdate = async (updatedProperty: Property) => {
     setProperties(prev => prev.map(p => p.id === updatedProperty.id ? updatedProperty : p))
     // Update the selected property if it's the one being updated
     if (selectedProperty && selectedProperty.id === updatedProperty.id) {
       setSelectedProperty(updatedProperty)
     }
+    // Refresh data to ensure consistency
+    await loadProperties()
   }
 
   const handleCloseForm = () => {
@@ -434,6 +444,7 @@ export default function Home() {
           onDelete={handleDeleteProperty}
           onStatusUpdate={handleUpdatePropertyStatus}
           onPropertyUpdate={handlePropertyUpdate}
+          onDataRefresh={loadProperties}
         />
       )}
     </div>

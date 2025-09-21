@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Property, PropertyStatus, Note } from '@/types/property'
-import { getPropertyNotes, createNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
+import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
 
 interface PropertyDetailModalProps {
   property: Property
@@ -11,6 +11,7 @@ interface PropertyDetailModalProps {
   onDelete: (id: string) => void
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
   onPropertyUpdate?: (updatedProperty: Property) => void
+  onDataRefresh?: () => void
 }
 
 export default function PropertyDetailModal({
@@ -19,7 +20,8 @@ export default function PropertyDetailModal({
   onEdit,
   onDelete,
   onStatusUpdate,
-  onPropertyUpdate
+  onPropertyUpdate,
+  onDataRefresh
 }: PropertyDetailModalProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
@@ -29,6 +31,8 @@ export default function PropertyDetailModal({
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const [editingDescription, setEditingDescription] = useState(false)
   const [tempDescription, setTempDescription] = useState(property.description || '')
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingNoteContent, setEditingNoteContent] = useState('')
   const [isMac, setIsMac] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -79,6 +83,10 @@ export default function PropertyDetailModal({
       const note = await createNote(property.id, newNote.trim())
       setNotes(prev => [note, ...prev])
       setNewNote('')
+      // Trigger data refresh to update notes count on cards
+      if (onDataRefresh) {
+        await onDataRefresh()
+      }
     } catch (error) {
       console.error('Error adding note:', error)
       alert('Error adding note. Please try again.')
@@ -93,9 +101,51 @@ export default function PropertyDetailModal({
     try {
       await deleteNote(noteId)
       setNotes(prev => prev.filter(note => note.id !== noteId))
+      // Trigger data refresh to update notes count on cards
+      if (onDataRefresh) {
+        await onDataRefresh()
+      }
     } catch (error) {
       console.error('Error deleting note:', error)
       alert('Error deleting note. Please try again.')
+    }
+  }
+
+  const handleEditNote = (note: Note) => {
+    setEditingNoteId(note.id)
+    setEditingNoteContent(note.content)
+  }
+
+  const handleSaveNoteEdit = async () => {
+    if (!editingNoteId || !editingNoteContent.trim()) return
+
+    try {
+      const updatedNote = await updateNote(editingNoteId, editingNoteContent.trim())
+      setNotes(prev => prev.map(note => note.id === editingNoteId ? updatedNote : note))
+      setEditingNoteId(null)
+      setEditingNoteContent('')
+      // Trigger data refresh to ensure consistency
+      if (onDataRefresh) {
+        await onDataRefresh()
+      }
+    } catch (error) {
+      console.error('Error updating note:', error)
+      alert('Error updating note. Please try again.')
+    }
+  }
+
+  const handleCancelNoteEdit = () => {
+    setEditingNoteId(null)
+    setEditingNoteContent('')
+  }
+
+  const handleNoteEditKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault()
+      await handleSaveNoteEdit()
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      handleCancelNoteEdit()
     }
   }
 
@@ -178,6 +228,10 @@ export default function PropertyDetailModal({
           const note = await createNote(property.id, newNote.trim())
           setNotes(prev => [note, ...prev])
           setNewNote('')
+          // Trigger data refresh to update notes count on cards
+          if (onDataRefresh) {
+            await onDataRefresh()
+          }
         } catch (error) {
           console.error('Error adding note:', error)
           alert('Error adding note. Please try again.')
@@ -466,17 +520,67 @@ export default function PropertyDetailModal({
                           <div className="text-sm text-slate-500 font-medium">
                             {formatDate(note.created_at)}
                           </div>
-                          <button
-                            onClick={() => handleDeleteNote(note.id)}
-                            className="text-slate-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded-lg"
-                            title="Delete note"
-                          >
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 3a1 1 0 012 0v4a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                            </svg>
-                          </button>
+                          <div className="flex items-center space-x-1">
+                            {editingNoteId === note.id && (
+                              <>
+                                <button
+                                  onClick={handleSaveNoteEdit}
+                                  className="text-slate-400 hover:text-primary transition-colors p-1 hover:bg-primary/10 rounded-lg"
+                                  title="Save changes"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={handleCancelNoteEdit}
+                                  className="text-slate-400 hover:text-slate-600 transition-colors p-1 hover:bg-slate-50 rounded-lg"
+                                  title="Cancel editing"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </>
+                            )}
+                            <button
+                              onClick={() => handleDeleteNote(note.id)}
+                              className="text-slate-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded-lg"
+                              title="Delete note"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 3a1 1 0 012 0v4a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V8z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-slate-900 whitespace-pre-wrap leading-relaxed text-base" dir="auto">{note.content}</p>
+                        {editingNoteId === note.id ? (
+                          <div className="space-y-3">
+                            <textarea
+                              value={editingNoteContent}
+                              onChange={(e) => setEditingNoteContent(e.target.value)}
+                              onKeyDown={handleNoteEditKeyDown}
+                              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none text-base"
+                              rows={4}
+                              dir="auto"
+                              autoFocus
+                            />
+                            <div className="flex justify-end space-x-2 text-xs text-slate-500">
+                              <span>{isMac ? 'Cmd' : 'Ctrl'}+Enter to save</span>
+                              <span>•</span>
+                              <span>ESC to cancel</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <p 
+                            className="text-slate-900 whitespace-pre-wrap leading-relaxed text-base cursor-pointer hover:bg-slate-50 -m-2 p-2 rounded-lg transition-colors" 
+                            dir="auto"
+                            onDoubleClick={() => handleEditNote(note)}
+                            title="Double-click to edit"
+                          >
+                            {note.content}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>

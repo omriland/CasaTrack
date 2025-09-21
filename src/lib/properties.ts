@@ -102,6 +102,18 @@ export async function createNote(propertyId: string, content: string): Promise<N
   return data
 }
 
+export async function updateNote(id: string, content: string): Promise<Note> {
+  const { data, error } = await supabase
+    .from('notes')
+    .update({ content })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
 export async function deleteNote(id: string): Promise<void> {
   const { error } = await supabase
     .from('notes')
