@@ -9,6 +9,7 @@ interface AddressAutocompleteProps {
   className?: string
   disabled?: boolean
   onBlur?: () => void
+  tabIndex?: number
 }
 
 export default function AddressAutocomplete({
@@ -17,7 +18,8 @@ export default function AddressAutocomplete({
   placeholder = "Enter property address",
   className = "",
   disabled = false,
-  onBlur
+  onBlur,
+  tabIndex
 }: AddressAutocompleteProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
@@ -214,6 +216,7 @@ export default function AddressAutocomplete({
           placeholder={placeholder}
           className={className}
           disabled={disabled}
+          tabIndex={tabIndex}
         />
         <p className="text-xs text-amber-600 mt-1">
           Address autocomplete unavailable - using manual input
@@ -233,6 +236,7 @@ export default function AddressAutocomplete({
         placeholder={isLoading ? "Loading address autocomplete..." : placeholder}
         className={`${className} ${isLoading ? 'bg-slate-50' : ''}`}
         disabled={disabled || isLoading}
+        tabIndex={tabIndex}
       />
       {(isLoading || isFetchingCoordinates) && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">

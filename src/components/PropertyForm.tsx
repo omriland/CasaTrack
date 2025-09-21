@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Property, PropertyInsert, PropertySource, PropertyType, PropertyStatus } from '@/types/property'
 import AddressAutocomplete from './AddressAutocomplete'
 
@@ -38,10 +38,33 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     property?.asked_price ? property.asked_price.toLocaleString('en-US') : ''
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
     onSubmit(formData)
   }
+
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check for Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        if (!loading) {
+          handleSubmit()
+        }
+      }
+      // ESC to cancel
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onCancel()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [loading, formData, onSubmit, onCancel])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -123,6 +146,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   onChange={handleAddressChange}
                   placeholder="Enter property address"
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={1}
                 />
                 {formData.latitude && formData.longitude && (
                   <div className="absolute -bottom-6 left-0 flex items-center space-x-1 text-xs text-primary">
@@ -147,6 +171,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleChange}
                 placeholder="https://www.yad2.co.il/..."
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                tabIndex={2}
               />
             </div>
 
@@ -165,6 +190,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                         ? 'bg-primary text-primary-foreground shadow-lg'
                         : 'bg-white/70 text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
                     }`}
+                    tabIndex={3}
                   >
                     {roomCount}
                   </button>
@@ -185,6 +211,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.square_meters}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={4}
                 />
               </div>
 
@@ -201,6 +228,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     onChange={handlePriceChange}
                     placeholder="0"
                     className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                    tabIndex={5}
                   />
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                     <span className="text-slate-500 text-sm font-medium">₪</span>
@@ -231,6 +259,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.contact_name || ''}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={6}
                 />
               </div>
 
@@ -244,6 +273,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.contact_phone || ''}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={7}
                 />
               </div>
             </div>
@@ -259,6 +289,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.source}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                    tabIndex={8}
                   >
                     {SOURCES.map(source => (
                       <option key={source} value={source}>{source}</option>
@@ -282,6 +313,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.property_type}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                    tabIndex={9}
                   >
                     {PROPERTY_TYPES.map(type => (
                       <option key={type} value={type}>{type}</option>
@@ -306,6 +338,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.status}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                  tabIndex={10}
                 >
                   {STATUSES.map(status => (
                     <option key={status} value={status}>{status}</option>
@@ -330,6 +363,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all resize-none"
                 placeholder="Additional details about the property"
+                tabIndex={11}
               />
             </div>
 
@@ -342,6 +376,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   checked={formData.apartment_broker || false}
                   onChange={handleCheckboxChange}
                   className="w-5 h-5 text-primary bg-white border-2 border-slate-300 rounded focus:ring-primary focus:ring-2 transition-all"
+                  tabIndex={12}
                 />
                 <label htmlFor="apartment_broker" className="ml-3 text-sm font-semibold text-slate-700 cursor-pointer">
                   Has Apartment Broker
@@ -364,13 +399,20 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 type="button"
                 onClick={onCancel}
                 className="px-6 py-3 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 font-medium transition-all"
+                tabIndex={14}
               >
-                Cancel
+                <div className="flex items-center space-x-2">
+                  <span>Cancel</span>
+                  <span className="text-xs text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
+                    ESC
+                  </span>
+                </div>
               </button>
               <button
                 type="submit"
                 disabled={loading}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                tabIndex={13}
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">
@@ -378,11 +420,16 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     <span>Saving...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={property ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 4v16m8-8H4"} />
-                    </svg>
-                    <span>{property ? 'Update Property' : 'Create Property'}</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={property ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 4v16m8-8H4"} />
+                      </svg>
+                      <span>{property ? 'Update Property' : 'Create Property'}</span>
+                    </div>
+                    <span className="text-xs bg-white/20 px-2 py-1 rounded text-primary-foreground/80">
+                      ⌘↵
+                    </span>
                   </div>
                 )}
               </button>
