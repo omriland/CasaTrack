@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Property, PropertyInsert, PropertySource, PropertyType, PropertyStatus } from '@/types/property'
 import AddressAutocomplete from './AddressAutocomplete'
 
@@ -47,10 +47,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     fieldsCount?: number
   }>({ show: false, success: false, message: '' })
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = useCallback((e?: React.FormEvent) => {
     e?.preventDefault()
     onSubmit(formData)
-  }
+  }, [formData, onSubmit])
 
   // Add keyboard shortcut handler
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [loading, formData, onSubmit, onCancel])
+  }, [loading, formData, onSubmit, onCancel, handleSubmit])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -188,7 +188,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         console.log('Received extracted data:', extractedData)
         
         // Count how many fields were extracted
-        const extractedFields = Object.entries(extractedData).filter(([key, value]) => 
+        const extractedFields = Object.entries(extractedData).filter(([, value]) => 
           value !== null && value !== 0 && value !== '' && value !== false
         ).length
 
@@ -342,7 +342,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     </svg>
                     <div>
                       <p className="font-medium text-slate-700 mb-1">AI Data Extraction Available</p>
-                      <p className="text-slate-600">Click "Extract Data" to automatically fill property details from this Yad2 listing using ChatGPT.</p>
+                      <p className="text-slate-600">Click &quot;Extract Data&quot; to automatically fill property details from this Yad2 listing using ChatGPT.</p>
                     </div>
                   </div>
                 </div>
