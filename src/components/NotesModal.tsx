@@ -17,7 +17,7 @@ export default function NotesModal({ property, onClose }: NotesModalProps) {
 
   useEffect(() => {
     loadNotes()
-  }, [property.id])
+  }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadNotes = async () => {
     try {

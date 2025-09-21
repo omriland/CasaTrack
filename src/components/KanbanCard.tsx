@@ -32,7 +32,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
 
   useEffect(() => {
     loadNotesCount()
-  }, [property.id])
+  }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadNotesCount = async () => {
     try {

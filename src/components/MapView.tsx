@@ -12,7 +12,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -214,7 +214,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       propertiesWithCoords.forEach(property => {
         bounds.extend({ lat: property.latitude!, lng: property.longitude! })
       })
-      mapInstanceRef.current.fitBounds(bounds, { padding: 50 })
+      mapInstanceRef.current.fitBounds(bounds)
     }
   }, [properties, isLoading, onPropertyClick])
 

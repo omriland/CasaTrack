@@ -73,7 +73,7 @@ export default function AddressAutocomplete({
                       lng: parseFloat(data[0].lon)
                     }
                   }
-                } catch (error) {
+                } catch {
                   // Silently fail - coordinates will be undefined
                 }
               }
@@ -151,7 +151,7 @@ export default function AddressAutocomplete({
               }
               console.log('📍 Got coordinates for synced address:', coordinates)
             }
-          } catch (error) {
+          } catch {
             console.log('📍 Could not get coordinates for synced address')
           }
         }

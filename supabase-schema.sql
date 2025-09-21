@@ -12,6 +12,8 @@ CREATE TABLE properties (
   property_type TEXT NOT NULL CHECK (property_type IN ('New', 'Existing apartment')),
   description TEXT,
   status TEXT NOT NULL DEFAULT 'Seen' CHECK (status IN ('Seen', 'Interested', 'Contacted Realtor', 'Visited', 'On Hold', 'Irrelevant', 'Purchased')),
+  latitude DECIMAL(10, 8),
+  longitude DECIMAL(11, 8),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
@@ -50,5 +52,6 @@ CREATE POLICY "Allow all operations on notes" ON notes FOR ALL USING (true);
 -- Create indexes for better performance
 CREATE INDEX idx_properties_status ON properties(status);
 CREATE INDEX idx_properties_created_at ON properties(created_at);
+CREATE INDEX idx_properties_coordinates ON properties(latitude, longitude);
 CREATE INDEX idx_notes_property_id ON notes(property_id);
 CREATE INDEX idx_notes_created_at ON notes(created_at);
