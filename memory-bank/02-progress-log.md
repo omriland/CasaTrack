@@ -153,6 +153,24 @@
      - Architecture documentation reflects coordinate handling
      - Active context updated with current development status
 
+15. **Irrelevant Properties Management**
+   - **Cards View Enhancement**: Implemented collapsible section for irrelevant properties
+     - Properties with 'Irrelevant' status are now hidden from main grid
+     - Collapsible section at bottom of page shows irrelevant properties when expanded
+     - Visual separation with red-themed header and trash can icon
+     - Smooth expand/collapse animations with opacity and height transitions
+     - Count display showing number of irrelevant properties
+   - **Improved Layout Management**: Clean separation of active vs irrelevant properties
+     - Main grid only shows properties with non-'Irrelevant' status
+     - Expandable section provides access to irrelevant properties when needed
+     - Edge case handling when only irrelevant properties exist
+     - Maintains consistent grid layout and responsive design
+   - **Enhanced User Experience**: Better property organization and visual hierarchy
+     - Reduces visual clutter in main cards view
+     - Easy toggle access to view irrelevant properties
+     - Intuitive expand/collapse controls with arrow indicators
+     - Preserves all existing functionality (edit, delete, view notes)
+
 ### 🎯 Next Priorities
 1. **Search & Filters**: Enhanced property discovery and filtering
 2. **Real-time Updates**: Leverage Supabase real-time capabilities

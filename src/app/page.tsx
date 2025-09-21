@@ -21,6 +21,7 @@ export default function Home() {
   const [showPropertyDetail, setShowPropertyDetail] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'kanban' | 'map'>('cards')
+  const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
 
   useEffect(() => {
     const checkAuth = () => {
@@ -138,6 +139,10 @@ export default function Home() {
     setShowForm(false)
     setEditingProperty(null)
   }
+
+  // Helper functions to separate properties by status
+  const relevantProperties = properties.filter(property => property.status !== 'Irrelevant')
+  const irrelevantProperties = properties.filter(property => property.status === 'Irrelevant')
 
   if (loading) {
     return (
@@ -297,23 +302,100 @@ export default function Home() {
           </div>
         ) : viewMode === 'cards' ? (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {properties.map((property, index) => (
-                <div
-                  key={property.id}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                  className="animate-fade-in"
+            {/* Main Properties Grid - Non-Irrelevant */}
+            {relevantProperties.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {relevantProperties.map((property, index) => (
+                  <div
+                    key={property.id}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="animate-fade-in"
+                  >
+                    <PropertyCard
+                      property={property}
+                      onEdit={handleEditProperty}
+                      onDelete={handleDeleteProperty}
+                      onViewNotes={handleViewNotes}
+                      onStatusUpdate={handleUpdatePropertyStatus}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Irrelevant Properties Collapsible Section */}
+            {irrelevantProperties.length > 0 && (
+              <div className="mt-12">
+                <button
+                  onClick={() => setShowIrrelevantProperties(!showIrrelevantProperties)}
+                  className="flex items-center justify-between w-full max-w-md p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200 mb-6"
                 >
-                  <PropertyCard
-                    property={property}
-                    onEdit={handleEditProperty}
-                    onDelete={handleDeleteProperty}
-                    onViewNotes={handleViewNotes}
-                    onStatusUpdate={handleUpdatePropertyStatus}
-                  />
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold text-slate-900">Irrelevant Properties</h3>
+                      <p className="text-sm text-slate-500">
+                        {irrelevantProperties.length} {irrelevantProperties.length === 1 ? 'property' : 'properties'}
+                      </p>
+                    </div>
+                  </div>
+                  <svg 
+                    className={`w-5 h-5 text-slate-400 transition-transform ${showIrrelevantProperties ? 'rotate-180' : ''}`} 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Collapsible Irrelevant Properties Grid */}
+                <div className={`transition-all duration-300 overflow-hidden ${
+                  showIrrelevantProperties 
+                    ? 'max-h-full opacity-100' 
+                    : 'max-h-0 opacity-0'
+                }`}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {irrelevantProperties.map((property, index) => (
+                      <div
+                        key={property.id}
+                        style={{ animationDelay: `${(relevantProperties.length + index) * 50}ms` }}
+                        className="animate-fade-in"
+                      >
+                        <PropertyCard
+                          property={property}
+                          onEdit={handleEditProperty}
+                          onDelete={handleDeleteProperty}
+                          onViewNotes={handleViewNotes}
+                          onStatusUpdate={handleUpdatePropertyStatus}
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
+            {/* Show message if no relevant properties */}
+            {relevantProperties.length === 0 && irrelevantProperties.length > 0 && (
+              <div className="text-center py-8">
+                <div className="max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No Active Properties</h3>
+                  <p className="text-slate-600">
+                    All your properties are marked as irrelevant. Check the section below to view them.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         ) : viewMode === 'kanban' ? (
           <div className="h-[calc(100vh-12rem)] animate-fade-in">
