@@ -126,14 +126,37 @@ export default function AddressAutocomplete({
     onChange(newValue)
   }
 
-  const handleBlur = () => {
+  const handleBlur = async () => {
     // When input loses focus, check if DOM value differs from our tracked value
     if (inputRef.current) {
       const domValue = inputRef.current.value
       if (domValue !== lastKnownValue.current) {
         console.log('📍 Syncing DOM value on blur:', domValue)
         lastKnownValue.current = domValue
-        onChange(domValue)
+
+        // Try to get coordinates for the address
+        let coordinates: { lat: number; lng: number } | undefined
+
+        if (domValue.trim()) {
+          try {
+            // Use OpenStreetMap Nominatim to get coordinates
+            const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(domValue)}&countrycodes=IL&limit=1`
+            const response = await fetch(nominatimUrl)
+            const data = await response.json()
+
+            if (data && data.length > 0) {
+              coordinates = {
+                lat: parseFloat(data[0].lat),
+                lng: parseFloat(data[0].lon)
+              }
+              console.log('📍 Got coordinates for synced address:', coordinates)
+            }
+          } catch (error) {
+            console.log('📍 Could not get coordinates for synced address')
+          }
+        }
+
+        onChange(domValue, coordinates)
       }
     }
     onBlur?.()
