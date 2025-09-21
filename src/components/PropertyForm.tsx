@@ -29,7 +29,8 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     status: property?.status || 'Seen',
     url: property?.url || '',
     latitude: property?.latitude || null,
-    longitude: property?.longitude || null
+    longitude: property?.longitude || null,
+    apartment_broker: property?.apartment_broker || false
   })
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,6 +61,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     
     console.log('📝 Updated form data:', newFormData)
     setFormData(newFormData)
+  }
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked
+    }))
   }
 
 
@@ -287,6 +296,31 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               />
             </div>
 
+            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="apartment_broker"
+                  name="apartment_broker"
+                  checked={formData.apartment_broker || false}
+                  onChange={handleCheckboxChange}
+                  className="w-5 h-5 text-primary bg-white border-2 border-slate-300 rounded focus:ring-primary focus:ring-2 transition-all"
+                />
+                <label htmlFor="apartment_broker" className="ml-3 text-sm font-semibold text-slate-700 cursor-pointer">
+                  Has Apartment Broker
+                </label>
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-slate-600">
+                  Check this if the property listing includes an apartment broker service
+                </p>
+              </div>
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            </div>
 
             <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
               <button

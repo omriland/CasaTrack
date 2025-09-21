@@ -68,7 +68,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
                 e.stopPropagation()
                 onEdit(property)
               }}
-              className="p-1 text-gray-400 hover:text-blue-600"
+              className="p-1 text-gray-400 hover:text-primary"
               title="Edit"
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -104,18 +104,28 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
         </div>
 
         <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-500">{property.source}</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs text-gray-500">{property.source}</span>
+            {property.apartment_broker && (
+              <div className="flex items-center space-x-1" title="Has apartment broker">
+                <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+              </div>
+            )}
+          </div>
           <button
             onClick={(e) => {
               e.stopPropagation()
               onViewNotes(property)
             }}
-            className="flex items-center text-xs text-blue-600 hover:text-blue-800"
+            className="flex items-center text-xs text-primary hover:text-primary/80"
           >
             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            {notesCount > 0 && <span className="bg-blue-100 text-blue-800 px-1 rounded">({notesCount})</span>}
+            {notesCount > 0 && <span className="bg-primary/10 text-primary px-1 rounded">({notesCount})</span>}
           </button>
         </div>
       </div>

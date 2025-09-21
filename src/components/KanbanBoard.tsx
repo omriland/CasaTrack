@@ -26,7 +26,9 @@ function DroppableColumn({
   title,
   count,
   color,
-  bgColor
+  bgColor,
+  isCollapsed,
+  onToggleCollapse
 }: {
   id: string
   children: React.ReactNode
@@ -34,25 +36,84 @@ function DroppableColumn({
   count: number
   color: string
   bgColor: string
+  isCollapsed: boolean
+  onToggleCollapse: () => void
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id,
   })
 
+  if (isCollapsed) {
+    return (
+      <div
+        className={`flex flex-col bg-gray-50 rounded-lg transition-all duration-300 ${
+          isOver ? 'bg-primary/10 ring-2 ring-primary/30' : ''
+        }`}
+        style={{ width: '100px', minHeight: '400px' }}
+      >
+        <button
+          onClick={onToggleCollapse}
+          className={`flex flex-col items-center justify-start p-4 rounded-md transition-all hover:scale-105 ${bgColor}`}
+          style={{ minHeight: '200px' }}
+        >
+          <div className="flex-1 flex items-center justify-center mb-4" style={{ minHeight: '120px' }}>
+            <h3 className={`font-medium text-sm ${color} transform rotate-90 whitespace-nowrap`}>
+              {title}
+            </h3>
+          </div>
+          <span className={`text-xs px-2 py-1 rounded-full bg-white ${color} mb-3`}>
+            {count}
+          </span>
+          <svg 
+            className={`w-4 h-4 ${color} transform rotate-90`} 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <div 
+          ref={setNodeRef}
+          className="flex-1 flex items-center justify-center p-2"
+        >
+          {count > 0 && (
+            <div className="text-center text-gray-400 text-xs">
+              <div className="transform rotate-90 whitespace-nowrap">
+                {count} {count === 1 ? 'property' : 'properties'}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col bg-gray-50 rounded-lg p-3 min-h-96 transition-colors ${
-        isOver ? 'bg-blue-50 ring-2 ring-blue-300' : ''
+      className={`flex flex-col bg-gray-50 rounded-lg p-3 min-h-96 transition-all duration-300 ${
+        isOver ? 'bg-primary/10 ring-2 ring-primary/30' : ''
       }`}
     >
       <div className={`flex items-center justify-between mb-3 p-2 rounded-md ${bgColor}`}>
         <h3 className={`font-medium text-sm ${color}`}>
           {title}
         </h3>
-        <span className={`text-xs px-2 py-1 rounded-full bg-white ${color}`}>
-          {count}
-        </span>
+        <div className="flex items-center space-x-2">
+          <span className={`text-xs px-2 py-1 rounded-full bg-white ${color}`}>
+            {count}
+          </span>
+          <button
+            onClick={onToggleCollapse}
+            className={`p-1 rounded transition-all hover:scale-110 ${color} hover:bg-white/50`}
+            title="Collapse column"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        </div>
       </div>
       {children}
     </div>
@@ -85,6 +146,9 @@ export default function KanbanBoard({
   onViewNotes
 }: KanbanBoardProps) {
   const [activeProperty, setActiveProperty] = useState<Property | null>(null)
+  const [collapsedColumns, setCollapsedColumns] = useState<Set<PropertyStatus>>(
+    new Set(['On Hold', 'Irrelevant', 'Purchased'])
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -96,6 +160,18 @@ export default function KanbanBoard({
 
   const getPropertiesByStatus = (status: PropertyStatus) => {
     return properties.filter(property => property.status === status)
+  }
+
+  const toggleColumnCollapse = (status: PropertyStatus) => {
+    setCollapsedColumns(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(status)) {
+        newSet.delete(status)
+      } else {
+        newSet.add(status)
+      }
+      return newSet
+    })
   }
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -168,51 +244,62 @@ export default function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 h-full">
+        <div className="flex gap-4 h-full overflow-x-auto">
           {STATUSES.map(({ status, color, bgColor }) => {
             const columnProperties = getPropertiesByStatus(status)
+            const isCollapsed = collapsedColumns.has(status)
 
             return (
-              <DroppableColumn
-                key={status}
-                id={status}
-                title={status}
-                count={columnProperties.length}
-                color={color}
-                bgColor={bgColor}
+              <div 
+                key={status} 
+                className={`flex-shrink-0 transition-all duration-300 ${
+                  isCollapsed ? 'w-28' : 'w-80'
+                }`}
               >
-                <SortableContext
-                  items={columnProperties.map(p => p.id)}
-                  strategy={verticalListSortingStrategy}
+                <DroppableColumn
+                  id={status}
+                  title={status}
+                  count={columnProperties.length}
+                  color={color}
+                  bgColor={bgColor}
+                  isCollapsed={isCollapsed}
+                  onToggleCollapse={() => toggleColumnCollapse(status)}
                 >
-                  <div
-                    className="flex-1 space-y-2 overflow-y-auto"
-                    style={{ minHeight: '200px' }}
-                  >
-                    {columnProperties.map(property => (
-                      <KanbanCard
-                        key={property.id}
-                        property={property}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onViewNotes={onViewNotes}
-                      />
-                    ))}
-                    {columnProperties.length === 0 && (
-                      <div className="text-center text-gray-400 text-sm py-8">
-                        Drop properties here
+                  {!isCollapsed && (
+                    <SortableContext
+                      items={columnProperties.map(p => p.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div
+                        className="flex-1 space-y-2 overflow-y-auto"
+                        style={{ minHeight: '200px' }}
+                      >
+                        {columnProperties.map(property => (
+                          <KanbanCard
+                            key={property.id}
+                            property={property}
+                            onEdit={onEdit}
+                            onDelete={onDelete}
+                            onViewNotes={onViewNotes}
+                          />
+                        ))}
+                        {columnProperties.length === 0 && (
+                          <div className="text-center text-gray-400 text-sm py-8">
+                            Drop properties here
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </SortableContext>
-              </DroppableColumn>
+                    </SortableContext>
+                  )}
+                </DroppableColumn>
+              </div>
             )
           })}
         </div>
 
         <DragOverlay>
           {activeProperty ? (
-            <div className="bg-white rounded-lg shadow-lg border-2 border-blue-300 p-3 rotate-3 opacity-90">
+            <div className="bg-white rounded-lg shadow-lg border-2 border-primary/30 p-3 rotate-3 opacity-90">
               <div className="font-medium text-sm text-gray-900 mb-1">
                 {activeProperty.address}
               </div>

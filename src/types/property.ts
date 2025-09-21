@@ -20,6 +20,7 @@ export interface Property {
   url: string | null
   latitude: number | null
   longitude: number | null
+  apartment_broker: boolean
   created_at: string
   updated_at: string
 }
@@ -38,6 +39,7 @@ export interface PropertyInsert {
   url?: string | null
   latitude?: number | null
   longitude?: number | null
+  apartment_broker?: boolean
 }
 
 export interface Note {
