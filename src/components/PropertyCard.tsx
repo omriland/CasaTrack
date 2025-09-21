@@ -185,7 +185,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                     <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
                     <span>{status}</span>
                     {status === property.status && (
-                      <svg className="w-3 h-3 ml-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -198,7 +198,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         <div className="flex space-x-1 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => onEdit(property)}
-            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+            className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
             title="Edit property"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,7 +241,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       </div>
 
       {/* Price Section */}
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 mb-4">
+      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 mb-4">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-slate-600">Asking Price</span>
           <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
@@ -283,7 +283,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               href={property.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors group"
+              className="flex items-center space-x-2 text-primary hover:text-primary/80 transition-colors group"
               title="Open property listing"
             >
               <span className="text-sm font-medium">View Listing</span>
@@ -350,16 +350,16 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             onClick={() => onViewNotes(property)}
             onMouseEnter={handleNotesHover}
             onMouseLeave={handleNotesLeave}
-            className="flex items-center justify-between w-full text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors group"
+            className="flex items-center justify-between w-full text-sm font-medium text-slate-700 hover:text-primary transition-colors group"
           >
             <div className="flex items-center space-x-2">
-              <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-slate-400 group-hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span>View Notes</span>
             </div>
             {notesCount > 0 && (
-              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium">
+              <span className="bg-primary/10 text-primary-foreground text-xs px-2 py-1 rounded-full font-medium">
                 {notesCount}
               </span>
             )}
