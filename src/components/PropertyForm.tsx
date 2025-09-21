@@ -33,11 +33,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('🚀 Submitting property:', {
-      address: formData.address,
-      latitude: formData.latitude,
-      longitude: formData.longitude
-    })
     onSubmit(formData)
   }
 
@@ -52,9 +47,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
-    console.log('📍 Address changed:', address)
-    console.log('📍 Coordinates:', coordinates)
-
     setFormData(prev => ({
       ...prev,
       address,
@@ -65,8 +57,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onCancel}
+    >
+      <div 
+        className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="p-6">
           <h2 className="text-xl font-bold mb-4">
             {property ? 'Edit Property' : 'Add New Property'}
@@ -230,16 +228,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               />
             </div>
 
-            {/* Debug coordinates */}
-            {(formData.latitude || formData.longitude) && (
-              <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                <p className="text-sm text-green-800">
-                  <strong>Coordinates detected:</strong><br />
-                  Latitude: {formData.latitude}<br />
-                  Longitude: {formData.longitude}
-                </p>
-              </div>
-            )}
 
             <div className="flex justify-end space-x-3 pt-4">
               <button

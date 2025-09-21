@@ -1,0 +1,5 @@
+---
+description: Never run 'npm run dev' if a dev instance is already running
+globs:
+alwaysApply: true
+---

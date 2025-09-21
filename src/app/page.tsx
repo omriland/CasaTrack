@@ -7,7 +7,7 @@ import { Property, PropertyInsert } from '@/types/property'
 import LoginForm from '@/components/LoginForm'
 import PropertyForm from '@/components/PropertyForm'
 import PropertyCard from '@/components/PropertyCard'
-import NotesModal from '@/components/NotesModal'
+import PropertyDetailModal from '@/components/PropertyDetailModal'
 import KanbanBoard from '@/components/KanbanBoard'
 import MapView from '@/components/MapView'
 
@@ -18,7 +18,7 @@ export default function Home() {
   const [showForm, setShowForm] = useState(false)
   const [editingProperty, setEditingProperty] = useState<Property | null>(null)
   const [formLoading, setFormLoading] = useState(false)
-  const [showNotesModal, setShowNotesModal] = useState(false)
+  const [showPropertyDetail, setShowPropertyDetail] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'kanban' | 'map'>('cards')
 
@@ -104,11 +104,11 @@ export default function Home() {
 
   const handleViewNotes = (property: Property) => {
     setSelectedProperty(property)
-    setShowNotesModal(true)
+    setShowPropertyDetail(true)
   }
 
-  const handleCloseNotesModal = () => {
-    setShowNotesModal(false)
+  const handleClosePropertyDetail = () => {
+    setShowPropertyDetail(false)
     setSelectedProperty(null)
   }
 
@@ -116,9 +116,21 @@ export default function Home() {
     try {
       const updatedProperty = await updatePropertyStatus(propertyId, newStatus)
       setProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p))
+      // Update the selected property if it's the one being updated
+      if (selectedProperty && selectedProperty.id === propertyId) {
+        setSelectedProperty(updatedProperty)
+      }
     } catch (error) {
       console.error('Error updating property status:', error)
       throw error
+    }
+  }
+
+  const handlePropertyUpdate = (updatedProperty: Property) => {
+    setProperties(prev => prev.map(p => p.id === updatedProperty.id ? updatedProperty : p))
+    // Update the selected property if it's the one being updated
+    if (selectedProperty && selectedProperty.id === updatedProperty.id) {
+      setSelectedProperty(updatedProperty)
     }
   }
 
@@ -297,6 +309,7 @@ export default function Home() {
                     onEdit={handleEditProperty}
                     onDelete={handleDeleteProperty}
                     onViewNotes={handleViewNotes}
+                    onStatusUpdate={handleUpdatePropertyStatus}
                   />
                 </div>
               ))}
@@ -331,10 +344,14 @@ export default function Home() {
         />
       )}
 
-      {showNotesModal && selectedProperty && (
-        <NotesModal
+      {showPropertyDetail && selectedProperty && (
+        <PropertyDetailModal
           property={selectedProperty}
-          onClose={handleCloseNotesModal}
+          onClose={handleClosePropertyDetail}
+          onEdit={handleEditProperty}
+          onDelete={handleDeleteProperty}
+          onStatusUpdate={handleUpdatePropertyStatus}
+          onPropertyUpdate={handlePropertyUpdate}
         />
       )}
     </div>

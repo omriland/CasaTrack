@@ -18,36 +18,26 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   useEffect(() => {
     const initializeMap = () => {
       try {
-        console.log('MapView: Initializing map...')
-        console.log('MapView: Properties received:', properties)
-
         if (!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-          console.error('MapView: Google Maps API key not configured')
           setError('Google Maps API key not configured')
           return
         }
 
         if (!mapRef.current) {
-          console.log('MapView: Map ref not ready yet')
           return
         }
 
         if (typeof google === 'undefined' || !google.maps) {
-          console.log('MapView: Google Maps not loaded yet')
           return
         }
 
         if (mapInstanceRef.current) {
-          console.log('MapView: Map already initialized')
           return
         }
-
-        console.log('MapView: Creating map instance...')
 
         if (mapRef.current && !mapInstanceRef.current && typeof google !== 'undefined' && google.maps) {
           // Default center to Tel Aviv if no properties with coordinates
           const propertiesWithCoords = properties.filter(p => p.latitude && p.longitude)
-          console.log('MapView: Properties with coordinates:', propertiesWithCoords)
 
           const defaultCenter = { lat: 32.0853, lng: 34.7818 } // Tel Aviv
 
@@ -62,8 +52,6 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
             zoom = propertiesWithCoords.length === 1 ? 16 : 12
           }
 
-          console.log('MapView: Map center:', center, 'zoom:', zoom)
-
           // Initialize map
           mapInstanceRef.current = new google.maps.Map(mapRef.current, {
             center,
@@ -77,41 +65,31 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
             ]
           })
 
-          console.log('MapView: Map created successfully')
           setError(null)
         }
-      } catch (err) {
-        console.error('Error initializing Google Maps:', err)
+      } catch {
         setError('Failed to load map')
       }
     }
 
     if (typeof google !== 'undefined' && google.maps) {
-      console.log('MapView: Google Maps already available')
       initializeMap()
     } else {
-      console.log('MapView: Waiting for Google Maps to load...')
-
       // Wait for Google Maps to load
       const handleGoogleMapsLoad = () => {
-        console.log('MapView: Received google-maps-loaded event')
         initializeMap()
       }
 
       if ((window as typeof window & { googleMapsLoaded?: boolean }).googleMapsLoaded) {
-        console.log('MapView: Google Maps already loaded (window flag)')
         initializeMap()
       } else {
         window.addEventListener('google-maps-loaded', handleGoogleMapsLoad)
 
         // Fallback: try to initialize after 5 seconds if Google Maps still not loaded
         const fallbackTimeout = setTimeout(() => {
-          console.log('MapView: Fallback timeout - checking if Google Maps available...')
           if (typeof google !== 'undefined' && google.maps) {
-            console.log('MapView: Google Maps available via fallback, initializing...')
             initializeMap()
           } else {
-            console.error('MapView: Google Maps failed to load after 5 seconds')
             setError('Google Maps failed to load')
           }
         }, 5000)
@@ -125,23 +103,16 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   }, [properties])
 
   useEffect(() => {
-    console.log('MapView: Markers effect running...')
-    console.log('MapView: Map instance exists:', !!mapInstanceRef.current)
-    console.log('MapView: Loading state:', isLoading)
-
     if (!mapInstanceRef.current || isLoading) {
-      console.log('MapView: Skipping markers - map not ready or still loading')
       return
     }
 
     // Clear existing markers
-    console.log('MapView: Clearing existing markers:', markersRef.current.length)
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
 
     // Add markers for properties with coordinates
     const propertiesWithCoords = properties.filter(p => p.latitude && p.longitude)
-    console.log('MapView: Adding markers for properties:', propertiesWithCoords.length)
 
     propertiesWithCoords.forEach(property => {
       if (!mapInstanceRef.current) return
