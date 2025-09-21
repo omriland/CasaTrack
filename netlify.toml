@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Disable secrets scanning for expected Next.js public environment variables
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_AUTH_PASSWORD,NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_GEOCODING_API_KEY"
+
+# Configure redirects for Next.js
+[[redirects]]
+  from = "/_next/static/*"
+  to = "/_next/static/:splat"
+  status = 200
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

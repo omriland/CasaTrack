@@ -18,7 +18,7 @@
    - Implemented simple password-based authentication
    - Cookie-based session management (24-hour expiry)
    - Fixed environment variable access issue (NEXT_PUBLIC_ prefix required)
-   - Password configured: 130188
+   - Password configured via environment variables
 
 4. **Core CRUD Operations**
    - Complete property management (Create, Read, Update, Delete)
@@ -50,7 +50,7 @@
 
 ### 📊 Current Status
 - **MVP Complete**: Full CRUD functionality working
-- **Authentication**: Functional with correct password (130188)
+- **Authentication**: Functional with environment-configured password
 - **Database**: Schema implemented and tested
 - **UI**: Responsive and user-friendly
 - **Development**: Server running and stable

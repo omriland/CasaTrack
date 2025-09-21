@@ -4,7 +4,7 @@
 **CasaTrack** is a single-user web application for managing the home-purchasing process. It allows tracking properties of interest, managing notes, and visualizing them through multiple views.
 
 ## Current Status: Enhanced MVP Complete ✅
-- **Authentication**: Modern login with glassmorphism design (130188)
+- **Authentication**: Modern login with glassmorphism design
 - **Core CRUD**: Full property management implemented
 - **Database**: Supabase PostgreSQL with proper schema
 - **UI**: Modern design system with Inter typography and cohesive color palette
@@ -30,7 +30,7 @@
 10. Responsive mobile-first design
 
 ## Environment Configuration
-- **Password**: `NEXT_PUBLIC_AUTH_PASSWORD=130188`
+- **Password**: Configured via environment variables
 - **Supabase URL**: Configured and working
 - **Google Maps API**: Key added but not yet implemented
 - **Development Server**: Running on port 3000
