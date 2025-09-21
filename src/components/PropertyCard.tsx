@@ -1,7 +1,8 @@
 'use client'
 
 import { Property } from '@/types/property'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { getPropertyNotes } from '@/lib/properties'
 
 interface PropertyCardProps {
   property: Property
@@ -12,6 +13,20 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ property, onEdit, onDelete, onViewNotes }: PropertyCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [notesCount, setNotesCount] = useState<number>(0)
+
+  useEffect(() => {
+    loadNotesCount()
+  }, [property.id])
+
+  const loadNotesCount = async () => {
+    try {
+      const notes = await getPropertyNotes(property.id)
+      setNotesCount(notes.length)
+    } catch (error) {
+      console.error('Error loading notes count:', error)
+    }
+  }
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US').format(price)
@@ -116,9 +131,12 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes }
       <div className="mt-3 pt-3 border-t border-gray-100">
         <button
           onClick={() => onViewNotes(property)}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="flex items-center text-sm text-blue-600 hover:text-blue-800"
         >
-          View Notes
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Notes {notesCount > 0 && <span className="ml-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">({notesCount})</span>}
         </button>
       </div>
 

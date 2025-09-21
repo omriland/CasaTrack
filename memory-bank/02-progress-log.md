@@ -55,11 +55,28 @@
 - **UI**: Responsive and user-friendly
 - **Development**: Server running and stable
 
-### 🎯 Next Priority
-- **Kanban Board View**: Drag and drop status management (ready to implement)
+8. **Notes System Implementation**
+   - Created NotesModal component with full CRUD functionality
+   - Added notes count display to PropertyCard components
+   - Integrated notes modal into main application flow
+   - Features: Add, view, delete notes with timestamps
+
+9. **Kanban Board Implementation**
+   - Installed @dnd-kit libraries for drag-and-drop functionality
+   - Created KanbanBoard component with 7 status columns
+   - Implemented KanbanCard component for compact property display
+   - Added view toggle between Cards and Kanban layouts
+   - Full drag-and-drop status management working
+   - Responsive design from mobile to desktop
+   - Visual feedback during drag operations
+
+### 🎯 Next Priorities
+1. **Map View**: Google Maps integration with property pins
+2. **Search & Filters**: Enhanced property discovery and filtering
+3. **Real-time Updates**: Leverage Supabase real-time capabilities
 
 ### 🔧 Technical Debt
-- Notes functionality exists in backend but UI not yet implemented
 - Map view has API key but integration pending
 - Real-time updates available but not utilized
 - No loading skeletons or error boundaries
+- Notes count could use real-time updates when notes are added/deleted

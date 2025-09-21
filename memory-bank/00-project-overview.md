@@ -22,7 +22,11 @@
 3. Status tracking with visual indicators
 4. Contact information management
 5. Property source and type categorization
-6. Responsive mobile-first design
+6. Notes system with timestamped entries
+7. Notes count display on property cards
+8. Kanban board with drag-and-drop status management
+9. View toggle between Cards and Kanban layouts
+10. Responsive mobile-first design
 
 ## Environment Configuration
 - **Password**: `NEXT_PUBLIC_AUTH_PASSWORD=130188`
