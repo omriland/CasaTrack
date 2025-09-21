@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Property, PropertyInsert, PropertySource, PropertyType, PropertyStatus } from '@/types/property'
+import AddressAutocomplete from './AddressAutocomplete'
 
 interface PropertyFormProps {
   property?: Property
@@ -25,11 +26,18 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     source: property?.source || 'Yad2',
     property_type: property?.property_type || 'Existing apartment',
     description: property?.description || '',
-    status: property?.status || 'Seen'
+    status: property?.status || 'Seen',
+    latitude: property?.latitude || null,
+    longitude: property?.longitude || null
   })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('🚀 Submitting property:', {
+      address: formData.address,
+      latitude: formData.latitude,
+      longitude: formData.longitude
+    })
     onSubmit(formData)
   }
 
@@ -42,6 +50,19 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         : value || null
     }))
   }
+
+  const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
+    console.log('📍 Address changed:', address)
+    console.log('📍 Coordinates:', coordinates)
+
+    setFormData(prev => ({
+      ...prev,
+      address,
+      latitude: coordinates?.lat || null,
+      longitude: coordinates?.lng || null
+    }))
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -56,14 +77,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Address *
               </label>
-              <input
-                type="text"
-                name="address"
-                required
+              <AddressAutocomplete
                 value={formData.address}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={handleAddressChange}
                 placeholder="Enter property address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -211,6 +229,17 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 placeholder="Additional details about the property"
               />
             </div>
+
+            {/* Debug coordinates */}
+            {(formData.latitude || formData.longitude) && (
+              <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                <p className="text-sm text-green-800">
+                  <strong>Coordinates detected:</strong><br />
+                  Latitude: {formData.latitude}<br />
+                  Longitude: {formData.longitude}
+                </p>
+              </div>
+            )}
 
             <div className="flex justify-end space-x-3 pt-4">
               <button
