@@ -128,8 +128,8 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
       // Determine marker color based on property status
       const isIrrelevant = property.status === 'Irrelevant'
-      const markerColor = isIrrelevant ? '#64748b' : 'oklch(0.8348 0.1302 160.9080)'
-      const textColor = isIrrelevant ? '#64748b' : 'oklch(0.8348 0.1302 160.9080)'
+      const markerColor = isIrrelevant ? '#64748b' : 'oklch(0.72 0.13 160.9)'
+      const textColor = isIrrelevant ? '#64748b' : 'oklch(0.72 0.13 160.9)'
 
       const marker = new google.maps.Marker({
         position: { lat: property.latitude!, lng: property.longitude! },

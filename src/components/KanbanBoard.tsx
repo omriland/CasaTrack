@@ -46,26 +46,26 @@ function DroppableColumn({
   if (isCollapsed) {
     return (
       <div
-        className={`flex flex-col bg-gray-50 rounded-lg transition-all duration-300 ${
-          isOver ? 'bg-primary/10 ring-2 ring-primary/30' : ''
+        className={`flex flex-col bg-slate-50 rounded-[3px] transition-all duration-300 ${
+          isOver ? 'ring-2 ring-primary/30' : ''
         }`}
         style={{ width: '100px', minHeight: '400px' }}
       >
         <button
           onClick={onToggleCollapse}
-          className={`flex flex-col items-center justify-start p-4 rounded-md transition-all hover:scale-105 ${bgColor}`}
+          className={`flex flex-col items-center justify-start p-4 rounded-md transition-all hover:scale-105`}
           style={{ minHeight: '200px' }}
         >
           <div className="flex-1 flex items-center justify-center mb-4" style={{ minHeight: '120px' }}>
-            <h3 className={`font-medium text-sm ${color} transform rotate-90 whitespace-nowrap`}>
+            <h3 className={`font-medium text-sm text-slate-700 transform rotate-90 whitespace-nowrap`}>
               {title}
             </h3>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-full bg-white ${color} mb-3`}>
+          <span className={`text-xs px-2 py-1 rounded-full bg-white text-slate-700 border border-slate-200 mb-3`}>
             {count}
           </span>
           <svg 
-            className={`w-4 h-4 ${color} transform rotate-90`} 
+            className={`w-4 h-4 text-slate-500 transform rotate-90`} 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -92,30 +92,19 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col bg-gray-50 rounded-lg p-3 min-h-96 transition-all duration-300 ${
-        isOver ? 'bg-primary/10 ring-2 ring-primary/30' : ''
+      className={`flex flex-col bg-slate-50 rounded-[3px] min-h-96 transition-colors ${
+        isOver ? 'ring-2 ring-primary/30' : ''
       }`}
     >
-      <div className={`flex items-center justify-between mb-3 p-2 rounded-md ${bgColor}`}>
-        <h3 className={`font-medium text-sm ${color}`}>
+      <div className={`sticky top-0 z-10 flex items-center justify-between px-3 py-2 rounded-t-[3px] bg-transparent`}>
+        <h3 className={`font-semibold text-xs tracking-wide uppercase text-slate-700`}>
           {title}
         </h3>
-        <div className="flex items-center space-x-2">
-          <span className={`text-xs px-2 py-1 rounded-full bg-white ${color}`}>
-            {count}
-          </span>
-          <button
-            onClick={onToggleCollapse}
-            className={`p-1 rounded transition-all hover:scale-110 ${color} hover:bg-white/50`}
-            title="Collapse column"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        </div>
+        <span className={`text-[10px] px-2 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200`}>{count}</span>
       </div>
-      {children}
+      <div className="px-3 pb-3">
+        {children}
+      </div>
     </div>
   )
 }
@@ -146,6 +135,7 @@ export default function KanbanBoard({
   onViewNotes
 }: KanbanBoardProps) {
   const [activeProperty, setActiveProperty] = useState<Property | null>(null)
+  const [isDraggingSomething, setIsDraggingSomething] = useState(false)
   const [collapsedColumns, setCollapsedColumns] = useState<Set<PropertyStatus>>(
     new Set(['On Hold', 'Irrelevant', 'Purchased'])
   )
@@ -177,6 +167,7 @@ export default function KanbanBoard({
   const handleDragStart = (event: DragStartEvent) => {
     const property = properties.find(p => p.id === event.active.id)
     setActiveProperty(property || null)
+    setIsDraggingSomething(true)
   }
 
   const handleDragOver = (event: DragOverEvent) => {
@@ -206,6 +197,7 @@ export default function KanbanBoard({
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
     setActiveProperty(null)
+    setIsDraggingSomething(false)
 
     if (!over) return
 
@@ -244,7 +236,7 @@ export default function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 h-full overflow-x-auto">
+        <div className="flex gap-4 h-full overflow-x-auto px-1">
           {STATUSES.map(({ status, color, bgColor }) => {
             const columnProperties = getPropertiesByStatus(status)
             const isCollapsed = collapsedColumns.has(status)
@@ -271,8 +263,8 @@ export default function KanbanBoard({
                       strategy={verticalListSortingStrategy}
                     >
                       <div
-                        className="flex-1 space-y-2 overflow-y-auto"
-                        style={{ minHeight: '200px' }}
+                        className="flex-1 space-y-2 overflow-y-auto pr-1"
+                        style={{ minHeight: '200px', maxHeight: 'calc(100vh - 16rem)' }}
                       >
                         {columnProperties.map(property => (
                           <KanbanCard
@@ -283,8 +275,8 @@ export default function KanbanBoard({
                             onViewNotes={onViewNotes}
                           />
                         ))}
-                        {columnProperties.length === 0 && (
-                          <div className="text-center text-gray-400 text-sm py-8">
+                        {columnProperties.length === 0 && isDraggingSomething && (
+                          <div className="text-center text-slate-400 text-xs py-8 border border-dashed border-slate-200 rounded-lg">
                             Drop properties here
                           </div>
                         )}
@@ -299,7 +291,7 @@ export default function KanbanBoard({
 
         <DragOverlay>
           {activeProperty ? (
-            <div className="bg-white rounded-lg shadow-lg border-2 border-primary/30 p-3 rotate-3 opacity-90">
+            <div className="bg-white rounded-lg shadow-lg border border-primary/30 p-3 opacity-95 rotate-3">
               <div className="font-medium text-sm text-gray-900 mb-1">
                 {activeProperty.address}
               </div>

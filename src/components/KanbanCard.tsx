@@ -53,13 +53,13 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white rounded-lg shadow-sm border p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow ${
-        isDragging ? 'opacity-50 rotate-2 shadow-lg' : ''
+      className={`bg-white rounded-lg shadow-sm border border-slate-200 p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all ${
+        isDragging ? 'opacity-80 shadow-lg scale-[1.01] rotate-2' : ''
       }`}
     >
       <div className="space-y-2">
         <div className="flex justify-between items-start">
-          <h4 className="font-medium text-sm text-gray-900 line-clamp-2 flex-1">
+          <h4 className="font-medium text-sm text-slate-900 line-clamp-2 flex-1">
             {property.address}
           </h4>
           <div className="flex space-x-1 ml-2">
@@ -68,7 +68,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
                 e.stopPropagation()
                 onEdit(property)
               }}
-              className="p-1 text-gray-400 hover:text-primary"
+              className="p-1 text-slate-400 hover:text-primary rounded hover:bg-primary/10"
               title="Edit"
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -82,7 +82,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
                   onDelete(property.id)
                 }
               }}
-              className="p-1 text-gray-400 hover:text-red-600"
+              className="p-1 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
               title="Delete"
             >
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -92,20 +92,30 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
           </div>
         </div>
 
-        <div className="text-xs text-gray-600 space-y-1">
-          <div className="flex justify-between">
-            <span>{property.rooms} rooms</span>
-            <span>{property.square_meters} m²</span>
+        <div className="text-[11px] text-slate-600 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <div className="inline-flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">
+              <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+              </svg>
+              <span>{property.rooms} rooms</span>
+            </div>
+            <div className="inline-flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">
+              <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
+              </svg>
+              <span>{property.square_meters} m²</span>
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="font-medium">₪{formatPrice(property.asked_price)}</span>
-            <span>₪{formatPrice(Math.round(property.price_per_meter))}/m²</span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-semibold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+            <span className="text-slate-500">₪{formatPrice(Math.round(property.price_per_meter))}/m²</span>
           </div>
         </div>
 
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-500">{property.source}</span>
+            <span className="text-[10px] text-slate-500 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">{property.source}</span>
             {property.apartment_broker && (
               <div className="flex items-center space-x-1" title="Has apartment broker">
                 <svg className="w-3 h-3 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,7 +130,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
               e.stopPropagation()
               onViewNotes(property)
             }}
-            className="flex items-center text-xs text-primary hover:text-primary/80"
+            className="flex items-center text-[11px] text-primary hover:text-primary/80"
           >
             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
