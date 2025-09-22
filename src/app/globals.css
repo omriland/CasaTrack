@@ -243,3 +243,32 @@ body {
 .animate-slide-in {
   animation: slideIn 0.2s ease-out;
 }
+
+/* Custom loading animations */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes wave {
+  0%, 60%, 100% { transform: initial; }
+  30% { transform: translateY(-15px); }
+}
+
+@keyframes progress-bar {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+.animate-wave {
+  animation: wave 1.4s ease-in-out infinite;
+}
+
+.animate-progress {
+  animation: progress-bar 8s ease-in-out infinite;
+}

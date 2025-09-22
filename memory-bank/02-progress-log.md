@@ -227,3 +227,11 @@
 - No loading skeletons or error boundaries
 - Notes count could use real-time updates when notes are added/deleted
 - Google Maps script loading could be optimized with proper error handling
+
+## Session 2 - UI Polish (September 22, 2025)
+
+### ✅ Completed Tasks
+1. Added minimal favicon via `app/icon.svg` using brand primary gradient.
+
+### 📊 Current Status
+- Visual polish improved; favicon displays in browser tabs automatically via Next.js app router.

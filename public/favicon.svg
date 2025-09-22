@@ -1,0 +1,32 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="houseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E40AF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- House base -->
+  <rect x="6" y="16" width="20" height="14" rx="1" fill="url(#houseGradient)"/>
+  
+  <!-- House roof -->
+  <path d="M4 16L16 6L28 16H26L16 8L6 16H4Z" fill="#1E40AF"/>
+  
+  <!-- Door -->
+  <rect x="13" y="22" width="6" height="8" rx="0.5" fill="#FFFFFF" opacity="0.9"/>
+  <circle cx="17" cy="26" r="0.5" fill="#1E40AF"/>
+  
+  <!-- Windows -->
+  <rect x="8" y="18" width="3" height="3" rx="0.5" fill="#FFFFFF" opacity="0.8"/>
+  <rect x="21" y="18" width="3" height="3" rx="0.5" fill="#FFFFFF" opacity="0.8"/>
+  
+  <!-- Window frames -->
+  <line x1="9.5" y1="18" x2="9.5" y2="21" stroke="#1E40AF" stroke-width="0.5" opacity="0.6"/>
+  <line x1="8" y1="19.5" x2="11" y2="19.5" stroke="#1E40AF" stroke-width="0.5" opacity="0.6"/>
+  <line x1="22.5" y1="18" x2="22.5" y2="21" stroke="#1E40AF" stroke-width="0.5" opacity="0.6"/>
+  <line x1="21" y1="19.5" x2="24" y2="19.5" stroke="#1E40AF" stroke-width="0.5" opacity="0.6"/>
+  
+  <!-- Chimney -->
+  <rect x="22" y="10" width="2" height="6" fill="#6B7280"/>
+</svg>
+

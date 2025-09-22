@@ -316,13 +316,37 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   type="button"
                   onClick={handleExtractFromURL}
                   disabled={isExtracting || !formData.url || !formData.url.includes('yad2.co.il')}
-                  className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 whitespace-nowrap"
+                  className={`px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl font-medium transition-all shadow-lg whitespace-nowrap ${
+                    isExtracting 
+                      ? 'opacity-90 cursor-not-allowed animate-pulse' 
+                      : 'hover:from-primary/90 hover:to-primary/80 hover:shadow-xl transform hover:-translate-y-0.5'
+                  }`}
                   title="Extract property data from Yad2 URL using AI"
                 >
                   {isExtracting ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Extracting...</span>
+                    <div className="flex items-center space-x-3 relative">
+                      <div className="relative">
+                        {/* Outer spinning ring */}
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        {/* Inner pulsing dot */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
+                        </div>
+                      </div>
+                      <span className="relative">
+                        Extracting
+                        <span className="inline-flex ml-1">
+                          <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
+                          <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
+                          <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+                        </span>
+                      </span>
+                      {/* Background shimmer effect */}
+                      <div className="absolute inset-0 overflow-hidden rounded-xl">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="absolute bottom-0 left-0 h-0.5 bg-white/30 rounded-full animate-progress"></div>
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2">
