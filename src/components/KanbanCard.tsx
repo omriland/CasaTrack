@@ -53,7 +53,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
       style={style}
       {...attributes}
       {...listeners}
-      className={`bg-white rounded-lg shadow-sm border border-slate-200 p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all ${
+      className={`group bg-white rounded-[5px] p-3 cursor-grab active:cursor-grabbing transition-all shadow-[0_2px_4px_-2px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_6px_-3px_rgba(0,0,0,0.10)] ${
         isDragging ? 'opacity-80 shadow-lg scale-[1.01] rotate-2' : ''
       }`}
     >
@@ -62,7 +62,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
           <h4 className="font-medium text-sm text-slate-900 line-clamp-2 flex-1">
             {property.address}
           </h4>
-          <div className="flex space-x-1 ml-2">
+          <div className="flex space-x-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => {
                 e.stopPropagation()

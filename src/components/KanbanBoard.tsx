@@ -46,26 +46,33 @@ function DroppableColumn({
   if (isCollapsed) {
     return (
       <div
-        className={`flex flex-col bg-slate-50 rounded-[3px] transition-all duration-300 ${
+        className={`flex flex-col bg-slate-100 rounded-[3px] h-full transition-all duration-300 ${
           isOver ? 'ring-2 ring-primary/30' : ''
         }`}
-        style={{ width: '100px', minHeight: '400px' }}
+        style={{ width: '100px' }}
       >
         <button
           onClick={onToggleCollapse}
-          className={`flex flex-col items-center justify-start p-4 rounded-md transition-all hover:scale-105`}
-          style={{ minHeight: '200px' }}
+          className={`flex flex-col items-center justify-start p-2 pt-4 rounded-md transition-all hover:scale-105 flex-1`}
         >
-          <div className="flex-1 flex items-center justify-center mb-4" style={{ minHeight: '120px' }}>
-            <h3 className={`font-medium text-sm text-slate-700 transform rotate-90 whitespace-nowrap`}>
+          <div className="flex items-center justify-center">
+            <h3
+              className={`font-medium text-sm text-slate-700 text-center leading-tight`}
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' as any }}
+            >
               {title}
             </h3>
           </div>
-          <span className={`text-xs px-2 py-1 rounded-full bg-white text-slate-700 border border-slate-200 mb-3`}>
-            {count}
-          </span>
+          <div className="mt-3">
+            <span
+              className="text-[10px] text-slate-500"
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' as any }}
+            >
+              {count} {count === 1 ? 'property' : 'properties'}
+            </span>
+          </div>
           <svg 
-            className={`w-4 h-4 text-slate-500 transform rotate-90`} 
+            className={`w-4 h-4 text-slate-500 mt-2 transform rotate-90`} 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -92,17 +99,17 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col bg-slate-50 rounded-[3px] min-h-96 transition-colors ${
+      className={`flex flex-col bg-slate-100 rounded-[3px] h-full transition-colors ${
         isOver ? 'ring-2 ring-primary/30' : ''
       }`}
     >
-      <div className={`sticky top-0 z-10 flex items-center justify-between px-3 py-2 rounded-t-[3px] bg-transparent`}>
-        <h3 className={`font-semibold text-xs tracking-wide uppercase text-slate-700`}>
+      <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 rounded-t-[3px] bg-transparent mt-1 mx-1 mb-2`}>
+        <h3 className={`font-semibold text-xs tracking-wide uppercase text-slate-700 mr-2 text-left`}>
           {title}
         </h3>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200`}>{count}</span>
+        <span className={`text-[11px] text-slate-500`}>{count} {count === 1 ? 'property' : 'properties'}</span>
       </div>
-      <div className="px-3 pb-3">
+      <div className="px-3 pb-3 flex-1 flex flex-col">
         {children}
       </div>
     </div>
@@ -244,8 +251,8 @@ export default function KanbanBoard({
             return (
               <div 
                 key={status} 
-                className={`flex-shrink-0 transition-all duration-300 ${
-                  isCollapsed ? 'w-28' : 'w-80'
+                className={`flex-shrink-0 h-full transition-all duration-300 ${
+                  isCollapsed ? 'w-24' : 'w-80'
                 }`}
               >
                 <DroppableColumn
@@ -263,8 +270,7 @@ export default function KanbanBoard({
                       strategy={verticalListSortingStrategy}
                     >
                       <div
-                        className="flex-1 space-y-2 overflow-y-auto pr-1"
-                        style={{ minHeight: '200px', maxHeight: 'calc(100vh - 16rem)' }}
+                        className="flex-1 space-y-2 overflow-y-auto pr-1 min-h-full"
                       >
                         {columnProperties.map(property => (
                           <KanbanCard
