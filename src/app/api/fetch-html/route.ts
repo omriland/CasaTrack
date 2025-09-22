@@ -21,8 +21,9 @@ export async function GET(request: NextRequest) {
         'Cache-Control': 'no-store'
       }
     })
-  } catch (err: any) {
-    return jsonError('Failed to fetch rendered HTML', 500, { detail: err?.message || String(err) })
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err)
+    return jsonError('Failed to fetch rendered HTML', 500, { detail })
   }
 }
 
@@ -41,8 +42,9 @@ export async function POST(request: NextRequest) {
         'Cache-Control': 'no-store'
       }
     })
-  } catch (err: any) {
-    return jsonError('Failed to fetch rendered HTML', 500, { detail: err?.message || String(err) })
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err)
+    return jsonError('Failed to fetch rendered HTML', 500, { detail })
   }
 }
 

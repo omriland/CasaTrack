@@ -18,45 +18,7 @@ const PropertySchema = z.object({
 type PropertyData = z.infer<typeof PropertySchema>
 
 // ------------------ Utilities ------------------
-function sanitizeHtml(html: string, maxChars = 28000) {
-  // First, try to extract text content from HTML
-  const textContent = html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<[^>]+>/g, ' ') // Remove ALL HTML tags to get pure text
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  if (textContent.length <= maxChars) return textContent
-
-  // keep head + tail to preserve important areas and reduce token use
-  const head = textContent.slice(0, Math.floor(maxChars * 0.6))
-  const tail = textContent.slice(-Math.floor(maxChars * 0.4))
-  return `${head}\n...TRUNCATED...\n${tail}`
-}
-
-function compressHtml(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function headTail(text: string, max: number): string {
-  if (text.length <= max) return text
-  const headLen = Math.floor(max * 0.6)
-  const tailLen = Math.floor(max * 0.4)
-  return text.slice(0, headLen) + '\n...TRUNCATED...\n' + text.slice(-tailLen)
-}
+// (Removed unused helpers: sanitizeHtml, compressHtml, headTail)
 
 // Extract concise evidence from raw HTML using user-provided selectors/patterns
 function buildEvidenceFromHtml(html: string) {
@@ -122,11 +84,11 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, ms = 60000)
 }
 
 async function retry<T>(fn: () => Promise<T>, attempts = 4, baseDelayMs = 800) {
-  let lastErr: any
+  let lastErr: unknown
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn()
-    } catch (err: any) {
+    } catch (err: unknown) {
       lastErr = err
       const delay = baseDelayMs * Math.pow(2, i) + Math.random() * 100
       await new Promise(r => setTimeout(r, delay))
@@ -297,7 +259,7 @@ export async function POST(request: NextRequest) {
       messages: buildMessages(url, sendText)
     }
 
-    const openaiRes = await retry(async () => {
+  const openaiRes = await retry(async () => {
       const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -310,10 +272,8 @@ export async function POST(request: NextRequest) {
         const t = await r.text()
       console.error(`OpenAI API Error - Status: ${r.status}`)
       console.error(`OpenAI API Error - Status Text: ${r.statusText}`)
-      console.error(`OpenAI API Error - Headers:`, Object.fromEntries(r.headers.entries()))
+      console.error('OpenAI API Error - Headers:', Object.fromEntries(r.headers.entries()))
       console.error(`OpenAI API Error - Response: ${t.slice(0, 800)}`)
-      console.error(`OpenAI API Key (first 20 chars): ${process.env.OPENAI_API_KEY?.slice(0, 20)}...`)
-      console.error(`OpenAI API Key (last 10 chars): ...${process.env.OPENAI_API_KEY?.slice(-10)}`)
       
       // Try to parse as JSON to get error details
       try {
@@ -358,7 +318,7 @@ export async function POST(request: NextRequest) {
     const parsed = PropertySchema.safeParse(candidate)
     if (!parsed.success) {
       console.error('Validation failed. Received data:', candidate)
-      console.error('Validation errors:', JSON.stringify(parsed.error.errors, null, 2))
+      console.error('Validation errors:', JSON.stringify(parsed.error.issues, null, 2))
       return NextResponse.json(
         { error: 'Extracted JSON failed validation', issues: parsed.error.format(), debug: extracted.slice(0, 500), receivedData: candidate },
         { status: 422 }
@@ -381,8 +341,9 @@ export async function POST(request: NextRequest) {
         used_chars: pageText.length
       }
     })
-  } catch (err: any) {
-    console.error('Property extraction error:', err?.message || err)
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error('Property extraction error:', message)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
