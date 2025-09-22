@@ -14,8 +14,10 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/supabase-js": "^2.57.4",
     "next": "15.5.3",
+    "playwright": "^1.55.0",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
