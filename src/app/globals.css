@@ -225,6 +225,13 @@ body {
   outline-offset: 2px;
 }
 
+/* Subtle focus treatment for form fields */
+:where(input, select, textarea):focus {
+  outline: none;
+  box-shadow: 0 0 0 1px color-mix(in oklch, var(--ring) 35%, transparent), var(--shadow-2xs);
+  border-color: color-mix(in oklch, var(--ring) 35%, transparent);
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -271,4 +278,17 @@ body {
 
 .animate-progress {
   animation: progress-bar 8s ease-in-out infinite;
+}
+
+/* Hide number input spinners across browsers */
+/* Chrome, Safari, Edge, Opera */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }

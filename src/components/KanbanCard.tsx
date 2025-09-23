@@ -3,8 +3,8 @@
 import { Property } from '@/types/property'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useState, useEffect } from 'react'
-import { getPropertyNotes } from '@/lib/properties'
+import { useState, useEffect, useRef } from 'react'
+import { getPropertyNotes, updateProperty } from '@/lib/properties'
 
 interface KanbanCardProps {
   property: Property
@@ -15,6 +15,9 @@ interface KanbanCardProps {
 
 export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: KanbanCardProps) {
   const [notesCount, setNotesCount] = useState<number>(0)
+  const [rooms, setRooms] = useState<number>(property.rooms)
+  const [showRoomsPicker, setShowRoomsPicker] = useState<boolean>(false)
+  const roomsPickerRef = useRef<HTMLDivElement>(null)
 
   const {
     attributes,
@@ -33,6 +36,30 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
   useEffect(() => {
     loadNotesCount()
   }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setRooms(property.rooms)
+  }, [property.rooms])
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (roomsPickerRef.current && !roomsPickerRef.current.contains(e.target as Node)) {
+        setShowRoomsPicker(false)
+      }
+    }
+    if (showRoomsPicker) document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [showRoomsPicker])
+
+  const handleQuickSetRooms = async (value: number) => {
+    try {
+      await updateProperty(property.id, { rooms: value })
+      setRooms(value)
+      setShowRoomsPicker(false)
+    } catch (e) {
+      console.error('Failed updating rooms:', e)
+    }
+  }
 
   const loadNotesCount = async () => {
     try {
@@ -94,11 +121,33 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
 
         <div className="text-[11px] text-slate-600 space-y-1.5">
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">
+            <div
+              className={`relative inline-flex items-center space-x-1 rounded px-1.5 py-0.5 ${
+                rooms === 0 ? 'bg-amber-50 border border-amber-200 text-amber-700 animate-pulse' : 'bg-slate-50 border border-slate-200'
+              } cursor-pointer`}
+              onClick={(e) => { e.stopPropagation(); setShowRoomsPicker((v) => !v) }}
+              title={rooms === 0 ? 'Add rooms' : 'Change rooms'}
+              ref={roomsPickerRef}
+            >
               <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
               </svg>
-              <span>{property.rooms} rooms</span>
+              <span>{rooms === 0 ? 'Add rooms' : `${rooms} rooms`}</span>
+              {showRoomsPicker && (
+                <div className="absolute left-0 top-full mt-1 bg-white rounded-md border border-slate-200 shadow-lg p-2 z-50">
+                  <div className="grid grid-cols-4 gap-1">
+                    {[3, 3.5, 4, 4.5, 5, 5.5, 6].map((r) => (
+                      <button
+                        key={r}
+                        onClick={(ev) => { ev.stopPropagation(); handleQuickSetRooms(r) }}
+                        className={`px-2 py-1 text-xs rounded hover:bg-slate-100 ${rooms === r ? 'bg-primary/10 text-primary' : 'text-slate-700'}`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="inline-flex items-center space-x-1 bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">
               <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

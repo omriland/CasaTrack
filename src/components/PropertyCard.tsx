@@ -2,7 +2,7 @@
 
 import { Property, PropertyStatus, Note } from '@/types/property'
 import { useState, useEffect, useRef } from 'react'
-import { getPropertyNotes, updatePropertyStatus } from '@/lib/properties'
+import { getPropertyNotes, updatePropertyStatus, updateProperty } from '@/lib/properties'
 
 interface PropertyCardProps {
   property: Property
@@ -22,10 +22,36 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const [notesLoading, setNotesLoading] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const notesPreviewRef = useRef<HTMLDivElement>(null)
+  const [inlineEditing, setInlineEditing] = useState<null | { field: 'rooms' | 'square_meters'; value: number }>(null)
+  const [localRooms, setLocalRooms] = useState<number>(property.rooms)
+  const [localSquareMeters, setLocalSquareMeters] = useState<number>(property.square_meters)
+  const roomsPickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadNotesCount()
   }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setLocalRooms(property.rooms)
+  }, [property.rooms])
+
+  useEffect(() => {
+    setLocalSquareMeters(property.square_meters)
+  }, [property.square_meters])
+
+  // Close rooms selector on outside click without saving
+  useEffect(() => {
+    const handleOutside = (e: MouseEvent) => {
+      if (inlineEditing?.field !== 'rooms') return
+      if (roomsPickerRef.current && !roomsPickerRef.current.contains(e.target as Node)) {
+        setInlineEditing(null)
+      }
+    }
+    if (inlineEditing?.field === 'rooms') {
+      document.addEventListener('mousedown', handleOutside)
+      return () => document.removeEventListener('mousedown', handleOutside)
+    }
+  }, [inlineEditing])
 
   // Handle click outside for status dropdown
   useEffect(() => {
@@ -142,6 +168,35 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     }, 100)
   }
 
+  // Inline edit helpers
+  const openInlineEditor = (field: 'rooms' | 'square_meters', current: number) => {
+    setInlineEditing({ field, value: current })
+  }
+
+  const commitInlineEdit = async () => {
+    if (!inlineEditing) return
+    try {
+      const updates: any = { [inlineEditing.field]: inlineEditing.value }
+      await updateProperty(property.id, updates)
+      if (inlineEditing.field === 'square_meters') {
+        setLocalSquareMeters(inlineEditing.value)
+      }
+      setInlineEditing(null)
+    } catch (e) {
+      console.error('Inline update failed:', e)
+    }
+  }
+
+  const quickSetRooms = async (value: number) => {
+    try {
+      await updateProperty(property.id, { rooms: value })
+      setLocalRooms(value)
+      setInlineEditing(null)
+    } catch (e) {
+      console.error('Failed to set rooms:', e)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
       month: 'short',
@@ -219,24 +274,72 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Property Stats */}
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="bg-slate-50 rounded-xl p-3">
+        <div
+          className={`relative rounded-xl p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+          onDoubleClick={() => openInlineEditor('rooms', property.rooms)}
+          title="Double-click to edit rooms"
+        >
           <div className="flex items-center space-x-2 mb-1">
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-4 h-4 ${property.rooms === 0 ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
             </svg>
-            <span className="text-xs font-medium text-slate-600">Rooms</span>
+            <span className={`text-xs font-medium ${property.rooms === 0 ? 'text-amber-700' : 'text-slate-600'}`}>Rooms</span>
           </div>
-          <span className="text-lg font-semibold text-slate-900">{property.rooms}</span>
+          <span className={`text-lg font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-slate-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
+          {inlineEditing?.field === 'rooms' && (
+            <div
+              className="absolute left-3 top-3 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50"
+              onClick={(e) => e.stopPropagation()}
+              ref={roomsPickerRef}
+            >
+              <div className="text-xs font-semibold text-slate-600 mb-2">Set Rooms</div>
+              <div className="flex gap-2">
+                {[3, 3.5, 4, 4.5, 5, 5.5, 6].map((roomCount) => (
+                  <button
+                    key={roomCount}
+                    type="button"
+                    onClick={() => quickSetRooms(roomCount)}
+                    className={`w-10 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 flex items-center justify-center ${
+                      localRooms === roomCount
+                        ? 'bg-primary text-primary-foreground shadow'
+                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
+                    }`}
+                  >
+                    {roomCount}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="bg-slate-50 rounded-xl p-3">
+        <div className="relative bg-slate-50 rounded-xl p-3 select-none" onDoubleClick={() => openInlineEditor('square_meters', localSquareMeters)} title="Double-click to edit size">
           <div className="flex items-center space-x-2 mb-1">
             <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
             </svg>
             <span className="text-xs font-medium text-slate-600">Size</span>
           </div>
-          <span className="text-lg font-semibold text-slate-900">{property.square_meters} m²</span>
+          {inlineEditing?.field === 'square_meters' ? (
+            <div className="flex items-baseline space-x-2" onClick={(e) => e.stopPropagation()}>
+              <input
+                type="number"
+                autoFocus
+                value={inlineEditing.value}
+                onChange={(e) => setInlineEditing({ field: 'square_meters', value: Number(e.target.value) })}
+                onBlur={commitInlineEdit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') commitInlineEdit()
+                  if (e.key === 'Escape') setInlineEditing(null)
+                }}
+                className="w-24 px-3 py-1.5 text-base border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-slate-400"
+                min={0}
+              />
+              <span className="text-xs text-slate-500">m²</span>
+            </div>
+          ) : (
+            <span className="text-lg font-semibold text-slate-900">{localSquareMeters} m²</span>
+          )}
         </div>
       </div>
 

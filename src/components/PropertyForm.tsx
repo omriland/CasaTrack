@@ -401,16 +401,25 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Square Meters *
                 </label>
-                <input
-                  type="number"
-                  name="square_meters"
-                  required
-                  min="1"
-                  value={formData.square_meters}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                  tabIndex={4}
-                />
+                <div className="relative">
+                  <input
+                    type="number"
+                    name="square_meters"
+                    required
+                    min="1"
+                    value={formData.square_meters || ''}
+                    onChange={handleChange}
+                    placeholder="0"
+                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                    tabIndex={4}
+                  />
+                  <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
+                    <div className="w-px h-6 bg-slate-300"></div>
+                  </div>
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <span className="text-slate-500 text-sm font-medium">m²</span>
+                  </div>
+                </div>
               </div>
 
               <div>
