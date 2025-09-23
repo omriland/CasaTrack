@@ -49,12 +49,17 @@ export default function AddressAutocomplete({
 
           // Add place changed listener
           autocompleteRef.current.addListener('place_changed', async () => {
+            console.log('Google place_changed event fired')
             const place = autocompleteRef.current?.getPlace()
 
-            if (!place) return
+            if (!place) {
+              console.log('No place returned from getPlace()')
+              return
+            }
 
             // Use the formatted_address from Google - this is the complete address
             const selectedAddress = place.formatted_address || place.name || ''
+            console.log('Selected address:', selectedAddress)
 
             if (selectedAddress) {
               let coordinates: { lat: number; lng: number } | undefined
@@ -88,6 +93,7 @@ export default function AddressAutocomplete({
               if (inputRef.current && inputRef.current.value !== selectedAddress) {
                 inputRef.current.value = selectedAddress
               }
+              console.log('Calling onChange with coordinates:', coordinates)
               onChange(selectedAddress, coordinates)
             }
           })
@@ -225,12 +231,15 @@ export default function AddressAutocomplete({
       return
     }
 
-    // Debounce coordinate fetching for manual typing; do NOT clear existing coords prematurely
+    // Update parent with address only (no coordinates yet)
+    onChange(newValue)
+    
+    // Debounce coordinate fetching for manual typing
     if (newValue.trim()) {
       debounceTimer.current = setTimeout(async () => {
         const coordinates = await fetchCoordinatesForAddress(newValue)
         if (coordinates && lastKnownValue.current === newValue) {
-          // Only update if the address hasn't changed since we started fetching
+          // Update parent with coordinates when found
           onChange(newValue, coordinates)
         }
       }, 1000) // 1 second delay
@@ -292,7 +301,7 @@ export default function AddressAutocomplete({
         type="text"
         value={value}
         onChange={(e) => {
-          onChange(e.target.value)
+          // Don't call parent onChange for every keystroke, let autocomplete handle it
           handleInputChange(e)
         }}
         onBlur={handleBlur}

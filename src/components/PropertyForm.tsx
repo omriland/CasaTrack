@@ -158,11 +158,12 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
+    console.log('handleAddressChange called with:', { address, coordinates })
     setFormData(prev => ({
       ...prev,
       address,
-      latitude: coordinates?.lat || null,
-      longitude: coordinates?.lng || null
+      latitude: coordinates?.lat || prev.latitude,
+      longitude: coordinates?.lng || prev.longitude
     }))
   }
 
@@ -272,18 +273,19 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         ).length
 
         // Update form data with extracted information (only non-empty values)
-        setFormData(prev => ({
-          ...prev,
-          address: extractedData.address || prev.address,
-          rooms: extractedData.rooms > 0 ? extractedData.rooms : prev.rooms,
-          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : prev.square_meters,
-          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : prev.asked_price,
-          contact_name: extractedData.contact_name || prev.contact_name,
-          contact_phone: extractedData.contact_phone || prev.contact_phone,
-          property_type: extractedData.property_type || prev.property_type,
-          description: extractedData.description || prev.description,
-          apartment_broker: extractedData.apartment_broker ?? prev.apartment_broker
-        }))
+        const updatedFormData = {
+          ...formData,
+          address: extractedData.address || formData.address,
+          rooms: extractedData.rooms > 0 ? extractedData.rooms : formData.rooms,
+          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : formData.square_meters,
+          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : formData.asked_price,
+          contact_name: extractedData.contact_name || formData.contact_name,
+          contact_phone: extractedData.contact_phone || formData.contact_phone,
+          property_type: extractedData.property_type || formData.property_type,
+          description: extractedData.description || formData.description,
+          apartment_broker: extractedData.apartment_broker ?? formData.apartment_broker
+        }
+        setFormData(updatedFormData)
 
 
         // Update formatted price
@@ -291,7 +293,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           setFormattedPrice(extractedData.asked_price.toLocaleString('en-US'))
         }
 
-        // Just set the address, let the user select from autocomplete to get coordinates
 
         setExtractionResult({
           show: true,
