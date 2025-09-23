@@ -43,7 +43,7 @@ export default function AddressAutocomplete({
           autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
             types: ['address'],
             componentRestrictions: { country: 'IL' },
-            fields: ['formatted_address', 'geometry', 'place_id', 'name']
+            fields: ['formatted_address', 'geometry', 'place_id', 'name', 'address_components']
           })
 
           // Add place changed listener
@@ -84,6 +84,9 @@ export default function AddressAutocomplete({
 
               // Store the value and notify parent
               lastKnownValue.current = selectedAddress
+              if (inputRef.current && inputRef.current.value !== selectedAddress) {
+                inputRef.current.value = selectedAddress
+              }
               onChange(selectedAddress, coordinates)
             }
           })
@@ -133,6 +136,17 @@ export default function AddressAutocomplete({
 
     try {
       setIsFetchingCoordinates(true)
+      // Prefer Google Geocoder if available for higher accuracy
+      if (typeof google !== 'undefined' && google.maps?.Geocoder) {
+        const geocoder = new google.maps.Geocoder()
+        const geocode = await geocoder.geocode({ address })
+        if (geocode.status === 'OK' && geocode.results[0]?.geometry?.location) {
+          return {
+            lat: geocode.results[0].geometry.location.lat(),
+            lng: geocode.results[0].geometry.location.lng()
+          }
+        }
+      }
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=IL&limit=1`
       const response = await fetch(nominatimUrl)
       const data = await response.json()
@@ -161,10 +175,13 @@ export default function AddressAutocomplete({
       clearTimeout(debounceTimer.current)
     }
 
-    // Immediately update the address (without coordinates)
-    onChange(newValue)
+    // If cleared, propagate clear to parent (address + no coordinates)
+    if (!newValue.trim()) {
+      onChange('')
+      return
+    }
 
-    // Debounce coordinate fetching for manual typing (only if not empty)
+    // Debounce coordinate fetching for manual typing; do NOT clear existing coords prematurely
     if (newValue.trim()) {
       debounceTimer.current = setTimeout(async () => {
         const coordinates = await fetchCoordinatesForAddress(newValue)

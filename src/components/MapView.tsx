@@ -187,6 +187,9 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
       // Add click listener
       marker.addListener('click', () => {
+        // Clear hover UI when selecting a marker
+        setHoveredProperty(null)
+        setHoverPosition(null)
         if (onPropertyClick) {
           onPropertyClick(property)
         }
@@ -298,7 +301,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       {/* Floating Hover Card */}
       {hoveredProperty && hoverPosition && (
         <div
-          className="fixed z-[9999] pointer-events-none"
+          className="fixed z-40 pointer-events-none"
           style={{
             left: `${hoverPosition.x + 15}px`,
             top: `${hoverPosition.y - 10}px`,
