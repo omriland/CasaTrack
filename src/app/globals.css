@@ -288,6 +288,21 @@ input[type=number]::-webkit-inner-spin-button {
   margin: 0;
 }
 
+/* Kanban horizontal scrollbar: hidden unless scrolling */
+.kanban-scroll {
+  scrollbar-width: none; /* Firefox */
+}
+.kanban-scroll::-webkit-scrollbar {
+  height: 0px; /* Chrome/Safari */
+}
+.kanban-scroll:hover::-webkit-scrollbar {
+  height: 6px;
+}
+.kanban-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
+}
+
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;

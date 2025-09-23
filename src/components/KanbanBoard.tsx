@@ -28,7 +28,9 @@ function DroppableColumn({
   color,
   bgColor,
   isCollapsed,
-  onToggleCollapse
+  onToggleCollapse,
+  isEmpty,
+  isDragging
 }: {
   id: string
   children: React.ReactNode
@@ -38,6 +40,8 @@ function DroppableColumn({
   bgColor: string
   isCollapsed: boolean
   onToggleCollapse: () => void
+  isEmpty: boolean
+  isDragging: boolean
 }) {
   const { isOver, setNodeRef } = useDroppable({
     id,
@@ -110,7 +114,22 @@ function DroppableColumn({
         <span className={`text-[11px] text-slate-500`}>{count} {count === 1 ? 'property' : 'properties'}</span>
       </div>
       <div className="px-3 pb-3 flex-1 flex flex-col">
-        {children}
+        {isEmpty && isDragging ? (
+          <div
+            className={`flex-1 grid place-items-center rounded-lg border-2 border-dashed transition-colors ${
+              isOver ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-400'
+            }`}
+          >
+            <div className="flex items-center space-x-2 text-xs">
+              <svg className={`w-4 h-4 ${isOver ? 'text-primary' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v12m0 0l-4-4m4 4l4-4" />
+              </svg>
+              <span>{isOver ? 'Release to drop here' : 'Drop property here'}</span>
+            </div>
+          </div>
+        ) : (
+          children
+        )}
       </div>
     </div>
   )
@@ -243,7 +262,7 @@ export default function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 h-full overflow-x-auto px-1">
+        <div className="kanban-scroll flex gap-4 h-full overflow-x-auto px-1">
           {STATUSES.map(({ status, color, bgColor }) => {
             const columnProperties = getPropertiesByStatus(status)
             const isCollapsed = collapsedColumns.has(status)
@@ -263,15 +282,15 @@ export default function KanbanBoard({
                   bgColor={bgColor}
                   isCollapsed={isCollapsed}
                   onToggleCollapse={() => toggleColumnCollapse(status)}
+                  isEmpty={columnProperties.length === 0}
+                  isDragging={isDraggingSomething}
                 >
                   {!isCollapsed && (
                     <SortableContext
                       items={columnProperties.map(p => p.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div
-                        className="flex-1 space-y-2 overflow-y-auto pr-1 min-h-full"
-                      >
+                      <div className="flex-1 space-y-2 overflow-y-auto pr-1 min-h-full">
                         {columnProperties.map(property => (
                           <KanbanCard
                             key={property.id}
@@ -281,11 +300,6 @@ export default function KanbanBoard({
                             onViewNotes={onViewNotes}
                           />
                         ))}
-                        {columnProperties.length === 0 && isDraggingSomething && (
-                          <div className="text-center text-slate-400 text-xs py-8 border border-dashed border-slate-200 rounded-lg">
-                            Drop properties here
-                          </div>
-                        )}
                       </div>
                     </SortableContext>
                   )}

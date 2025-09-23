@@ -72,6 +72,27 @@ function buildEvidenceFromHtml(html: string) {
   }
 }
 
+function extractFirstJsonObject(text: string): string | null {
+  if (!text) return null
+  // Strip code fences if present
+  const unfenced = text.replace(/^```[a-zA-Z]*\n|```$/g, '')
+  // Find first balanced { ... }
+  const start = unfenced.indexOf('{')
+  if (start === -1) return null
+  let depth = 0
+  for (let i = start; i < unfenced.length; i++) {
+    const ch = unfenced[i]
+    if (ch === '{') depth++
+    else if (ch === '}') {
+      depth--
+      if (depth === 0) {
+        return unfenced.slice(start, i + 1)
+      }
+    }
+  }
+  return null
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit = {}, ms = 60000) {
   const controller = new AbortController()
   const id = setTimeout(() => controller.abort(), ms)
@@ -110,6 +131,8 @@ Identify key property details as accurately as possible—including price, addre
 
 If data is incomplete or not present, handle nullable fields according to the schema (i.e., set as \`null\` or, after transformation, to the proper default); never fill in information beyond what is provided or confidently inferred from the input. For numeric fields, strip any units or currency symbols found in the source.
 
+For the description field specifically, DO NOT copy the entire Yad2 description verbatim. Instead, produce a brief (1–2 sentences) agent-curated summary of only the most relevant selling points of the property (e.g., rooms, floor, size, standout features, location highlights). Omit boilerplate marketing language and generic fluff.
+
 - Do not summarize or comment—output only the structured data.
 - Provide output in JSON format matching this exact schema (with these precise property names and value types):
 
@@ -124,6 +147,7 @@ Field mapping:
 - contact_phone: Phone number for contact; default is \`null\` if not present.
 - property_type: Must be exactly "New" or "Existing apartment" (classify based on provided cues; if unclear, choose "Existing apartment").
 - description: Textual description; default is \`null\` if not present.
+  - When present, keep it concise and high-signal as described above (not the whole source text).
 - apartment_broker: Boolean indicating if a broker is involved; nullable input transforms to \`false\` (use explicit cues such as broker/company names/labels if possible).
 
 When writing JSON, replace any missing or null values with the schema's default transformation where appropriate (e.g., \`null\` for contact fields, \`0\` for numbers, \`false\` for booleans).
@@ -193,15 +217,78 @@ export async function POST(request: NextRequest) {
     console.log('- API Key length:', process.env.OPENAI_API_KEY?.length)
     console.log('- API Key format check:', process.env.OPENAI_API_KEY?.startsWith('sk-') ? 'Valid format' : 'Invalid format')
     
-    const { url, html } = await request.json()
+    const { url, html, image } = await request.json()
 
-    if (!url || !/^https?:\/\/(www\.)?yad2\.co\.il\/realestate\/item\//.test(url)) {
+    if (!url && !image && !html) {
+      return NextResponse.json({ error: 'Provide one of: url, html, or image' }, { status: 400 })
+    }
+    if (url && !/^https?:\/\/(www\.)?yad2\.co\.il\/realestate\/item\//.test(url)) {
       return NextResponse.json({ error: 'Please provide a valid Yad2 listing URL' }, { status: 400 })
     }
 
     if (!process.env.OPENAI_API_KEY) {
       console.error('OpenAI API key missing from environment')
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 })
+    }
+
+    // 1) If image provided, skip page fetch and go straight to vision extraction
+    if (typeof image === 'string' && image.startsWith('data:image')) {
+      const visionSystem = buildMessages(url || 'image-upload', '[image input]')[0]
+      const visionUser = {
+        role: 'user' as const,
+        content: [
+          { type: 'text', text: 'Use the following screenshot (Yad2 listing) to extract the fields as per the system instructions above.' },
+          { type: 'image_url', image_url: { url: image } }
+        ]
+      }
+      const body = {
+        model: 'gpt-4o',
+        max_tokens: 1500,
+        messages: [visionSystem, visionUser]
+      }
+      const openaiRes = await retry(async () => {
+        const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        }, 90000)
+        if (!r.ok) {
+          const t = await r.text()
+          console.error(`OpenAI API Error - Status: ${r.status}`)
+          console.error(`OpenAI API Error - Status Text: ${r.statusText}`)
+          console.error('OpenAI API Error - Headers:', Object.fromEntries(r.headers.entries()))
+          console.error(`OpenAI API Error - Response: ${t.slice(0, 800)}`)
+          throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
+        }
+        return r
+      })
+      const openaiJson = await openaiRes.json()
+      let extracted = openaiJson?.choices?.[0]?.message?.content
+      if (!extracted) {
+        return NextResponse.json({ error: 'No data extracted from OpenAI' }, { status: 502 })
+      }
+      const jsonStr = extractFirstJsonObject(extracted)
+      if (jsonStr) extracted = jsonStr
+      let candidate: unknown
+      try {
+        candidate = JSON.parse(extracted)
+      } catch {
+        return NextResponse.json({ error: 'OpenAI returned non-JSON content', debug: extracted.slice(0, 500) }, { status: 502 })
+      }
+      const parsed = PropertySchema.safeParse(candidate)
+      if (!parsed.success) {
+        console.error('Validation failed. Received data:', candidate)
+        console.error('Validation errors:', JSON.stringify(parsed.error.issues, null, 2))
+        return NextResponse.json({ error: 'Extracted JSON failed validation', issues: parsed.error.format(), receivedData: candidate }, { status: 422 })
+      }
+      const data: PropertyData = parsed.data
+      if (!data.address || data.address.trim().length === 0) {
+        return NextResponse.json({ error: 'Could not extract property address from the listing' }, { status: 400 })
+      }
+      return NextResponse.json({ success: true, data, debug: { mode: 'vision' } })
     }
 
     // 1) Obtain page HTML: prefer provided raw HTML, otherwise fetch via Playwright

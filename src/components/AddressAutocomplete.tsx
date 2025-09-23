@@ -28,6 +28,7 @@ export default function AddressAutocomplete({
   const [error, setError] = useState<string | null>(null)
   const lastKnownValue = useRef(value || '')
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+  const fetchedForValueRef = useRef<string>('')
 
   useEffect(() => {
     const initializeAutocomplete = () => {
@@ -130,24 +131,51 @@ export default function AddressAutocomplete({
     }
   }, [onChange])
 
+  // Google Places fallback using findPlaceFromQuery (more tolerant than Geocoder)
+  const findWithGooglePlaces = async (query: string): Promise<{ lat: number; lng: number } | undefined> => {
+    if (typeof google === 'undefined' || !google.maps?.places) return undefined
+    try {
+      // Create a dummy container for PlacesService
+      const container = document.createElement('div')
+      const service = new google.maps.places.PlacesService(container)
+      // Bias to Israel bounds roughly
+      const israelBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(29.0, 34.2),
+        new google.maps.LatLng(33.5, 35.9)
+      )
+      const request: google.maps.places.FindPlaceFromQueryRequest = {
+        query,
+        fields: ['geometry'],
+        bounds: israelBounds
+      }
+      return await new Promise((resolve) => {
+        service.findPlaceFromQuery(request, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+            const loc = results[0].geometry?.location
+            if (loc) {
+              resolve({ lat: loc.lat(), lng: loc.lng() })
+              return
+            }
+          }
+          resolve(undefined)
+        })
+      })
+    } catch {
+      return undefined
+    }
+  }
+
   // Function to fetch coordinates for an address
   const fetchCoordinatesForAddress = async (address: string): Promise<{ lat: number; lng: number } | undefined> => {
     if (!address.trim()) return undefined
 
     try {
       setIsFetchingCoordinates(true)
-      // Prefer Google Geocoder if available for higher accuracy
-      if (typeof google !== 'undefined' && google.maps?.Geocoder) {
-        const geocoder = new google.maps.Geocoder()
-        const geocode = await geocoder.geocode({ address })
-        if (geocode.status === 'OK' && geocode.results[0]?.geometry?.location) {
-          return {
-            lat: geocode.results[0].geometry.location.lat(),
-            lng: geocode.results[0].geometry.location.lng()
-          }
-        }
-      }
-      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&countrycodes=IL&limit=1`
+      // Normalize address and try OpenStreetMap (Nominatim) first to avoid Google ZERO_RESULTS console noise
+      const normalized = address.includes('ישראל') || address.includes('Israel')
+        ? address
+        : `${address}, ישראל`
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(normalized)}&countrycodes=IL&limit=1`
       const response = await fetch(nominatimUrl)
       const data = await response.json()
 
@@ -155,6 +183,22 @@ export default function AddressAutocomplete({
         return {
           lat: parseFloat(data[0].lat),
           lng: parseFloat(data[0].lon)
+        }
+      }
+
+      // Fallback to Google Places (findPlaceFromQuery) with Israel bounds
+      const placesCoords = await findWithGooglePlaces(normalized)
+      if (placesCoords) return placesCoords
+
+      // Final fallback to Google Geocoder if available
+      if (typeof google !== 'undefined' && google.maps?.Geocoder) {
+        const geocoder = new google.maps.Geocoder()
+        const geocode = await geocoder.geocode({ address: normalized })
+        if (geocode.status === 'OK' && geocode.results[0]?.geometry?.location) {
+          return {
+            lat: geocode.results[0].geometry.location.lat(),
+            lng: geocode.results[0].geometry.location.lng()
+          }
         }
       }
     } catch (error) {
@@ -216,8 +260,7 @@ export default function AddressAutocomplete({
 
   // Only sync from prop to input when prop changes (for editing mode)
   useEffect(() => {
-    if (value !== lastKnownValue.current && inputRef.current) {
-      inputRef.current.value = value || ''
+    if (value !== lastKnownValue.current) {
       lastKnownValue.current = value || ''
     }
   }, [value])
@@ -247,8 +290,11 @@ export default function AddressAutocomplete({
       <input
         ref={inputRef}
         type="text"
-        defaultValue={value}
-        onChange={handleInputChange}
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+          handleInputChange(e)
+        }}
         onBlur={handleBlur}
         placeholder={isLoading ? "Loading address autocomplete..." : placeholder}
         className={`${className} ${isLoading ? 'bg-slate-50' : ''}`}

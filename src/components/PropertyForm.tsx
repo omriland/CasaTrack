@@ -46,10 +46,82 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     message: string
     fieldsCount?: number
   }>({ show: false, success: false, message: '' })
+  // Image paste support for extraction
+  const [pastedImageDataUrl, setPastedImageDataUrl] = useState<string | null>(null)
+  const [pastedImageName, setPastedImageName] = useState<string | null>(null)
 
-  const handleSubmit = useCallback((e?: React.FormEvent) => {
+  const geocodeNormalized = async (address: string): Promise<{ lat: number; lng: number } | undefined> => {
+    const normalized = address.includes('ישראל') || address.includes('Israel')
+      ? address
+      : `${address}, ישראל`
+    try {
+      // Try Nominatim first
+      const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(normalized)}&countrycodes=IL&limit=1`
+      const res = await fetch(nominatimUrl)
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) {
+        const lat = parseFloat(data[0].lat)
+        const lng = parseFloat(data[0].lon)
+        if (!Number.isNaN(lat) && !Number.isNaN(lng)) return { lat, lng }
+      }
+    } catch {}
+
+    // Try Google Places findPlaceFromQuery (if available)
+    try {
+      if (typeof google !== 'undefined' && google.maps?.places) {
+        const container = document.createElement('div')
+        const service = new google.maps.places.PlacesService(container)
+        const israelBounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(29.0, 34.2),
+          new google.maps.LatLng(33.5, 35.9)
+        )
+        const request: google.maps.places.FindPlaceFromQueryRequest = { query: normalized, fields: ['geometry'], bounds: israelBounds }
+        const coords = await new Promise<{ lat: number; lng: number } | undefined>((resolve) => {
+          service.findPlaceFromQuery(request, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+              const loc = results[0].geometry?.location
+              if (loc) return resolve({ lat: loc.lat(), lng: loc.lng() })
+            }
+            resolve(undefined)
+          })
+        })
+        if (coords) return coords
+      }
+    } catch {}
+
+    // Final fallback: Google Geocoder
+    try {
+      if (typeof google !== 'undefined' && google.maps?.Geocoder) {
+        const geocoder = new google.maps.Geocoder()
+        const geocode = await geocoder.geocode({ address: normalized })
+        if (geocode.status === 'OK' && geocode.results[0]?.geometry?.location) {
+          return {
+            lat: geocode.results[0].geometry.location.lat(),
+            lng: geocode.results[0].geometry.location.lng()
+          }
+        }
+      }
+    } catch {}
+
+    return undefined
+  }
+
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault()
-    onSubmit(formData)
+
+    // Ensure address present
+    const address = (formData.address || '').trim()
+    let payload = { ...formData, address }
+
+    // If we have address but missing coords, attempt geocode before submit
+    if (address && (!payload.latitude || !payload.longitude)) {
+      const coords = await geocodeNormalized(address)
+      if (coords) {
+        payload = { ...payload, latitude: coords.lat, longitude: coords.lng }
+      }
+    }
+
+    onSubmit(payload)
   }, [formData, onSubmit])
 
   // Add keyboard shortcut handler
@@ -157,11 +229,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleExtractFromURL = async () => {
-    if (!formData.url || !formData.url.includes('yad2.co.il')) {
+    if (!pastedImageDataUrl && (!formData.url || !formData.url.includes('yad2.co.il'))) {
       setExtractionResult({
         show: true,
         success: false,
-        message: 'Please enter a valid Yad2 URL first'
+        message: 'Please enter a valid Yad2 URL or paste a screenshot first'
       })
       return
     }
@@ -174,7 +246,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: formData.url })
+        body: JSON.stringify(pastedImageDataUrl ? { image: pastedImageDataUrl } : { url: formData.url })
       })
 
       const result = await response.json()
@@ -186,6 +258,13 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
       if (result.success && result.data) {
         const extractedData = result.data
         console.log('Received extracted data:', extractedData)
+        // Normalize extracted address (trim, collapse spaces)
+        if (extractedData.address) {
+          extractedData.address = extractedData.address
+            .replace(/\s+/g, ' ')
+            .replace(/\u00A0/g, ' ') // nbsp
+            .trim()
+        }
         
         // Count how many fields were extracted
         const extractedFields = Object.entries(extractedData).filter(([, value]) => 
@@ -206,10 +285,13 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           apartment_broker: extractedData.apartment_broker ?? prev.apartment_broker
         }))
 
+
         // Update formatted price
         if (extractedData.asked_price > 0) {
           setFormattedPrice(extractedData.asked_price.toLocaleString('en-US'))
         }
+
+        // Just set the address, let the user select from autocomplete to get coordinates
 
         setExtractionResult({
           show: true,
@@ -217,6 +299,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           message: `Property data extracted successfully! Found ${extractedFields} fields. Please review and complete any missing information.`,
           fieldsCount: extractedFields
         })
+
+        // Clear pasted image after success
+        setPastedImageDataUrl(null)
+        setPastedImageName(null)
       }
 
     } catch (error) {
@@ -229,6 +315,35 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     } finally {
       setIsExtracting(false)
     }
+  }
+
+  const handleUrlPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        const file = item.getAsFile()
+        if (!file) continue
+        const reader = new FileReader()
+        reader.onload = () => {
+          const dataUrl = typeof reader.result === 'string' ? reader.result : null
+          if (dataUrl) {
+            setPastedImageDataUrl(dataUrl)
+            setPastedImageName(file.name)
+          }
+        }
+        reader.readAsDataURL(file)
+        // prevent default text paste into the input
+        e.preventDefault()
+        break
+      }
+    }
+  }
+
+  const clearPastedImage = () => {
+    setPastedImageDataUrl(null)
+    setPastedImageName(null)
   }
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -263,10 +378,15 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         <div className="p-8">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+              {property ? (
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+              ) : (
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 21l4-4 4 4" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
               </svg>
+              )}
             </div>
             <h2 className="text-2xl font-bold text-slate-900">
               {property ? 'Edit Property' : 'Add New Property'}
@@ -279,10 +399,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 Address *
               </label>
               <div className="relative">
-                <AddressAutocomplete
-                  value={formData.address}
-                  onChange={handleAddressChange}
-                  placeholder="Enter property address"
+              <AddressAutocomplete
+                value={formData.address}
+                onChange={handleAddressChange}
+                placeholder="Enter property address"
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={1}
                 />
@@ -303,62 +423,32 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 Property URL
               </label>
               <div className="flex space-x-3">
-                <input
-                  type="url"
-                  name="url"
-                  value={formData.url || ''}
-                  onChange={handleChange}
-                  placeholder="https://www.yad2.co.il/..."
+              <input
+                type="url"
+                name="url"
+                value={formData.url || ''}
+                onChange={handleChange}
+                placeholder="https://www.yad2.co.il/..."
                   className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={2}
                 />
                 <button
                   type="button"
                   onClick={handleExtractFromURL}
-                  disabled={isExtracting || !formData.url || !formData.url.includes('yad2.co.il')}
-                  className={`px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl font-medium transition-all shadow-lg whitespace-nowrap ${
-                    isExtracting 
-                      ? 'opacity-90 cursor-not-allowed animate-pulse' 
-                      : 'hover:from-primary/90 hover:to-primary/80 hover:shadow-xl transform hover:-translate-y-0.5'
-                  }`}
-                  title="Extract property data from Yad2 URL using AI"
+                  disabled={true}
+                  className={`px-6 py-3 bg-slate-200 text-slate-500 rounded-xl font-medium transition-all shadow-lg whitespace-nowrap cursor-not-allowed`}
+                  title="Coming soon"
                 >
-                  {isExtracting ? (
-                    <div className="flex items-center space-x-3 relative">
-                      <div className="relative">
-                        {/* Outer spinning ring */}
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        {/* Inner pulsing dot */}
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
-                        </div>
-                      </div>
-                      <span className="relative">
-                        Extracting
-                        <span className="inline-flex ml-1">
-                          <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                          <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                          <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
-                        </span>
-                      </span>
-                      {/* Background shimmer effect */}
-                      <div className="absolute inset-0 overflow-hidden rounded-xl">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-                      </div>
-                      {/* Progress bar */}
-                      <div className="absolute bottom-0 left-0 h-0.5 bg-white/30 rounded-full animate-progress"></div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      <span>Extract Data</span>
-                    </div>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Extract Data</span>
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-300 text-slate-700">Soon</span>
+                  </div>
                 </button>
               </div>
-              {formData.url && formData.url.includes('yad2.co.il') && (
+              {(formData.url && formData.url.includes('yad2.co.il')) && !pastedImageDataUrl && (
                 <div className="mt-2 text-xs text-slate-600 bg-primary/5 rounded-lg p-3 border border-primary/20">
                   <div className="flex items-start space-x-2">
                     <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -371,6 +461,46 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   </div>
                 </div>
               )}
+              {/* Screenshot extraction - separate field */}
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Yad2 Screenshot (paste or upload)
+                </label>
+                <div className={`p-3 border rounded-xl bg-white/70 backdrop-blur-sm transition-all ${pastedImageDataUrl ? 'border-primary/40' : 'border-slate-300'}`}>
+                  <input
+                    type="text"
+                    onPaste={handleUrlPaste}
+                    placeholder={pastedImageDataUrl ? 'Image pasted ✓' : 'Paste screenshot here (⌘+V / Ctrl+V)'}
+                    readOnly
+                    className="w-full px-3 py-2 rounded border border-slate-200 focus:outline-none"
+                  />
+                  <div className="flex items-center justify-end mt-2 space-x-2">
+                    {pastedImageDataUrl && (
+                      <button type="button" onClick={clearPastedImage} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200">Remove</button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!pastedImageDataUrl) return
+                        await handleExtractFromURL()
+                      }}
+                      disabled={isExtracting || !pastedImageDataUrl}
+                      className={`px-4 py-2 bg-slate-900 text-white rounded-lg text-sm ${isExtracting ? 'opacity-60' : 'hover:bg-slate-800'}`}
+                      title="Extract property data from pasted screenshot"
+                    >
+                      {isExtracting ? 'Extracting…' : 'Extract From Image'}
+                    </button>
+                  </div>
+                </div>
+                {pastedImageDataUrl && (
+                  <div className="mt-2 p-2 border border-primary/30 rounded-lg bg-primary/5">
+                    <div className="text-xs text-slate-700 mb-1">Screenshot attached {pastedImageName ? `(${pastedImageName})` : ''}</div>
+                    <div className="relative w-full h-40 overflow-hidden rounded-md border border-white/20 bg-white">
+                      <img src={pastedImageDataUrl} alt="Pasted screenshot preview" className="object-contain w-full h-full" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -402,13 +532,13 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   Square Meters *
                 </label>
                 <div className="relative">
-                  <input
-                    type="number"
-                    name="square_meters"
-                    required
-                    min="1"
+                <input
+                  type="number"
+                  name="square_meters"
+                  required
+                  min="1"
                     value={formData.square_meters || ''}
-                    onChange={handleChange}
+                  onChange={handleChange}
                     placeholder="0"
                     className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                     tabIndex={4}
@@ -427,10 +557,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   Asked Price (ILS) *
                 </label>
                 <div className="relative">
-                  <input
+                <input
                     type="text"
-                    name="asked_price"
-                    required
+                  name="asked_price"
+                  required
                     value={formattedPrice}
                     onChange={handlePriceChange}
                     placeholder="0"
@@ -640,11 +770,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   </div>
                 ) : (
                   <div className="flex items-center space-x-3">
-                    <div className="flex items-center space-x-2">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={property ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 4v16m8-8H4"} />
-                      </svg>
-                      <span>{property ? 'Update Property' : 'Create Property'}</span>
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={property ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 4v16m8-8H4"} />
+                    </svg>
+                    <span>{property ? 'Update Property' : 'Create Property'}</span>
                     </div>
                     <span className="text-xs bg-white/20 px-2 py-1 rounded text-primary-foreground/80">
                       ⌘↵

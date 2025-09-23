@@ -105,6 +105,9 @@ export default function Home() {
   }
 
   const handleEditProperty = (property: Property) => {
+    // If detail modal is open, close it before opening the edit form
+    setShowPropertyDetail(false)
+    setSelectedProperty(null)
     setEditingProperty(property)
     setShowForm(true)
   }
