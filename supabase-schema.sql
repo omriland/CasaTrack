@@ -5,7 +5,11 @@ CREATE TABLE properties (
   rooms DECIMAL(3,1) NOT NULL, -- Allows values like 3.5
   square_meters INTEGER NOT NULL,
   asked_price INTEGER NOT NULL, -- Price in ILS
-  price_per_meter DECIMAL(10,2) GENERATED ALWAYS AS (asked_price::decimal / square_meters) STORED,
+  -- Optional balcony size in square meters; counted at 50% for price_per_meter
+  balcony_square_meters INTEGER,
+  price_per_meter DECIMAL(10,2) GENERATED ALWAYS AS (
+    asked_price::decimal / NULLIF((square_meters::decimal + COALESCE(balcony_square_meters, 0)::decimal / 2.0), 0)
+  ) STORED,
   contact_name TEXT,
   contact_phone TEXT,
   source TEXT NOT NULL CHECK (source IN ('Yad2', 'Friends & Family', 'Facebook', 'Madlan', 'Other')),

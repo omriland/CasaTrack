@@ -30,7 +30,8 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     url: property?.url || '',
     latitude: property?.latitude || null,
     longitude: property?.longitude || null,
-    apartment_broker: property?.apartment_broker || false
+    apartment_broker: property?.apartment_broker || false,
+    balcony_square_meters: property?.balcony_square_meters ?? null
   })
 
   // State for formatted price display
@@ -148,7 +149,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'rooms' || name === 'square_meters' || name === 'asked_price'
+      [name]: name === 'rooms' || name === 'square_meters' || name === 'asked_price' || name === 'balcony_square_meters'
         ? Number(value)
         : value || null
     }))
@@ -514,36 +515,67 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   </div>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Asked Price (ILS) *
+                  Balcony m² (optional)
                 </label>
                 <div className="relative">
-                <input
-                    type="text"
-                  name="asked_price"
-                  required
-                    value={formattedPrice}
-                    onChange={handlePriceChange}
+                  <input
+                    type="number"
+                    name="balcony_square_meters"
+                    min="0"
+                    value={formData.balcony_square_meters ?? ''}
+                    onChange={handleChange}
                     placeholder="0"
                     className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                    tabIndex={5}
                   />
-                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <span className="text-slate-500 text-sm font-medium">₪</span>
-                  </div>
                   <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
                     <div className="w-px h-6 bg-slate-300"></div>
+                  </div>
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <span className="text-slate-500 text-sm font-medium">m²</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {formData.asked_price > 0 && formData.square_meters > 0 && (
+            {/* Price row */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Asked Price (ILS) *
+              </label>
+              <div className="relative max-w-md">
+                <input
+                  type="text"
+                  name="asked_price"
+                  required
+                  value={formattedPrice}
+                  onChange={handlePriceChange}
+                  placeholder="0"
+                  className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={5}
+                />
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <span className="text-slate-500 text-sm font-medium">₪</span>
+                </div>
+                <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
+                  <div className="w-px h-6 bg-slate-300"></div>
+                </div>
+              </div>
+            </div>
+
+            {(() => {
+              const balcony = formData.balcony_square_meters ?? 0
+              const effectiveArea = (formData.square_meters || 0) + 0.5 * balcony
+              return formData.asked_price > 0 && effectiveArea > 0
+            })() && (
               <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
                 <p className="text-sm font-medium text-slate-700">
-                  Price per m²: ₪{(formData.asked_price / formData.square_meters).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                  Price per m²: ₪{(() => {
+                    const balcony = formData.balcony_square_meters ?? 0
+                    const effectiveArea = (formData.square_meters || 0) + 0.5 * balcony
+                    return (formData.asked_price / effectiveArea).toLocaleString('en-US', { maximumFractionDigits: 0 })
+                  })()}
                 </p>
               </div>
             )}

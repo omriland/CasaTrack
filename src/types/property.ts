@@ -21,6 +21,7 @@ export interface Property {
   latitude: number | null
   longitude: number | null
   apartment_broker: boolean
+  balcony_square_meters: number | null
   created_at: string
   updated_at: string
 }
@@ -40,6 +41,7 @@ export interface PropertyInsert {
   latitude?: number | null
   longitude?: number | null
   apartment_broker?: boolean
+  balcony_square_meters?: number | null
 }
 
 export interface Note {
