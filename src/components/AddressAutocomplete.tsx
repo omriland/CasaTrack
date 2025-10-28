@@ -152,7 +152,7 @@ export default function AddressAutocomplete({
       const request: google.maps.places.FindPlaceFromQueryRequest = {
         query,
         fields: ['geometry'],
-        bounds: israelBounds
+        locationBias: israelBounds
       }
       return await new Promise((resolve) => {
         service.findPlaceFromQuery(request, (results, status) => {

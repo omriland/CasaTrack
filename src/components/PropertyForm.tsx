@@ -73,7 +73,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           new google.maps.LatLng(29.0, 34.2),
           new google.maps.LatLng(33.5, 35.9)
         )
-        const request: google.maps.places.FindPlaceFromQueryRequest = { query: normalized, fields: ['geometry'], bounds: israelBounds }
+        const request: google.maps.places.FindPlaceFromQueryRequest = { query: normalized, fields: ['geometry'], locationBias: israelBounds }
         const coords = await new Promise<{ lat: number; lng: number } | undefined>((resolve) => {
           service.findPlaceFromQuery(request, (results, status) => {
             if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
