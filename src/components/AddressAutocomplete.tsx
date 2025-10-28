@@ -200,10 +200,11 @@ export default function AddressAutocomplete({
       if (typeof google !== 'undefined' && google.maps?.Geocoder) {
         const geocoder = new google.maps.Geocoder()
         const geocode = await geocoder.geocode({ address: normalized })
-        if (geocode.status === 'OK' && geocode.results[0]?.geometry?.location) {
+        const first = geocode.results?.[0]
+        if (first?.geometry?.location) {
           return {
-            lat: geocode.results[0].geometry.location.lat(),
-            lng: geocode.results[0].geometry.location.lng()
+            lat: first.geometry.location.lat(),
+            lng: first.geometry.location.lng()
           }
         }
       }
