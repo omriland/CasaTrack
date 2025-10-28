@@ -24,7 +24,7 @@
    - Complete property management (Create, Read, Update, Delete)
    - Type-safe database operations with Supabase
    - Proper error handling and user feedback
-   - Auto-calculated price per square meter
+   - Auto-calculated price per square meter (counts 50% of balcony area)
 
 5. **UI Components**
    - LoginForm: Password authentication with loading states
@@ -235,3 +235,26 @@
 
 ### 📊 Current Status
 - Visual polish improved; favicon displays in browser tabs automatically via Next.js app router.
+
+## Session 3 - Balcony Metrage & UX Fixes (October 28, 2025)
+
+### ✅ Completed Tasks
+1. Balcony Metrage & Pricing Rule
+   - Added `balcony_square_meters` (optional) to properties schema
+   - Updated computed `price_per_meter` to count half of balcony area
+   - Updated TypeScript types and PropertyForm
+   - Form layout: metrage fields on one row; price in its own row; preview uses half-balcony rule
+
+2. Hebrew RTL Editing Fixes
+   - Replaced contentEditable editors with RTL-safe textareas where needed
+   - Fixed placeholder clearing and ensured typed text is black
+   - Reordered notes view: existing notes now appear above the add-note form
+
+3. Cards UX Enhancements
+   - Truncated descriptions now show full text on hover (tooltip)
+   - Added “Added X ago” with exact timestamp on hover
+
+### 📊 Current Status
+- Balcony pricing logic live; UI/DB aligned
+- Description and notes editing UX solid for RTL
+- Card info density improved with helpful hover previews

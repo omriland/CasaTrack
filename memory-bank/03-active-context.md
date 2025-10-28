@@ -37,6 +37,7 @@
 
 ### Technical Implementation Highlights
 - **Database**: Computed columns for price_per_meter, triggers for timestamps
+- **Pricing Logic**: price_per_meter uses square_meters + 0.5 × balcony_square_meters
 - **Drag & Drop**: Professional implementation with @dnd-kit
 - **Maps Integration**: Robust Google Maps API integration with fallbacks
 - **Address Handling**: Smart coordinate extraction with OpenStreetMap fallback
@@ -50,6 +51,7 @@
 - **Kanban Board**: 7-column drag-and-drop status management
 - **Map View**: Google Maps with custom property pins and interactive info windows
 - **Address System**: Google Places autocomplete with coordinate extraction and fallback geocoding
+- **Balcony**: Optional balcony m² stored; counted at 50% in price per m²
 - **Modern UX**: Glassmorphism, gradients, animations, responsive design
 - **Code Quality**: Debug code cleaned, all components optimized
 

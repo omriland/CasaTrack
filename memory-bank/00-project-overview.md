@@ -19,7 +19,7 @@
 
 ## Key Features Implemented
 1. Property CRUD operations (Create, Read, Update, Delete)
-2. Auto-calculated price per square meter
+2. Auto-calculated price per square meter (counts 50% of balcony area)
 3. Status tracking with visual indicators
 4. Contact information management
 5. Property source and type categorization
@@ -38,7 +38,7 @@
 ## Database Schema
 - **Properties Table**: Complete with all required fields
 - **Notes Table**: Ready for implementation
-- **Computed Columns**: Price per meter automatically calculated
+- **Computed Columns**: Price per meter automatically calculated (counts 50% of balcony area)
 - **Triggers**: Auto-updating timestamps implemented
 
 ## User Authentication

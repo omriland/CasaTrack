@@ -58,6 +58,7 @@ src/
 - address (TEXT, required)
 - rooms (DECIMAL, allows 3.5)
 - square_meters (INTEGER)
+- balcony_square_meters (INTEGER, optional; counted at 50% in pricing)
 - asked_price (INTEGER, ILS)
 - price_per_meter (COMPUTED)
 - contact info (name, phone)
