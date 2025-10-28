@@ -322,34 +322,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }
   }
 
-  const handleUrlPaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const items = e.clipboardData?.items
-    if (!items) return
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]
-      if (item.kind === 'file' && item.type.startsWith('image/')) {
-        const file = item.getAsFile()
-        if (!file) continue
-        const reader = new FileReader()
-        reader.onload = () => {
-          const dataUrl = typeof reader.result === 'string' ? reader.result : null
-          if (dataUrl) {
-            setPastedImageDataUrl(dataUrl)
-            setPastedImageName(file.name)
-          }
-        }
-        reader.readAsDataURL(file)
-        // prevent default text paste into the input
-        e.preventDefault()
-        break
-      }
-    }
-  }
-
-  const clearPastedImage = () => {
-    setPastedImageDataUrl(null)
-    setPastedImageName(null)
-  }
+  // Image paste/extraction removed; no handlers needed
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
