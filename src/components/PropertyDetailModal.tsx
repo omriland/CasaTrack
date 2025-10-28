@@ -481,24 +481,17 @@ export default function PropertyDetailModal({
 
                   {editingDescription ? (
                     <div className="space-y-4">
-                      <div
-                        contentEditable
-                        onInput={handleDescriptionInput}
-                        onFocus={handleDescriptionFocus}
-                        onKeyDown={handleDescriptionKeyDown}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-base text-right min-h-[150px] max-h-[300px] overflow-y-auto"
+                      <textarea
+                        value={tempDescription}
+                        onChange={(e) => setTempDescription(e.target.value)}
+                        placeholder="Add a description for this property..."
+                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-base text-right text-slate-900 min-h-[150px] max-h-[300px]"
                         dir="rtl"
-                        style={{ unicodeBidi: 'plaintext' }}
-                        dangerouslySetInnerHTML={{ __html: tempDescription || '<span style="color: #94a3b8; font-style: italic;">Add a description for this property...</span>' }}
-                        suppressContentEditableWarning={true}
+                        rows={6}
                       />
                       <div className="flex justify-between items-center">
-                        <div className="flex space-x-2 text-xs text-slate-500">
-                          <span>Cmd+B for bold</span>
-                          <span>•</span>
-                          <span>Enter for line break</span>
-                          <span>•</span>
-                          <span>Shift+Enter for new paragraph</span>
+                        <div className="text-xs text-slate-500">
+                          Enter for new line
                         </div>
                         <div className="flex space-x-3">
                           <button

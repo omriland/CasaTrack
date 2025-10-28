@@ -20,6 +20,8 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const [showNotesPreview, setShowNotesPreview] = useState(false)
   const [previewNotes, setPreviewNotes] = useState<Note[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
+  const [showDescPreview, setShowDescPreview] = useState(false)
+  const descPreviewRef = useRef<HTMLDivElement>(null)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const notesPreviewRef = useRef<HTMLDivElement>(null)
   const [inlineEditing, setInlineEditing] = useState<null | { field: 'rooms' | 'square_meters'; value: number }>(null)
@@ -76,6 +78,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       if (notesPreviewRef.current && !notesPreviewRef.current.contains(event.target as Node)) {
         setShowNotesPreview(false)
       }
+      if (descPreviewRef.current && !descPreviewRef.current.contains(event.target as Node)) {
+        setShowDescPreview(false)
+      }
     }
 
     if (showNotesPreview) {
@@ -98,6 +103,36 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('en-US').format(price)
+  }
+
+  const formatExactDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    })
+  }
+
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date()
+    const then = new Date(dateString)
+    const diffMs = then.getTime() - now.getTime()
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+
+    const minutes = Math.round(diffMs / (1000 * 60))
+    const hours = Math.round(diffMs / (1000 * 60 * 60))
+    const days = Math.round(diffMs / (1000 * 60 * 60 * 24))
+    const months = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30))
+    const years = Math.round(diffMs / (1000 * 60 * 60 * 24 * 365))
+
+    if (Math.abs(minutes) < 60) return rtf.format(minutes, 'minute')
+    if (Math.abs(hours) < 24) return rtf.format(hours, 'hour')
+    if (Math.abs(days) < 30) return rtf.format(days, 'day')
+    if (Math.abs(months) < 12) return rtf.format(months, 'month')
+    return rtf.format(years, 'year')
   }
 
   const getStatusColor = (status: Property['status']) => {
@@ -215,8 +250,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <h3 className="font-semibold text-lg text-slate-900 mb-2 line-clamp-2 leading-tight">
             {property.address}
           </h3>
-          <div className="relative" ref={statusDropdownRef}>
-            <button
+          <div className="flex items-center space-x-3">
+            <div className="relative" ref={statusDropdownRef}>
+              <button
               onClick={() => setShowStatusDropdown(!showStatusDropdown)}
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm ${getStatusColor(property.status)}`}
             >
@@ -225,29 +261,33 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
               </svg>
-            </button>
+              </button>
             
-            {showStatusDropdown && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
-                {allStatuses.map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusChange(status)}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
-                      status === property.status ? 'bg-slate-50 font-medium' : ''
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                    <span>{status}</span>
-                    {status === property.status && (
-                      <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
+              {showStatusDropdown && (
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
+                  {allStatuses.map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status)}
+                      className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
+                        status === property.status ? 'bg-slate-50 font-medium' : ''
+                      }`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
+                      <span>{status}</span>
+                      {status === property.status && (
+                        <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-slate-500" title={formatExactDateTime(property.created_at)}>
+              Added {getRelativeTime(property.created_at)}
+            </div>
           </div>
         </div>
         <div className="flex space-x-1 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -456,14 +496,33 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Description */}
       {property.description && (
-        <div className="mt-4 pt-4 border-t border-slate-100">
+        <div className="mt-4 pt-4 border-t border-slate-100 relative" ref={descPreviewRef}>
           <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Description</h4>
-          <div 
-            className="text-sm text-slate-600 leading-relaxed line-clamp-3 text-right" 
-            dir="rtl" 
+          <div
+            className="text-sm text-slate-600 leading-relaxed line-clamp-3 text-right cursor-help"
+            dir="rtl"
             style={{ unicodeBidi: 'plaintext' }}
+            onMouseEnter={() => setShowDescPreview(true)}
+            onMouseLeave={() => setShowDescPreview(false)}
             dangerouslySetInnerHTML={{ __html: property.description }}
           />
+
+          {showDescPreview && (
+            <div
+              className="absolute bottom-full right-0 mb-2 w-96 max-w-[85vw] bg-white rounded-xl shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
+              onMouseEnter={() => setShowDescPreview(true)}
+              onMouseLeave={() => setShowDescPreview(false)}
+            >
+              <div
+                className="text-sm text-slate-700 leading-relaxed max-h-60 overflow-auto text-right"
+                dir="rtl"
+                style={{ unicodeBidi: 'plaintext' }}
+                dangerouslySetInnerHTML={{ __html: property.description }}
+              />
+              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>
+              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-slate-200 transform translate-y-px"></div>
+            </div>
+          )}
         </div>
       )}
 

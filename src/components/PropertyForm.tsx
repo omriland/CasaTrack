@@ -46,9 +46,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     message: string
     fieldsCount?: number
   }>({ show: false, success: false, message: '' })
-  // Image paste support for extraction
-  const [pastedImageDataUrl, setPastedImageDataUrl] = useState<string | null>(null)
-  const [pastedImageName, setPastedImageName] = useState<string | null>(null)
 
   const geocodeNormalized = async (address: string): Promise<{ lat: number; lng: number } | undefined> => {
     const normalized = address.includes('ישראל') || address.includes('Israel')
@@ -217,6 +214,15 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }))
   }
 
+  // Ensure placeholder disappears before the first typed character is inserted
+  const handleDescriptionBeforeInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const element = e.currentTarget
+    if (element.innerHTML.includes('Additional details about the property')) {
+      element.innerHTML = ''
+      setFormData(prev => ({ ...prev, description: '' }))
+    }
+  }
+
   const handleDescriptionFocus = (e: React.FocusEvent<HTMLDivElement>) => {
     const element = e.currentTarget
     // Clear placeholder on focus
@@ -230,11 +236,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleExtractFromURL = async () => {
-    if (!pastedImageDataUrl && (!formData.url || !formData.url.includes('yad2.co.il'))) {
+    if (!formData.url || !formData.url.includes('yad2.co.il')) {
       setExtractionResult({
         show: true,
         success: false,
-        message: 'Please enter a valid Yad2 URL or paste a screenshot first'
+        message: 'Please enter a valid Yad2 URL'
       })
       return
     }
@@ -247,7 +253,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(pastedImageDataUrl ? { image: pastedImageDataUrl } : { url: formData.url })
+        body: JSON.stringify({ url: formData.url })
       })
 
       const result = await response.json()
@@ -300,10 +306,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           message: `Property data extracted successfully! Found ${extractedFields} fields. Please review and complete any missing information.`,
           fieldsCount: extractedFields
         })
-
-        // Clear pasted image after success
-        setPastedImageDataUrl(null)
-        setPastedImageName(null)
       }
 
     } catch (error) {
@@ -449,7 +451,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   </div>
                 </button>
               </div>
-              {(formData.url && formData.url.includes('yad2.co.il')) && !pastedImageDataUrl && (
+              {(formData.url && formData.url.includes('yad2.co.il')) && (
                 <div className="mt-2 text-xs text-slate-600 bg-primary/5 rounded-lg p-3 border border-primary/20">
                   <div className="flex items-start space-x-2">
                     <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -462,46 +464,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   </div>
                 </div>
               )}
-              {/* Screenshot extraction - separate field */}
-              <div className="mt-4">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Yad2 Screenshot (paste or upload)
-                </label>
-                <div className={`p-3 border rounded-xl bg-white/70 backdrop-blur-sm transition-all ${pastedImageDataUrl ? 'border-primary/40' : 'border-slate-300'}`}>
-                  <input
-                    type="text"
-                    onPaste={handleUrlPaste}
-                    placeholder={pastedImageDataUrl ? 'Image pasted ✓' : 'Paste screenshot here (⌘+V / Ctrl+V)'}
-                    readOnly
-                    className="w-full px-3 py-2 rounded border border-slate-200 focus:outline-none"
-                  />
-                  <div className="flex items-center justify-end mt-2 space-x-2">
-                    {pastedImageDataUrl && (
-                      <button type="button" onClick={clearPastedImage} className="text-xs px-2 py-1 rounded bg-slate-100 hover:bg-slate-200">Remove</button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (!pastedImageDataUrl) return
-                        await handleExtractFromURL()
-                      }}
-                      disabled={isExtracting || !pastedImageDataUrl}
-                      className={`px-4 py-2 bg-slate-900 text-white rounded-lg text-sm ${isExtracting ? 'opacity-60' : 'hover:bg-slate-800'}`}
-                      title="Extract property data from pasted screenshot"
-                    >
-                      {isExtracting ? 'Extracting…' : 'Extract From Image'}
-                    </button>
-                  </div>
-                </div>
-                {pastedImageDataUrl && (
-                  <div className="mt-2 p-2 border border-primary/30 rounded-lg bg-primary/5">
-                    <div className="text-xs text-slate-700 mb-1">Screenshot attached {pastedImageName ? `(${pastedImageName})` : ''}</div>
-                    <div className="relative w-full h-40 overflow-hidden rounded-md border border-white/20 bg-white">
-                      <img src={pastedImageDataUrl} alt="Pasted screenshot preview" className="object-contain w-full h-full" />
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             <div>
@@ -695,24 +657,17 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 Description
               </label>
               <div className="space-y-2">
-                <div
-                  contentEditable
-                  onInput={handleDescriptionInput}
-                  onFocus={handleDescriptionFocus}
-                  onKeyDown={handleDescriptionKeyDown}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right min-h-[100px] max-h-[200px] overflow-y-auto"
+                <textarea
+                  name="description"
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Additional details about the property"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right text-slate-900 min-h-[100px] max-h-[200px]"
                   dir="rtl"
-                  style={{ unicodeBidi: 'plaintext' }}
-                  dangerouslySetInnerHTML={{ __html: formData.description || '<span style="color: #94a3b8; font-style: italic;">Additional details about the property</span>' }}
-                  suppressContentEditableWarning={true}
                   tabIndex={11}
                 />
-                <div className="flex justify-end space-x-2 text-xs text-slate-500">
-                  <span>Cmd+B for bold</span>
-                  <span>•</span>
-                  <span>Enter for line break</span>
-                  <span>•</span>
-                  <span>Shift+Enter for new paragraph</span>
+                <div className="flex justify-end text-xs text-slate-500">
+                  <span>Enter for new line</span>
                 </div>
               </div>
             </div>
