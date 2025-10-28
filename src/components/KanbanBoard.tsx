@@ -62,7 +62,7 @@ function DroppableColumn({
           <div className="flex items-center justify-center">
             <h3
               className={`font-medium text-sm text-slate-700 text-center leading-tight`}
-              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' as any }}
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
               {title}
             </h3>
@@ -70,7 +70,7 @@ function DroppableColumn({
           <div className="mt-3">
             <span
               className="text-[10px] text-slate-500"
-              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' as any }}
+              style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
               {count} {count === 1 ? 'property' : 'properties'}
             </span>

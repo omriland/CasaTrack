@@ -211,7 +211,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const commitInlineEdit = async () => {
     if (!inlineEditing) return
     try {
-      const updates: any = { [inlineEditing.field]: inlineEditing.value }
+      const updates: Partial<Pick<Property, 'rooms' | 'square_meters'>> = { [inlineEditing.field]: inlineEditing.value } as Partial<Pick<Property, 'rooms' | 'square_meters'>>
       await updateProperty(property.id, updates)
       if (inlineEditing.field === 'square_meters') {
         setLocalSquareMeters(inlineEditing.value)
