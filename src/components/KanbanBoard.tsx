@@ -50,18 +50,18 @@ function DroppableColumn({
   if (isCollapsed) {
     return (
       <div
-        className={`flex flex-col bg-slate-100 rounded-[3px] h-full transition-all duration-300 ${
-          isOver ? 'ring-2 ring-primary/30' : ''
+        className={`flex flex-col bg-slate-50/50 rounded-lg h-full transition-all duration-300 ${
+          isOver ? 'ring-2 ring-primary/20 ring-offset-2' : ''
         }`}
         style={{ width: '100px' }}
       >
         <button
           onClick={onToggleCollapse}
-          className={`flex flex-col items-center justify-start p-2 pt-4 rounded-md transition-all hover:scale-105 flex-1`}
+          className={`flex flex-col items-center justify-start p-2 pt-4 rounded-md transition-all hover:bg-white/50 flex-1`}
         >
           <div className="flex items-center justify-center">
             <h3
-              className={`font-medium text-sm text-slate-700 text-center leading-tight`}
+              className="font-semibold text-sm text-slate-700 text-center leading-tight"
               style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
               {title}
@@ -69,14 +69,14 @@ function DroppableColumn({
           </div>
           <div className="mt-3">
             <span
-              className="text-[10px] text-slate-500"
+              className="text-xs text-slate-500 font-medium"
               style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
-              {count} {count === 1 ? 'property' : 'properties'}
+              {count}
             </span>
           </div>
           <svg 
-            className={`w-4 h-4 text-slate-500 mt-2 transform rotate-90`} 
+            className="w-4 h-4 text-slate-400 mt-2 transform rotate-90" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -89,9 +89,9 @@ function DroppableColumn({
           className="flex-1 flex items-center justify-center p-2"
         >
           {count > 0 && (
-            <div className="text-center text-gray-400 text-xs">
-              <div className="transform rotate-90 whitespace-nowrap">
-                {count} {count === 1 ? 'property' : 'properties'}
+            <div className="text-center text-slate-400 text-sm">
+              <div className="transform rotate-90 whitespace-nowrap font-medium">
+                {count}
               </div>
             </div>
           )}
@@ -103,30 +103,57 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col bg-slate-100 rounded-[3px] h-full transition-colors ${
-        isOver ? 'ring-2 ring-primary/30' : ''
+      className={`flex flex-col bg-slate-50/50 rounded-lg h-full transition-all ${
+        isOver ? 'ring-2 ring-primary/20 ring-offset-2' : ''
       }`}
     >
-      <div className={`sticky top-0 z-10 flex items-center justify-between px-4 py-3 rounded-t-[3px] bg-transparent mt-1 mx-1 mb-2`}>
-        <h3 className={`font-semibold text-xs tracking-wide uppercase text-slate-700 mr-2 text-left`}>
-          {title}
-        </h3>
-        <span className={`text-[11px] text-slate-500`}>{count} {count === 1 ? 'property' : 'properties'}</span>
-      </div>
-      <div className="px-3 pb-3 flex-1 flex flex-col">
-        {isEmpty && isDragging ? (
-          <div
-            className={`flex-1 grid place-items-center rounded-lg border-2 border-dashed transition-colors ${
-              isOver ? 'border-primary bg-primary/5 text-primary' : 'border-slate-200 text-slate-400'
-            }`}
-          >
-            <div className="flex items-center space-x-2 text-xs">
-              <svg className={`w-4 h-4 ${isOver ? 'text-primary' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v12m0 0l-4-4m4 4l4-4" />
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 py-3 rounded-t-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 flex-1 min-w-0">
+            <button
+              onClick={onToggleCollapse}
+              className="p-1 hover:bg-slate-100 rounded transition-colors flex-shrink-0 -ml-1"
+              title={isCollapsed ? 'Expand column' : 'Collapse column'}
+            >
+              <svg 
+                className={`w-4 h-4 text-slate-500 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
               </svg>
-              <span>{isOver ? 'Release to drop here' : 'Drop property here'}</span>
+            </button>
+            <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+              <div className={`w-1 h-5 ${bgColor} rounded-full flex-shrink-0`}></div>
+              <h3 className="font-semibold text-sm text-slate-700 text-left truncate">
+                {title}
+              </h3>
             </div>
           </div>
+          <span className="text-sm text-slate-500 ml-2 flex-shrink-0 font-medium">{count}</span>
+        </div>
+      </div>
+      <div className="px-2.5 py-2 flex-1 flex flex-col overflow-y-auto">
+        {isEmpty ? (
+          isDragging ? (
+            <div
+              className={`flex-1 grid place-items-center rounded-lg border-2 border-dashed transition-all ${
+                isOver ? 'border-primary/40 bg-primary/5 text-primary' : 'border-slate-200 text-slate-400'
+              }`}
+            >
+              <div className="flex flex-col items-center space-y-2 text-xs">
+                <svg className={`w-5 h-5 ${isOver ? 'text-primary' : 'text-slate-400'} transition-transform`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                </svg>
+                <span className="font-medium">{isOver ? 'Release to drop' : 'Drop here'}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 grid place-items-center">
+              <div className="text-xs text-slate-400 font-medium">No properties</div>
+            </div>
+          )
         ) : (
           children
         )}
@@ -266,7 +293,7 @@ export default function KanbanBoard({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="kanban-scroll flex gap-4 h-full overflow-x-auto px-1">
+        <div className="kanban-scroll flex gap-3 h-full overflow-x-auto px-4 py-2">
           {STATUSES.map(({ status, color, bgColor }) => {
             const columnProperties = getPropertiesByStatus(status)
             const isCollapsed = collapsedColumns.has(status)
@@ -275,7 +302,7 @@ export default function KanbanBoard({
               <div 
                 key={status} 
                 className={`flex-shrink-0 h-full transition-all duration-300 ${
-                  isCollapsed ? 'w-24' : 'w-80'
+                  isCollapsed ? 'w-24' : 'w-[320px]'
                 }`}
               >
                 <DroppableColumn
@@ -294,7 +321,7 @@ export default function KanbanBoard({
                       items={columnProperties.map(p => p.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      <div className="flex-1 space-y-2 overflow-y-auto pr-1 min-h-full">
+                      <div className="flex-1 space-y-2 min-h-full">
                         {columnProperties.map(property => (
                           <KanbanCard
                             key={property.id}
@@ -317,12 +344,34 @@ export default function KanbanBoard({
 
         <DragOverlay>
           {activeProperty ? (
-            <div className="bg-white rounded-lg shadow-lg border border-primary/30 p-3 opacity-95 rotate-3">
-              <div className="font-medium text-sm text-gray-900 mb-1">
+            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary/40 p-4 opacity-95 rotate-2 scale-105 max-w-xs">
+              <div className="font-semibold text-sm text-slate-900 mb-2 line-clamp-2">
                 {activeProperty.address}
               </div>
-              <div className="text-xs text-gray-600">
-                ₪{new Intl.NumberFormat('en-US').format(activeProperty.asked_price)}
+              <div className="space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-500">Rooms:</span>
+                    <span className="font-medium text-slate-700">{activeProperty.rooms || '—'}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-slate-500">Size:</span>
+                    <span className="font-medium text-slate-700">
+                      {activeProperty.square_meters} m²
+                      {activeProperty.balcony_square_meters && activeProperty.balcony_square_meters > 0 && (
+                        <span className="text-slate-500 ml-1">+ {activeProperty.balcony_square_meters}</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                  <span className="font-semibold text-slate-900">
+                    ₪{new Intl.NumberFormat('en-US').format(activeProperty.asked_price)}
+                  </span>
+                  <span className="text-slate-500">
+                    ₪{new Intl.NumberFormat('en-US').format(Math.round(activeProperty.price_per_meter))}/m²
+                  </span>
+                </div>
               </div>
             </div>
           ) : null}

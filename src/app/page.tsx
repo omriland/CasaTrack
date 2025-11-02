@@ -181,40 +181,40 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="none">
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
                   <path d="M3 11L12 4L21 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M5 10.5V19a2 2 0 002 2h10a2 2 0 002-2v-8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   <rect x="10" y="14" width="4" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-xl font-bold">
                 <span className="text-slate-900">Casa</span>
                 <span className="text-primary">Track</span>
               </h1>
               {properties.length > 0 && (
-                <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 ml-2">
+                <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 ml-2">
                   {properties.length} {properties.length === 1 ? 'property' : 'properties'}
                 </span>
               )}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               {/* View Toggle */}
               {properties.length > 0 && (
-                <div className="flex bg-slate-100 rounded-xl p-1 shadow-sm">
+                <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
                   <button
                     onClick={() => setViewMode('cards')}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                       viewMode === 'cards'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-white text-slate-900 border border-slate-200'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,10 +224,10 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                       viewMode === 'kanban'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-white text-slate-900 border border-slate-200'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,10 +237,10 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setViewMode('map')}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all ${
                       viewMode === 'map'
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-white text-slate-900 border border-slate-200'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,7 +253,7 @@ export default function Home() {
 
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl hover:from-primary/90 hover:to-primary/80 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 font-medium"
+                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -263,7 +263,7 @@ export default function Home() {
 
               <button
                 onClick={handleLogout}
-                className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"
+                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                 title="Logout"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
