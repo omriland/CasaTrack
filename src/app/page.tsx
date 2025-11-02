@@ -22,6 +22,8 @@ export default function Home() {
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'kanban' | 'map'>('cards')
   const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0)
+  const [notesBump, setNotesBump] = useState<null | { id: string; delta: number; nonce: number }>(null)
 
   useEffect(() => {
     const checkAuth = () => {
@@ -45,6 +47,14 @@ export default function Home() {
     } catch (error) {
       console.error('Error loading properties:', error)
     }
+  }
+
+  const handleNotesChanged = () => {
+    setNotesRefreshKey((k) => k + 1)
+  }
+
+  const handleNotesDelta = (propertyId: string, delta: number) => {
+    setNotesBump({ id: propertyId, delta, nonce: Date.now() })
   }
 
   const handleLogin = () => {
@@ -334,6 +344,8 @@ export default function Home() {
                       onDelete={handleDeleteProperty}
                       onViewNotes={handleViewNotes}
                       onStatusUpdate={handleUpdatePropertyStatus}
+                      notesRefreshKey={notesRefreshKey}
+                      notesBump={notesBump}
                     />
                   </div>
                 ))}
@@ -389,6 +401,8 @@ export default function Home() {
                           onDelete={handleDeleteProperty}
                           onViewNotes={handleViewNotes}
                           onStatusUpdate={handleUpdatePropertyStatus}
+                          notesRefreshKey={notesRefreshKey}
+                          notesBump={notesBump}
                         />
                       </div>
                     ))}
@@ -422,6 +436,8 @@ export default function Home() {
               onEdit={handleEditProperty}
               onDelete={handleDeleteProperty}
               onViewNotes={handleViewNotes}
+              notesRefreshKey={notesRefreshKey}
+              notesBump={notesBump}
             />
           </div>
         ) : (
@@ -452,6 +468,8 @@ export default function Home() {
           onStatusUpdate={handleUpdatePropertyStatus}
           onPropertyUpdate={handlePropertyUpdate}
           onDataRefresh={loadProperties}
+          onNotesChanged={handleNotesChanged}
+          onNotesDelta={handleNotesDelta}
         />
       )}
     </div>

@@ -45,7 +45,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-8 animate-fade-in">
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 p-8 animate-fade-in">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
@@ -57,7 +57,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-slate-900 placeholder-slate-400 shadow-sm"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 text-slate-900 placeholder-slate-400 shadow-sm"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -117,24 +117,6 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             <p className="text-xs text-slate-500">
               Secure access to your property management dashboard
             </p>
-          </div>
-        </div>
-
-        {/* Features Preview */}
-        <div className="mt-8 text-center space-y-4 animate-fade-in">
-          <div className="flex justify-center space-x-8 text-slate-600">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium">Property Tracking</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-primary rounded-full"></div>
-              <span className="text-sm font-medium">Status Management</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <span className="text-sm font-medium">Notes & History</span>
-            </div>
           </div>
         </div>
       </div>

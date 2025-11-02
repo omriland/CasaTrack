@@ -141,6 +141,8 @@ interface KanbanBoardProps {
   onEdit: (property: Property) => void
   onDelete: (id: string) => void
   onViewNotes: (property: Property) => void
+  notesRefreshKey?: number
+  notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
 const STATUSES: { status: PropertyStatus; color: string; bgColor: string }[] = [
@@ -158,7 +160,9 @@ export default function KanbanBoard({
   onUpdateStatus,
   onEdit,
   onDelete,
-  onViewNotes
+  onViewNotes,
+  notesRefreshKey,
+  notesBump
 }: KanbanBoardProps) {
   const [activeProperty, setActiveProperty] = useState<Property | null>(null)
   const [isDraggingSomething, setIsDraggingSomething] = useState(false)
@@ -298,6 +302,8 @@ export default function KanbanBoard({
                             onEdit={onEdit}
                             onDelete={onDelete}
                             onViewNotes={onViewNotes}
+                            notesRefreshKey={notesRefreshKey}
+                            notesBump={notesBump}
                           />
                         ))}
                       </div>

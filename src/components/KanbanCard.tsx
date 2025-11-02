@@ -11,9 +11,11 @@ interface KanbanCardProps {
   onEdit: (property: Property) => void
   onDelete: (id: string) => void
   onViewNotes: (property: Property) => void
+  notesRefreshKey?: number
+  notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: KanbanCardProps) {
+export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, notesRefreshKey, notesBump }: KanbanCardProps) {
   const [notesCount, setNotesCount] = useState<number>(0)
   const [rooms, setRooms] = useState<number>(property.rooms)
   const [showRoomsPicker, setShowRoomsPicker] = useState<boolean>(false)
@@ -35,7 +37,13 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes }: 
 
   useEffect(() => {
     loadNotesCount()
-  }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [property.id, notesRefreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!notesBump) return
+    if (notesBump.id !== property.id) return
+    setNotesCount((prev) => Math.max(0, prev + notesBump.delta))
+  }, [notesBump?.nonce])
 
   useEffect(() => {
     setRooms(property.rooms)
