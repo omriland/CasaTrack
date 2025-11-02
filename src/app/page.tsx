@@ -166,6 +166,7 @@ export default function Home() {
   // Helper functions to separate properties by status
   const relevantProperties = properties.filter(property => property.status !== 'Irrelevant')
   const irrelevantProperties = properties.filter(property => property.status === 'Irrelevant')
+  const relevantPropertiesCount = relevantProperties.length
 
   if (loading) {
     return (
@@ -181,40 +182,41 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200/80 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-14">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 11L12 4L21 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M5 10.5V19a2 2 0 002 2h10a2 2 0 002-2v-8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <rect x="10" y="14" width="4" height="7" rx="1" stroke="currentColor" strokeWidth="2" />
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold">
-                <span className="text-slate-900">Casa</span>
-                <span className="text-primary">Track</span>
-              </h1>
-              {properties.length > 0 && (
-                <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200 ml-2">
-                  {properties.length} {properties.length === 1 ? 'property' : 'properties'}
+              <div className="flex items-baseline space-x-0.5">
+                <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk), sans-serif' }}>
+                  <span className="text-slate-900">Casa</span>
+                  <span className="text-primary">Track</span>
+                </h1>
+              </div>
+              {relevantPropertiesCount > 0 && (
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600 ml-2.5">
+                  {relevantPropertiesCount}
                 </span>
               )}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               {/* View Toggle */}
               {properties.length > 0 && (
-                <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
+                <div className="flex bg-slate-50 rounded-lg p-0.5 border border-slate-200/60">
                   <button
                     onClick={() => setViewMode('cards')}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                       viewMode === 'cards'
-                        ? 'bg-white text-slate-900 border border-slate-200'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -224,10 +226,10 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                       viewMode === 'kanban'
-                        ? 'bg-white text-slate-900 border border-slate-200'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -237,10 +239,10 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => setViewMode('map')}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                       viewMode === 'map'
-                        ? 'bg-white text-slate-900 border border-slate-200'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -253,17 +255,18 @@ export default function Home() {
 
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-all font-medium shadow-sm hover:shadow"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                 </svg>
-                <span>Add Property</span>
+                <span className="hidden sm:inline">Add Property</span>
+                <span className="sm:hidden">Add</span>
               </button>
 
               <button
                 onClick={handleLogout}
-                className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
                 title="Logout"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
