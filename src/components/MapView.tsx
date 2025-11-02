@@ -12,11 +12,22 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
+  const transitLayerRef = useRef<google.maps.TransitLayer | null>(null)
+  const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null)
+  const bicycleLayerRef = useRef<google.maps.BicyclingLayer | null>(null)
+  const schoolMarkersRef = useRef<google.maps.Marker[]>([])
+  const placesServiceRef = useRef<google.maps.places.PlacesService | null>(null)
   const [isLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hoveredProperty, setHoveredProperty] = useState<Property | null>(null)
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null)
   const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
+  const [layers, setLayers] = useState({
+    transit: false,
+    traffic: false,
+    bicycle: false,
+    schools: false
+  })
 
   useEffect(() => {
     const initializeMap = () => {
@@ -62,6 +73,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
           mapInstanceRef.current = new google.maps.Map(mapRef.current, {
             center,
             zoom,
+            language: 'he',
             styles: [
               {
                 featureType: 'poi',
@@ -70,6 +82,16 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
               }
             ]
           })
+
+          // Initialize layers
+          transitLayerRef.current = new google.maps.TransitLayer()
+          trafficLayerRef.current = new google.maps.TrafficLayer()
+          bicycleLayerRef.current = new google.maps.BicyclingLayer()
+
+          // Initialize Places Service
+          if (google.maps.places) {
+            placesServiceRef.current = new google.maps.places.PlacesService(mapInstanceRef.current)
+          }
 
           setError(null)
         }
@@ -245,6 +267,157 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
     }
   }, [properties, isLoading, onPropertyClick, showIrrelevantProperties])
 
+  // Handle layer toggles
+  useEffect(() => {
+    if (!mapInstanceRef.current) return
+
+    if (layers.transit && transitLayerRef.current) {
+      transitLayerRef.current.setMap(mapInstanceRef.current)
+    } else if (transitLayerRef.current) {
+      transitLayerRef.current.setMap(null)
+    }
+
+    if (layers.traffic && trafficLayerRef.current) {
+      trafficLayerRef.current.setMap(mapInstanceRef.current)
+    } else if (trafficLayerRef.current) {
+      trafficLayerRef.current.setMap(null)
+    }
+
+    if (layers.bicycle && bicycleLayerRef.current) {
+      bicycleLayerRef.current.setMap(mapInstanceRef.current)
+    } else if (bicycleLayerRef.current) {
+      bicycleLayerRef.current.setMap(null)
+    }
+
+    // Handle schools layer
+    if (layers.schools) {
+      if (!placesServiceRef.current) return
+
+      // Clear existing school markers
+      schoolMarkersRef.current.forEach(marker => marker.setMap(null))
+      schoolMarkersRef.current = []
+
+      const map = mapInstanceRef.current
+      const bounds = map.getBounds()
+      
+      if (!bounds) return
+
+      // Use PlacesService to search for schools
+      const request: google.maps.places.PlaceSearchRequest = {
+        bounds: bounds,
+        type: 'school',
+        query: 'school'
+      }
+
+      placesServiceRef.current.nearbySearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+          results.forEach((place) => {
+            if (place.geometry && place.geometry.location && mapInstanceRef.current) {
+              const marker = new google.maps.Marker({
+                position: place.geometry.location,
+                map: mapInstanceRef.current,
+                title: place.name || 'School',
+                icon: {
+                  url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                    <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M14 0C6.268 0 0 6.268 0 14c0 14 14 22 14 22s14-8 14-22c0-7.732-6.268-14-14-14z" fill="#3b82f6"/>
+                      <path d="M14 8l-6 3v4h12v-4l-6-3zm-4 8v6h8v-6h-8z" fill="white"/>
+                    </svg>
+                  `)}`,
+                  scaledSize: new google.maps.Size(28, 36),
+                  anchor: new google.maps.Point(14, 36)
+                }
+              })
+
+              // Add info window with school name
+              if (place.name) {
+                const infoWindow = new google.maps.InfoWindow({
+                  content: `<div class="p-2"><div class="font-semibold text-sm text-slate-900">${place.name}</div></div>`
+                })
+
+                marker.addListener('click', () => {
+                  infoWindow.open(mapInstanceRef.current, marker)
+                })
+              }
+
+              schoolMarkersRef.current.push(marker)
+            }
+          })
+        }
+      })
+    } else {
+      // Clear school markers
+      schoolMarkersRef.current.forEach(marker => marker.setMap(null))
+      schoolMarkersRef.current = []
+    }
+  }, [layers])
+
+  // Reload schools when map bounds change (zoom/pan)
+  useEffect(() => {
+    if (!layers.schools || !mapInstanceRef.current || !placesServiceRef.current) return
+
+    const map = mapInstanceRef.current
+    const boundsChangedListener = map.addListener('bounds_changed', () => {
+      // Debounce the search
+      setTimeout(() => {
+        if (!layers.schools || !placesServiceRef.current) return
+
+        // Clear existing school markers
+        schoolMarkersRef.current.forEach(marker => marker.setMap(null))
+        schoolMarkersRef.current = []
+
+        const bounds = map.getBounds()
+        if (!bounds) return
+
+        const request: google.maps.places.PlaceSearchRequest = {
+          bounds: bounds,
+          type: 'school',
+          query: 'school'
+        }
+
+        placesServiceRef.current.nearbySearch(request, (results, status) => {
+          if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+            results.forEach((place) => {
+              if (place.geometry && place.geometry.location && mapInstanceRef.current) {
+                const marker = new google.maps.Marker({
+                  position: place.geometry.location,
+                  map: mapInstanceRef.current,
+                  title: place.name || 'School',
+                  icon: {
+                    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                      <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 0C6.268 0 0 6.268 0 14c0 14 14 22 14 22s14-8 14-22c0-7.732-6.268-14-14-14z" fill="#3b82f6"/>
+                        <path d="M14 8l-6 3v4h12v-4l-6-3zm-4 8v6h8v-6h-8z" fill="white"/>
+                      </svg>
+                    `)}`,
+                    scaledSize: new google.maps.Size(28, 36),
+                    anchor: new google.maps.Point(14, 36)
+                  }
+                })
+
+                if (place.name) {
+                  const infoWindow = new google.maps.InfoWindow({
+                    content: `<div class="p-2"><div class="font-semibold text-sm text-slate-900">${place.name}</div></div>`
+                  })
+
+                  marker.addListener('click', () => {
+                    infoWindow.open(mapInstanceRef.current, marker)
+                  })
+                }
+
+                schoolMarkersRef.current.push(marker)
+              }
+            })
+          }
+        })
+      }, 500)
+    })
+
+    return () => {
+      google.maps.event.removeListener(boundsChangedListener)
+    }
+  }, [layers.schools])
+
   if (error) {
     return (
       <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl">
@@ -416,8 +589,100 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         </div>
       )}
 
-      {/* Toggle Control for Irrelevant Properties */}
-      <div className="absolute top-4 right-4">
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        {/* Layer Toggle */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/50 p-2">
+          <div className="text-xs font-semibold text-slate-600 mb-2 px-2">Layers</div>
+          <div className="space-y-1">
+            <button
+              onClick={() => setLayers(prev => ({ ...prev, transit: !prev.transit }))}
+              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+                layers.transit 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span>Transit</span>
+              </div>
+              {layers.transit && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={() => setLayers(prev => ({ ...prev, traffic: !prev.traffic }))}
+              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+                layers.traffic 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Traffic</span>
+              </div>
+              {layers.traffic && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={() => setLayers(prev => ({ ...prev, bicycle: !prev.bicycle }))}
+              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+                layers.bicycle 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="5.5" cy="17.5" r="3.5" strokeWidth="2" />
+                  <circle cx="18.5" cy="17.5" r="3.5" strokeWidth="2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.5 17.5l3-7.5m10.5 0l-3 7.5M8.5 10h7M12 10v7.5M9 4l3 1.5 3-1.5" />
+                </svg>
+                <span>Bike lanes</span>
+              </div>
+              {layers.bicycle && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+            <button
+              onClick={() => setLayers(prev => ({ ...prev, schools: !prev.schools }))}
+              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+                layers.schools 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14v7m0-7l-6.16-3.422a12.083 12.083 0 00-.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 006.824-2.998 12.078 12.078 0 00-.665-6.479L12 14z" />
+                </svg>
+                <span>Schools</span>
+              </div>
+              {layers.schools && (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Toggle Control for Irrelevant Properties */}
         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/50 p-3">
           <div className="flex items-center space-x-3">
             <span className="text-sm font-medium text-slate-700">Show irrelevant</span>
