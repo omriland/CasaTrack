@@ -10,9 +10,11 @@ interface PropertyCardProps {
   onDelete: (id: string) => void
   onViewNotes: (property: Property) => void
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
+  notesRefreshKey?: number
+  notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate }: PropertyCardProps) {
+export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate, notesRefreshKey, notesBump }: PropertyCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [notesCount, setNotesCount] = useState<number>(0)
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
@@ -31,7 +33,13 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   useEffect(() => {
     loadNotesCount()
-  }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [property.id, notesRefreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!notesBump) return
+    if (notesBump.id !== property.id) return
+    setNotesCount((prev) => Math.max(0, prev + notesBump.delta))
+  }, [notesBump?.nonce, property.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setLocalRooms(property.rooms)

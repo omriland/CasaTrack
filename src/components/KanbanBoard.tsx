@@ -25,7 +25,6 @@ function DroppableColumn({
   children,
   title,
   count,
-  color,
   bgColor,
   isCollapsed,
   onToggleCollapse,
@@ -36,7 +35,6 @@ function DroppableColumn({
   children: React.ReactNode
   title: string
   count: number
-  color: string
   bgColor: string
   isCollapsed: boolean
   onToggleCollapse: () => void
@@ -309,7 +307,6 @@ export default function KanbanBoard({
                   id={status}
                   title={status}
                   count={columnProperties.length}
-                  color={color}
                   bgColor={bgColor}
                   isCollapsed={isCollapsed}
                   onToggleCollapse={() => toggleColumnCollapse(status)}
