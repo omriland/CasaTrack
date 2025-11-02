@@ -292,7 +292,7 @@ export default function KanbanBoard({
         onDragEnd={handleDragEnd}
       >
         <div className="kanban-scroll flex gap-3 h-full overflow-x-auto px-4 py-2">
-          {STATUSES.map(({ status, color, bgColor }) => {
+          {STATUSES.map(({ status, bgColor }) => {
             const columnProperties = getPropertiesByStatus(status)
             const isCollapsed = collapsedColumns.has(status)
 

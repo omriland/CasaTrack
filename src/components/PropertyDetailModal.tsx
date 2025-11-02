@@ -12,6 +12,8 @@ interface PropertyDetailModalProps {
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
   onPropertyUpdate?: (updatedProperty: Property) => void
   onDataRefresh?: () => void
+  onNotesChanged?: () => void
+  onNotesDelta?: (propertyId: string, delta: number) => void
 }
 
 export default function PropertyDetailModal({
@@ -21,7 +23,9 @@ export default function PropertyDetailModal({
   onDelete,
   onStatusUpdate,
   onPropertyUpdate,
-  onDataRefresh
+  onDataRefresh,
+  onNotesChanged,
+  onNotesDelta
 }: PropertyDetailModalProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
