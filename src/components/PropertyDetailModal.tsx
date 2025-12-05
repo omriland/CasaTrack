@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Property, PropertyStatus, Note } from '@/types/property'
+import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
+import { getPropertyAttachments, getAttachmentUrl, deleteAttachment } from '@/lib/attachments'
 
 interface PropertyDetailModalProps {
   property: Property
@@ -39,10 +40,45 @@ export default function PropertyDetailModal({
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [isMac, setIsMac] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false)
+  const [deletingAttachment, setDeletingAttachment] = useState<string | null>(null)
+  const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null)
 
   useEffect(() => {
     loadNotes()
+    loadAttachments()
   }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadAttachments = async () => {
+    setAttachmentsLoading(true)
+    try {
+      const data = await getPropertyAttachments(property.id)
+      setAttachments(data)
+    } catch (error) {
+      console.error('Error loading attachments:', error)
+    } finally {
+      setAttachmentsLoading(false)
+    }
+  }
+
+  const handleDeleteAttachment = async (attachmentId: string) => {
+    if (!confirm('Are you sure you want to delete this attachment?')) return
+
+    setDeletingAttachment(attachmentId)
+    try {
+      await deleteAttachment(attachmentId)
+      setAttachments(attachments.filter(a => a.id !== attachmentId))
+      if (selectedAttachment?.id === attachmentId) {
+        setSelectedAttachment(null)
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete attachment')
+    } finally {
+      setDeletingAttachment(null)
+    }
+  }
 
   useEffect(() => {
     // Detect Mac for keyboard shortcut display
@@ -499,6 +535,75 @@ export default function PropertyDetailModal({
                 )}
               </div>
 
+              {/* Attachments Section */}
+              {attachmentsLoading ? (
+                <div className="mb-8 flex items-center justify-center py-8">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <span className="ml-2 text-sm text-slate-600">Loading attachments...</span>
+                </div>
+              ) : attachments.length > 0 && (
+                <div className="mb-8">
+                  <div className="bg-slate-50 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Attachments</h3>
+                      <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {attachments.map((attachment) => {
+                        const url = getAttachmentUrl(attachment.file_path)
+                        const isDeleting = deletingAttachment === attachment.id
+                        return (
+                          <div
+                            key={attachment.id}
+                            className={`relative group aspect-video rounded-lg overflow-hidden border border-slate-200 cursor-pointer transition-all hover:shadow-lg ${
+                              isDeleting ? 'opacity-50' : ''
+                            }`}
+                            onClick={() => setSelectedAttachment(attachment)}
+                          >
+                            {attachment.file_type === 'image' ? (
+                              <img
+                                src={url}
+                                alt={attachment.file_name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <>
+                                <video
+                                  src={url}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                >
+                                  <source src={url} type={attachment.mime_type} />
+                                </video>
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                              </>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteAttachment(attachment.id)
+                              }}
+                              disabled={isDeleting}
+                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                              title="Delete attachment"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Full Width Description */}
               <div className="mb-8">
                 <div className="bg-slate-50 rounded-xl p-6">
@@ -686,6 +791,47 @@ export default function PropertyDetailModal({
       </div>
 
       {/* Delete Confirmation Modal */}
+      {/* Attachment Lightbox */}
+      {selectedAttachment && (
+        <div
+          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[70] animate-fade-in"
+          onClick={() => setSelectedAttachment(null)}
+        >
+          <div
+            className="relative max-w-7xl max-h-[95vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedAttachment(null)}
+              className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all z-10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {selectedAttachment.file_type === 'image' ? (
+              <img
+                src={getAttachmentUrl(selectedAttachment.file_path)}
+                alt={selectedAttachment.file_name}
+                className="max-w-full max-h-full object-contain rounded-lg"
+              />
+            ) : (
+              <video
+                src={getAttachmentUrl(selectedAttachment.file_path)}
+                controls
+                autoPlay
+                className="max-w-full max-h-full rounded-lg"
+              >
+                <source src={getAttachmentUrl(selectedAttachment.file_path)} type={selectedAttachment.mime_type} />
+              </video>
+            )}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-lg text-sm">
+              {selectedAttachment.file_name}
+            </div>
+          </div>
+        </div>
+      )}
+
       {showDeleteConfirm && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-60 animate-fade-in"

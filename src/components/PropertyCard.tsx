@@ -1,8 +1,9 @@
 'use client'
 
-import { Property, PropertyStatus, Note } from '@/types/property'
+import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { useState, useEffect, useRef } from 'react'
 import { getPropertyNotes, updatePropertyStatus, updateProperty } from '@/lib/properties'
+import { getPropertyAttachments, getAttachmentUrl } from '@/lib/attachments'
 
 interface PropertyCardProps {
   property: Property
@@ -30,10 +31,25 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const [localRooms, setLocalRooms] = useState<number>(property.rooms)
   const [localSquareMeters, setLocalSquareMeters] = useState<number | null>(property.square_meters)
   const roomsPickerRef = useRef<HTMLDivElement>(null)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false)
 
   useEffect(() => {
     loadNotesCount()
+    loadAttachments()
   }, [property.id, notesRefreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadAttachments = async () => {
+    setAttachmentsLoading(true)
+    try {
+      const data = await getPropertyAttachments(property.id)
+      setAttachments(data)
+    } catch (error) {
+      console.error('Error loading attachments:', error)
+    } finally {
+      setAttachmentsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!notesBump) return
@@ -480,6 +496,43 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
+          </div>
+        </div>
+      )}
+
+      {/* Attachments */}
+      {attachments.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Attachments</span>
+            <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {attachments.slice(0, 4).map((attachment) => {
+              const url = getAttachmentUrl(attachment.file_path)
+              return (
+                <div key={attachment.id} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                  {attachment.file_type === 'image' ? (
+                    <img
+                      src={url}
+                      alt={attachment.file_name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {attachments.length > 4 && (
+              <div className="aspect-square rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
+                <span className="text-xs font-medium text-slate-600">+{attachments.length - 4}</span>
+              </div>
+            )}
           </div>
         </div>
       )}

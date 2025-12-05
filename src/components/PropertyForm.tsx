@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Property, PropertyInsert, PropertySource, PropertyType, PropertyStatus } from '@/types/property'
+import { Property, PropertyInsert, PropertySource, PropertyType, PropertyStatus, Attachment } from '@/types/property'
 import AddressAutocomplete from './AddressAutocomplete'
+import AttachmentUpload from './AttachmentUpload'
+import { getPropertyAttachments } from '@/lib/attachments'
 
 interface PropertyFormProps {
   property?: Property
@@ -48,6 +50,31 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     message: string
     fieldsCount?: number
   }>({ show: false, success: false, message: '' })
+
+  // State for attachments
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [loadingAttachments, setLoadingAttachments] = useState(false)
+
+  // Load attachments when editing existing property
+  useEffect(() => {
+    if (property?.id) {
+      loadAttachments(property.id)
+    } else {
+      setAttachments([])
+    }
+  }, [property?.id])
+
+  const loadAttachments = async (propertyId: string) => {
+    setLoadingAttachments(true)
+    try {
+      const data = await getPropertyAttachments(propertyId)
+      setAttachments(data)
+    } catch (error) {
+      console.error('Error loading attachments:', error)
+    } finally {
+      setLoadingAttachments(false)
+    }
+  }
 
   const geocodeNormalized = async (address: string): Promise<{ lat: number; lng: number } | undefined> => {
     const normalized = address.includes('ישראל') || address.includes('Israel')
@@ -703,6 +730,38 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 </div>
               </div>
             </div>
+
+            {/* Attachments - only show when editing existing property */}
+            {property?.id && (
+              <div>
+                {loadingAttachments ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="ml-2 text-sm text-slate-600">Loading attachments...</span>
+                  </div>
+                ) : (
+                  <AttachmentUpload
+                    propertyId={property.id}
+                    attachments={attachments}
+                    onAttachmentsChange={setAttachments}
+                  />
+                )}
+              </div>
+            )}
+
+            {!property?.id && (
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-start space-x-3">
+                  <svg className="w-5 h-5 text-slate-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">Attachments</p>
+                    <p className="text-xs text-slate-500 mt-1">You can add photos and videos after creating the property.</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
               <div className="flex items-center">
