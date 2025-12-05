@@ -156,7 +156,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       const marker = new google.maps.Marker({
         position: { lat: property.latitude!, lng: property.longitude! },
         map: mapInstanceRef.current,
-        title: property.address,
+        title: property.title,
         icon: {
           url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
             <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -220,7 +220,8 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         const infoWindow = new google.maps.InfoWindow({
           content: `
             <div class="p-3 max-w-xs">
-              <h3 class="font-semibold text-slate-900 mb-2">${property.address}</h3>
+              <h3 class="font-semibold text-slate-900 mb-1">${property.title}</h3>
+              <div class="text-xs text-slate-500 mb-2">${property.address}</div>
               <div class="space-y-1 text-sm text-slate-600">
                 <div class="flex justify-between">
                   <span>Rooms:</span>
@@ -228,16 +229,18 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                 </div>
                 <div class="flex justify-between">
                   <span>Size:</span>
-                  <span class="font-medium">${property.square_meters}m²</span>
+                  <span class="font-medium">${property.square_meters !== null ? property.square_meters + 'm²' : 'Not set'}</span>
                 </div>
                 <div class="flex justify-between">
                   <span>Price:</span>
-                  <span class="font-medium">₪${property.asked_price.toLocaleString()}</span>
+                  <span class="font-medium">${property.asked_price !== null ? '₪' + property.asked_price.toLocaleString() : 'Not set'}</span>
                 </div>
+                ${property.price_per_meter !== null ? `
                 <div class="flex justify-between">
                   <span>Per m²:</span>
                   <span class="font-medium">₪${property.price_per_meter.toLocaleString()}</span>
                 </div>
+                ` : ''}
                 <div class="flex justify-between">
                   <span>Status:</span>
                   <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
@@ -486,8 +489,11 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-lg text-slate-900 leading-tight line-clamp-2">
-                  {hoveredProperty.address}
+                  {hoveredProperty.title}
                 </h3>
+                <div className="text-xs text-slate-500 mt-0.5 line-clamp-1" title={hoveredProperty.address}>
+                  {hoveredProperty.address}
+                </div>
                 <div className="mt-1">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(hoveredProperty.status)}`}>
                     <div className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 opacity-60"></div>
@@ -509,28 +515,43 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                 <span className="text-sm font-semibold text-slate-900">{hoveredProperty.rooms}</span>
               </div>
 
-              <div className="bg-slate-50 rounded-xl p-2.5">
+              <div className={`rounded-xl p-2.5 ${hoveredProperty.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
                 <div className="flex items-center space-x-1.5 mb-1">
-                  <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-3 h-3 ${hoveredProperty.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
                   </svg>
-                  <span className="text-xs font-medium text-slate-600">Size</span>
+                  <span className={`text-xs font-medium ${hoveredProperty.square_meters === null ? 'text-amber-700' : 'text-slate-600'}`}>Size</span>
                 </div>
-                <span className="text-sm font-semibold text-slate-900">{hoveredProperty.square_meters} m²</span>
+                <span className={`text-sm font-semibold ${hoveredProperty.square_meters === null ? 'text-amber-700' : 'text-slate-900'}`}>
+                  {hoveredProperty.square_meters === null ? 'Not set' : `${hoveredProperty.square_meters} m²`}
+                </span>
               </div>
             </div>
 
             {/* Price Section */}
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-3 mb-3">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-medium text-slate-600">Asking Price</span>
-                <span className="text-lg font-bold text-slate-900">₪{formatPrice(hoveredProperty.asked_price)}</span>
+            {hoveredProperty.asked_price !== null ? (
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-3 mb-3">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-medium text-slate-600">Asking Price</span>
+                  <span className="text-lg font-bold text-slate-900">₪{formatPrice(hoveredProperty.asked_price)}</span>
+                </div>
+                {hoveredProperty.price_per_meter !== null && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-slate-500">Price per m²</span>
+                    <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(hoveredProperty.price_per_meter))}</span>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between items-center text-xs">
-                <span className="text-slate-500">Price per m²</span>
-                <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(hoveredProperty.price_per_meter))}</span>
+            ) : (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-sm font-medium text-amber-700">Price not set</span>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Additional Details */}
             <div className="space-y-1.5 text-xs">

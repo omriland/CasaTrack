@@ -317,8 +317,11 @@ export default function PropertyDetailModal({
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0 mr-4">
                 <h2 className="text-2xl font-bold text-slate-900 line-clamp-2 leading-tight">
-                  {property.address}
+                  {property.title}
                 </h2>
+                <div className="text-sm text-slate-500 mt-1 line-clamp-1" title={property.address}>
+                  {property.address}
+                </div>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="relative" ref={statusDropdownRef}>
@@ -406,12 +409,21 @@ export default function PropertyDetailModal({
                     </div>
                     <div>
                       <div className="flex items-center space-x-2 mb-2">
-                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
                         </svg>
-                        <span className="text-sm font-medium text-slate-600">Size</span>
+                        <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : 'text-slate-600'}`}>Size</span>
                       </div>
-                      <span className="text-3xl font-bold text-slate-900">{property.square_meters} <span className="text-lg text-slate-600">m²</span></span>
+                      {property.square_meters === null ? (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xl font-semibold text-amber-700">Not set</span>
+                          <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <span className="text-3xl font-bold text-slate-900">{property.square_meters} <span className="text-lg text-slate-600">m²</span></span>
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center space-x-2 mb-2">
@@ -458,19 +470,33 @@ export default function PropertyDetailModal({
                 </div>
 
                 {/* Pricing */}
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6">
-                  <h3 className="text-sm font-semibold text-slate-600 mb-4 uppercase tracking-wide">Pricing</h3>
-                  <div className="space-y-6">
-                    <div>
-                      <span className="text-sm font-medium text-slate-600 block mb-1">Asking Price</span>
-                      <span className="text-4xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
-                    </div>
-                    <div className="pt-4 border-t border-slate-200">
-                      <span className="text-sm text-slate-500 block mb-1">Price per m²</span>
-                      <span className="text-2xl font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+                {property.asked_price !== null ? (
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6">
+                    <h3 className="text-sm font-semibold text-slate-600 mb-4 uppercase tracking-wide">Pricing</h3>
+                    <div className="space-y-6">
+                      <div>
+                        <span className="text-sm font-medium text-slate-600 block mb-1">Asking Price</span>
+                        <span className="text-4xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+                      </div>
+                      {property.price_per_meter !== null && (
+                        <div className="pt-4 border-t border-slate-200">
+                          <span className="text-sm text-slate-500 block mb-1">Price per m²</span>
+                          <span className="text-2xl font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                    <h3 className="text-sm font-semibold text-amber-700 mb-4 uppercase tracking-wide">Pricing</h3>
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-lg font-semibold text-amber-700">Price not set</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Full Width Description */}
@@ -681,7 +707,7 @@ export default function PropertyDetailModal({
               </div>
             </div>
             <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-              Are you sure you want to delete <strong>{property.address}</strong>? All associated notes and data will be permanently removed.
+              Are you sure you want to delete <strong>{property.title}</strong>? All associated notes and data will be permanently removed.
             </p>
             <div className="flex space-x-3">
               <button

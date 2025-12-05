@@ -26,9 +26,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const descPreviewRef = useRef<HTMLDivElement>(null)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const notesPreviewRef = useRef<HTMLDivElement>(null)
-  const [inlineEditing, setInlineEditing] = useState<null | { field: 'rooms' | 'square_meters'; value: number }>(null)
+  const [inlineEditing, setInlineEditing] = useState<null | { field: 'rooms' | 'square_meters'; value: number | null }>(null)
   const [localRooms, setLocalRooms] = useState<number>(property.rooms)
-  const [localSquareMeters, setLocalSquareMeters] = useState<number>(property.square_meters)
+  const [localSquareMeters, setLocalSquareMeters] = useState<number | null>(property.square_meters)
   const roomsPickerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -212,7 +212,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   }
 
   // Inline edit helpers
-  const openInlineEditor = (field: 'rooms' | 'square_meters', current: number) => {
+  const openInlineEditor = (field: 'rooms' | 'square_meters', current: number | null) => {
     setInlineEditing({ field, value: current })
   }
 
@@ -256,8 +256,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-lg text-slate-900 mb-1 line-clamp-2 leading-tight">
-            {property.address}
+            {property.title}
           </h3>
+          <div className="text-xs text-slate-500 mb-1 line-clamp-1" title={property.address}>
+            {property.address}
+          </div>
           <div className="text-xs text-slate-500 mb-2" title={formatExactDateTime(property.created_at)}>
             Added {getRelativeTime(property.created_at)}
           </div>
@@ -359,20 +362,20 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
 
-        <div className="relative bg-slate-50 rounded-xl p-3 select-none" onDoubleClick={() => openInlineEditor('square_meters', localSquareMeters)} title="Double-click to edit size">
+        <div className={`relative rounded-xl p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`} onDoubleClick={() => openInlineEditor('square_meters', localSquareMeters)} title="Double-click to edit size">
           <div className="flex items-center space-x-2 mb-1">
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
             </svg>
-            <span className="text-xs font-medium text-slate-600">Size</span>
+            <span className={`text-xs font-medium ${property.square_meters === null ? 'text-amber-700' : 'text-slate-600'}`}>Size</span>
           </div>
           {inlineEditing?.field === 'square_meters' ? (
             <div className="flex items-baseline space-x-2" onClick={(e) => e.stopPropagation()}>
               <input
                 type="number"
                 autoFocus
-                value={inlineEditing.value}
-                onChange={(e) => setInlineEditing({ field: 'square_meters', value: Number(e.target.value) })}
+                value={inlineEditing.value ?? ''}
+                onChange={(e) => setInlineEditing({ field: 'square_meters', value: e.target.value === '' ? null : Number(e.target.value) })}
                 onBlur={commitInlineEdit}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') commitInlineEdit()
@@ -380,13 +383,16 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 }}
                 className="w-24 px-3 py-1.5 text-base border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-slate-400"
                 min={0}
+                placeholder="Optional"
               />
               <span className="text-xs text-slate-500">m²</span>
             </div>
           ) : (
             <div className="flex flex-col">
-              <span className="text-lg font-semibold text-slate-900">{localSquareMeters} m²</span>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && (
+              <span className={`text-lg font-semibold ${localSquareMeters === null ? 'text-amber-700' : 'text-slate-900'}`}>
+                {localSquareMeters === null ? 'Add size' : `${localSquareMeters} m²`}
+              </span>
+              {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && (
                 <span className="text-xs text-slate-600 mt-0.5">+ {property.balcony_square_meters} m² balcony</span>
               )}
             </div>
@@ -395,16 +401,29 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       </div>
 
       {/* Price Section */}
-      <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <span className="text-sm font-medium text-slate-600">Asking Price</span>
-          <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+      {property.asked_price !== null ? (
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-slate-600">Asking Price</span>
+            <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+          </div>
+          {property.price_per_meter !== null && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-slate-500">Price per m²</span>
+              <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+            </div>
+          )}
         </div>
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-slate-500">Price per m²</span>
-          <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+      ) : (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+          <div className="flex items-center space-x-2">
+            <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm font-medium text-amber-700">Price not set</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Additional Details */}
       <div className="space-y-2 text-sm">
@@ -624,7 +643,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               </div>
             </div>
             <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-              Are you sure you want to delete <strong>{property.address}</strong>? All associated notes and data will be permanently removed.
+              Are you sure you want to delete <strong>{property.title}</strong>? All associated notes and data will be permanently removed.
             </p>
             <div className="flex space-x-3">
               <button

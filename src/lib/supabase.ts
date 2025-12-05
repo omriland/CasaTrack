@@ -11,11 +11,12 @@ export type Database = {
       properties: {
         Row: {
           id: string
+          title: string
           address: string
           rooms: number
-          square_meters: number
-          asked_price: number
-          price_per_meter: number
+          square_meters: number | null
+          asked_price: number | null
+          price_per_meter: number | null
           contact_name: string | null
           contact_phone: string | null
           source: 'Yad2' | 'Friends & Family' | 'Facebook' | 'Madlan' | 'Other'
@@ -30,11 +31,12 @@ export type Database = {
         }
         Insert: {
           id?: string
+          title: string
           address: string
           rooms: number
-          square_meters: number
-          asked_price: number
-          price_per_meter?: number
+          square_meters?: number | null
+          asked_price?: number | null
+          price_per_meter?: number | null
           contact_name?: string | null
           contact_phone?: string | null
           source: 'Yad2' | 'Friends & Family' | 'Facebook' | 'Madlan' | 'Other'
@@ -49,6 +51,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          title?: string
           address?: string
           rooms?: number
           square_meters?: number

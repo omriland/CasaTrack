@@ -342,7 +342,10 @@ export default function KanbanBoard({
         <DragOverlay>
           {activeProperty ? (
             <div className="bg-white rounded-xl shadow-2xl border-2 border-primary/40 p-4 opacity-95 rotate-2 scale-105 max-w-xs">
-              <div className="font-semibold text-sm text-slate-900 mb-2 line-clamp-2">
+              <div className="font-semibold text-sm text-slate-900 mb-1 line-clamp-2">
+                {activeProperty.title}
+              </div>
+              <div className="text-xs text-slate-500 mb-2 line-clamp-1" title={activeProperty.address}>
                 {activeProperty.address}
               </div>
               <div className="space-y-1.5 text-xs">
@@ -353,22 +356,37 @@ export default function KanbanBoard({
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-500">Size:</span>
-                    <span className="font-medium text-slate-700">
-                      {activeProperty.square_meters} m²
-                      {activeProperty.balcony_square_meters && activeProperty.balcony_square_meters > 0 && (
-                        <span className="text-slate-500 ml-1">+ {activeProperty.balcony_square_meters}</span>
+                    <span className={`font-medium ${activeProperty.square_meters === null ? 'text-amber-700' : 'text-slate-700'}`}>
+                      {activeProperty.square_meters === null ? 'Not set' : (
+                        <>
+                          {activeProperty.square_meters} m²
+                          {activeProperty.balcony_square_meters && activeProperty.balcony_square_meters > 0 && (
+                            <span className="text-slate-500 ml-1">+ {activeProperty.balcony_square_meters}</span>
+                          )}
+                        </>
                       )}
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
-                  <span className="font-semibold text-slate-900">
-                    ₪{new Intl.NumberFormat('en-US').format(activeProperty.asked_price)}
-                  </span>
-                  <span className="text-slate-500">
-                    ₪{new Intl.NumberFormat('en-US').format(Math.round(activeProperty.price_per_meter))}/m²
-                  </span>
-                </div>
+                {activeProperty.asked_price !== null ? (
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                    <span className="font-semibold text-slate-900">
+                      ₪{new Intl.NumberFormat('en-US').format(activeProperty.asked_price)}
+                    </span>
+                    {activeProperty.price_per_meter !== null && (
+                      <span className="text-slate-500">
+                        ₪{new Intl.NumberFormat('en-US').format(Math.round(activeProperty.price_per_meter))}/m²
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2 pt-1 border-t border-slate-100">
+                    <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-amber-700">Price not set</span>
+                  </div>
+                )}
               </div>
             </div>
           ) : null}

@@ -94,9 +94,14 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
     >
         <div className="space-y-3">
         <div className="flex justify-between items-start gap-2">
-          <h4 className="font-semibold text-base text-slate-900 line-clamp-2 flex-1 leading-tight">
-            {property.address}
-          </h4>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-base text-slate-900 line-clamp-2 leading-tight">
+              {property.title}
+            </h4>
+            <div className="text-xs text-slate-500 line-clamp-1 mt-0.5" title={property.address}>
+              {property.address}
+            </div>
+          </div>
           <div className="flex space-x-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             <button
               onClick={(e) => {
@@ -161,22 +166,35 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                 </div>
               )}
             </div>
-            <div className="inline-flex flex-col items-start bg-slate-50 border border-slate-200 rounded px-2.5 py-1.5">
+            <div className={`inline-flex flex-col items-start rounded px-2.5 py-1.5 ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50 border border-slate-200'}`}>
               <div className="flex items-center space-x-1.5">
-                <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className={`w-3.5 h-3.5 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
                 </svg>
-                <span className="text-sm font-medium text-slate-700">{property.square_meters} m²</span>
+                <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : 'text-slate-700'}`}>
+                  {property.square_meters === null ? 'Add size' : `${property.square_meters} m²`}
+                </span>
               </div>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && (
+              {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters !== null && (
                 <span className="text-xs text-slate-500 mt-0.5 ml-5">+ {property.balcony_square_meters} m² balcony</span>
               )}
             </div>
           </div>
-          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-            <span className="text-lg font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
-            <span className="text-sm text-slate-500 font-medium">₪{formatPrice(Math.round(property.price_per_meter))}/m²</span>
-          </div>
+          {property.asked_price !== null ? (
+            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+              <span className="text-lg font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+              {property.price_per_meter !== null && (
+                <span className="text-sm text-slate-500 font-medium">₪{formatPrice(Math.round(property.price_per_meter))}/m²</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-100">
+              <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-amber-700">Price not set</span>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between items-center pt-2 border-t border-slate-100">

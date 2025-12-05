@@ -17,10 +17,11 @@ const STATUSES: PropertyStatus[] = ['Seen', 'Interested', 'Contacted Realtor', '
 
 export default function PropertyForm({ property, onSubmit, onCancel, loading = false }: PropertyFormProps) {
   const [formData, setFormData] = useState<PropertyInsert>({
+    title: property?.title || '',
     address: property?.address || '',
     rooms: property?.rooms || 0,
-    square_meters: property?.square_meters || 0,
-    asked_price: property?.asked_price || 0,
+    square_meters: property?.square_meters ?? null,
+    asked_price: property?.asked_price ?? null,
     contact_name: property?.contact_name || '',
     contact_phone: property?.contact_phone || '',
     source: property?.source || 'Yad2',
@@ -151,19 +152,24 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     setFormData(prev => ({
       ...prev,
       [name]: name === 'rooms' || name === 'square_meters' || name === 'asked_price' || name === 'balcony_square_meters'
-        ? Number(value)
+        ? (value === '' ? null : Number(value))
         : value || null
     }))
   }
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
     console.log('handleAddressChange called with:', { address, coordinates })
-    setFormData(prev => ({
-      ...prev,
-      address,
-      latitude: coordinates?.lat || prev.latitude,
-      longitude: coordinates?.lng || prev.longitude
-    }))
+    setFormData(prev => {
+      // Auto-populate title with address if title is empty
+      const newTitle = prev.title.trim() === '' ? address : prev.title
+      return {
+        ...prev,
+        title: newTitle,
+        address,
+        latitude: coordinates?.lat || prev.latitude,
+        longitude: coordinates?.lng || prev.longitude
+      }
+    })
   }
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -281,12 +287,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
         ).length
 
         // Update form data with extracted information (only non-empty values)
+        const extractedAddress = extractedData.address || formData.address
         const updatedFormData = {
           ...formData,
-          address: extractedData.address || formData.address,
+          title: formData.title.trim() === '' ? extractedAddress : formData.title, // Auto-populate title if empty
+          address: extractedAddress,
           rooms: extractedData.rooms > 0 ? extractedData.rooms : formData.rooms,
-          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : formData.square_meters,
-          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : formData.asked_price,
+          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : formData.square_meters ?? null,
+          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : formData.asked_price ?? null,
           contact_name: extractedData.contact_name || formData.contact_name,
           contact_phone: extractedData.contact_phone || formData.contact_phone,
           property_type: extractedData.property_type || formData.property_type,
@@ -330,8 +338,8 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     // Remove all non-digit characters
     const numericValue = inputValue.replace(/[^\d]/g, '')
     
-    // Convert to number
-    const numberValue = numericValue === '' ? 0 : parseInt(numericValue, 10)
+    // Convert to number (null if empty)
+    const numberValue = numericValue === '' ? null : parseInt(numericValue, 10)
     
     // Update form data with the numeric value
     setFormData(prev => ({
@@ -340,7 +348,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }))
     
     // Update formatted display value
-    setFormattedPrice(numberValue === 0 ? '' : numberValue.toLocaleString('en-US'))
+    setFormattedPrice(numberValue === null ? '' : numberValue.toLocaleString('en-US'))
   }
 
 
@@ -374,6 +382,23 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Title *
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="Enter property title"
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                tabIndex={1}
+              />
+              <p className="mt-1 text-xs text-slate-500">This will be auto-filled with the address if you enter the address first</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Address *
               </label>
               <div className="relative">
@@ -382,7 +407,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleAddressChange}
                 placeholder="Enter property address"
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                  tabIndex={1}
+                  tabIndex={2}
                 />
                 {formData.latitude && formData.longitude && (
                   <div className="absolute -bottom-6 left-0 flex items-center space-x-1 text-xs text-primary">
@@ -408,7 +433,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleChange}
                 placeholder="https://www.yad2.co.il/..."
                   className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                  tabIndex={2}
+                  tabIndex={3}
                 />
                 <button
                   type="button"
@@ -456,7 +481,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                         ? 'bg-primary text-primary-foreground shadow-lg'
                         : 'bg-white/70 text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
                     }`}
-                    tabIndex={3}
+                    tabIndex={4}
                   >
                     {roomCount}
                   </button>
@@ -467,17 +492,16 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Square Meters *
+                  Square Meters
                 </label>
                 <div className="relative">
                 <input
                   type="number"
                   name="square_meters"
-                  required
-                  min="1"
-                    value={formData.square_meters || ''}
+                  min="0"
+                    value={formData.square_meters ?? ''}
                   onChange={handleChange}
-                    placeholder="0"
+                    placeholder="Optional"
                     className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                     tabIndex={4}
                   />
@@ -516,18 +540,16 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             {/* Price row */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Asked Price (ILS) *
+                Asked Price (ILS)
               </label>
               <div className="relative max-w-md">
                 <input
                   type="text"
                   name="asked_price"
-                  required
                   value={formattedPrice}
                   onChange={handlePriceChange}
-                  placeholder="0"
-                  className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                  tabIndex={5}
+                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  tabIndex={7}
                 />
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                   <span className="text-slate-500 text-sm font-medium">₪</span>
@@ -540,15 +562,19 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
             {(() => {
               const balcony = formData.balcony_square_meters ?? 0
-              const effectiveArea = (formData.square_meters || 0) + 0.5 * balcony
-              return formData.asked_price > 0 && effectiveArea > 0
+              const squareMeters = formData.square_meters ?? 0
+              const effectiveArea = squareMeters + 0.5 * balcony
+              return formData.asked_price !== null && formData.asked_price > 0 && effectiveArea > 0
             })() && (
               <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
                 <p className="text-sm font-medium text-slate-700">
                   Price per m²: ₪{(() => {
                     const balcony = formData.balcony_square_meters ?? 0
-                    const effectiveArea = (formData.square_meters || 0) + 0.5 * balcony
-                    return (formData.asked_price / effectiveArea).toLocaleString('en-US', { maximumFractionDigits: 0 })
+                    const squareMeters = formData.square_meters ?? 0
+                    const effectiveArea = squareMeters + 0.5 * balcony
+                    return formData.asked_price && effectiveArea > 0 
+                      ? (formData.asked_price / effectiveArea).toLocaleString('en-US', { maximumFractionDigits: 0 })
+                      : 'N/A'
                   })()}
                 </p>
               </div>
@@ -595,7 +621,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.source}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
-                    tabIndex={8}
+                    tabIndex={9}
                   >
                     {SOURCES.map(source => (
                       <option key={source} value={source}>{source}</option>
@@ -644,7 +670,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.status}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
-                  tabIndex={10}
+                  tabIndex={11}
                 >
                   {STATUSES.map(status => (
                     <option key={status} value={status}>{status}</option>
@@ -670,7 +696,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   placeholder="Additional details about the property"
                   className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right text-slate-900 min-h-[100px] max-h-[200px]"
                   dir="rtl"
-                  tabIndex={11}
+                  tabIndex={12}
                 />
                 <div className="flex justify-end text-xs text-slate-500">
                   <span>Enter for new line</span>
@@ -687,7 +713,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   checked={formData.apartment_broker || false}
                   onChange={handleCheckboxChange}
                   className="w-5 h-5 text-primary bg-white border-2 border-slate-300 rounded focus:ring-primary focus:ring-2 transition-all"
-                  tabIndex={12}
+                  tabIndex={13}
                 />
                 <label htmlFor="apartment_broker" className="ml-3 text-sm font-semibold text-slate-700 cursor-pointer">
                   Has Apartment Broker
@@ -710,7 +736,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 type="button"
                 onClick={onCancel}
                 className="px-6 py-3 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 font-medium transition-all"
-                tabIndex={14}
+                tabIndex={15}
               >
                 <div className="flex items-center space-x-2">
                   <span>Cancel</span>
@@ -723,7 +749,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 type="submit"
                 disabled={loading}
                 className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                tabIndex={13}
+                tabIndex={14}
               >
                 {loading ? (
                   <div className="flex items-center space-x-2">
