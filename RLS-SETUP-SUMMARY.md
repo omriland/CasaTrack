@@ -56,3 +56,4 @@ After setup, test that uploads work:
 - Solution: Check that DELETE policy exists and is enabled
 - Verify policy allows operations on `property-attachments` bucket
 
+

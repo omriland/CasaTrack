@@ -266,8 +266,17 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     })
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if user is selecting text
+    if (window.getSelection()?.toString()) return
+    onViewNotes(property)
+  }
+
   return (
-    <div className="group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in">
+    <div 
+      className="group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in cursor-pointer"
+      onClick={handleCardClick}
+    >
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1 min-w-0">
@@ -282,7 +291,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           </div>
           <div className="relative inline-block" ref={statusDropdownRef}>
             <button
-              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+              onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
               className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm whitespace-nowrap ${getStatusColor(property.status)}`}
             >
               <div className="w-1.5 h-1.5 rounded-full bg-current mr-2 opacity-60"></div>
@@ -297,7 +306,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 {allStatuses.map((status) => (
                   <button
                     key={status}
-                    onClick={() => handleStatusChange(status)}
+                    onClick={(e) => { e.stopPropagation(); handleStatusChange(status) }}
                     className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
                       status === property.status ? 'bg-slate-50 font-medium' : ''
                     }`}
@@ -317,7 +326,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
         <div className="flex space-x-1 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => onEdit(property)}
+            onClick={(e) => { e.stopPropagation(); onEdit(property) }}
             className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
             title="Edit property"
           >
@@ -326,7 +335,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </svg>
           </button>
           <button
-            onClick={() => setShowDeleteConfirm(true)}
+            onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
             className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
             title="Delete property"
           >
@@ -341,7 +350,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div
           className={`relative rounded-xl p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
-          onDoubleClick={() => openInlineEditor('rooms', property.rooms)}
+          onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('rooms', property.rooms) }}
           title="Double-click to edit rooms"
         >
           <div className="flex items-center space-x-2 mb-1">
@@ -363,7 +372,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   <button
                     key={roomCount}
                     type="button"
-                    onClick={() => quickSetRooms(roomCount)}
+                    onClick={(e) => { e.stopPropagation(); quickSetRooms(roomCount) }}
                     className={`w-10 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 flex items-center justify-center ${
                       localRooms === roomCount
                         ? 'bg-primary text-primary-foreground shadow'
@@ -378,7 +387,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
 
-        <div className={`relative rounded-xl p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`} onDoubleClick={() => openInlineEditor('square_meters', localSquareMeters)} title="Double-click to edit size">
+        <div className={`relative rounded-xl p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
           <div className="flex items-center space-x-2 mb-1">
             <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
@@ -488,6 +497,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               href={property.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="flex items-center space-x-2 text-primary hover:text-primary/80 transition-colors group"
               title="Open property listing"
             >
@@ -511,7 +521,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             {attachments.slice(0, 4).map((attachment) => {
               const url = getAttachmentUrl(attachment.file_path)
               return (
-                <div key={attachment.id} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                <div key={attachment.id} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200" onClick={(e) => e.stopPropagation()}>
                   {attachment.file_type === 'image' ? (
                     <img
                       src={url}
@@ -555,7 +565,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                   <button
-                    onClick={handleCopyPhone}
+                    onClick={(e) => { e.stopPropagation(); handleCopyPhone() }}
                     className="relative text-sm text-slate-600 hover:text-blue-600 transition-colors cursor-pointer group/phone"
                     title="Click to copy phone number"
                   >
@@ -585,6 +595,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             className="text-sm text-slate-600 leading-relaxed line-clamp-3 text-right cursor-help"
             dir="rtl"
             style={{ unicodeBidi: 'plaintext' }}
+            onClick={(e) => e.stopPropagation()}
             onMouseEnter={() => setShowDescPreview(true)}
             onMouseLeave={() => setShowDescPreview(false)}
             dangerouslySetInnerHTML={{ __html: property.description }}
@@ -613,7 +624,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       <div className="mt-4 pt-4 border-t border-slate-100">
         <div className="relative" ref={notesPreviewRef}>
           <button
-            onClick={() => onViewNotes(property)}
+            onClick={(e) => { e.stopPropagation(); onViewNotes(property) }}
             onMouseEnter={handleNotesHover}
             onMouseLeave={handleNotesLeave}
             className="flex items-center justify-between w-full text-sm font-medium text-slate-700 hover:text-primary transition-colors group"

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
-import { getPropertyAttachments, getAttachmentUrl, deleteAttachment } from '@/lib/attachments'
+import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
 
 interface PropertyDetailModalProps {
   property: Property
@@ -44,6 +44,8 @@ export default function PropertyDetailModal({
   const [attachmentsLoading, setAttachmentsLoading] = useState(false)
   const [deletingAttachment, setDeletingAttachment] = useState<string | null>(null)
   const [selectedAttachment, setSelectedAttachment] = useState<Attachment | null>(null)
+  const [uploadingAttachment, setUploadingAttachment] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadNotes()
@@ -77,6 +79,26 @@ export default function PropertyDetailModal({
       alert(error instanceof Error ? error.message : 'Failed to delete attachment')
     } finally {
       setDeletingAttachment(null)
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setUploadingAttachment(true)
+    try {
+      const uploadPromises = Array.from(files).map(file => uploadAttachment(property.id, file))
+      const newAttachments = await Promise.all(uploadPromises)
+      setAttachments(prev => [...prev, ...newAttachments])
+    } catch (error) {
+      console.error('Error uploading files:', error)
+      alert(error instanceof Error ? error.message : 'Failed to upload files')
+    } finally {
+      setUploadingAttachment(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -345,7 +367,7 @@ export default function PropertyDetailModal({
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col animate-fade-in"
+          className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col animate-fade-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -536,18 +558,55 @@ export default function PropertyDetailModal({
               </div>
 
               {/* Attachments Section */}
-              {attachmentsLoading ? (
-                <div className="mb-8 flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                  <span className="ml-2 text-sm text-slate-600">Loading attachments...</span>
-                </div>
-              ) : attachments.length > 0 && (
-                <div className="mb-8">
-                  <div className="bg-slate-50 rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Attachments</h3>
-                      <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
+              <div className="mb-8">
+                <div className="bg-slate-50 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Attachments</h3>
+                    <div className="flex items-center space-x-3">
+                      {attachments.length > 0 && (
+                        <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
+                      )}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={handleFileUpload}
+                        disabled={uploadingAttachment}
+                        className="hidden"
+                        id="detail-attachment-upload"
+                      />
+                      <label
+                        htmlFor="detail-attachment-upload"
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${
+                          uploadingAttachment 
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        }`}
+                      >
+                        {uploadingAttachment ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Add Files</span>
+                          </>
+                        )}
+                      </label>
                     </div>
+                  </div>
+                  
+                  {attachmentsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      <span className="ml-2 text-sm text-slate-600">Loading attachments...</span>
+                    </div>
+                  ) : attachments.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {attachments.map((attachment) => {
                         const url = getAttachmentUrl(attachment.file_path)
@@ -600,9 +659,17 @@ export default function PropertyDetailModal({
                         )
                       })}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-slate-500">No attachments yet</p>
+                      <p className="text-xs text-slate-400 mt-1">Click &quot;Add Files&quot; to upload photos or videos</p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Full Width Description */}
               <div className="mb-8">

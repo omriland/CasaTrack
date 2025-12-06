@@ -37,3 +37,4 @@ CREATE INDEX idx_attachments_created_at ON attachments(created_at);
 -- File size limit: 50MB (or your preferred limit)
 -- Allowed MIME types: image/*, video/*
 
+

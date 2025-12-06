@@ -414,7 +414,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <input
                 type="text"
                 name="title"
-                value={formData.title}
+                value={formData.title || ''}
                 onChange={handleChange}
                 placeholder="Enter property title"
                 required

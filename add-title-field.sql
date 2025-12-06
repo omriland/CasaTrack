@@ -17,3 +17,4 @@ ALTER TABLE properties
 -- Note: After running this migration, you may want to add an index on title if you plan to search by it
 -- CREATE INDEX idx_properties_title ON properties(title);
 
+
