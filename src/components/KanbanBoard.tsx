@@ -341,7 +341,7 @@ export default function KanbanBoard({
 
         <DragOverlay>
           {activeProperty ? (
-            <div className="bg-white rounded-xl shadow-2xl border-2 border-primary/40 p-4 opacity-95 rotate-2 scale-105 max-w-xs">
+            <div className="bg-white rounded-lg shadow-2xl border-2 border-primary/40 p-4 opacity-95 rotate-2 scale-105 max-w-xs">
               <div className="font-semibold text-sm text-slate-900 mb-1 line-clamp-2">
                 {activeProperty.title}
               </div>

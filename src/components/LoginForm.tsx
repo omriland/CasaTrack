@@ -33,7 +33,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl mb-6 shadow-lg">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-lg mb-6 shadow-lg">
             <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none">
               <path d="M3 11L12 4L21 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <path d="M5 10.5V19a2 2 0 002 2h10a2 2 0 002-2v-8.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -45,7 +45,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-xl border border-white/20 p-8 animate-fade-in">
+        <div className="bg-white/80 backdrop-blur-sm rounded-lg shadow-xl border border-white/20 p-8 animate-fade-in">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-semibold text-slate-700">
@@ -95,7 +95,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             <button
               type="submit"
               disabled={loading || !password.trim()}
-              className="w-full py-3 px-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold rounded-xl hover:from-primary/90 hover:to-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full py-3 px-4 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground font-semibold rounded-lg hover:from-primary/90 hover:to-primary/80 focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               {loading ? (
                 <div className="flex items-center justify-center space-x-2">

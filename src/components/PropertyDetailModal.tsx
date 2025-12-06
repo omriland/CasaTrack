@@ -367,7 +367,7 @@ export default function PropertyDetailModal({
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col animate-fade-in"
+          className="bg-white rounded-lg shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[85vh] overflow-hidden flex flex-col animate-fade-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -395,7 +395,7 @@ export default function PropertyDetailModal({
                   </button>
 
                   {showStatusDropdown && (
-                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
                       {allStatuses.map((status) => (
                         <button
                           key={status}
@@ -453,7 +453,7 @@ export default function PropertyDetailModal({
               {/* Top Row: Property Details and Pricing */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {/* Property Details */}
-                <div className="bg-slate-50 rounded-xl p-6">
+                <div className="bg-slate-50 rounded-lg p-6">
                   <h3 className="text-sm font-semibold text-slate-600 mb-4 uppercase tracking-wide">Property Details</h3>
                   <div className="grid grid-cols-2 gap-6">
                     <div>
@@ -529,7 +529,7 @@ export default function PropertyDetailModal({
 
                 {/* Pricing */}
                 {property.asked_price !== null ? (
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-6">
                     <h3 className="text-sm font-semibold text-slate-600 mb-4 uppercase tracking-wide">Pricing</h3>
                     <div className="space-y-6">
                       <div>
@@ -545,7 +545,7 @@ export default function PropertyDetailModal({
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
                     <h3 className="text-sm font-semibold text-amber-700 mb-4 uppercase tracking-wide">Pricing</h3>
                     <div className="flex items-center space-x-3">
                       <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -559,7 +559,7 @@ export default function PropertyDetailModal({
 
               {/* Attachments Section */}
               <div className="mb-8">
-                <div className="bg-slate-50 rounded-xl p-6">
+                <div className="bg-slate-50 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Attachments</h3>
                     <div className="flex items-center space-x-3">
@@ -673,7 +673,7 @@ export default function PropertyDetailModal({
 
               {/* Full Width Description */}
               <div className="mb-8">
-                <div className="bg-slate-50 rounded-xl p-6">
+                <div className="bg-slate-50 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Description</h3>
                     {!editingDescription && (
@@ -687,7 +687,7 @@ export default function PropertyDetailModal({
                         value={tempDescription}
                         onChange={(e) => setTempDescription(e.target.value)}
                         placeholder="Add a description for this property..."
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-base text-right text-slate-900 min-h-[150px] max-h-[300px]"
+                        className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-base text-right text-slate-900 min-h-[150px] max-h-[300px]"
                         dir="rtl"
                         rows={6}
                       />
@@ -756,7 +756,7 @@ export default function PropertyDetailModal({
                 ) : (
                   <div className="space-y-6">
                     {notes.map((note) => (
-                      <div key={note.id} className="bg-white border border-slate-200 rounded-xl p-6 hover:shadow-sm transition-shadow">
+                      <div key={note.id} className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
                         <div className="flex justify-between items-start mb-3">
                           <div className="text-sm text-slate-500 font-medium">
                             {formatDate(note.created_at)}
@@ -801,7 +801,7 @@ export default function PropertyDetailModal({
                               value={editingNoteContent}
                               onChange={(e) => setEditingNoteContent(e.target.value)}
                               onKeyDown={handleNoteEditKeyDown}
-                              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none text-base"
+                              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none text-base"
                               rows={4}
                               dir="auto"
                               autoFocus
@@ -836,7 +836,7 @@ export default function PropertyDetailModal({
                       onKeyDown={handleNoteKeyDown}
                       placeholder={`Add a note... (${isMac ? 'Cmd' : 'Ctrl'}+Enter to submit)`}
                       rows={4}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
+                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
                       disabled={submitting}
                       dir="auto"
                     />
@@ -844,7 +844,7 @@ export default function PropertyDetailModal({
                       <button
                         type="submit"
                         disabled={submitting || !newNote.trim()}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                       >
                         {submitting ? 'Adding...' : 'Add Note'}
                       </button>
@@ -905,7 +905,7 @@ export default function PropertyDetailModal({
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full animate-fade-in"
+            className="bg-white rounded-lg shadow-2xl border border-slate-200 p-6 max-w-sm w-full animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center space-x-3 mb-4">
@@ -925,7 +925,7 @@ export default function PropertyDetailModal({
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2.5 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 font-medium transition-colors"
+                className="flex-1 px-4 py-2.5 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium transition-colors"
               >
                 Cancel
               </button>
@@ -935,7 +935,7 @@ export default function PropertyDetailModal({
                   setShowDeleteConfirm(false)
                   onClose()
                 }}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
               >
                 Delete
               </button>

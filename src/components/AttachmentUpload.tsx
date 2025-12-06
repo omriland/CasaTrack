@@ -75,7 +75,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
           />
           <label
             htmlFor="attachment-upload"
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl border-2 border-dashed border-slate-300 cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 border-dashed border-slate-300 cursor-pointer transition-all hover:border-primary hover:bg-primary/5 ${
               uploading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -99,7 +99,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
             return (
               <div
                 key={attachment.id}
-                className={`relative group bg-slate-50 rounded-xl overflow-hidden border border-slate-200 ${
+                className={`relative group bg-slate-50 rounded-lg overflow-hidden border border-slate-200 ${
                   isDeleting ? 'opacity-50' : ''
                 }`}
               >

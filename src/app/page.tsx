@@ -294,7 +294,7 @@ export default function Home() {
               </p>
               <button
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-8 py-4 rounded-2xl hover:from-primary/90 hover:to-primary/80 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold"
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground px-8 py-4 rounded-lg hover:from-primary/90 hover:to-primary/80 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
@@ -304,7 +304,7 @@ export default function Home() {
 
               <div className="mt-12 grid grid-cols-3 gap-8 text-center">
                 <div>
-                  <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
                     <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
@@ -312,7 +312,7 @@ export default function Home() {
                   <p className="text-xs font-medium text-slate-700">Track Details</p>
                 </div>
                 <div>
-                  <div className="w-8 h-8 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                     <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                     </svg>
@@ -320,7 +320,7 @@ export default function Home() {
                   <p className="text-xs font-medium text-slate-700">Manage Status</p>
                 </div>
                 <div>
-                  <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center mx-auto mb-2">
+                  <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
                     <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
@@ -360,7 +360,7 @@ export default function Home() {
               <div className="mt-12">
                 <button
                   onClick={() => setShowIrrelevantProperties(!showIrrelevantProperties)}
-                  className="flex items-center justify-between w-full max-w-md p-4 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200 mb-6"
+                  className="flex items-center justify-between w-full max-w-md p-4 bg-slate-50 hover:bg-slate-100 rounded-lg transition-all border border-slate-200 mb-6"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
@@ -418,7 +418,7 @@ export default function Home() {
             {relevantProperties.length === 0 && irrelevantProperties.length > 0 && (
               <div className="text-center py-8">
                 <div className="max-w-md mx-auto">
-                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>

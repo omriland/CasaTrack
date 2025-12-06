@@ -274,7 +274,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   return (
     <div 
-      className="group bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in cursor-pointer"
+      className="group bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in cursor-pointer"
       onClick={handleCardClick}
     >
       {/* Header */}
@@ -302,7 +302,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </button>
           
             {showStatusDropdown && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
                 {allStatuses.map((status) => (
                   <button
                     key={status}
@@ -349,7 +349,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       {/* Property Stats */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div
-          className={`relative rounded-xl p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+          className={`relative rounded-lg p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
           onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('rooms', property.rooms) }}
           title="Double-click to edit rooms"
         >
@@ -362,7 +362,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <span className={`text-lg font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-slate-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
           {inlineEditing?.field === 'rooms' && (
             <div
-              className="absolute left-3 top-3 bg-white border border-slate-200 rounded-2xl shadow-xl p-3 z-50"
+              className="absolute left-3 top-3 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50"
               onClick={(e) => e.stopPropagation()}
               ref={roomsPickerRef}
             >
@@ -387,7 +387,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
 
-        <div className={`relative rounded-xl p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
+        <div className={`relative rounded-lg p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
           <div className="flex items-center space-x-2 mb-1">
             <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
@@ -427,7 +427,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Price Section */}
       {property.asked_price !== null ? (
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-4 mb-4">
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 mb-4">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-slate-600">Asking Price</span>
             <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
@@ -440,7 +440,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
       ) : (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
           <div className="flex items-center space-x-2">
             <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -550,7 +550,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       {/* Contact Information */}
       {property.contact_name && (
         <div className="mt-4 pt-4 border-t border-slate-100">
-          <div className="bg-slate-50 rounded-xl p-3">
+          <div className="bg-slate-50 rounded-lg p-3">
             <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Contact</h4>
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
@@ -603,7 +603,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
           {showDescPreview && (
             <div
-              className="absolute bottom-full right-0 mb-2 w-96 max-w-[85vw] bg-white rounded-xl shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
+              className="absolute bottom-full right-0 mb-2 w-96 max-w-[85vw] bg-white rounded-lg shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
               onMouseEnter={() => setShowDescPreview(true)}
               onMouseLeave={() => setShowDescPreview(false)}
             >
@@ -645,7 +645,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           {/* Notes Preview Tooltip */}
           {showNotesPreview && notesCount > 0 && (
             <div 
-              className="absolute bottom-full left-0 mb-2 w-80 bg-white rounded-xl shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
+              className="absolute bottom-full left-0 mb-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
               onMouseEnter={() => setShowNotesPreview(true)}
               onMouseLeave={() => setShowNotesPreview(false)}
             >
@@ -692,7 +692,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-sm w-full animate-fade-in"
+            className="bg-white rounded-lg shadow-2xl border border-slate-200 p-6 max-w-sm w-full animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center space-x-3 mb-4">
@@ -712,7 +712,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <div className="flex space-x-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2.5 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 font-medium transition-colors"
+                className="flex-1 px-4 py-2.5 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium transition-colors"
               >
                 Cancel
               </button>
@@ -721,7 +721,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   onDelete(property.id)
                   setShowDeleteConfirm(false)
                 }}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition-colors"
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
               >
                 Delete
               </button>

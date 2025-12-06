@@ -423,7 +423,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl">
+      <div className="h-full flex items-center justify-center bg-slate-50 rounded-lg">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,7 +439,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
   if (isLoading) {
     return (
-      <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl">
+      <div className="h-full flex items-center justify-center bg-slate-50 rounded-lg">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-slate-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-600">Loading map...</p>
@@ -471,7 +471,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   }
 
   return (
-    <div className="h-full relative bg-white rounded-xl overflow-hidden shadow-sm">
+    <div className="h-full relative bg-white rounded-lg overflow-hidden shadow-sm">
       <div ref={mapRef} className="w-full h-full" />
 
       {/* Floating Hover Card */}
@@ -484,7 +484,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
             transform: hoverPosition.x > window.innerWidth - 350 ? 'translateX(-100%)' : 'none'
           }}
         >
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-slate-200/50 p-4 w-80 animate-fade-in">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-2xl border border-slate-200/50 p-4 w-80 animate-fade-in">
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
@@ -505,7 +505,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
             {/* Property Stats */}
             <div className="grid grid-cols-2 gap-3 mb-3">
-              <div className="bg-slate-50 rounded-xl p-2.5">
+              <div className="bg-slate-50 rounded-lg p-2.5">
                 <div className="flex items-center space-x-1.5 mb-1">
                   <svg className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
@@ -515,7 +515,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                 <span className="text-sm font-semibold text-slate-900">{hoveredProperty.rooms}</span>
               </div>
 
-              <div className={`rounded-xl p-2.5 ${hoveredProperty.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
+              <div className={`rounded-lg p-2.5 ${hoveredProperty.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
                 <div className="flex items-center space-x-1.5 mb-1">
                   <svg className={`w-3 h-3 ${hoveredProperty.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
@@ -530,7 +530,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
             {/* Price Section */}
             {hoveredProperty.asked_price !== null ? (
-              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-3 mb-3">
+              <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-3 mb-3">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-medium text-slate-600">Asking Price</span>
                   <span className="text-lg font-bold text-slate-900">₪{formatPrice(hoveredProperty.asked_price)}</span>
@@ -543,7 +543,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                 )}
               </div>
             ) : (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
                 <div className="flex items-center space-x-2">
                   <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -613,7 +613,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       {/* Map Controls */}
       <div className="absolute top-4 right-4 flex flex-col gap-2">
         {/* Layer Toggle */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/50 p-2">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-2">
           <div className="text-xs font-semibold text-slate-600 mb-2 px-2">Layers</div>
           <div className="space-y-1">
             <button
@@ -704,7 +704,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         </div>
 
         {/* Toggle Control for Irrelevant Properties */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/50 p-3">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-3">
           <div className="flex items-center space-x-3">
             <span className="text-sm font-medium text-slate-700">Show irrelevant</span>
             <button
@@ -725,7 +725,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
 
       {/* Property Count Display */}
       {propertiesWithCoords.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-slate-200/50 p-3">
+        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-3">
           <div className="flex items-center space-x-2 text-sm">
             <div className="w-4 h-4 bg-primary rounded-full"></div>
             <span className="text-slate-600">

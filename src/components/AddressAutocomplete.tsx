@@ -40,12 +40,20 @@ export default function AddressAutocomplete({
         }
 
         if (inputRef.current && !autocompleteRef.current && typeof google !== 'undefined' && google.maps) {
-          // Initialize autocomplete with explicit geometry field request
+          // Initialize autocomplete with geocode type for broader results
+          // Using 'geocode' instead of 'address' to include more location types
           autocompleteRef.current = new google.maps.places.Autocomplete(inputRef.current, {
-            types: ['address'],
+            types: ['geocode'],
             componentRestrictions: { country: 'IL' },
             fields: ['formatted_address', 'geometry', 'place_id', 'name', 'address_components']
           })
+          
+          // Set bounds bias to Israel for better local results
+          const israelBounds = new google.maps.LatLngBounds(
+            new google.maps.LatLng(29.0, 34.2),
+            new google.maps.LatLng(33.5, 35.9)
+          )
+          autocompleteRef.current.setBounds(israelBounds)
 
           // Add place changed listener
           autocompleteRef.current.addListener('place_changed', async () => {
@@ -57,8 +65,41 @@ export default function AddressAutocomplete({
               return
             }
 
-            // Use the formatted_address from Google - this is the complete address
-            const selectedAddress = place.formatted_address || place.name || ''
+            // Build Hebrew address from address_components if available
+            // This ensures we get the Hebrew version even if formatted_address is in English
+            let selectedAddress = ''
+            
+            if (place.address_components && place.address_components.length > 0) {
+              // Extract address parts in order: street_number, route, locality, country
+              const streetNumber = place.address_components.find(c => c.types.includes('street_number'))?.long_name || ''
+              const route = place.address_components.find(c => c.types.includes('route'))?.long_name || ''
+              const locality = place.address_components.find(c => c.types.includes('locality'))?.long_name || ''
+              const sublocality = place.address_components.find(c => c.types.includes('sublocality'))?.long_name || ''
+              
+              // Build address string (Hebrew style: street number, street name, city)
+              const parts: string[] = []
+              if (route) {
+                if (streetNumber) {
+                  parts.push(`${route} ${streetNumber}`)
+                } else {
+                  parts.push(route)
+                }
+              }
+              if (sublocality && sublocality !== locality) {
+                parts.push(sublocality)
+              }
+              if (locality) {
+                parts.push(locality)
+              }
+              
+              selectedAddress = parts.join(', ')
+            }
+            
+            // Fallback to formatted_address if we couldn't build from components
+            if (!selectedAddress) {
+              selectedAddress = place.formatted_address || place.name || ''
+            }
+            
             console.log('Selected address:', selectedAddress)
 
             if (selectedAddress) {

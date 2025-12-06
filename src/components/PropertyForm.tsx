@@ -385,12 +385,12 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
       onClick={onCancel}
     >
       <div 
-        className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-white/20"
+        className="bg-white/95 backdrop-blur-md shadow-2xl rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-white/20"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
               {property ? (
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -418,7 +418,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleChange}
                 placeholder="Enter property title"
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                 tabIndex={1}
               />
               <p className="mt-1 text-xs text-slate-500">This will be auto-filled with the address if you enter the address first</p>
@@ -433,7 +433,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 value={formData.address}
                 onChange={handleAddressChange}
                 placeholder="Enter property address"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={2}
                 />
                 {formData.latitude && formData.longitude && (
@@ -459,14 +459,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 value={formData.url || ''}
                 onChange={handleChange}
                 placeholder="https://www.yad2.co.il/..."
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={3}
                 />
                 <button
                   type="button"
                   onClick={handleExtractFromURL}
                   disabled={true}
-                  className={`px-6 py-3 bg-slate-200 text-slate-500 rounded-xl font-medium transition-all shadow-lg whitespace-nowrap cursor-not-allowed`}
+                  className={`px-6 py-3 bg-slate-200 text-slate-500 rounded-lg font-medium transition-all shadow-lg whitespace-nowrap cursor-not-allowed`}
                   title="Coming soon"
                 >
                   <div className="flex items-center space-x-2">
@@ -529,7 +529,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.square_meters ?? ''}
                   onChange={handleChange}
                     placeholder="Optional"
-                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                     tabIndex={4}
                   />
                   <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
@@ -552,7 +552,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.balcony_square_meters ?? ''}
                     onChange={handleChange}
                     placeholder="0"
-                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   />
                   <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
                     <div className="w-px h-6 bg-slate-300"></div>
@@ -575,7 +575,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="asked_price"
                   value={formattedPrice}
                   onChange={handlePriceChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={7}
                 />
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -593,7 +593,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               const effectiveArea = squareMeters + 0.5 * balcony
               return formData.asked_price !== null && formData.asked_price > 0 && effectiveArea > 0
             })() && (
-              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20">
+              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
                 <p className="text-sm font-medium text-slate-700">
                   Price per m²: ₪{(() => {
                     const balcony = formData.balcony_square_meters ?? 0
@@ -617,7 +617,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="contact_name"
                   value={formData.contact_name || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={6}
                 />
               </div>
@@ -631,7 +631,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="contact_phone"
                   value={formData.contact_phone || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={7}
                 />
               </div>
@@ -647,7 +647,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     name="source"
                     value={formData.source}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
                     tabIndex={9}
                   >
                     {SOURCES.map(source => (
@@ -671,7 +671,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     name="property_type"
                     value={formData.property_type}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
                     tabIndex={9}
                   >
                     {PROPERTY_TYPES.map(type => (
@@ -696,7 +696,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
                   tabIndex={11}
                 >
                   {STATUSES.map(status => (
@@ -721,7 +721,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Additional details about the property"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right text-slate-900 min-h-[100px] max-h-[200px]"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right text-slate-900 min-h-[100px] max-h-[200px]"
                   dir="rtl"
                   tabIndex={12}
                 />
@@ -750,7 +750,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             )}
 
             {!property?.id && (
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <div className="flex items-start space-x-3">
                   <svg className="w-5 h-5 text-slate-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -763,7 +763,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               </div>
             )}
 
-            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl border border-primary/20">
+            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -794,7 +794,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-3 text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 font-medium transition-all"
+                className="px-6 py-3 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium transition-all"
                 tabIndex={15}
               >
                 <div className="flex items-center space-x-2">
@@ -807,7 +807,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-xl hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-lg hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 tabIndex={14}
               >
                 {loading ? (
@@ -841,7 +841,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           onClick={() => setExtractionResult({ show: false, success: false, message: '' })}
         >
           <div 
-            className="bg-white/95 backdrop-blur-md shadow-2xl rounded-2xl max-w-md w-full p-6 animate-fade-in border border-white/20"
+            className="bg-white/95 backdrop-blur-md shadow-2xl rounded-lg max-w-md w-full p-6 animate-fade-in border border-white/20"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center space-x-3 mb-4">
@@ -879,7 +879,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             <div className="flex justify-end">
               <button
                 onClick={() => setExtractionResult({ show: false, success: false, message: '' })}
-                className={`px-6 py-2.5 rounded-xl font-medium transition-all ${
+                className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
                   extractionResult.success
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
