@@ -1,9 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --font-hebrew: 'Assistant', var(--font-sans);
   --background: oklch(0.9911 0 0);
   --foreground: oklch(0.2046 0 0);
   --card: oklch(0.9911 0 0);
@@ -36,7 +34,7 @@
   --sidebar-accent-foreground: oklch(0.2435 0 0);
   --sidebar-border: oklch(0.9037 0 0);
   --sidebar-ring: oklch(0.8348 0.1302 160.9080);
-  --font-sans: Outfit, sans-serif;
+  --font-sans: 'Assistant', sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: monospace;
   --radius: 0.5rem;
@@ -94,7 +92,7 @@
   --sidebar-accent-foreground: oklch(0.9851 0 0);
   --sidebar-border: oklch(0.2809 0 0);
   --sidebar-ring: oklch(0.8003 0.1821 151.7110);
-  --font-sans: Outfit, sans-serif;
+  --font-sans: 'Assistant', sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: monospace;
   --radius: 0.5rem;
@@ -154,7 +152,6 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
-  --font-hebrew: var(--font-hebrew);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -201,25 +198,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: var(--tracking-normal);
-}
-
-/* Hebrew font support - Assistant font for Hebrew characters */
-@font-face {
-  font-family: 'HebrewFallback';
-  src: local('Assistant');
-  unicode-range: U+0590-05FF, U+FB1D-FB4F; /* Hebrew unicode range */
-}
-
-/* Apply Assistant font to any element containing Hebrew text */
-:lang(he),
-[lang="he"],
-[dir="rtl"] {
-  font-family: 'Assistant', var(--font-sans);
-}
-
-/* Utility class for Hebrew text */
-.font-hebrew {
-  font-family: 'Assistant', var(--font-sans);
 }
 
 /* Custom scrollbar */
