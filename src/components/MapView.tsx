@@ -73,7 +73,6 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
           mapInstanceRef.current = new google.maps.Map(mapRef.current, {
             center,
             zoom,
-            language: 'he',
             styles: [
               {
                 featureType: 'poi',
