@@ -42,14 +42,21 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     property?.asked_price ? property.asked_price.toLocaleString('en-US') : ''
   )
   
-  // State for URL extraction
+  // State for AI extraction
+  const [extractionMode, setExtractionMode] = useState<'image' | 'html'>('image')
   const [isExtracting, setIsExtracting] = useState(false)
+  const [extractionProgress, setExtractionProgress] = useState(0)
+  const [isAiSectionCollapsed, setIsAiSectionCollapsed] = useState(false)
   const [extractionResult, setExtractionResult] = useState<{
     show: boolean
     success: boolean
     message: string
     fieldsCount?: number
   }>({ show: false, success: false, message: '' })
+  
+  // State for extraction inputs
+  const [pastedImage, setPastedImage] = useState<string | null>(null)
+  const [htmlContent, setHtmlContent] = useState('')
 
   // State for attachments
   const [attachments, setAttachments] = useState<Attachment[]>([])
@@ -269,12 +276,22 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }
   }
 
-  const handleExtractFromURL = async () => {
-    if (!formData.url || !formData.url.includes('yad2.co.il')) {
+  // Unified extraction handler
+  const handleExtract = async () => {
+    if (extractionMode === 'image' && !pastedImage) {
       setExtractionResult({
         show: true,
         success: false,
-        message: 'Please enter a valid Yad2 URL'
+        message: 'Please paste an image first'
+      })
+      return
+    }
+
+    if (extractionMode === 'html' && !htmlContent.trim()) {
+      setExtractionResult({
+        show: true,
+        success: false,
+        message: 'Please paste the HTML content'
       })
       return
     }
@@ -282,59 +299,57 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     try {
       setIsExtracting(true)
       
+      const requestBody = extractionMode === 'image' 
+        ? { image: pastedImage }
+        : { html: htmlContent }
+      
       const response = await fetch('/api/extract-property', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: formData.url })
+        body: JSON.stringify(requestBody)
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to extract property data')
+        const errorMsg = result.error || 'Failed to extract property data'
+        throw new Error(errorMsg)
       }
 
       if (result.success && result.data) {
         const extractedData = result.data
-        console.log('Received extracted data:', extractedData)
-        // Normalize extracted address (trim, collapse spaces)
+        // Normalize extracted address
         if (extractedData.address) {
           extractedData.address = extractedData.address
             .replace(/\s+/g, ' ')
-            .replace(/\u00A0/g, ' ') // nbsp
+            .replace(/\u00A0/g, ' ')
             .trim()
         }
         
-        // Count how many fields were extracted
         const extractedFields = Object.entries(extractedData).filter(([, value]) => 
           value !== null && value !== 0 && value !== '' && value !== false
         ).length
 
-        // Update form data with extracted information (only non-empty values)
         const extractedAddress = extractedData.address || formData.address
-        const updatedFormData = {
-          ...formData,
-          title: formData.title.trim() === '' ? extractedAddress : formData.title, // Auto-populate title if empty
+        setFormData(prev => ({
+          ...prev,
+          title: prev.title.trim() === '' ? extractedAddress : prev.title,
           address: extractedAddress,
-          rooms: extractedData.rooms > 0 ? extractedData.rooms : formData.rooms,
-          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : formData.square_meters ?? null,
-          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : formData.asked_price ?? null,
-          contact_name: extractedData.contact_name || formData.contact_name,
-          contact_phone: extractedData.contact_phone || formData.contact_phone,
-          property_type: extractedData.property_type || formData.property_type,
-          description: extractedData.description || formData.description,
-          apartment_broker: extractedData.apartment_broker ?? formData.apartment_broker
-        }
-        setFormData(updatedFormData)
+          rooms: extractedData.rooms > 0 ? extractedData.rooms : prev.rooms,
+          square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : prev.square_meters ?? null,
+          asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : prev.asked_price ?? null,
+          contact_name: extractedData.contact_name || prev.contact_name,
+          contact_phone: extractedData.contact_phone || prev.contact_phone,
+          property_type: extractedData.property_type || prev.property_type,
+          description: extractedData.description || prev.description,
+          apartment_broker: extractedData.apartment_broker ?? prev.apartment_broker
+        }))
 
-
-        // Update formatted price
         if (extractedData.asked_price > 0) {
           setFormattedPrice(extractedData.asked_price.toLocaleString('en-US'))
         }
-
 
         setExtractionResult({
           show: true,
@@ -342,8 +357,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
           message: `Property data extracted successfully! Found ${extractedFields} fields. Please review and complete any missing information.`,
           fieldsCount: extractedFields
         })
+        
+        // Clear extraction inputs on success
+        setPastedImage(null)
+        setHtmlContent('')
+        
+        // Auto-collapse AI section after successful extraction
+        setIsAiSectionCollapsed(true)
       }
-
     } catch (error) {
       console.error('Extraction error:', error)
       setExtractionResult({
@@ -356,9 +377,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }
   }
 
-  // Handle image paste for extraction
+  // Handle image paste - only when in image extraction mode and extraction area is focused
   useEffect(() => {
-    const handlePaste = async (e: ClipboardEvent) => {
+    if (extractionMode !== 'image') return
+    
+    const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items
       if (!items) return
 
@@ -371,81 +394,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
           // Convert blob to data URL
           const reader = new FileReader()
-          reader.onloadend = async () => {
+          reader.onloadend = () => {
             const imageDataUrl = reader.result as string
-            if (!imageDataUrl) return
-
-            try {
-              setIsExtracting(true)
-              const response = await fetch('/api/extract-property', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ image: imageDataUrl })
-              })
-
-              const result = await response.json()
-
-              if (!response.ok) {
-                throw new Error(result.error || 'Failed to extract property data')
-              }
-
-              if (result.success && result.data) {
-                const extractedData = result.data
-                
-                // Normalize extracted address
-                if (extractedData.address) {
-                  extractedData.address = extractedData.address
-                    .replace(/\s+/g, ' ')
-                    .replace(/\u00A0/g, ' ')
-                    .trim()
-                }
-                
-                // Count extracted fields
-                const extractedFields = Object.entries(extractedData).filter(([, value]) => 
-                  value !== null && value !== 0 && value !== '' && value !== false
-                ).length
-
-                // Update form data using functional update to avoid stale closure
-                setFormData(prev => {
-                  const extractedAddress = extractedData.address || prev.address
-                  return {
-                    ...prev,
-                    title: prev.title.trim() === '' ? extractedAddress : prev.title,
-                    address: extractedAddress,
-                    rooms: extractedData.rooms > 0 ? extractedData.rooms : prev.rooms,
-                    square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : prev.square_meters ?? null,
-                    asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : prev.asked_price ?? null,
-                    contact_name: extractedData.contact_name || prev.contact_name,
-                    contact_phone: extractedData.contact_phone || prev.contact_phone,
-                    property_type: extractedData.property_type || prev.property_type,
-                    description: extractedData.description || prev.description,
-                    apartment_broker: extractedData.apartment_broker ?? prev.apartment_broker
-                  }
-                })
-
-                // Update formatted price
-                if (extractedData.asked_price > 0) {
-                  setFormattedPrice(extractedData.asked_price.toLocaleString('en-US'))
-                }
-
-                setExtractionResult({
-                  show: true,
-                  success: true,
-                  message: `Property data extracted from image! Found ${extractedFields} fields. Please review and complete any missing information.`,
-                  fieldsCount: extractedFields
-                })
-              }
-            } catch (error) {
-              console.error('Image extraction error:', error)
-              setExtractionResult({
-                show: true,
-                success: false,
-                message: `Failed to extract data from image: ${error instanceof Error ? error.message : 'Unknown error'}`
-              })
-            } finally {
-              setIsExtracting(false)
+            if (imageDataUrl) {
+              setPastedImage(imageDataUrl)
             }
           }
           reader.readAsDataURL(blob)
@@ -458,7 +410,34 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     return () => {
       document.removeEventListener('paste', handlePaste)
     }
-  }, []) // Empty dependency array - handler doesn't depend on formData
+  }, [extractionMode])
+
+  // Animate progress bar during extraction (0% to 90% over 14 seconds)
+  useEffect(() => {
+    if (!isExtracting) {
+      setExtractionProgress(0)
+      return
+    }
+
+    const duration = 14000 // 14 seconds
+    const targetProgress = 90 // 90%
+    const interval = 50 // Update every 50ms
+    const steps = duration / interval
+    const increment = targetProgress / steps
+
+    let currentProgress = 0
+    const timer = setInterval(() => {
+      currentProgress += increment
+      if (currentProgress >= targetProgress) {
+        setExtractionProgress(targetProgress)
+        clearInterval(timer)
+      } else {
+        setExtractionProgress(currentProgress)
+      }
+    }, interval)
+
+    return () => clearInterval(timer)
+  }, [isExtracting])
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
@@ -580,49 +559,176 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Property URL
               </label>
-              <div className="flex space-x-3">
               <input
                 type="url"
                 name="url"
                 value={formData.url || ''}
                 onChange={handleChange}
                 placeholder="https://www.yad2.co.il/..."
-                  className="flex-1 px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
-                  tabIndex={3}
-                />
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                tabIndex={3}
+              />
+            </div>
+
+            {/* AI Extraction Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-semibold text-slate-700">
+                  AI Data Extraction
+                </label>
                 <button
                   type="button"
-                  onClick={handleExtractFromURL}
-                  disabled={true}
-                  className={`px-6 py-3 bg-slate-200 text-slate-500 rounded-lg font-medium transition-all shadow-lg whitespace-nowrap cursor-not-allowed`}
-                  title="Coming soon"
+                  onClick={() => setIsAiSectionCollapsed(!isAiSectionCollapsed)}
+                  className="text-slate-500 hover:text-slate-700 transition-colors"
+                  aria-label={isAiSectionCollapsed ? 'Expand AI extraction section' : 'Collapse AI extraction section'}
                 >
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <svg 
+                    className={`w-5 h-5 transition-transform ${isAiSectionCollapsed ? '' : 'rotate-180'}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
+              
+              {!isAiSectionCollapsed && (
+                <>
+              {/* Mode Toggle */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExtractionMode('image')
+                    setPastedImage(null)
+                  }}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${
+                    extractionMode === 'image'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span>Extract Data</span>
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-300 text-slate-700">Soon</span>
+                    <span>Image</span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExtractionMode('html')
+                    setHtmlContent('')
+                  }}
+                  className={`flex-1 px-4 py-3 rounded-lg font-medium transition-all ${
+                    extractionMode === 'html'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-lg'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>HTML</span>
                   </div>
                 </button>
               </div>
-              <div className="mt-2 text-xs text-slate-600 bg-primary/5 rounded-lg p-3 border border-primary/20">
-                <div className="flex items-start space-x-2">
-                  <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <p className="font-medium text-slate-700 mb-1">AI Data Extraction Available</p>
-                    <p className="text-slate-600 mb-2">Paste a Yad2 screenshot anywhere in this form to automatically extract property details, or enter a Yad2 URL and click &quot;Extract Data&quot;.</p>
-                    {isExtracting && (
-                      <div className="flex items-center space-x-2 text-primary">
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs">Extracting data from image...</span>
+
+              {/* Image Mode */}
+              {extractionMode === 'image' && (
+                <div className="space-y-3">
+                  <div 
+                    className="relative border-2 border-dashed border-slate-300 rounded-lg p-4 bg-slate-50 hover:border-primary/50 transition-all cursor-pointer"
+                    onClick={() => {
+                      // Trigger paste when clicking the area
+                      document.execCommand('paste')
+                    }}
+                  >
+                    {pastedImage ? (
+                      <div className="relative">
+                        <img 
+                          src={pastedImage} 
+                          alt="Pasted screenshot" 
+                          className="max-w-full max-h-32 mx-auto rounded-lg shadow-md"
+                        />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPastedImage(null)
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-all"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <svg className="w-8 h-8 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p className="text-sm font-medium text-slate-700 mb-1">Paste Yad2 Screenshot</p>
+                        <p className="text-xs text-slate-500">Click here and paste (Cmd+V / Ctrl+V) a screenshot of the Yad2 listing</p>
                       </div>
                     )}
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* HTML Mode */}
+              {extractionMode === 'html' && (
+                <div className="space-y-3">
+                  <textarea
+                    value={htmlContent}
+                    onChange={(e) => setHtmlContent(e.target.value)}
+                    placeholder="Paste the full HTML content here..."
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white text-sm font-mono min-h-[100px] max-h-[400px] resize-y"
+                  />
+                </div>
+              )}
+
+              {/* Extract Button */}
+              <button
+                type="button"
+                onClick={handleExtract}
+                disabled={isExtracting || (extractionMode === 'image' && !pastedImage) || (extractionMode === 'html' && !htmlContent.trim())}
+                className={`w-full mt-4 px-6 py-4 rounded-lg font-semibold transition-all shadow-lg relative overflow-hidden ${
+                  isExtracting || (extractionMode === 'image' && !pastedImage) || (extractionMode === 'html' && !htmlContent.trim())
+                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary/80 hover:shadow-xl transform hover:-translate-y-0.5'
+                }`}
+              >
+                {/* Progress bar overlay */}
+                {isExtracting && (
+                  <div 
+                    className="absolute inset-0 bg-primary/20 transition-all duration-75 ease-linear"
+                    style={{ width: `${extractionProgress}%` }}
+                  />
+                )}
+                
+                <div className="relative z-10 flex items-center justify-center space-x-3">
+                  {isExtracting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                      <span>Extracting property data... {Math.round(extractionProgress)}%</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      <span>Extract Property Data</span>
+                    </>
+                  )}
+                </div>
+              </button>
+              </>
+              )}
             </div>
 
             <div>
@@ -941,7 +1047,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-lg hover:from-primary/90 hover:to-primary/80 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-lg hover:brightness-90 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 tabIndex={14}
               >
                 {loading ? (
@@ -1010,7 +1116,18 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               {extractionResult.message}
             </p>
             
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-3">
+              {!extractionResult.success && extractionResult.message.includes('CAPTCHA') && (
+                <button
+                  onClick={() => {
+                    setExtractionResult({ show: false, success: false, message: '' })
+                    setExtractionMode('html')
+                  }}
+                  className="px-6 py-2.5 rounded-lg font-medium transition-all bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  Try HTML Mode
+                </button>
+              )}
               <button
                 onClick={() => setExtractionResult({ show: false, success: false, message: '' })}
                 className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
@@ -1019,7 +1136,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                {extractionResult.success ? 'Continue Editing' : 'Try Again'}
+                {extractionResult.success ? 'Continue Editing' : 'Close'}
               </button>
             </div>
           </div>

@@ -27,44 +27,71 @@ function buildEvidenceFromHtml(html: string) {
     return m ? m[1].trim() : null
   }
 
-  // Address
-  const address = pick(/<span[^>]*data-testid=["']address-line["'][^>]*>([^<]+)<\/span>/)
-
-  // Price
-  const asked_price_raw = pick(/data-testid=["']price["'][^>]*>([\d.,\s]+₪)<\/span>/)
-
-  // Details line with rooms and meters
-  const detailsLine = pick(/property-ad-card_PropertyDetailsBox__[a-zA-Z0-9_\-]+[\s\S]*?<span>([^<]+)<\/span>/)
-  let rooms_from_details: string | null = null
-  let meters_from_details: string | null = null
-  if (detailsLine) {
-    const rm = detailsLine.match(/(\d+(?:\.\d+)?)\s*חדרים/)
-    rooms_from_details = rm ? rm[1] : null
-    const sm = detailsLine.match(/(\d+)\s*מ["״']?ר/)
-    meters_from_details = sm ? sm[1] : null
+  // Address - try multiple patterns
+  let address = pick(/<[^>]*class="[^"]*address[^"]*"[^>]*>([^<]+)/)
+  if (!address) {
+    address = pick(/<span[^>]*data-testid=["']address-line["'][^>]*>([^<]+)<\/span>/)
+  }
+  // Clean address - remove "דירה," prefix if present
+  if (address && address.startsWith('דירה,')) {
+    address = address.replace(/^דירה,\s*/, '').trim()
   }
 
-  // Built meters override
-  const builtMeters = pick(/<dd[^>]*class=["'][^"']*item-detail_label__FnhAu[^"']*["'][^>]*>\s*מ״ר\s*בנוי\s*<\/dd>\s*<dt[^>]*data-testid=["']item-detail["'][^>]*>\s*(\d+)\s*מ/)
-  const square_meters_source = builtMeters || meters_from_details
+  // Price - find all prices and take the highest (usually the current/latest price)
+  const priceMatches = html.matchAll(/(\d{1,3}(?:,\d{3})*)\s*₪/g)
+  const prices: number[] = []
+  for (const match of priceMatches) {
+    const priceStr = match[1].replace(/,/g, '')
+    const priceNum = parseInt(priceStr, 10)
+    if (priceNum > 100000) { // Filter out small numbers that might be prices per sqm
+      prices.push(priceNum)
+    }
+  }
+  const asked_price_raw = prices.length > 0 ? Math.max(...prices).toLocaleString('en-US') + ' ₪' : null
 
-  // Contact
-  const contact_name = pick(/agency-ad-contact-info_name__[a-zA-Z0-9_\-]+[^>]*>([^<]+)<\/span>/)
+  // Rooms - look for "X חדרים" pattern
+  const roomsMatch = html.match(/(\d+(?:\.\d+)?)\s*חדרים/)
+  const rooms_from_details = roomsMatch ? roomsMatch[1] : null
+
+  // Square meters - prioritize "מ״ר בנוי" (built square meters)
+  // Pattern 1: Look for "104 מ״ר בנוי" or "מ״ר בנוי 104"
+  let square_meters_source: string | null = null
+  const builtMetersMatch1 = html.match(/(\d+)\s*מ[״"״]ר[^<]*בנוי/)
+  const builtMetersMatch2 = html.match(/בנוי[^<]*(\d+)\s*מ[״"״]ר/)
+  const builtMetersMatch3 = html.match(/מ[״"״]ר\s*בנוי[^<]*(\d+)/)
+  
+  if (builtMetersMatch1) {
+    square_meters_source = builtMetersMatch1[1]
+  } else if (builtMetersMatch2) {
+    square_meters_source = builtMetersMatch2[1]
+  } else if (builtMetersMatch3) {
+    square_meters_source = builtMetersMatch3[1]
+  } else {
+    // Fallback: look for any "X מ״ר" pattern
+    const metersMatch = html.match(/(\d+)\s*מ[״"״]ר/)
+    square_meters_source = metersMatch ? metersMatch[1] : null
+  }
+
+  // Contact name - look for agency-ad-contact-info-name
+  let contact_name = pick(/<span[^>]*data-testid=["']agency-ad-contact-info-name["'][^>]*>([^<]+)<\/span>/)
+  if (!contact_name) {
+    contact_name = pick(/<span[^>]*class="[^"]*agency-ad-contact-info_name__[^"]*"[^>]*>([^<]+)<\/span>/)
+  }
+
+  // Contact phone - look for tel: links
   const contact_phone = pick(/href=["']tel:([^"']+)["']/)
 
-  // Description (fallback from og:description)
+  // Description - use og:description meta tag
   const description = pick(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/)
 
-  // Broker: presence of agency container implies broker true
-  const broker = /agency-ad-contact-info_details__/i.test(html) || /broker|agency|תיווך/i.test(html)
+  // Broker: presence of agency contact section implies broker true
+  const broker = /agency-ad-contact-info/i.test(html) || /forsale-agency-contact-section/i.test(html) || /broker|agency|תיווך/i.test(html)
 
   return {
     address,
     asked_price_raw,
-    details_line: detailsLine,
     rooms_from_details,
     square_meters_source,
-    built_meters: builtMeters,
     contact_name,
     contact_phone,
     description,
@@ -199,17 +226,31 @@ For the description field specifically, DO NOT copy the entire Yad2 description 
 { "address": "[string, required, never empty]", "rooms": [number, nullable, \`null\` becomes 0], "square_meters": [number, nullable, \`null\` becomes 0], "asked_price": [number, nullable, \`null\` becomes 0], "contact_name": [string, nullable, default null], "contact_phone": [string, nullable, default null], "property_type": ["New" | "Existing apartment"], "description": [string, nullable, default null], "apartment_broker": [boolean, nullable, \`null\` becomes false] }
 
 Field mapping:
-- address: The full location string, must not be empty.
-- rooms: The number of rooms; input \`null\` transforms to \`0\`.
-- square_meters: The area in square meters as a number; input \`null\` transforms to \`0\`.
-- asked_price: Numeric asking price; input \`null\` transforms to \`0\`.
-- contact_name: Name of contact person; default is \`null\` if not present.
-- contact_phone: Phone number for contact; default is \`null\` if not present.
-- property_type: Must be exactly "New" or "Existing apartment" (classify based on provided cues; if unclear, choose "Existing apartment").
+- address: The full location string, must not be empty. Look for elements with class containing "address" or data-testid="address-line". Example: "דובה ויצחק שיינפיין 30, כפר סבא"
+- rooms: The number of rooms; input \`null\` transforms to \`0\`. Look for patterns like "4 חדרים" or "4.5 חדרים". Extract the number.
+- square_meters: The area in square meters as a number; input \`null\` transforms to \`0\`. **IMPORTANT: Prioritize "מ״ר בנוי" (built square meters) over regular "מ״ר"**. Look for patterns like "104 מ״ר בנוי" or "מ״ר בנוי 104". Extract the number.
+- asked_price: Numeric asking price; input \`null\` transforms to \`0\`. Look for prices with ₪ symbol. If multiple prices exist, use the highest/latest one. Remove commas and convert to number (e.g., "3,390,000 ₪" becomes 3390000).
+- contact_name: Name of contact person; default is \`null\` if not present. Look for elements with data-testid="agency-ad-contact-info-name" or class containing "agency-ad-contact-info_name".
+- contact_phone: Phone number for contact; default is \`null\` if not present. Look for href="tel:..." links. Format: "058-5041818" or "0585041818".
+- property_type: Must be exactly "New" or "Existing apartment" (classify based on provided cues; if unclear, choose "Existing apartment"). Look for keywords like "חדש" (new) or "דירה קיימת" (existing).
 - description: Textual description; default is \`null\` if not present.
   - For images: If Hebrew description exists, preserve it completely as-is. Do not summarize Hebrew text.
-  - For HTML: Keep it concise and high-signal (1-2 sentences summary of key selling points).
-- apartment_broker: Boolean indicating if a broker is involved; nullable input transforms to \`false\` (use explicit cues such as broker/company names/labels if possible).
+  - For HTML: Keep it concise and high-signal (1-2 sentences summary of key selling points). Example: "דירת 4 חדרים בירוקה 80, מוארת עם חניה ומחסן. קומה 2 מתוך 5"
+- apartment_broker: Boolean indicating if a broker is involved; nullable input transforms to \`false\` (use explicit cues such as broker/company names/labels if possible). Look for elements with class containing "agency-ad-contact-info" or "forsale-agency-contact-section" - presence indicates broker = true.
+
+# Example Output
+
+For a Yad2 listing with:
+- Address: "דובה ויצחק שיינפיין 30, כפר סבא"
+- Rooms: 4 חדרים
+- Square meters: 104 מ״ר בנוי
+- Price: 3,390,000 ₪
+- Contact: ליה הוד, 058-5041818
+- Broker: Yes (agency contact section present)
+- Description: "חדש בשוק ובשיווק בלעדי! למכירה דירת 4 חד מתוקה בירוקה 80 כפר סבא. סופר מוארת עם חלוקה נהדרת קבלן איכותי - גלעד את ענת חניה ומחסן מרחק פסיעה לקניון הירוקה , לקאנטרי"
+
+Expected JSON output:
+{"address":"דובה ויצחק שיינפיין 30, כפר סבא","rooms":4,"square_meters":104,"asked_price":3390000,"contact_name":"ליה הוד","contact_phone":"058-5041818","property_type":"Existing apartment","description":"דירת 4 חדרים בירוקה 80, מוארת עם חניה ומחסן. קומה 2 מתוך 5","apartment_broker":true}
 
 When writing JSON, replace any missing or null values with the schema's default transformation where appropriate (e.g., \`null\` for contact fields, \`0\` for numbers, \`false\` for booleans).
 
@@ -230,6 +271,7 @@ Then output only the final JSON object, matching the schema above, in a single b
 - Always match the exact field names and types; only values from the schema.
 - If you cannot infer a value, use the schema's default/null/false settings as instructed.
 - Persist and chain your reasoning to ensure fully complete and accurate extractions, including for complex or nested inputs.
+- **CRITICAL**: For square_meters, always prioritize "מ״ר בנוי" (built square meters) over regular "מ״ר" if both are present.
 
 Your objective is: Extract property details from yad2 HTML or textual content, following step-by-step reasoning before outputting only the final JSON structure according to the PropertySchema as shown.`
     },
@@ -283,7 +325,8 @@ export async function POST(request: NextRequest) {
     if (!url && !image && !html) {
       return NextResponse.json({ error: 'Provide one of: url, html, or image' }, { status: 400 })
     }
-    if (url && !/^https?:\/\/(www\.)?yad2\.co\.il\/realestate\/item\//.test(url)) {
+    // Only validate URL if it's being used for fetching (not when HTML is provided)
+    if (url && !html && !/^https?:\/\/(www\.)?yad2\.co\.il\/realestate\/item\//.test(url)) {
       return NextResponse.json({ error: 'Please provide a valid Yad2 listing URL' }, { status: 400 })
     }
 
@@ -418,10 +461,23 @@ Return JSON matching the schema. Remember: preserve Hebrew descriptions complete
         // Always send FULL HTML (raw, untruncated)
         pageText = await retry(() => fetchRenderedHtml(url, 1_000_000, { raw: true }))
       } catch (error) {
-        console.error('Failed to fetch page with Playwright:', error)
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('Failed to fetch page with Playwright:', errorMessage)
+        
+        // Provide more helpful error messages
+        let userMessage = 'Failed to load the Yad2 page. Please check the URL and try again.'
+        if (errorMessage.includes('browser') || errorMessage.includes('executable')) {
+          userMessage = 'Playwright browser not installed. Please run: npx playwright install chromium'
+        } else if (errorMessage.includes('timeout')) {
+          userMessage = 'Request timed out. Yad2 may be slow or blocking the request. Try using image extraction instead.'
+        } else if (errorMessage.includes('net::ERR') || errorMessage.includes('Navigation')) {
+          userMessage = 'Unable to access the URL. The page may be blocked or the URL may be invalid. Try using image extraction instead.'
+        }
+        
         return NextResponse.json({ 
-          error: 'Failed to load the Yad2 page. Please check the URL and try again.',
-          debug: error instanceof Error ? error.message : 'Unknown error'
+          error: userMessage,
+          debug: errorMessage,
+          suggestion: 'You can paste a screenshot of the Yad2 listing instead to extract the data.'
         }, { status: 400 })
       }
     }
@@ -458,40 +514,71 @@ Return JSON matching the schema. Remember: preserve Hebrew descriptions complete
     // 2) Build concise evidence only and send to OpenAI
     const evidence = buildEvidenceFromHtml(pageText)
     const sendText = JSON.stringify({ url, evidence }, null, 2)
-    const body = {
-      model: 'gpt-4o',
-      max_tokens: 1500,
+    let body = {
+      model: 'gpt-5.2', // Using GPT-5.2 for improved HTML extraction and larger output capacity
+      max_tokens: 30000, // Increased token limit for comprehensive extraction
       messages: buildMessages(url, sendText)
     }
 
-  const openaiRes = await retry(async () => {
-      const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      }, 90000)
-      if (!r.ok) {
-        const t = await r.text()
-      console.error(`OpenAI API Error - Status: ${r.status}`)
-      console.error(`OpenAI API Error - Status Text: ${r.statusText}`)
-      console.error('OpenAI API Error - Headers:', Object.fromEntries(r.headers.entries()))
-      console.error(`OpenAI API Error - Response: ${t.slice(0, 800)}`)
-      
-      // Try to parse as JSON to get error details
-      try {
-        const errorJson = JSON.parse(t)
-        console.error('OpenAI API Error JSON:', errorJson)
-      } catch {
-        console.error('Response is not JSON, likely an HTML error page')
+    // Try GPT-5.2 first, fallback to GPT-4o if model not available
+    let openaiRes
+    try {
+      openaiRes = await retry(async () => {
+        const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(body)
+        }, 90000)
+        if (!r.ok) {
+          const t = await r.text()
+          console.error(`OpenAI API Error - Status: ${r.status}`)
+          console.error(`OpenAI API Error - Response: ${t.slice(0, 800)}`)
+          throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
+        }
+        return r
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      // If model not found, fallback to GPT-4o
+      if (errorMessage.includes('model_not_found') || errorMessage.includes('model')) {
+        console.log('GPT-5.2 not available, falling back to GPT-4o')
+        body.model = 'gpt-4o'
+        body.max_tokens = 15000 // GPT-4o has lower max tokens, but still increased from 1500
+        try {
+          openaiRes = await retry(async () => {
+            const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(body)
+            }, 90000)
+            if (!r.ok) {
+              const t = await r.text()
+              throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
+            }
+            return r
+          })
+        } catch (fallbackError) {
+          const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
+          console.error('HTML extraction API error (fallback also failed):', fallbackMessage)
+          return NextResponse.json({ 
+            error: 'Failed to extract property data from HTML',
+            details: fallbackMessage
+          }, { status: 500 })
+        }
+      } else {
+        console.error('HTML extraction API error:', errorMessage)
+        return NextResponse.json({ 
+          error: 'Failed to extract property data from HTML',
+          details: errorMessage
+        }, { status: 500 })
       }
-      
-      throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
-      }
-      return r
-    })
+    }
 
     const openaiJson = await openaiRes.json()
     let extracted = openaiJson?.choices?.[0]?.message?.content
@@ -500,20 +587,31 @@ Return JSON matching the schema. Remember: preserve Hebrew descriptions complete
       return NextResponse.json({ error: 'No data extracted from OpenAI' }, { status: 502 })
     }
 
-    // The model now returns reasoning + JSON. Extract the JSON object.
-    // Find first JSON object substring.
-    const jsonMatch = extracted.match(/\{[\s\S]*\}$/)
-    if (jsonMatch) {
-      extracted = jsonMatch[0]
+    // The model now returns reasoning + JSON. Extract the JSON object using robust extraction
+    const jsonStr = extractFirstJsonObject(extracted)
+    if (jsonStr) {
+      extracted = jsonStr
+    } else {
+      // Fallback: try to find JSON at the end of the response
+      const jsonMatch = extracted.match(/\{[\s\S]*\}$/)
+      if (jsonMatch) {
+        extracted = jsonMatch[0]
+      }
     }
 
     // 3) Parse + validate strictly
     let candidate: unknown
     try {
       candidate = JSON.parse(extracted)
-    } catch {
+    } catch (parseError) {
+      console.error('JSON parse error. Raw content:', extracted.slice(0, 1000))
+      console.error('Parse error:', parseError)
       return NextResponse.json(
-        { error: 'OpenAI returned non-JSON content', debug: extracted.slice(0, 500) },
+        { 
+          error: 'OpenAI returned non-JSON content', 
+          debug: extracted.slice(0, 1000),
+          hint: 'The model may have returned reasoning text. Check the debug field for the raw response.'
+        },
         { status: 502 }
       )
     }

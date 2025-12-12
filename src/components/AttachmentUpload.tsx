@@ -53,7 +53,8 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
   }
 
   return (
@@ -86,7 +87,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
               {uploading ? 'Uploading...' : 'Add Files'}
             </span>
           </label>
-          <span className="text-xs text-slate-500">Max 50MB per file</span>
+          <span className="text-xs text-slate-500">Max 1GB per file (supports videos up to 4 minutes)</span>
         </div>
       </div>
 

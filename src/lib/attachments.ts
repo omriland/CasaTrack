@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { Attachment, AttachmentInsert } from '@/types/property'
 
 const BUCKET_NAME = 'property-attachments'
-const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
+const MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1GB (supports videos up to 4 minutes)
 
 export async function uploadAttachment(
   propertyId: string,

@@ -255,7 +255,7 @@ export default function Home() {
 
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-all font-medium shadow-sm hover:shadow"
+                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:brightness-90 transition-all font-medium shadow-sm hover:shadow"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />

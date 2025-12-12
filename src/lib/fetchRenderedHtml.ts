@@ -1,7 +1,17 @@
 import { chromium } from 'playwright'
 
 export async function fetchRenderedHtml(url: string, maxChars = 20000, options?: { raw?: boolean }) {
-  const browser = await chromium.launch({ headless: true })
+  let browser
+  try {
+    browser = await chromium.launch({ headless: true })
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes('browser') || errorMessage.includes('executable') || errorMessage.includes('not found')) {
+      throw new Error('Playwright browser not installed. Run: npx playwright install chromium')
+    }
+    throw error
+  }
+  
   try {
     const ctx = await browser.newContext({
       locale: 'he-IL',
@@ -29,6 +39,8 @@ export async function fetchRenderedHtml(url: string, maxChars = 20000, options?:
 
     return sanitized.slice(0, maxChars)
   } finally {
-    await browser.close()
+    if (browser) {
+      await browser.close()
+    }
   }
 }
