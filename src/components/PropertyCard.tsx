@@ -33,6 +33,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const roomsPickerRef = useRef<HTMLDivElement>(null)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [attachmentsLoading, setAttachmentsLoading] = useState(false)
+  const [selectedAttachmentIndex, setSelectedAttachmentIndex] = useState<number | null>(null)
+  const [isZoomed, setIsZoomed] = useState(false)
+  const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
 
   useEffect(() => {
     loadNotesCount()
@@ -518,10 +521,18 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="grid grid-cols-4 gap-2">
-            {attachments.slice(0, 4).map((attachment) => {
+            {attachments.slice(0, 4).map((attachment, index) => {
               const url = getAttachmentUrl(attachment.file_path)
               return (
-                <div key={attachment.id} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  key={attachment.id} 
+                  className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setSelectedAttachmentIndex(index)
+                    setIsZoomed(false)
+                  }}
+                >
                   {attachment.file_type === 'image' ? (
                     <img
                       src={url}
@@ -539,7 +550,14 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               )
             })}
             {attachments.length > 4 && (
-              <div className="aspect-square rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
+              <div 
+                className="aspect-square rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setSelectedAttachmentIndex(4)
+                  setIsZoomed(false)
+                }}
+              >
                 <span className="text-xs font-medium text-slate-600">+{attachments.length - 4}</span>
               </div>
             )}
@@ -729,6 +747,174 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           </div>
         </div>
       )}
+
+      {/* Attachment Lightbox with Navigation and Zoom */}
+      {selectedAttachmentIndex !== null && attachments[selectedAttachmentIndex] && (() => {
+        const currentAttachment = attachments[selectedAttachmentIndex]
+        const hasPrev = selectedAttachmentIndex > 0
+        const hasNext = selectedAttachmentIndex < attachments.length - 1
+        
+        const handlePrev = () => {
+          if (hasPrev) {
+            setSelectedAttachmentIndex(selectedAttachmentIndex - 1)
+            setIsZoomed(false)
+          }
+        }
+        
+        const handleNext = () => {
+          if (hasNext) {
+            setSelectedAttachmentIndex(selectedAttachmentIndex + 1)
+            setIsZoomed(false)
+          }
+        }
+        
+        const handleKeyDown = (e: React.KeyboardEvent) => {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault()
+            handlePrev()
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault()
+            handleNext()
+          } else if (e.key === 'Escape') {
+            e.preventDefault()
+            setSelectedAttachmentIndex(null)
+            setIsZoomed(false)
+          }
+        }
+        
+        const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
+          e.stopPropagation()
+          if (!isZoomed) {
+            // Calculate click position as percentage
+            const rect = e.currentTarget.getBoundingClientRect()
+            const x = ((e.clientX - rect.left) / rect.width) * 100
+            const y = ((e.clientY - rect.top) / rect.height) * 100
+            setZoomPosition({ x, y })
+          }
+          setIsZoomed(!isZoomed)
+        }
+        
+        const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+          if (!isZoomed) return
+          const rect = e.currentTarget.getBoundingClientRect()
+          const x = ((e.clientX - rect.left) / rect.width) * 100
+          const y = ((e.clientY - rect.top) / rect.height) * 100
+          setZoomPosition({ x, y })
+        }
+        
+        return (
+          <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[70] animate-fade-in"
+            onClick={() => {
+              setSelectedAttachmentIndex(null)
+              setIsZoomed(false)
+            }}
+            onKeyDown={handleKeyDown}
+            tabIndex={0}
+            ref={(el) => el?.focus()}
+          >
+            <div
+              className="relative max-w-7xl max-h-[95vh] w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setSelectedAttachmentIndex(null)
+                  setIsZoomed(false)
+                }}
+                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all z-10"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              
+              {/* Previous Button */}
+              {hasPrev && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePrev()
+                  }}
+                  className="absolute left-[20px] top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white transition-all z-10 group"
+                  title="Previous (←)"
+                >
+                  <svg className="w-10 h-10 group-hover:scale-110 transition-transform drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+              
+              {/* Next Button */}
+              {hasNext && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleNext()
+                  }}
+                  className="absolute right-[20px] top-1/2 -translate-y-1/2 p-3 text-white/70 hover:text-white transition-all z-10 group"
+                  title="Next (→)"
+                >
+                  <svg className="w-10 h-10 group-hover:scale-110 transition-transform drop-shadow-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+              
+              {/* Image/Video Display with Zoom */}
+              {currentAttachment.file_type === 'image' ? (
+                <div 
+                  className={`relative overflow-hidden ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
+                  onMouseMove={handleMouseMove}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                  }}
+                >
+                  <img
+                    src={getAttachmentUrl(currentAttachment.file_path)}
+                    alt={currentAttachment.file_name}
+                    className="max-w-full max-h-[85vh] object-contain rounded-lg select-none transition-transform duration-200"
+                    draggable={false}
+                    onClick={handleImageClick}
+                    style={isZoomed ? {
+                      transform: 'scale(2.5)',
+                      transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%`,
+                    } : undefined}
+                  />
+                </div>
+              ) : (
+                <video
+                  src={getAttachmentUrl(currentAttachment.file_path)}
+                  controls
+                  autoPlay
+                  className="max-w-full max-h-full rounded-lg"
+                >
+                  <source src={getAttachmentUrl(currentAttachment.file_path)} type={currentAttachment.mime_type} />
+                </video>
+              )}
+              
+              {/* Bottom Info Bar */}
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
+                <div className="bg-black/50 text-white px-4 py-2 rounded-lg text-sm">
+                  {currentAttachment.file_name}
+                </div>
+                {attachments.length > 1 && (
+                  <div className="bg-black/50 text-white px-3 py-2 rounded-lg text-sm font-medium">
+                    {selectedAttachmentIndex + 1} / {attachments.length}
+                  </div>
+                )}
+                {currentAttachment.file_type === 'image' && (
+                  <div className="bg-black/50 text-white px-3 py-2 rounded-lg text-xs">
+                    {isZoomed ? 'Click to zoom out' : 'Click to zoom in'}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

@@ -18,3 +18,6 @@ ALTER TABLE properties
 -- CREATE INDEX idx_properties_title ON properties(title);
 
 
+
+
+

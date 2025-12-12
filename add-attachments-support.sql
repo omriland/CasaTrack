@@ -38,3 +38,6 @@ CREATE INDEX idx_attachments_created_at ON attachments(created_at);
 -- Allowed MIME types: image/*, video/*
 
 
+
+
+
