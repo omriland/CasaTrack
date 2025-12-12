@@ -119,6 +119,66 @@ async function retry<T>(fn: () => Promise<T>, attempts = 4, baseDelayMs = 800) {
 }
 
 // ------------------ Prompt ------------------
+function buildImageMessages() {
+  return [
+    {
+      role: "system",
+      content: `Extract structured property data from a Yad2 real estate listing screenshot/image.
+
+Identify key property details as accurately as possible—including price, address, number of rooms, area in square meters, contact information, property type, description, and apartment broker status—following the mapping and logic specified in the target schema below.
+
+**Before outputting any conclusions or final data, think step-by-step about where each detail is found, how ambiguous or missing information is interpreted, and how inconsistent formatting is handled. Record your reasoning process first, then produce only the resulting structured JSON.**
+
+If data is incomplete or not present, handle nullable fields according to the schema (i.e., set as \`null\` or, after transformation, to the proper default); never fill in information beyond what is provided or confidently inferred from the input. For numeric fields, strip any units or currency symbols found in the source.
+
+For the description field specifically:
+- If the image contains a property description in Hebrew (עברית), extract it COMPLETELY and PRESERVE IT AS-IS. Do not summarize, edit, or shorten Hebrew descriptions.
+- Preserve all Hebrew text exactly as it appears in the image, including all details, features, and information.
+- Only if there is no Hebrew description present, you may set description to null.
+
+- Do not summarize or comment—output only the structured data.
+- Provide output in JSON format matching this exact schema (with these precise property names and value types):
+
+{ "address": "[string, required, never empty]", "rooms": [number, nullable, \`null\` becomes 0], "square_meters": [number, nullable, \`null\` becomes 0], "asked_price": [number, nullable, \`null\` becomes 0], "contact_name": [string, nullable, default null], "contact_phone": [string, nullable, default null], "property_type": ["New" | "Existing apartment"], "description": [string, nullable, default null], "apartment_broker": [boolean, nullable, \`null\` becomes false] }
+
+Field mapping:
+- address: The full location string, must not be empty.
+- rooms: The number of rooms; input \`null\` transforms to \`0\`.
+- square_meters: The area in square meters as a number; input \`null\` transforms to \`0\`.
+- asked_price: Numeric asking price; input \`null\` transforms to \`0\`.
+- contact_name: Name of contact person; default is \`null\` if not present.
+- contact_phone: Phone number for contact; default is \`null\` if not present.
+- property_type: Must be exactly "New" or "Existing apartment" (classify based on provided cues; if unclear, choose "Existing apartment").
+- description: Textual description; default is \`null\` if not present.
+  - For images: If Hebrew description exists, preserve it completely as-is. Do not summarize Hebrew text.
+  - For HTML: Keep it concise and high-signal (1-2 sentences summary of key selling points).
+- apartment_broker: Boolean indicating if a broker is involved; nullable input transforms to \`false\` (use explicit cues such as broker/company names/labels if possible).
+
+When writing JSON, replace any missing or null values with the schema's default transformation where appropriate (e.g., \`null\` for contact fields, \`0\` for numbers, \`false\` for booleans).
+
+# Steps
+
+1. Analyze the HTML/text to find relevant values for each schema field, noting how you dealt with any ambiguities or missing data.
+2. Map each discovered value into the schema, handling required value transformations or defaults as described.
+3. Produce the final output as a single, minified JSON object conforming to the schema above.
+
+# Output Format
+
+First provide step-by-step reasoning as a bulleted list. 
+Then output only the final JSON object, matching the schema above, in a single block and **without extra commentary or formatting**. (Do not include extra whitespace. Do not output Markdown or code blocks.)
+
+# Notes
+- Never output Markdown or commentary—output must be only valid JSON after reasoning.
+- Always provide reasoning before the JSON, never after.
+- Always match the exact field names and types; only values from the schema.
+- If you cannot infer a value, use the schema's default/null/false settings as instructed.
+- Persist and chain your reasoning to ensure fully complete and accurate extractions, including for complex or nested inputs.
+
+Your objective is: Extract property details from a Yad2 listing screenshot/image, following step-by-step reasoning before outputting only the final JSON structure according to the PropertySchema as shown.`
+    }
+  ]
+}
+
 function buildMessages(url: string, pageText: string) {
   return [
     {
@@ -147,7 +207,8 @@ Field mapping:
 - contact_phone: Phone number for contact; default is \`null\` if not present.
 - property_type: Must be exactly "New" or "Existing apartment" (classify based on provided cues; if unclear, choose "Existing apartment").
 - description: Textual description; default is \`null\` if not present.
-  - When present, keep it concise and high-signal as described above (not the whole source text).
+  - For images: If Hebrew description exists, preserve it completely as-is. Do not summarize Hebrew text.
+  - For HTML: Keep it concise and high-signal (1-2 sentences summary of key selling points).
 - apartment_broker: Boolean indicating if a broker is involved; nullable input transforms to \`false\` (use explicit cues such as broker/company names/labels if possible).
 
 When writing JSON, replace any missing or null values with the schema's default transformation where appropriate (e.g., \`null\` for contact fields, \`0\` for numbers, \`false\` for booleans).
@@ -233,38 +294,95 @@ export async function POST(request: NextRequest) {
 
     // 1) If image provided, skip page fetch and go straight to vision extraction
     if (typeof image === 'string' && image.startsWith('data:image')) {
-      const visionSystem = buildMessages(url || 'image-upload', '[image input]')[0]
+      const visionSystem = buildImageMessages()[0]
       const visionUser = {
         role: 'user' as const,
         content: [
-          { type: 'text', text: 'Use the following screenshot (Yad2 listing) to extract the fields as per the system instructions above.' },
+          { 
+            type: 'text', 
+            text: `Extract property data from this Yad2 listing screenshot and return a JSON object.
+
+Find these fields if they exist in the image:
+- address: full property address
+- rooms: number of rooms (חדרים)
+- square_meters: property size in square meters (מ״ר)
+- asked_price: listing price in Israeli Shekels (₪) - convert to number
+- contact_name: seller/agent name
+- contact_phone: phone number
+- property_type: "New" or "Existing apartment"
+- description: If there is a Hebrew description (תיאור), extract it COMPLETELY and preserve it as-is. Do not summarize or shorten Hebrew text.
+- apartment_broker: true if broker/agency, false if private, null if unclear
+
+Return JSON matching the schema. Remember: preserve Hebrew descriptions completely as they appear in the image.` 
+          },
           { type: 'image_url', image_url: { url: image } }
         ]
       }
-      const body = {
-        model: 'gpt-4o',
-        max_tokens: 1500,
+      // Try GPT-5.2 first, fallback to GPT-4o if model not available
+      let body = {
+        model: 'gpt-5.2', // Using GPT-5.2 for improved image extraction and larger output capacity
+        max_tokens: 15000, // Increased for very long Hebrew descriptions (can go up to 128,000 if needed)
         messages: [visionSystem, visionUser]
       }
-      const openaiRes = await retry(async () => {
-        const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
-        }, 90000)
-        if (!r.ok) {
-          const t = await r.text()
-          console.error(`OpenAI API Error - Status: ${r.status}`)
-          console.error(`OpenAI API Error - Status Text: ${r.statusText}`)
-          console.error('OpenAI API Error - Headers:', Object.fromEntries(r.headers.entries()))
-          console.error(`OpenAI API Error - Response: ${t.slice(0, 800)}`)
-          throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
+      
+      let openaiRes
+      try {
+        openaiRes = await retry(async () => {
+          const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+          }, 90000)
+          if (!r.ok) {
+            const t = await r.text()
+            console.error(`OpenAI API Error - Status: ${r.status}`)
+            console.error(`OpenAI API Error - Response: ${t.slice(0, 800)}`)
+            throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
+          }
+          return r
+        })
+      } catch (error) {
+        // Check if error is due to model not found, then try fallback
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        if (errorMessage.includes('model_not_found') || errorMessage.includes('model')) {
+          console.log('GPT-5.2 not available, falling back to GPT-4o')
+          body.model = 'gpt-4o'
+          body.max_tokens = 8000 // GPT-4o has lower max tokens
+          try {
+            openaiRes = await retry(async () => {
+              const r = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+              }, 90000)
+              if (!r.ok) {
+                const t = await r.text()
+                throw new Error(`OpenAI ${r.status}: ${t.slice(0, 400)}`)
+              }
+              return r
+            })
+          } catch (fallbackError) {
+            const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError)
+            console.error('Image extraction API error (fallback also failed):', fallbackMessage)
+            return NextResponse.json({ 
+              error: 'Failed to extract property data from image',
+              details: fallbackMessage
+            }, { status: 500 })
+          }
+        } else {
+          console.error('Image extraction API error:', errorMessage)
+          return NextResponse.json({ 
+            error: 'Failed to extract property data from image',
+            details: errorMessage
+          }, { status: 500 })
         }
-        return r
-      })
+      }
       const openaiJson = await openaiRes.json()
       let extracted = openaiJson?.choices?.[0]?.message?.content
       if (!extracted) {
@@ -341,8 +459,8 @@ export async function POST(request: NextRequest) {
     const evidence = buildEvidenceFromHtml(pageText)
     const sendText = JSON.stringify({ url, evidence }, null, 2)
     const body = {
-      model: 'gpt-5',
-      max_completion_tokens: 1500,
+      model: 'gpt-4o',
+      max_tokens: 1500,
       messages: buildMessages(url, sendText)
     }
 

@@ -185,7 +185,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
   }
 
   const handleAddressChange = (address: string, coordinates?: { lat: number; lng: number }) => {
-    console.log('handleAddressChange called with:', { address, coordinates })
     setFormData(prev => {
       // Auto-populate title with address if title is empty
       const newTitle = prev.title.trim() === '' ? address : prev.title
@@ -357,7 +356,109 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }
   }
 
-  // Image paste/extraction removed; no handlers needed
+  // Handle image paste for extraction
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      // Check if any item is an image
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          e.preventDefault()
+          const blob = items[i].getAsFile()
+          if (!blob) return
+
+          // Convert blob to data URL
+          const reader = new FileReader()
+          reader.onloadend = async () => {
+            const imageDataUrl = reader.result as string
+            if (!imageDataUrl) return
+
+            try {
+              setIsExtracting(true)
+              const response = await fetch('/api/extract-property', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ image: imageDataUrl })
+              })
+
+              const result = await response.json()
+
+              if (!response.ok) {
+                throw new Error(result.error || 'Failed to extract property data')
+              }
+
+              if (result.success && result.data) {
+                const extractedData = result.data
+                
+                // Normalize extracted address
+                if (extractedData.address) {
+                  extractedData.address = extractedData.address
+                    .replace(/\s+/g, ' ')
+                    .replace(/\u00A0/g, ' ')
+                    .trim()
+                }
+                
+                // Count extracted fields
+                const extractedFields = Object.entries(extractedData).filter(([, value]) => 
+                  value !== null && value !== 0 && value !== '' && value !== false
+                ).length
+
+                // Update form data using functional update to avoid stale closure
+                setFormData(prev => {
+                  const extractedAddress = extractedData.address || prev.address
+                  return {
+                    ...prev,
+                    title: prev.title.trim() === '' ? extractedAddress : prev.title,
+                    address: extractedAddress,
+                    rooms: extractedData.rooms > 0 ? extractedData.rooms : prev.rooms,
+                    square_meters: extractedData.square_meters > 0 ? extractedData.square_meters : prev.square_meters ?? null,
+                    asked_price: extractedData.asked_price > 0 ? extractedData.asked_price : prev.asked_price ?? null,
+                    contact_name: extractedData.contact_name || prev.contact_name,
+                    contact_phone: extractedData.contact_phone || prev.contact_phone,
+                    property_type: extractedData.property_type || prev.property_type,
+                    description: extractedData.description || prev.description,
+                    apartment_broker: extractedData.apartment_broker ?? prev.apartment_broker
+                  }
+                })
+
+                // Update formatted price
+                if (extractedData.asked_price > 0) {
+                  setFormattedPrice(extractedData.asked_price.toLocaleString('en-US'))
+                }
+
+                setExtractionResult({
+                  show: true,
+                  success: true,
+                  message: `Property data extracted from image! Found ${extractedFields} fields. Please review and complete any missing information.`,
+                  fieldsCount: extractedFields
+                })
+              }
+            } catch (error) {
+              console.error('Image extraction error:', error)
+              setExtractionResult({
+                show: true,
+                success: false,
+                message: `Failed to extract data from image: ${error instanceof Error ? error.message : 'Unknown error'}`
+              })
+            } finally {
+              setIsExtracting(false)
+            }
+          }
+          reader.readAsDataURL(blob)
+          break
+        }
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, []) // Empty dependency array - handler doesn't depend on formData
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value
@@ -376,6 +477,33 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     
     // Update formatted display value
     setFormattedPrice(numberValue === null ? '' : numberValue.toLocaleString('en-US'))
+  }
+
+  const handlePriceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const input = e.currentTarget
+    const cursorPosition = input.selectionStart || 0
+    
+    // Prevent cursor from being positioned before the ₪ symbol area
+    // The ₪ symbol takes up space, so cursor should be at position 0 minimum
+    if (cursorPosition === 0 && (e.key === 'ArrowLeft' || e.key === 'Home')) {
+      e.preventDefault()
+      // Move cursor to start of actual number (after symbol area)
+      setTimeout(() => {
+        input.setSelectionRange(0, 0)
+      }, 0)
+    }
+  }
+
+  const handlePriceClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    const input = e.currentTarget
+    const cursorPosition = input.selectionStart || 0
+    
+    // If user clicks in the symbol area, move cursor to start of number
+    if (cursorPosition === 0) {
+      setTimeout(() => {
+        input.setSelectionRange(0, 0)
+      }, 0)
+    }
   }
 
 
@@ -478,19 +606,23 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   </div>
                 </button>
               </div>
-              {(formData.url && formData.url.includes('yad2.co.il')) && (
-                <div className="mt-2 text-xs text-slate-600 bg-primary/5 rounded-lg p-3 border border-primary/20">
-                  <div className="flex items-start space-x-2">
-                    <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>
-                      <p className="font-medium text-slate-700 mb-1">AI Data Extraction Available</p>
-                      <p className="text-slate-600">Click &quot;Extract Data&quot; to automatically fill property details from this Yad2 listing using ChatGPT.</p>
-                    </div>
+              <div className="mt-2 text-xs text-slate-600 bg-primary/5 rounded-lg p-3 border border-primary/20">
+                <div className="flex items-start space-x-2">
+                  <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="font-medium text-slate-700 mb-1">AI Data Extraction Available</p>
+                    <p className="text-slate-600 mb-2">Paste a Yad2 screenshot anywhere in this form to automatically extract property details, or enter a Yad2 URL and click &quot;Extract Data&quot;.</p>
+                    {isExtracting && (
+                      <div className="flex items-center space-x-2 text-primary">
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs">Extracting data from image...</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div>
@@ -575,14 +707,16 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="asked_price"
                   value={formattedPrice}
                   onChange={handlePriceChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  onKeyDown={handlePriceKeyDown}
+                  onClick={handlePriceClick}
+                  className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
                   tabIndex={7}
                 />
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <span className="text-slate-500 text-sm font-medium">₪</span>
-                </div>
                 <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
                   <div className="w-px h-6 bg-slate-300"></div>
+                </div>
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                  <span className="text-slate-500 text-sm font-medium">₪</span>
                 </div>
               </div>
             </div>
