@@ -73,7 +73,6 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
           mapInstanceRef.current = new google.maps.Map(mapRef.current, {
             center,
             zoom,
-            language: 'he',
             styles: [
               {
                 featureType: 'poi',
@@ -309,7 +308,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       const request: google.maps.places.PlaceSearchRequest = {
         bounds: bounds,
         type: 'school',
-        query: 'school'
+        keyword: 'school'
       }
 
       placesServiceRef.current.nearbySearch(request, (results, status) => {
@@ -375,7 +374,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         const request: google.maps.places.PlaceSearchRequest = {
           bounds: bounds,
           type: 'school',
-          query: 'school'
+          keyword: 'school'
         }
 
         placesServiceRef.current.nearbySearch(request, (results, status) => {

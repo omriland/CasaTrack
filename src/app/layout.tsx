@@ -1,21 +1,16 @@
 import type { Metadata } from "next";
-import { Outfit, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { Assistant, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const outfitSans = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
+const assistant = Assistant({
+  variable: "--font-assistant",
+  subsets: ["latin", "hebrew"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -48,7 +43,7 @@ export default function RootLayout({
         ></script>
       </head>
       <body
-        className={`${outfitSans.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} antialiased`}
+        className={`${assistant.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
       </body>

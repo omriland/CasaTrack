@@ -2,6 +2,9 @@
   "name": "casa-track",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <21"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
@@ -13,10 +16,10 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@supabase/supabase-js": "^2.57.4",
-    "next": "15.5.3",
+    "next": "15.5.7",
     "playwright": "^1.55.0",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "react": "19.1.2",
+    "react-dom": "19.1.2",
     "zod": "^4.1.11"
   },
   "devDependencies": {
@@ -27,7 +30,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.5.3",
+    "eslint-config-next": "15.5.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

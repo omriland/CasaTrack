@@ -591,7 +591,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               const balcony = formData.balcony_square_meters ?? 0
               const squareMeters = formData.square_meters ?? 0
               const effectiveArea = squareMeters + 0.5 * balcony
-              return formData.asked_price !== null && formData.asked_price > 0 && effectiveArea > 0
+              return formData.asked_price != null && formData.asked_price > 0 && effectiveArea > 0
             })() && (
               <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
                 <p className="text-sm font-medium text-slate-700">
