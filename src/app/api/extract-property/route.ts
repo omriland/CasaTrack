@@ -362,7 +362,7 @@ Return JSON matching the schema. Remember: preserve Hebrew descriptions complete
         ]
       }
       // Try GPT-5.2 first, fallback to GPT-4o if model not available
-      let body = {
+      const body = {
         model: 'gpt-5.2', // Using GPT-5.2 for improved image extraction and larger output capacity
         max_tokens: 15000, // Increased for very long Hebrew descriptions (can go up to 128,000 if needed)
         messages: [visionSystem, visionUser]
@@ -514,7 +514,7 @@ Return JSON matching the schema. Remember: preserve Hebrew descriptions complete
     // 2) Build concise evidence only and send to OpenAI
     const evidence = buildEvidenceFromHtml(pageText)
     const sendText = JSON.stringify({ url, evidence }, null, 2)
-    let body = {
+    const body = {
       model: 'gpt-5.2', // Using GPT-5.2 for improved HTML extraction and larger output capacity
       max_tokens: 30000, // Increased token limit for comprehensive extraction
       messages: buildMessages(url, sendText)
