@@ -3,10 +3,12 @@ import { Attachment, AttachmentInsert } from '@/types/property'
 
 const BUCKET_NAME = 'property-attachments'
 const MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1GB (supports videos up to 4 minutes)
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 
 export async function uploadAttachment(
   propertyId: string,
-  file: File
+  file: File,
+  onProgress?: (progress: number) => void
 ): Promise<Attachment> {
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
@@ -24,22 +26,51 @@ export async function uploadAttachment(
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
   const filePath = `${propertyId}/${fileName}`
 
-  // Upload to Supabase Storage
-  // RLS policies will control whether this upload is allowed
-  const { error: uploadError } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: false
+  // Get upload URL from Supabase
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    throw new Error('Not authenticated')
+  }
+
+    // Use XMLHttpRequest for progress tracking
+    const uploadPromise = new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      
+      // Get the upload URL
+      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${filePath}`
+    
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable && onProgress) {
+        const percentComplete = Math.round((e.loaded / e.total) * 100)
+        onProgress(percentComplete)
+      }
     })
 
-  if (uploadError) {
-    // Check if it's an RLS/policy error
-    if (uploadError.message.includes('policy') || uploadError.message.includes('permission') || uploadError.message.includes('RLS')) {
-      throw new Error(`Upload denied by security policy. Please ensure RLS policies are set up correctly. Error: ${uploadError.message}`)
-    }
-    throw new Error(`Failed to upload file: ${uploadError.message}`)
-  }
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve()
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`))
+      }
+    })
+
+    xhr.addEventListener('error', () => {
+      reject(new Error('Upload failed'))
+    })
+
+    xhr.addEventListener('abort', () => {
+      reject(new Error('Upload aborted'))
+    })
+
+    xhr.open('POST', uploadUrl)
+    xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`)
+    xhr.setRequestHeader('apikey', session.access_token)
+    xhr.setRequestHeader('x-upsert', 'false')
+    xhr.setRequestHeader('cache-control', '3600')
+    xhr.send(file)
+  })
+
+  await uploadPromise
 
   // Get public URL
   const { data: urlData } = supabase.storage

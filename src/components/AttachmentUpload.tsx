@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { Attachment } from '@/types/property'
 import { uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/lib/attachments'
+import imageCompression from 'browser-image-compression'
 
 interface AttachmentUploadProps {
   propertyId: string
@@ -12,16 +13,82 @@ interface AttachmentUploadProps {
 
 export default function AttachmentUpload({ propertyId, attachments, onAttachmentsChange }: AttachmentUploadProps) {
   const [uploading, setUploading] = useState(false)
+  const [compressing, setCompressing] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [deleting, setDeleting] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const compressImage = async (file: File): Promise<File> => {
+    const options = {
+      maxSizeMB: 2, // Maximum size in MB
+      maxWidthOrHeight: 1920, // Maximum width or height
+      useWebWorker: true,
+      fileType: file.type,
+    }
+    
+    try {
+      const compressedFile = await imageCompression(file, options)
+      console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+      return compressedFile
+    } catch (error) {
+      console.error('Error compressing image:', error)
+      // Return original file if compression fails
+      return file
+    }
+  }
+
+  const compressVideo = async (file: File): Promise<File> => {
+    // Video compression in the browser is complex and resource-intensive
+    // For now, we'll return the original file
+    // Full video compression would require ffmpeg.wasm or server-side processing
+    // Images are compressed, videos are uploaded as-is (within the 1GB limit)
+    return file
+  }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
     setUploading(true)
+    setCompressing(true)
+    
     try {
-      const uploadPromises = Array.from(files).map(file => uploadAttachment(propertyId, file))
+      const processedFiles: File[] = []
+      
+      // Process each file (compress if needed)
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('image/')) {
+          const compressed = await compressImage(file)
+          processedFiles.push(compressed)
+        } else if (file.type.startsWith('video/')) {
+          // For videos, compress if they're large
+          const compressed = await compressVideo(file)
+          processedFiles.push(compressed)
+        } else {
+          processedFiles.push(file)
+        }
+      }
+      
+      setCompressing(false)
+      
+      // Upload processed files with progress tracking
+      const uploadPromises = processedFiles.map((file, index) => {
+        const fileId = `${file.name}-${index}-${Date.now()}`
+        return uploadAttachment(
+          propertyId, 
+          file,
+          (progress) => {
+            setUploadProgress(prev => ({ ...prev, [fileId]: progress }))
+          }
+        ).finally(() => {
+          // Clean up progress tracking after upload completes
+          setUploadProgress(prev => {
+            const updated = { ...prev }
+            delete updated[fileId]
+            return updated
+          })
+        })
+      })
       const newAttachments = await Promise.all(uploadPromises)
       onAttachmentsChange([...attachments, ...newAttachments])
     } catch (error) {
@@ -29,6 +96,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
       alert(error instanceof Error ? error.message : 'Failed to upload files')
     } finally {
       setUploading(false)
+      setCompressing(false)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -84,11 +152,44 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
             </svg>
             <span className="text-sm font-medium text-slate-700">
-              {uploading ? 'Uploading...' : 'Add Files'}
+              {compressing ? 'Compressing...' : uploading ? (
+                <span className="flex items-center space-x-2">
+                  <span>Uploading...</span>
+                  {Object.keys(uploadProgress).length > 0 && (
+                    <span className="text-xs text-primary">
+                      {Math.round(
+                        Object.values(uploadProgress).reduce((sum, p) => sum + p, 0) / Object.keys(uploadProgress).length
+                      )}%
+                    </span>
+                  )}
+                </span>
+              ) : 'Add Files'}
             </span>
           </label>
           <span className="text-xs text-slate-500">Max 1GB per file (supports videos up to 4 minutes)</span>
         </div>
+        {uploading && Object.keys(uploadProgress).length > 0 && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-slate-600">Upload Progress</span>
+              <span className="text-xs font-medium text-primary">
+                {Math.round(
+                  Object.values(uploadProgress).reduce((sum, p) => sum + p, 0) / Object.keys(uploadProgress).length
+                )}%
+              </span>
+            </div>
+            <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+                style={{
+                  width: `${Math.round(
+                    Object.values(uploadProgress).reduce((sum, p) => sum + p, 0) / Object.keys(uploadProgress).length
+                  )}%`
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {attachments.length > 0 && (
