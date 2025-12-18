@@ -82,19 +82,38 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
     return new Intl.NumberFormat('en-US').format(price)
   }
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if user is selecting text or if dragging
+    if (window.getSelection()?.toString() || isDragging) return
+    // Don't trigger if clicking on interactive elements
+    const target = e.target as HTMLElement
+    if (target.closest('button') || target.closest('[role="button"]')) return
+    onViewNotes(property)
+  }
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`group bg-white rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all border border-slate-200 hover:border-slate-300 ${
+      className={`group bg-white rounded-lg p-3 transition-all border border-slate-200 hover:border-slate-300 ${
         isDragging ? 'opacity-50 scale-105 rotate-1 border-primary/40' : ''
       }`}
+      onClick={handleCardClick}
     >
         <div className="space-y-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
+            {/* Drag Handle */}
+            <div
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing mb-1 -ml-1 -mt-1 p-1 rounded hover:bg-slate-50 transition-colors inline-block touch-none"
+              title="Drag to move"
+            >
+              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
+              </svg>
+            </div>
             <h4 className="font-semibold text-base text-slate-900 line-clamp-2 leading-tight">
               {property.title}
             </h4>
@@ -166,26 +185,30 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                 </div>
               )}
             </div>
-            <div className={`inline-flex flex-col items-start rounded px-2.5 py-1.5 ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50 border border-slate-200'}`}>
+            <div className={`inline-flex flex-col items-start rounded px-2.5 py-1.5 ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : property.square_meters === 1 ? 'bg-slate-50 border border-slate-200' : 'bg-slate-50 border border-slate-200'}`}>
               <div className="flex items-center space-x-1.5">
                 <svg className={`w-3.5 h-3.5 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
                 </svg>
-                <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : 'text-slate-700'}`}>
-                  {property.square_meters === null ? 'Add size' : `${property.square_meters} m²`}
+                <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : property.square_meters === 1 ? 'text-slate-500' : 'text-slate-700'}`}>
+                  {property.square_meters === null ? 'Add size' : property.square_meters === 1 ? 'Unknown' : `${property.square_meters} m²`}
                 </span>
               </div>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters !== null && (
+              {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters !== null && property.square_meters !== 1 && (
                 <span className="text-xs text-slate-500 mt-0.5 ml-5">+ {property.balcony_square_meters} m² balcony</span>
               )}
             </div>
           </div>
-          {property.asked_price !== null ? (
+          {property.asked_price !== null && property.asked_price !== 1 ? (
             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
               <span className="text-lg font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
               {property.price_per_meter !== null && (
                 <span className="text-sm text-slate-500 font-medium">₪{formatPrice(Math.round(property.price_per_meter))}/m²</span>
               )}
+            </div>
+          ) : property.asked_price === 1 ? (
+            <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-100">
+              <span className="text-sm font-medium text-slate-500">Price: Unknown</span>
             </div>
           ) : (
             <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-100">

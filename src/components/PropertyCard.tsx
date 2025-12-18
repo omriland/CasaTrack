@@ -36,10 +36,26 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const [selectedAttachmentIndex, setSelectedAttachmentIndex] = useState<number | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     loadNotesCount()
     loadAttachments()
+    
+    // Detect mobile and set initial expanded state
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768
+      setIsMobile(mobile)
+      if (mobile) {
+        setIsExpanded(false) // Collapsed by default on mobile
+      } else {
+        setIsExpanded(true) // Expanded by default on desktop
+      }
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [property.id, notesRefreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadAttachments = async () => {
@@ -269,100 +285,185 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     })
   }
 
+  const formatNoteDate = (dateString: string) => {
+    const now = new Date()
+    const noteDate = new Date(dateString)
+    const diffMs = now.getTime() - noteDate.getTime()
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    // Less than a minute ago
+    if (diffMinutes < 1) {
+      return 'Just now'
+    }
+
+    // Less than an hour ago - show minutes
+    if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`
+    }
+
+    // Less than 24 hours ago - show hours
+    if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    }
+
+    // Yesterday
+    if (diffDays === 1) {
+      const timeStr = noteDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return `Yesterday, ${timeStr}`
+    }
+
+    // Today (more than 24 hours but same calendar day)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const noteDay = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate())
+    if (today.getTime() === noteDay.getTime()) {
+      const timeStr = noteDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return `Today, ${timeStr}`
+    }
+
+    // Within a couple of days (2-3 days)
+    if (diffDays <= 3) {
+      const timeStr = noteDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return `${diffDays} days ago, ${timeStr}`
+    }
+
+    // Older than a couple of days - use full date format
+    return formatDate(dateString)
+  }
+
   const handleCardClick = (e: React.MouseEvent) => {
-    // Don't trigger if user is selecting text
+    // Don't trigger if user is selecting text or clicking on interactive elements
     if (window.getSelection()?.toString()) return
+    // On mobile, if collapsed, expand it instead of opening modal
+    if (isMobile && !isExpanded) {
+      e.stopPropagation()
+      setIsExpanded(true)
+      return
+    }
     onViewNotes(property)
+  }
+
+  const handleExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsExpanded(!isExpanded)
   }
 
   return (
     <div 
-      className="group bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in cursor-pointer"
+      className={`group bg-white rounded-lg shadow-sm border border-slate-200 ${isMobile ? (isExpanded ? 'p-6' : 'p-3') : 'p-6'} hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in cursor-pointer`}
       onClick={handleCardClick}
     >
       {/* Header */}
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start mb-2 md:mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-lg text-slate-900 mb-1 line-clamp-2 leading-tight">
+          <h3 className={`font-semibold text-slate-900 mb-1 line-clamp-2 leading-tight ${isMobile && !isExpanded ? 'text-base' : 'text-lg'}`}>
             {property.title}
           </h3>
-          <div className="text-xs text-slate-500 mb-1 line-clamp-1" title={property.address}>
+          <div className={`text-slate-500 mb-1 line-clamp-1 ${isMobile && !isExpanded ? 'text-xs' : 'text-xs'}`} title={property.address}>
             {property.address}
           </div>
-          <div className="text-xs text-slate-500 mb-2" title={formatExactDateTime(property.created_at)}>
-            Added {getRelativeTime(property.created_at)}
-          </div>
-          <div className="relative inline-block" ref={statusDropdownRef}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm whitespace-nowrap ${getStatusColor(property.status)}`}
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-current mr-2 opacity-60"></div>
-              {property.status}
-              <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          
-            {showStatusDropdown && (
-              <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
-                {allStatuses.map((status) => (
-                  <button
-                    key={status}
-                    onClick={(e) => { e.stopPropagation(); handleStatusChange(status) }}
-                    className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
-                      status === property.status ? 'bg-slate-50 font-medium' : ''
-                    }`}
-                  >
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                    <span>{status}</span>
-                    {status === property.status && (
-                      <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
+          {(isExpanded || !isMobile) && (
+            <>
+              <div className="hidden md:block text-xs text-slate-500 mb-2" title={formatExactDateTime(property.created_at)}>
+                Added {getRelativeTime(property.created_at)}
               </div>
-            )}
-          </div>
+              <div className="hidden md:block relative inline-block" ref={statusDropdownRef}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm whitespace-nowrap ${getStatusColor(property.status)}`}
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-current mr-2 opacity-60"></div>
+                  {property.status}
+                  <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              
+                {showStatusDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
+                    {allStatuses.map((status) => (
+                      <button
+                        key={status}
+                        onClick={(e) => { e.stopPropagation(); handleStatusChange(status) }}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
+                          status === property.status ? 'bg-slate-50 font-medium' : ''
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
+                        <span>{status}</span>
+                        {status === property.status && (
+                          <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </div>
-        <div className="flex space-x-1 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Expand/Collapse Chevron - Mobile Only */}
+        {isMobile && (
           <button
-            onClick={(e) => { e.stopPropagation(); onEdit(property) }}
-            className="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-            title="Edit property"
+            onClick={handleExpandToggle}
+            className="ml-2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+            title={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <svg 
+              className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowDeleteConfirm(true) }}
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-            title="Delete property"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Property Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div
-          className={`relative rounded-lg p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
-          onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('rooms', property.rooms) }}
-          title="Double-click to edit rooms"
-        >
-          <div className="flex items-center space-x-2 mb-1">
-            <svg className={`w-4 h-4 ${property.rooms === 0 ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      {isMobile && !isExpanded ? (
+        // Compact collapsed view - Mobile only
+        <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
             </svg>
-            <span className={`text-xs font-medium ${property.rooms === 0 ? 'text-amber-700' : 'text-slate-600'}`}>Rooms</span>
+            <span className={`text-xs font-medium ${localRooms === 0 ? 'text-amber-700' : 'text-slate-700'}`}>
+              {localRooms === 0 ? 'Add rooms' : `${localRooms} rooms`}
+            </span>
           </div>
-          <span className={`text-lg font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-slate-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
+        </div>
+      ) : (
+        // Full expanded view
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div
+            className={`relative rounded-lg p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+            onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('rooms', property.rooms) }}
+            title="Double-click to edit rooms"
+          >
+            <div className="flex items-center space-x-2 mb-1">
+              <svg className={`w-4 h-4 ${property.rooms === 0 ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+              </svg>
+              <span className={`text-xs font-medium ${property.rooms === 0 ? 'text-amber-700' : 'text-slate-600'}`}>Rooms</span>
+            </div>
+            <span className={`text-lg font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-slate-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
           {inlineEditing?.field === 'rooms' && (
             <div
               className="absolute left-3 top-3 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50"
@@ -390,7 +491,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
 
-        <div className={`relative rounded-lg p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-lg p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : property.square_meters === 1 ? 'bg-slate-50' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
           <div className="flex items-center space-x-2 mb-1">
             <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
@@ -417,44 +518,75 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </div>
           ) : (
             <div className="flex flex-col">
-              <span className={`text-lg font-semibold ${localSquareMeters === null ? 'text-amber-700' : 'text-slate-900'}`}>
-                {localSquareMeters === null ? 'Add size' : `${localSquareMeters} m²`}
+              <span className={`text-lg font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-slate-500' : 'text-slate-900'}`}>
+                {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : `${localSquareMeters} m²`}
               </span>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && (
+              {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
                 <span className="text-xs text-slate-600 mt-0.5">+ {property.balcony_square_meters} m² balcony</span>
               )}
             </div>
           )}
         </div>
       </div>
+      )}
 
       {/* Price Section */}
-      {property.asked_price !== null ? (
-        <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-medium text-slate-600">Asking Price</span>
-            <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+      {isMobile && !isExpanded ? (
+        // Compact collapsed price view - Mobile only
+        property.asked_price !== null && property.asked_price !== 1 ? (
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-slate-500">Price:</span>
+            <span className="text-base font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
           </div>
-          {property.price_per_meter !== null && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-slate-500">Price per m²</span>
-              <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        ) : property.asked_price === 1 ? (
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-xs text-slate-500">Price:</span>
+            <span className="text-xs font-medium text-slate-500">Unknown</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 mb-2">
+            <svg className="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="text-sm font-medium text-amber-700">Price not set</span>
+            <span className="text-xs font-medium text-amber-700">Price not set</span>
           </div>
-        </div>
+        )
+      ) : (
+        // Full expanded price view
+        property.asked_price !== null && property.asked_price !== 1 ? (
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-slate-600">Asking Price</span>
+              <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+            </div>
+            {property.price_per_meter !== null && (
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-slate-500">Price per m²</span>
+                <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+              </div>
+            )}
+          </div>
+        ) : property.asked_price === 1 ? (
+          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-slate-600">Asking Price:</span>
+              <span className="text-sm font-medium text-slate-500">Unknown</span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-amber-700">Price not set</span>
+            </div>
+          </div>
+        )
       )}
 
       {/* Additional Details */}
-      <div className="space-y-2 text-sm">
+      <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} space-y-2 text-sm`}>
         <div className="flex justify-between items-center">
           <span className="text-slate-500 flex items-center space-x-1">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -493,7 +625,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Property URL */}
       {property.url && (
-        <div className="mt-4 pt-4 border-t border-slate-100">
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Property Link</span>
             <a
@@ -515,7 +647,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Attachments */}
       {attachments.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-slate-100">
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Attachments</span>
             <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
@@ -567,7 +699,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Contact Information */}
       {property.contact_name && (
-        <div className="mt-4 pt-4 border-t border-slate-100">
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="bg-slate-50 rounded-lg p-3">
             <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Contact</h4>
             <div className="space-y-1">
@@ -607,7 +739,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Description */}
       {property.description && (
-        <div className="mt-4 pt-4 border-t border-slate-100 relative" ref={descPreviewRef}>
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100 relative`} ref={descPreviewRef}>
           <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Description</h4>
           <div
             className="text-sm text-slate-600 leading-relaxed line-clamp-3 text-right cursor-help"
@@ -639,7 +771,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       )}
 
       {/* Notes Section */}
-      <div className="mt-4 pt-4 border-t border-slate-100">
+      <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
         <div className="relative" ref={notesPreviewRef}>
           <button
             onClick={(e) => { e.stopPropagation(); onViewNotes(property) }}
@@ -681,7 +813,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   {previewNotes.map((note) => (
                     <div key={note.id} className="bg-slate-50 rounded-lg p-3">
                       <div className="text-xs text-slate-500 mb-1">
-                        {formatDate(note.created_at)}
+                        {formatNoteDate(note.created_at)}
                       </div>
                       <p className="text-sm text-slate-700 line-clamp-2" dir="auto">
                         {note.content}

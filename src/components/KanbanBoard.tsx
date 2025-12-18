@@ -7,6 +7,7 @@ import {
   DragOverlay,
   DragStartEvent,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragOverEvent,
@@ -200,6 +201,12 @@ export default function KanbanBoard({
       activationConstraint: {
         distance: 8,
       },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
+      },
     })
   )
 
@@ -356,8 +363,8 @@ export default function KanbanBoard({
                   </div>
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-500">Size:</span>
-                    <span className={`font-medium ${activeProperty.square_meters === null ? 'text-amber-700' : 'text-slate-700'}`}>
-                      {activeProperty.square_meters === null ? 'Not set' : (
+                    <span className={`font-medium ${activeProperty.square_meters === null ? 'text-amber-700' : activeProperty.square_meters === 1 ? 'text-slate-500' : 'text-slate-700'}`}>
+                      {activeProperty.square_meters === null ? 'Not set' : activeProperty.square_meters === 1 ? 'Unknown' : (
                         <>
                           {activeProperty.square_meters} m²
                           {activeProperty.balcony_square_meters && activeProperty.balcony_square_meters > 0 && (
@@ -368,7 +375,7 @@ export default function KanbanBoard({
                     </span>
                   </div>
                 </div>
-                {activeProperty.asked_price !== null ? (
+                {activeProperty.asked_price !== null && activeProperty.asked_price !== 1 ? (
                   <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                     <span className="font-semibold text-slate-900">
                       ₪{new Intl.NumberFormat('en-US').format(activeProperty.asked_price)}
@@ -378,6 +385,10 @@ export default function KanbanBoard({
                         ₪{new Intl.NumberFormat('en-US').format(Math.round(activeProperty.price_per_meter))}/m²
                       </span>
                     )}
+                  </div>
+                ) : activeProperty.asked_price === 1 ? (
+                  <div className="flex items-center space-x-2 pt-1 border-t border-slate-100">
+                    <span className="text-sm font-medium text-slate-500">Price: Unknown</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2 pt-1 border-t border-slate-100">

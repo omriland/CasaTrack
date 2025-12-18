@@ -70,6 +70,65 @@ export default function NotesModal({ property, onClose }: NotesModalProps) {
     })
   }
 
+  const formatNoteDate = (dateString: string) => {
+    const now = new Date()
+    const noteDate = new Date(dateString)
+    const diffMs = now.getTime() - noteDate.getTime()
+    const diffMinutes = Math.floor(diffMs / (1000 * 60))
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    // Less than a minute ago
+    if (diffMinutes < 1) {
+      return 'Just now'
+    }
+
+    // Less than an hour ago - show minutes
+    if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`
+    }
+
+    // Less than 24 hours ago - show hours
+    if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    }
+
+    // Yesterday
+    if (diffDays === 1) {
+      const timeStr = noteDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return `Yesterday, ${timeStr}`
+    }
+
+    // Today (more than 24 hours but same calendar day)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const noteDay = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate())
+    if (today.getTime() === noteDay.getTime()) {
+      const timeStr = noteDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return `Today, ${timeStr}`
+    }
+
+    // Within a couple of days (2-3 days)
+    if (diffDays <= 3) {
+      const timeStr = noteDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+      return `${diffDays} days ago, ${timeStr}`
+    }
+
+    // Older than a couple of days - use full date format
+    return formatDate(dateString)
+  }
+
   return (
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -140,7 +199,7 @@ export default function NotesModal({ property, onClose }: NotesModalProps) {
                 <div key={note.id} className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div className="text-sm text-gray-500">
-                      {formatDate(note.created_at)}
+                      {formatNoteDate(note.created_at)}
                     </div>
                     <button
                       onClick={() => handleDeleteNote(note.id)}
