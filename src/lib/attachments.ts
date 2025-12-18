@@ -4,6 +4,7 @@ import { Attachment, AttachmentInsert } from '@/types/property'
 const BUCKET_NAME = 'property-attachments'
 const MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1GB (supports videos up to 4 minutes)
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function uploadAttachment(
   propertyId: string,
@@ -26,18 +27,14 @@ export async function uploadAttachment(
   const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
   const filePath = `${propertyId}/${fileName}`
 
-  // Get upload URL from Supabase
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
-    throw new Error('Not authenticated')
-  }
-
-    // Use XMLHttpRequest for progress tracking
-    const uploadPromise = new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest()
-      
-      // Get the upload URL
-      const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${filePath}`
+  // Use XMLHttpRequest for progress tracking with anon key
+  // Note: This app uses simple cookie-based password auth, not Supabase auth
+  // RLS policies on the storage bucket allow public access
+  const uploadPromise = new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    
+    // Get the upload URL
+    const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${filePath}`
     
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && onProgress) {
@@ -63,8 +60,8 @@ export async function uploadAttachment(
     })
 
     xhr.open('POST', uploadUrl)
-    xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`)
-    xhr.setRequestHeader('apikey', session.access_token)
+    xhr.setRequestHeader('Authorization', `Bearer ${SUPABASE_ANON_KEY}`)
+    xhr.setRequestHeader('apikey', SUPABASE_ANON_KEY)
     xhr.setRequestHeader('x-upsert', 'false')
     xhr.setRequestHeader('cache-control', '3600')
     xhr.send(file)
