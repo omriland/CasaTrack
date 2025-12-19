@@ -1,6 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import imageCompression from 'browser-image-compression'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
@@ -51,6 +54,7 @@ export default function PropertyDetailModal({
   const touchEndX = useRef(0)
   const [uploadingAttachment, setUploadingAttachment] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const ffmpegRef = useRef<FFmpeg | null>(null)
 
   useEffect(() => {
     loadNotes()
@@ -87,13 +91,140 @@ export default function PropertyDetailModal({
     }
   }
 
+  const compressImage = async (file: File): Promise<File> => {
+    const options = {
+      maxSizeMB: 2, // Maximum size in MB
+      maxWidthOrHeight: 1920, // Maximum width or height
+      useWebWorker: true,
+      fileType: file.type,
+    }
+    
+    try {
+      const compressedFile = await imageCompression(file, options)
+      console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+      return compressedFile
+    } catch (error) {
+      console.error('Error compressing image:', error)
+      // Return original file if compression fails
+      return file
+    }
+  }
+
+  const loadFFmpeg = async () => {
+    if (ffmpegRef.current) return ffmpegRef.current
+
+    try {
+      const ffmpeg = new FFmpeg()
+      ffmpegRef.current = ffmpeg
+
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      })
+
+      return ffmpeg
+    } catch (error) {
+      console.error('Error loading FFmpeg:', error)
+      throw error
+    }
+  }
+
+  const compressVideo = async (file: File): Promise<File> => {
+    // Only compress videos larger than 50MB to avoid unnecessary processing
+    const MAX_SIZE_BEFORE_COMPRESSION = 50 * 1024 * 1024 // 50MB
+    if (file.size <= MAX_SIZE_BEFORE_COMPRESSION) {
+      return file
+    }
+
+    try {
+      const ffmpeg = await loadFFmpeg()
+      if (!ffmpeg) {
+        console.warn('FFmpeg not loaded, returning original file')
+        return file
+      }
+
+      // Write input file to FFmpeg's virtual file system
+      const inputFileName = 'input.' + file.name.split('.').pop()
+      const outputFileName = 'output.mp4'
+      
+      await ffmpeg.writeFile(inputFileName, await fetchFile(file))
+
+      // Compress video: reduce bitrate and resolution if needed
+      await ffmpeg.exec([
+        '-i', inputFileName,
+        '-vf', 'scale=1920:-2', // Scale down to max 1920px width, maintain aspect ratio
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-crf', '28', // Balance between quality and file size (18-28 is good range)
+        '-c:a', 'aac',
+        '-b:a', '128k', // Audio bitrate
+        '-movflags', '+faststart', // Optimize for web playback
+        outputFileName
+      ])
+
+      // Read the compressed file
+      const data = await ffmpeg.readFile(outputFileName)
+      // Convert FileData to ArrayBuffer for Blob constructor
+      let arrayBuffer: ArrayBuffer
+      if (data instanceof Uint8Array) {
+        // Create a new ArrayBuffer by copying the data
+        arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
+      } else if (typeof data === 'string') {
+        arrayBuffer = new TextEncoder().encode(data).buffer
+      } else {
+        arrayBuffer = data as ArrayBuffer
+      }
+      const compressedBlob = new Blob([arrayBuffer], { type: 'video/mp4' })
+      
+      // Clean up virtual files
+      await ffmpeg.deleteFile(inputFileName)
+      await ffmpeg.deleteFile(outputFileName)
+
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '.mp4'), {
+        type: 'video/mp4',
+        lastModified: Date.now()
+      })
+
+      console.log(`Video compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+      
+      // If compression didn't reduce size significantly, return original
+      if (compressedFile.size >= file.size * 0.9) {
+        console.log('Compression did not reduce size significantly, using original')
+        return file
+      }
+
+      return compressedFile
+    } catch (error) {
+      console.error('Error compressing video:', error)
+      // Return original file if compression fails
+      return file
+    }
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
     setUploadingAttachment(true)
     try {
-      const uploadPromises = Array.from(files).map(file => uploadAttachment(property.id, file))
+      // Process each file (compress images and videos)
+      const processedFiles: File[] = []
+      for (const file of Array.from(files)) {
+        if (file.type.startsWith('image/')) {
+          const compressed = await compressImage(file)
+          processedFiles.push(compressed)
+        } else if (file.type.startsWith('video/')) {
+          // Compress videos (only if larger than 50MB)
+          const compressed = await compressVideo(file)
+          processedFiles.push(compressed)
+        } else {
+          processedFiles.push(file)
+        }
+      }
+
+      // Upload processed files
+      const uploadPromises = processedFiles.map(file => uploadAttachment(property.id, file))
       const newAttachments = await Promise.all(uploadPromises)
       setAttachments(prev => [...prev, ...newAttachments])
     } catch (error) {

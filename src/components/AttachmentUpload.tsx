@@ -4,6 +4,8 @@ import { useState, useRef } from 'react'
 import { Attachment } from '@/types/property'
 import { uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/lib/attachments'
 import imageCompression from 'browser-image-compression'
+import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 interface AttachmentUploadProps {
   propertyId: string
@@ -37,12 +39,105 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
     }
   }
 
+  const ffmpegRef = useRef<FFmpeg | null>(null)
+  const [ffmpegLoading, setFfmpegLoading] = useState(false)
+
+  const loadFFmpeg = async () => {
+    if (ffmpegRef.current) return ffmpegRef.current
+
+    setFfmpegLoading(true)
+    try {
+      const ffmpeg = new FFmpeg()
+      ffmpegRef.current = ffmpeg
+
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm'
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      })
+
+      return ffmpeg
+    } catch (error) {
+      console.error('Error loading FFmpeg:', error)
+      throw error
+    } finally {
+      setFfmpegLoading(false)
+    }
+  }
+
   const compressVideo = async (file: File): Promise<File> => {
-    // Video compression in the browser is complex and resource-intensive
-    // For now, we'll return the original file
-    // Full video compression would require ffmpeg.wasm or server-side processing
-    // Images are compressed, videos are uploaded as-is (within the 1GB limit)
-    return file
+    // Only compress videos larger than 50MB to avoid unnecessary processing
+    const MAX_SIZE_BEFORE_COMPRESSION = 50 * 1024 * 1024 // 50MB
+    if (file.size <= MAX_SIZE_BEFORE_COMPRESSION) {
+      return file
+    }
+
+    try {
+      const ffmpeg = await loadFFmpeg()
+      if (!ffmpeg) {
+        console.warn('FFmpeg not loaded, returning original file')
+        return file
+      }
+
+      // Write input file to FFmpeg's virtual file system
+      const inputFileName = 'input.' + file.name.split('.').pop()
+      const outputFileName = 'output.mp4'
+      
+      await ffmpeg.writeFile(inputFileName, await fetchFile(file))
+
+      // Compress video: reduce bitrate and resolution if needed
+      // -vf scale: scale down if width > 1920
+      // -b:v: set video bitrate to 2M (adjustable)
+      // -crf: constant rate factor (lower = better quality, higher = smaller file)
+      await ffmpeg.exec([
+        '-i', inputFileName,
+        '-vf', 'scale=1920:-2', // Scale down to max 1920px width, maintain aspect ratio
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-crf', '28', // Balance between quality and file size (18-28 is good range)
+        '-c:a', 'aac',
+        '-b:a', '128k', // Audio bitrate
+        '-movflags', '+faststart', // Optimize for web playback
+        outputFileName
+      ])
+
+      // Read the compressed file
+      const data = await ffmpeg.readFile(outputFileName)
+      // Convert FileData to ArrayBuffer for Blob constructor
+      let arrayBuffer: ArrayBuffer
+      if (data instanceof Uint8Array) {
+        // Create a new ArrayBuffer by copying the data
+        arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
+      } else if (typeof data === 'string') {
+        arrayBuffer = new TextEncoder().encode(data).buffer
+      } else {
+        arrayBuffer = data as ArrayBuffer
+      }
+      const compressedBlob = new Blob([arrayBuffer], { type: 'video/mp4' })
+      
+      // Clean up virtual files
+      await ffmpeg.deleteFile(inputFileName)
+      await ffmpeg.deleteFile(outputFileName)
+
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, '.mp4'), {
+        type: 'video/mp4',
+        lastModified: Date.now()
+      })
+
+      console.log(`Video compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
+      
+      // If compression didn't reduce size significantly, return original
+      if (compressedFile.size >= file.size * 0.9) {
+        console.log('Compression did not reduce size significantly, using original')
+        return file
+      }
+
+      return compressedFile
+    } catch (error) {
+      console.error('Error compressing video:', error)
+      // Return original file if compression fails
+      return file
+    }
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -38,10 +38,14 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
   const [isExpanded, setIsExpanded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     loadNotesCount()
     loadAttachments()
+    
+    // Set mounted to true after initial render to avoid hydration mismatch
+    setMounted(true)
     
     // Detect mobile and set initial expanded state
     const checkMobile = () => {
@@ -344,16 +348,29 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     return formatDate(dateString)
   }
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't trigger if user is selecting text or clicking on interactive elements
-    if (window.getSelection()?.toString()) return
-    // On mobile, if collapsed, expand it instead of opening modal
-    if (isMobile && !isExpanded) {
-      e.stopPropagation()
-      setIsExpanded(true)
-      return
+  const handleTitleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    // On mobile, if collapsed, clicking title opens modal
+    if (mounted && isMobile && !isExpanded) {
+      onViewNotes(property)
+    } else {
+      // On desktop or when expanded, also open modal
+      onViewNotes(property)
     }
-    onViewNotes(property)
+  }
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't trigger if user is selecting text
+    if (window.getSelection()?.toString()) return
+    
+    // On mobile, only handle clicks when expanded (to open modal)
+    // When collapsed, title click handles opening modal
+    if (mounted && isMobile && isExpanded) {
+      onViewNotes(property)
+    } else if (!mounted || !isMobile) {
+      // On desktop, always open modal
+      onViewNotes(property)
+    }
   }
 
   const handleExpandToggle = (e: React.MouseEvent) => {
@@ -363,19 +380,35 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   return (
     <div 
-      className={`group bg-white rounded-lg shadow-sm border border-slate-200 ${isMobile ? (isExpanded ? 'p-6' : 'p-3') : 'p-6'} hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in cursor-pointer`}
-      onClick={handleCardClick}
+      className={`group bg-white rounded-lg shadow-sm border border-slate-200 ${mounted && isMobile ? (isExpanded ? 'p-6' : 'p-3') : 'p-6'} hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in ${mounted && isMobile && !isExpanded ? '' : 'cursor-pointer'}`}
+      onClick={mounted && isMobile && !isExpanded ? undefined : handleCardClick}
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-2 md:mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className={`font-semibold text-slate-900 mb-1 line-clamp-2 leading-tight ${isMobile && !isExpanded ? 'text-base' : 'text-lg'}`}>
+          <h3 
+            className={`font-semibold text-slate-900 mb-1 line-clamp-2 leading-tight ${mounted && isMobile && !isExpanded ? 'text-base cursor-pointer hover:text-primary transition-colors' : 'text-lg'}`}
+            onClick={mounted && isMobile && !isExpanded ? handleTitleClick : undefined}
+          >
             {property.title}
           </h3>
-          <div className={`text-slate-500 mb-1 line-clamp-1 ${isMobile && !isExpanded ? 'text-xs' : 'text-xs'}`} title={property.address}>
+          <div 
+            className={`text-slate-500 mb-1 line-clamp-1 ${mounted && isMobile && !isExpanded ? 'text-xs cursor-pointer hover:text-primary transition-colors' : 'text-xs'}`} 
+            title={property.address}
+            onClick={mounted && isMobile && !isExpanded ? handleTitleClick : undefined}
+          >
             {property.address}
           </div>
-          {(isExpanded || !isMobile) && (
+          {/* Status badge - show on collapsed mobile view */}
+          {mounted && isMobile && !isExpanded && (
+            <div className="mt-1.5">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(property.status)}`}>
+                <div className="w-1 h-1 rounded-full bg-current mr-1.5 opacity-60"></div>
+                {property.status}
+              </span>
+            </div>
+          )}
+          {(mounted && (isExpanded || !isMobile)) && (
             <>
               <div className="hidden md:block text-xs text-slate-500 mb-2" title={formatExactDateTime(property.created_at)}>
                 Added {getRelativeTime(property.created_at)}
@@ -418,7 +451,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
         {/* Expand/Collapse Chevron - Mobile Only */}
-        {isMobile && (
+        {mounted && isMobile && (
           <button
             onClick={handleExpandToggle}
             className="ml-2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
@@ -437,7 +470,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       </div>
 
       {/* Property Stats */}
-      {isMobile && !isExpanded ? (
+      {mounted && isMobile && !isExpanded ? (
         // Compact collapsed view - Mobile only
         <div className="flex items-center gap-3 mb-2">
           <div className="flex items-center gap-1.5">
@@ -491,7 +524,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
 
-        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-lg p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : property.square_meters === 1 ? 'bg-slate-50' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
+        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-lg p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : property.square_meters === 1 ? 'bg-slate-50' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
           <div className="flex items-center space-x-2 mb-1">
             <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
@@ -531,7 +564,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       )}
 
       {/* Price Section */}
-      {isMobile && !isExpanded ? (
+      {mounted && isMobile && !isExpanded ? (
         // Compact collapsed price view - Mobile only
         property.asked_price !== null && property.asked_price !== 1 ? (
           <div className="flex items-center gap-2 mb-2">
@@ -586,7 +619,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       )}
 
       {/* Additional Details */}
-      <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} space-y-2 text-sm`}>
+      <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} space-y-2 text-sm`}>
         <div className="flex justify-between items-center">
           <span className="text-slate-500 flex items-center space-x-1">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -625,7 +658,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Property URL */}
       {property.url && (
-        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
+        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Property Link</span>
             <a
@@ -647,7 +680,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Attachments */}
       {attachments.length > 0 && (
-        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
+        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Attachments</span>
             <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
@@ -699,7 +732,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Contact Information */}
       {property.contact_name && (
-        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
+        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="bg-slate-50 rounded-lg p-3">
             <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Contact</h4>
             <div className="space-y-1">
@@ -771,7 +804,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       )}
 
       {/* Notes Section */}
-      <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
+      <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
         <div className="relative" ref={notesPreviewRef}>
           <button
             onClick={(e) => { e.stopPropagation(); onViewNotes(property) }}
