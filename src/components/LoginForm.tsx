@@ -42,6 +42,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">CasaTrack</h1>
           <p className="text-slate-600 font-medium">Your Home Purchasing Companion</p>
+          <p className="text-slate-500 text-sm font-medium mt-1">Created by Omriland</p>
         </div>
 
         {/* Login Card */}
