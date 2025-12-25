@@ -1,6 +1,7 @@
 'use client'
 
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
+import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
 import { useState, useEffect, useRef } from 'react'
 import { getPropertyNotes, updatePropertyStatus, updateProperty } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl } from '@/lib/attachments'
@@ -222,10 +223,6 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     }
   }
 
-  const allStatuses: PropertyStatus[] = [
-    'Seen', 'Interested', 'Contacted Realtor', 'Visited', 'On Hold', 'Irrelevant', 'Purchased'
-  ]
-
   const handleNotesHover = async () => {
     if (notesCount === 0) return
     
@@ -404,7 +401,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <div className="mt-1.5">
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(property.status)}`}>
                 <div className="w-1 h-1 rounded-full bg-current mr-1.5 opacity-60"></div>
-                {property.status}
+                {getStatusLabel(property.status)}
               </span>
             </div>
           )}
@@ -416,28 +413,28 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <div className="hidden md:block relative inline-block" ref={statusDropdownRef}>
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm whitespace-nowrap ${getStatusColor(property.status)}`}
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-current mr-2 opacity-60"></div>
-                  {property.status}
-                  <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm whitespace-nowrap ${getStatusColor(property.status)}`}
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-current mr-2 opacity-60"></div>
+                {getStatusLabel(property.status)}
+                <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
                 </button>
               
                 {showStatusDropdown && (
                   <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
-                    {allStatuses.map((status) => (
+                    {PROPERTY_STATUS_OPTIONS.map((status) => (
                       <button
-                        key={status}
-                        onClick={(e) => { e.stopPropagation(); handleStatusChange(status) }}
+                        key={status.value}
+                        onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
                         className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
-                          status === property.status ? 'bg-slate-50 font-medium' : ''
+                          status.value === property.status ? 'bg-slate-50 font-medium' : ''
                         }`}
                       >
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                        <span>{status}</span>
-                        {status === property.status && (
+                        <div className={`w-2 h-2 rounded-full ${getStatusColor(status.value).split(' ')[0].replace('bg-', 'bg-')}`}></div>
+                        <span>{status.label}</span>
+                        {status.value === property.status && (
                           <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                           </svg>

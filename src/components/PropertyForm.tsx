@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Property, PropertyInsert, PropertySource, PropertyType, PropertyStatus, Attachment } from '@/types/property'
+import { Property, PropertyInsert, PropertySource, PropertyType, Attachment } from '@/types/property'
+import { PROPERTY_STATUS_OPTIONS, PROPERTY_STATUSES } from '@/constants/statuses'
 import AddressAutocomplete from './AddressAutocomplete'
 import AttachmentUpload from './AttachmentUpload'
 import { getPropertyAttachments } from '@/lib/attachments'
@@ -15,7 +16,6 @@ interface PropertyFormProps {
 
 const SOURCES: PropertySource[] = ['Yad2', 'Friends & Family', 'Facebook', 'Madlan', 'Other']
 const PROPERTY_TYPES: PropertyType[] = ['New', 'Existing apartment']
-const STATUSES: PropertyStatus[] = ['Seen', 'Interested', 'Contacted Realtor', 'Visited', 'On Hold', 'Irrelevant', 'Purchased']
 
 export default function PropertyForm({ property, onSubmit, onCancel, loading = false }: PropertyFormProps) {
   const [formData, setFormData] = useState<PropertyInsert>({
@@ -29,7 +29,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     source: property?.source || 'Yad2',
     property_type: property?.property_type || 'Existing apartment',
     description: property?.description || '',
-    status: property?.status || 'Seen',
+    status: property?.status || PROPERTY_STATUSES[0],
     url: property?.url || '',
     latitude: property?.latitude || null,
     longitude: property?.longitude || null,
@@ -939,8 +939,8 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
                   tabIndex={11}
                 >
-                  {STATUSES.map(status => (
-                    <option key={status} value={status}>{status}</option>
+                  {PROPERTY_STATUS_OPTIONS.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
                   ))}
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">

@@ -1,6 +1,7 @@
 'use client'
 
 import { Property, PropertyStatus } from '@/types/property'
+import { getStatusLabel } from '@/constants/statuses'
 import {
   DndContext,
   DragEndEvent,
@@ -312,7 +313,7 @@ export default function KanbanBoard({
               >
                 <DroppableColumn
                   id={status}
-                  title={status}
+                  title={getStatusLabel(status)}
                   count={columnProperties.length}
                   bgColor={bgColor}
                   isCollapsed={isCollapsed}
