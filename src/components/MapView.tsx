@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Property } from '@/types/property'
+import { getStatusLabel } from '@/constants/statuses'
 
 interface MapViewProps {
   properties: Property[]
@@ -264,7 +265,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                     ${property.status === 'Purchased' ? 'bg-green-100 text-green-800' :
                       property.status === 'Visited' ? 'bg-blue-100 text-blue-800' :
                       property.status === 'Interested' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-gray-100 text-gray-800'}">${property.status}</span>
+                      'bg-gray-100 text-gray-800'}">${getStatusLabel(property.status)}</span>
                 </div>
               </div>
             </div>
@@ -638,7 +639,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                 <div className="mt-1">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(hoveredProperty.status)}`}>
                     <div className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 opacity-60"></div>
-                    {hoveredProperty.status}
+                    {getStatusLabel(hoveredProperty.status)}
                   </span>
                 </div>
               </div>

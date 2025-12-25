@@ -5,6 +5,7 @@ import imageCompression from 'browser-image-compression'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
+import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
 
@@ -470,10 +471,6 @@ export default function PropertyDetailModal({
     return colors[status] || 'bg-slate-100 text-slate-700 border-slate-200'
   }
 
-  const allStatuses: PropertyStatus[] = [
-    'Seen', 'Interested', 'Contacted Realtor', 'Visited', 'On Hold', 'Irrelevant', 'Purchased'
-  ]
-
   const handleDescriptionEdit = () => {
     setEditingDescription(true)
     setTempDescription(property.description || '')
@@ -604,7 +601,7 @@ export default function PropertyDetailModal({
                     className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border transition-all hover:shadow-sm ${getStatusColor(property.status)}`}
                   >
                     <div className="w-2 h-2 rounded-full bg-current mr-2 opacity-60"></div>
-                    {property.status}
+                    {getStatusLabel(property.status)}
                     <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
@@ -612,17 +609,17 @@ export default function PropertyDetailModal({
 
                   {showStatusDropdown && (
                     <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
-                      {allStatuses.map((status) => (
+                      {PROPERTY_STATUS_OPTIONS.map((status) => (
                         <button
-                          key={status}
-                          onClick={() => handleStatusChange(status)}
+                          key={status.value}
+                          onClick={() => handleStatusChange(status.value)}
                           className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
-                            status === property.status ? 'bg-slate-50 font-medium' : ''
+                            status.value === property.status ? 'bg-slate-50 font-medium' : ''
                           }`}
                         >
-                          <div className={`w-2 h-2 rounded-full ${getStatusColor(status).split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                          <span>{status}</span>
-                          {status === property.status && (
+                          <div className={`w-2 h-2 rounded-full ${getStatusColor(status.value).split(' ')[0].replace('bg-', 'bg-')}`}></div>
+                          <span>{status.label}</span>
+                          {status.value === property.status && (
                             <svg className="w-3 h-3 ml-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                             </svg>
