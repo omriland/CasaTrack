@@ -602,12 +602,12 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   const getStatusColor = (status: string) => {
     const colors = {
       'Seen': 'bg-slate-100 text-slate-700',
-      'Interested': 'bg-amber-100 text-amber-700',
-      'Contacted Realtor': 'bg-primary/10 text-primary-foreground',
-      'Visited': 'bg-purple-100 text-purple-700',
+      'Interested': 'bg-emerald-100 text-emerald-800',
+      'Contacted Realtor': 'bg-blue-50 text-blue-700',
+      'Visited': 'bg-indigo-100 text-indigo-800',
       'On Hold': 'bg-orange-100 text-orange-700',
-      'Irrelevant': 'bg-red-100 text-red-700',
-      'Purchased': 'bg-emerald-100 text-emerald-700'
+      'Irrelevant': 'bg-red-50 text-red-700',
+      'Purchased': 'bg-emerald-50 text-emerald-700'
     }
     return colors[status as keyof typeof colors] || 'bg-slate-100 text-slate-700'
   }

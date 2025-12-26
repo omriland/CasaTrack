@@ -173,13 +173,13 @@ interface KanbanBoardProps {
 }
 
 const STATUSES: { status: PropertyStatus; color: string; bgColor: string }[] = [
-  { status: 'Seen', color: 'text-gray-800', bgColor: 'bg-gray-100' },
-  { status: 'Interested', color: 'text-yellow-800', bgColor: 'bg-yellow-100' },
-  { status: 'Contacted Realtor', color: 'text-blue-800', bgColor: 'bg-blue-100' },
-  { status: 'Visited', color: 'text-purple-800', bgColor: 'bg-purple-100' },
-  { status: 'On Hold', color: 'text-orange-800', bgColor: 'bg-orange-100' },
-  { status: 'Irrelevant', color: 'text-red-800', bgColor: 'bg-red-100' },
-  { status: 'Purchased', color: 'text-green-800', bgColor: 'bg-green-100' },
+  { status: 'Seen', color: 'text-gray-700', bgColor: 'bg-gray-100' },
+  { status: 'Interested', color: 'text-emerald-800', bgColor: 'bg-emerald-100' },
+  { status: 'Contacted Realtor', color: 'text-blue-700', bgColor: 'bg-blue-50' },
+  { status: 'Visited', color: 'text-indigo-800', bgColor: 'bg-indigo-100' },
+  { status: 'On Hold', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  { status: 'Irrelevant', color: 'text-red-700', bgColor: 'bg-red-50' },
+  { status: 'Purchased', color: 'text-green-700', bgColor: 'bg-green-50' },
 ]
 
 export default function KanbanBoard({

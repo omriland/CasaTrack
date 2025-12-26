@@ -11,8 +11,8 @@ export const PROPERTY_STATUSES: PropertyStatus[] = [
 ]
 
 export const PROPERTY_STATUS_LABELS: Record<PropertyStatus, string> = {
-  'Seen': 'Seen',
-  'Interested': 'Contact realtor',
+  'Seen': 'Just Added',
+  'Interested': 'To contact',
   'Contacted Realtor': 'Contacted Realtor',
   'Visited': 'Visited',
   'On Hold': 'On Hold/Thinking',

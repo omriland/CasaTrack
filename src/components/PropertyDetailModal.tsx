@@ -461,10 +461,10 @@ export default function PropertyDetailModal({
   const getStatusColor = (status: PropertyStatus) => {
     const colors = {
       'Seen': 'bg-slate-100 text-slate-700 border-slate-200',
-      'Interested': 'bg-amber-50 text-amber-700 border-amber-200',
+      'Interested': 'bg-emerald-100 text-emerald-800 border-emerald-400 font-semibold',
       'Contacted Realtor': 'bg-blue-50 text-blue-700 border-blue-200',
-      'Visited': 'bg-purple-50 text-purple-700 border-purple-200',
-      'On Hold': 'bg-orange-50 text-orange-700 border-orange-200',
+      'Visited': 'bg-indigo-100 text-indigo-800 border-indigo-300',
+      'On Hold': 'bg-orange-100 text-orange-700 border-orange-200',
       'Irrelevant': 'bg-red-50 text-red-700 border-red-200',
       'Purchased': 'bg-emerald-50 text-emerald-700 border-emerald-200'
     }

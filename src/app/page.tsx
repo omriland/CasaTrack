@@ -164,7 +164,15 @@ export default function Home() {
   }
 
   // Helper functions to separate properties by status
-  const relevantProperties = properties.filter(property => property.status !== 'Irrelevant')
+  const relevantProperties = properties
+    .filter(property => property.status !== 'Irrelevant')
+    .sort((a, b) => {
+      // Sort "Interested" (To contact) status first
+      if (a.status === 'Interested' && b.status !== 'Interested') return -1
+      if (b.status === 'Interested' && a.status !== 'Interested') return 1
+      // For other properties, maintain original order (by created_at desc)
+      return 0
+    })
   const irrelevantProperties = properties.filter(property => property.status === 'Irrelevant')
   const relevantPropertiesCount = relevantProperties.length
 
