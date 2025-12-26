@@ -31,6 +31,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   })
   const [zoomLevel, setZoomLevel] = useState<number>(10)
   const [isMobile, setIsMobile] = useState(false)
+  const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
   const labelOverlaysRef = useRef<google.maps.OverlayView[]>([])
 
   useEffect(() => {
@@ -624,9 +625,98 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
     return colors[status as keyof typeof colors] || 'bg-slate-100 text-slate-700'
   }
 
+  const renderLayerButtons = () => (
+    <div className="space-y-1">
+      <button
+        onClick={() => setLayers(prev => ({ ...prev, transit: !prev.transit }))}
+        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+          layers.transit
+            ? 'bg-primary/10 text-primary'
+            : 'text-slate-600 hover:bg-slate-50'
+        }`}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+          <span>Transit</span>
+        </div>
+        {layers.transit && (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+      <button
+        onClick={() => setLayers(prev => ({ ...prev, traffic: !prev.traffic }))}
+        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+          layers.traffic
+            ? 'bg-primary/10 text-primary'
+            : 'text-slate-600 hover:bg-slate-50'
+        }`}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>Traffic</span>
+        </div>
+        {layers.traffic && (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+      <button
+        onClick={() => setLayers(prev => ({ ...prev, bicycle: !prev.bicycle }))}
+        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+          layers.bicycle
+            ? 'bg-primary/10 text-primary'
+            : 'text-slate-600 hover:bg-slate-50'
+        }`}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="5.5" cy="17.5" r="3.5" strokeWidth="2" />
+            <circle cx="18.5" cy="17.5" r="3.5" strokeWidth="2" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.5 17.5l3-7.5m10.5 0l-3 7.5M8.5 10h7M12 10v7.5M9 4l3 1.5 3-1.5" />
+          </svg>
+          <span>Bike lanes</span>
+        </div>
+        {layers.bicycle && (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+      <button
+        onClick={() => setLayers(prev => ({ ...prev, schools: !prev.schools }))}
+        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+          layers.schools
+            ? 'bg-primary/10 text-primary'
+            : 'text-slate-600 hover:bg-slate-50'
+        }`}
+      >
+        <div className="flex items-center space-x-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14v7m0-7l-6.16-3.422a12.083 12.083 0 00-.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 006.824-2.998 12.078 12.078 0 00-.665-6.479L12 14z" />
+          </svg>
+          <span>Schools</span>
+        </div>
+        {layers.schools && (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </button>
+    </div>
+  )
+
   return (
     <div className="h-full relative bg-white rounded-lg overflow-hidden shadow-sm">
-      <div ref={mapRef} className="w-full h-full" />
+      <div ref={mapRef} className={`w-full h-full ${isMobile ? 'touch-none' : ''}`} />
 
       {/* Floating Hover Card */}
       {hoveredProperty && hoverPosition && (
@@ -765,116 +855,79 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       )}
 
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2">
-        {/* Layer Toggle */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-2">
-          <div className="text-xs font-semibold text-slate-600 mb-2 px-2">Layers</div>
-          <div className="space-y-1">
+      <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
+        {isMobile ? (
+          <>
             <button
-              onClick={() => setLayers(prev => ({ ...prev, transit: !prev.transit }))}
-              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
-                layers.transit 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
+              onClick={() => setIsLayerDrawerOpen(prev => !prev)}
+              className="bg-white/95 backdrop-blur-sm shadow-lg border border-slate-200/50 px-3 py-2 rounded-full text-sm font-medium text-slate-700 flex items-center space-x-2"
             >
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                <span>Transit</span>
-              </div>
-              {layers.transit && (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
+              <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+              <span>Layers</span>
+              <svg
+                className={`w-4 h-4 text-slate-400 transition-transform ${isLayerDrawerOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-            <button
-              onClick={() => setLayers(prev => ({ ...prev, traffic: !prev.traffic }))}
-              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
-                layers.traffic 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span>Traffic</span>
-              </div>
-              {layers.traffic && (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-            <button
-              onClick={() => setLayers(prev => ({ ...prev, bicycle: !prev.bicycle }))}
-              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
-                layers.bicycle 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="5.5" cy="17.5" r="3.5" strokeWidth="2" />
-                  <circle cx="18.5" cy="17.5" r="3.5" strokeWidth="2" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.5 17.5l3-7.5m10.5 0l-3 7.5M8.5 10h7M12 10v7.5M9 4l3 1.5 3-1.5" />
-                </svg>
-                <span>Bike lanes</span>
-              </div>
-              {layers.bicycle && (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-            <button
-              onClick={() => setLayers(prev => ({ ...prev, schools: !prev.schools }))}
-              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
-                layers.schools 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14v7m0-7l-6.16-3.422a12.083 12.083 0 00-.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 006.824-2.998 12.078 12.078 0 00-.665-6.479L12 14z" />
-                </svg>
-                <span>Schools</span>
-              </div>
-              {layers.schools && (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
 
-        {/* Toggle Control for Irrelevant Properties */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-3">
-          <div className="flex items-center space-x-3">
-            <span className="text-sm font-medium text-slate-700">Show irrelevant</span>
-            <button
-              onClick={() => setShowIrrelevantProperties(!showIrrelevantProperties)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                showIrrelevantProperties ? 'bg-primary' : 'bg-slate-200'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                  showIrrelevantProperties ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
+            {isLayerDrawerOpen && (
+              <div className="w-72 max-w-[calc(100vw-2rem)] bg-white/95 backdrop-blur-sm rounded-lg shadow-xl border border-slate-200/60 p-3 mt-2">
+                <div className="text-xs font-semibold text-slate-600 mb-2 px-1">Layers</div>
+                {renderLayerButtons()}
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">Show irrelevant</span>
+                    <button
+                      onClick={() => setShowIrrelevantProperties(!showIrrelevantProperties)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                        showIrrelevantProperties ? 'bg-primary' : 'bg-slate-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                          showIrrelevantProperties ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Layer Toggle */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-2">
+              <div className="text-xs font-semibold text-slate-600 mb-2 px-2">Layers</div>
+              {renderLayerButtons()}
+            </div>
+
+            {/* Toggle Control for Irrelevant Properties */}
+            <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-3">
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-medium text-slate-700">Show irrelevant</span>
+                <button
+                  onClick={() => setShowIrrelevantProperties(!showIrrelevantProperties)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    showIrrelevantProperties ? 'bg-primary' : 'bg-slate-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                      showIrrelevantProperties ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Property Count Display */}
