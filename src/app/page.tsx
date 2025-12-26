@@ -24,6 +24,15 @@ export default function Home() {
   const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
   const [notesBump, setNotesBump] = useState<null | { id: string; delta: number; nonce: number }>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const detectMobile = () => setIsMobile(window.innerWidth < 768)
+    detectMobile()
+    window.addEventListener('resize', detectMobile)
+
+    return () => window.removeEventListener('resize', detectMobile)
+  }, [])
 
   useEffect(() => {
     const checkAuth = () => {
@@ -393,7 +402,13 @@ export default function Home() {
         </div>
       )}
 
-      <main className={`mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-8 ${viewMode === 'kanban' || viewMode === 'map' ? 'max-w-full' : 'max-w-7xl'}`}>
+      <main
+        className={`mx-auto ${
+          viewMode === 'map' && isMobile
+            ? 'px-0 pt-2 pb-2 overflow-hidden'
+            : 'px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-8'
+        } ${viewMode === 'kanban' || viewMode === 'map' ? 'max-w-full' : 'max-w-7xl'}`}
+      >
         {properties.length === 0 ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
@@ -559,7 +574,13 @@ export default function Home() {
             />
           </div>
         ) : (
-          <div className="h-[calc(100vh-12rem)] animate-fade-in">
+          <div
+            className={`animate-fade-in ${
+              isMobile
+                ? 'h-[calc(100vh-6.5rem)] -mx-4 sm:-mx-6 lg:-mx-8'
+                : 'h-[calc(100vh-12rem)]'
+            }`}
+          >
             <MapView
               properties={properties}
               onPropertyClick={handleViewNotes}
