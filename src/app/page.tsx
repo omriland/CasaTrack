@@ -181,92 +181,93 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <header className="bg-white/95 backdrop-blur-sm border-b border-slate-200/80 sticky top-0 z-40">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50 pb-20 md:pb-8">
+      {/* Top Header - Minimal on mobile, full on desktop */}
+      <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-50 supports-[backdrop-filter]:bg-white/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14">
+          <div className="flex justify-between items-center h-14 md:h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-                <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="w-8 h-8 md:w-9 md:h-9 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center shadow-sm shadow-primary/20">
+                <svg className="w-5 h-5 md:w-5.5 md:h-5.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
               </div>
               <div className="flex items-baseline space-x-0.5">
-                <h1 className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk), sans-serif' }}>
+                <h1 className="text-lg md:text-xl font-bold tracking-tight" style={{ fontFamily: 'var(--font-space-grotesk), sans-serif' }}>
                   <span className="text-slate-900">Casa</span>
                   <span className="text-primary">Track</span>
                 </h1>
               </div>
               {relevantPropertiesCount > 0 && (
-                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-600 ml-2.5">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 ml-2.5">
                   {relevantPropertiesCount}
                 </span>
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center space-x-3">
+            {/* Desktop Actions - Hidden on mobile */}
+            <div className="hidden md:flex items-center space-x-3">
               {/* View Toggle */}
               {properties.length > 0 && (
-                <div className="flex bg-slate-50 rounded-lg p-0.5 border border-slate-200/60">
+                <div className="flex bg-slate-50/80 backdrop-blur-sm rounded-xl p-1 border border-slate-200/60 shadow-sm">
                   <button
                     onClick={() => setViewMode('cards')}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       viewMode === 'cards'
                         ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14-4H5m14 8H5" />
                     </svg>
-                    <span className="hidden sm:inline">Cards</span>
+                    <span>Cards</span>
                   </button>
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       viewMode === 'kanban'
                         ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                     </svg>
-                    <span className="hidden sm:inline">Kanban</span>
+                    <span>Kanban</span>
                   </button>
                   <button
                     onClick={() => setViewMode('map')}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       viewMode === 'map'
                         ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-600 hover:text-slate-900'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                     }`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20.247l6-16.5 6 16.5-6-2.25-6 2.25z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span className="hidden sm:inline">Map</span>
+                    <span>Map</span>
                   </button>
                 </div>
               )}
 
               <button
                 onClick={() => setShowForm(true)}
-                className="flex items-center space-x-2 bg-primary text-white px-4 py-2 rounded-lg hover:brightness-90 transition-all font-medium shadow-sm hover:shadow"
+                className="flex items-center space-x-2 bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-2.5 rounded-xl hover:from-primary/90 hover:to-primary/80 transition-all duration-200 font-medium shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/30 hover:-translate-y-0.5"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="hidden sm:inline">Add Property</span>
-                <span className="sm:hidden">Add</span>
+                <span>Add Property</span>
               </button>
 
               <button
                 onClick={handleLogout}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                className="p-2.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200"
                 title="Logout"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,11 +275,117 @@ export default function Home() {
                 </svg>
               </button>
             </div>
+
+            {/* Mobile Menu Button - Only show logout on mobile */}
+            <button
+              onClick={handleLogout}
+              className="md:hidden p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all duration-200"
+              title="Logout"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>
 
-      <main className={`mx-auto px-4 sm:px-6 lg:px-8 py-8 ${viewMode === 'kanban' || viewMode === 'map' ? 'max-w-full' : 'max-w-7xl'}`}>
+      {/* Mobile Bottom Navigation Bar - Apple Style */}
+      {properties.length > 0 && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+          {/* Blur backdrop */}
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-slate-200/50 supports-[backdrop-filter]:bg-white/70" />
+          
+          {/* Safe area padding for iOS */}
+          <div className="relative px-4 pb-safe pb-4 pt-3">
+            <div className="flex items-center justify-around max-w-md mx-auto">
+              {/* Cards View */}
+              <button
+                onClick={() => setViewMode('cards')}
+                className={`flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-2xl transition-all duration-300 min-w-[70px] ${
+                  viewMode === 'cards'
+                    ? 'bg-primary/10 text-primary scale-105'
+                    : 'text-slate-500 hover:text-slate-700 active:scale-95'
+                }`}
+              >
+                <div className={`relative transition-all duration-300 ${viewMode === 'cards' ? 'scale-110' : ''}`}>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={viewMode === 'cards' ? 2.5 : 2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14-4H5m14 8H5" />
+                  </svg>
+                </div>
+                <span className={`text-[10px] font-semibold transition-all duration-300 ${viewMode === 'cards' ? 'opacity-100' : 'opacity-70'}`}>
+                  Cards
+                </span>
+              </button>
+
+              {/* Kanban View */}
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-2xl transition-all duration-300 min-w-[70px] ${
+                  viewMode === 'kanban'
+                    ? 'bg-primary/10 text-primary scale-105'
+                    : 'text-slate-500 hover:text-slate-700 active:scale-95'
+                }`}
+              >
+                <div className={`relative transition-all duration-300 ${viewMode === 'kanban' ? 'scale-110' : ''}`}>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={viewMode === 'kanban' ? 2.5 : 2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                  </svg>
+                </div>
+                <span className={`text-[10px] font-semibold transition-all duration-300 ${viewMode === 'kanban' ? 'opacity-100' : 'opacity-70'}`}>
+                  Kanban
+                </span>
+              </button>
+
+              {/* Map View */}
+              <button
+                onClick={() => setViewMode('map')}
+                className={`flex flex-col items-center justify-center space-y-1 px-4 py-2 rounded-2xl transition-all duration-300 min-w-[70px] ${
+                  viewMode === 'map'
+                    ? 'bg-primary/10 text-primary scale-105'
+                    : 'text-slate-500 hover:text-slate-700 active:scale-95'
+                }`}
+              >
+                <div className={`relative transition-all duration-300 ${viewMode === 'map' ? 'scale-110' : ''}`}>
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={viewMode === 'map' ? 2.5 : 2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <span className={`text-[10px] font-semibold transition-all duration-300 ${viewMode === 'map' ? 'opacity-100' : 'opacity-70'}`}>
+                  Map
+                </span>
+              </button>
+
+              {/* Add Property Button - Prominent */}
+              <button
+                onClick={() => setShowForm(true)}
+                className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/90 text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-110 active:scale-95"
+              >
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </nav>
+      )}
+
+      {/* Mobile Add Button - Show when no properties */}
+      {properties.length === 0 && (
+        <div className="fixed bottom-6 right-6 z-50 md:hidden">
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary/90 text-white shadow-xl shadow-primary/40 hover:shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-110 active:scale-95"
+          >
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      <main className={`mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 pb-24 md:pb-8 ${viewMode === 'kanban' || viewMode === 'map' ? 'max-w-full' : 'max-w-7xl'}`}>
         {properties.length === 0 ? (
           <div className="text-center py-16">
             <div className="max-w-md mx-auto">
