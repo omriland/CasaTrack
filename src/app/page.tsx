@@ -24,6 +24,15 @@ export default function Home() {
   const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
   const [notesBump, setNotesBump] = useState<null | { id: string; delta: number; nonce: number }>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const detectMobile = () => setIsMobile(window.innerWidth < 768)
+    detectMobile()
+    window.addEventListener('resize', detectMobile)
+
+    return () => window.removeEventListener('resize', detectMobile)
+  }, [])
 
   useEffect(() => {
     const checkAuth = () => {
@@ -520,7 +529,13 @@ export default function Home() {
             />
           </div>
         ) : (
-          <div className="h-[calc(100vh-12rem)] animate-fade-in">
+          <div
+            className={`animate-fade-in ${
+              isMobile
+                ? 'h-[calc(100vh-6.5rem)] -mx-4 sm:-mx-6 lg:-mx-8'
+                : 'h-[calc(100vh-12rem)]'
+            }`}
+          >
             <MapView
               properties={properties}
               onPropertyClick={handleViewNotes}
