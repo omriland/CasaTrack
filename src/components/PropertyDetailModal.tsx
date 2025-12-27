@@ -618,7 +618,7 @@ export default function PropertyDetailModal({
                 <button
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                   className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    property.status === 'To Contact' || property.status === 'Interested'
+                    property.status === 'Interested' || property.status === 'Contacted Realtor'
                       ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)]'
                       : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
