@@ -398,9 +398,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <div className="relative flex-shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap ${
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap relative ${
                 isToContact 
-                  ? 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)]'
+                  ? 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)] status-highlight'
                   : isContacted
                   ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -501,9 +501,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <div className="relative inline-block mb-3" ref={statusDropdownRef}>
             <button
               onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-              className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all ${
+              className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all relative ${
                 property.status === 'Interested'
-                  ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)]'
+                  ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)] status-highlight'
                   : property.status === 'Contacted Realtor'
                   ? 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
                   : 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'

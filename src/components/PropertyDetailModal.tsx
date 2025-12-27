@@ -617,8 +617,10 @@ export default function PropertyDetailModal({
               <div className="relative inline-block" ref={statusDropdownRef}>
                 <button
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    property.status === 'Interested' || property.status === 'Contacted Realtor'
+                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all relative ${
+                    property.status === 'Interested'
+                      ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)] status-highlight'
+                      : property.status === 'Contacted Realtor'
                       ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)]'
                       : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
