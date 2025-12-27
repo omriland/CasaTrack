@@ -201,7 +201,7 @@ export default function Home() {
     <div className="min-h-screen pb-20 md:pb-8">
       {/* Top Header - Purple Accent */}
       <header className="sticky top-0 z-50 bg-gradient-to-r from-[oklch(0.4_0.22_280)] to-[oklch(0.5_0.22_280)] border-b border-[oklch(0.45_0.22_280)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex justify-between items-center h-[61px] md:h-14">
             {/* Logo */}
             <div className="flex items-center space-x-3">
@@ -217,8 +217,57 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Center - View Toggle */}
+            {properties.length > 0 && (
+              <div className="hidden md:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
+                <div className="flex bg-[oklch(0.5_0.22_280)] rounded-lg p-1 gap-1">
+                  <button
+                    onClick={() => setViewMode('cards')}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'cards'
+                        ? 'bg-white border border-gray-300 text-[oklch(0.5_0.22_280)] shadow-sm'
+                        : 'text-white/90 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
+                    </svg>
+                    <span>Cards</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('kanban')}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'kanban'
+                        ? 'bg-white border border-gray-300 text-[oklch(0.5_0.22_280)] shadow-sm'
+                        : 'text-white/90 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <rect x="3" y="3" width="6" height="6" rx="1" />
+                      <rect x="3" y="13" width="6" height="6" rx="1" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 6h6M13 10h6M13 16h6M13 20h6" />
+                    </svg>
+                    <span>Kanban</span>
+                  </button>
+                  <button
+                    onClick={() => setViewMode('map')}
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                      viewMode === 'map'
+                        ? 'bg-white border border-gray-300 text-[oklch(0.5_0.22_280)] shadow-sm'
+                        : 'text-white/90 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                    </svg>
+                    <span>Map</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Right Side Actions */}
-            <div className="flex items-center space-x-2 md:space-x-3">
+            <div className="flex items-center space-x-2 md:space-x-3 ml-auto">
               {/* Add Property Button - Small white circle with purple + */}
               <button
                 onClick={() => setShowForm(true)}
@@ -230,54 +279,8 @@ export default function Home() {
                 </svg>
               </button>
 
-              {/* Desktop Actions - View Toggle and Logout */}
+              {/* Desktop Actions - Logout */}
               <div className="hidden md:flex items-center space-x-2">
-                {/* View Toggle - Apple-style segmented control */}
-                {properties.length > 0 && (
-                  <div className="flex bg-white/10 backdrop-blur-sm rounded-xl p-1">
-                    <button
-                      onClick={() => setViewMode('cards')}
-                      className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        viewMode === 'cards'
-                          ? 'bg-white/20 text-white'
-                          : 'text-white/70 hover:text-white'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14-4H5m14 8H5" />
-                      </svg>
-                      <span>Cards</span>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('kanban')}
-                      className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        viewMode === 'kanban'
-                          ? 'bg-white/20 text-white'
-                          : 'text-white/70 hover:text-white'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-                      </svg>
-                      <span>Kanban</span>
-                    </button>
-                    <button
-                      onClick={() => setViewMode('map')}
-                      className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        viewMode === 'map'
-                          ? 'bg-white/20 text-white'
-                          : 'text-white/70 hover:text-white'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                      <span>Map</span>
-                    </button>
-                  </div>
-                )}
-
                 <button
                   onClick={handleLogout}
                   className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-all duration-200"
@@ -421,13 +424,13 @@ export default function Home() {
             {/* Properties Header - Mobile */}
             {relevantProperties.length > 0 && (
               <h2 className="text-gray-900 font-medium text-base md:hidden mb-4">
-                {relevantProperties.length} {relevantProperties.length === 1 ? 'PROPERTY' : 'PROPERTIES'}
+                <span className="font-numbers">{relevantProperties.length}</span> {relevantProperties.length === 1 ? 'PROPERTY' : 'PROPERTIES'}
               </h2>
             )}
             
             {/* Main Properties Grid - Non-Irrelevant */}
             {relevantProperties.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[10.2px] md:gap-[27.2px]">
                 {relevantProperties.map((property, index) => (
                   <div
                     key={property.id}
@@ -476,7 +479,7 @@ export default function Home() {
                     ? 'max-h-full opacity-100' 
                     : 'max-h-0 opacity-0'
                 }`}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[10.2px] md:gap-[20.4px]">
                     {irrelevantProperties.map((property, index) => (
                       <div
                         key={property.id}

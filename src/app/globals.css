@@ -40,6 +40,7 @@
   --font-sans: var(--font-assistant), 'Assistant', sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  --font-numbers: var(--font-montserrat), 'Montserrat', sans-serif;
   
   /* Apple Liquid Glass Design Tokens - Ultra Flat */
   --radius: 1rem; /* Rounded but not excessive */
@@ -162,6 +163,7 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
+  --font-numbers: var(--font-numbers);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -408,4 +410,11 @@ input[type=number] {
   -webkit-backdrop-filter: blur(40px);
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: none;
+}
+
+/* Montserrat font for numbers only */
+.font-numbers {
+  font-family: var(--font-numbers);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }

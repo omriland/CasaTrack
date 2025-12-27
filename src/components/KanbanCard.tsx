@@ -164,7 +164,9 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
               </svg>
-              <span>{rooms === 0 ? 'Add rooms' : `${rooms}`}</span>
+              <span>
+                {rooms === 0 ? 'Add rooms' : <span className="font-numbers">{rooms}</span>}
+              </span>
               {showRoomsPicker && (
                 <div className="absolute left-0 top-full mt-1.5 bg-white rounded-lg border border-slate-200 p-2 z-50">
                   <div className="grid grid-cols-4 gap-1.5">
@@ -178,7 +180,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        {r}
+                        <span className="font-numbers">{r}</span>
                       </button>
                     ))}
                   </div>
@@ -191,19 +193,29 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
                 </svg>
                 <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : property.square_meters === 1 ? 'text-slate-500' : 'text-slate-700'}`}>
-                  {property.square_meters === null ? 'Add size' : property.square_meters === 1 ? 'Unknown' : `${property.square_meters} m²`}
+                  {property.square_meters === null ? 'Add size' : property.square_meters === 1 ? 'Unknown' : (
+                    <>
+                      <span className="font-numbers">{property.square_meters}</span> m²
+                    </>
+                  )}
                 </span>
               </div>
               {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters !== null && property.square_meters !== 1 && (
-                <span className="text-xs text-slate-500 mt-0.5 ml-5">+ {property.balcony_square_meters} m² balcony</span>
+                <span className="text-xs text-slate-500 mt-0.5 ml-5">
+                  + <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                </span>
               )}
             </div>
           </div>
           {property.asked_price !== null && property.asked_price !== 1 ? (
             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-              <span className="text-lg font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+              <span className="text-lg font-bold text-slate-900">
+                <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+              </span>
               {property.price_per_meter !== null && (
-                <span className="text-sm text-slate-500 font-medium">₪{formatPrice(Math.round(property.price_per_meter))}/m²</span>
+                <span className="text-sm text-slate-500 font-medium">
+                  <span className="font-numbers">{formatPrice(Math.round(property.price_per_meter))}</span>₪/m²
+                </span>
               )}
             </div>
           ) : property.asked_price === 1 ? (

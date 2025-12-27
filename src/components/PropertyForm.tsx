@@ -488,34 +488,38 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
   return (
     <div 
-      className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm md:flex md:items-center md:justify-center md:p-4 z-50 animate-fade-in"
       onClick={onCancel}
     >
       <div 
-        className="glass-strong rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-fade-in-up"
+        className="bg-white md:rounded-lg md:shadow-2xl md:border md:border-slate-200 w-full h-full md:h-auto md:max-w-3xl md:max-h-[90vh] overflow-hidden flex flex-col animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-10">
-          <div className="flex items-center space-x-4 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
-              {property ? (
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                </svg>
-              ) : (
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              )}
-            </div>
-            <h2 className="text-3xl font-semibold text-gray-900">
-              {property ? 'Edit Property' : 'Add New Property'}
-            </h2>
-          </div>
+        {/* Header - Purple Gradient */}
+        <div className="relative bg-gradient-to-r from-[oklch(0.4_0.22_280)] to-[oklch(0.5_0.22_280)] px-4 py-4 md:px-10 md:py-6">
+          {/* Close Button */}
+          <button
+            onClick={onCancel}
+            className="absolute top-4 right-4 md:top-6 md:right-10 p-2 text-white hover:bg-white/20 rounded-lg transition-all z-10"
+            title="Close"
+          >
+            <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
 
-          <form onSubmit={handleSubmit} className="space-y-7">
+          <h2 className="text-xl md:text-2xl font-bold text-white pr-10">
+            {property ? 'Edit Property' : 'Add New Property'}
+          </h2>
+        </div>
+
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto bg-gray-50 md:bg-white">
+          <div className="px-4 py-4 md:px-10 md:py-6 bg-white">
+
+          <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Title *
               </label>
               <input
@@ -525,14 +529,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleChange}
                 placeholder="Enter property title"
                 required
-                className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/80 backdrop-blur-sm transition-all duration-300"
+                className="w-full px-4 py-3 md:px-5 md:py-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                 tabIndex={1}
               />
-              <p className="mt-2 text-xs text-gray-500">This will be auto-filled with the address if you enter the address first</p>
+              <p className="mt-1.5 text-xs text-gray-500">This will be auto-filled with the address if you enter the address first</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Address *
               </label>
               <div className="relative">
@@ -540,7 +544,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 value={formData.address}
                 onChange={handleAddressChange}
                 placeholder="Enter property address"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                   tabIndex={2}
                 />
                 {formData.latitude && formData.longitude && (
@@ -732,10 +736,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Rooms *
               </label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {[3, 3.5, 4, 4.5, 5, 5.5, 6].map((roomCount) => (
                   <button
                     key={roomCount}
@@ -743,20 +747,20 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     onClick={() => setFormData(prev => ({ ...prev, rooms: roomCount }))}
                     className={`w-12 h-12 rounded-full text-sm font-medium transition-all flex-shrink-0 flex items-center justify-center ${
                       formData.rooms === roomCount
-                        ? 'bg-primary text-primary-foreground shadow-lg'
-                        : 'bg-white/70 text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
+                        ? 'bg-[oklch(0.5_0.22_280)] text-white shadow-md'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-[oklch(0.5_0.22_280)]/30'
                     }`}
                     tabIndex={4}
                   >
-                    {roomCount}
+                    <span className="font-numbers">{roomCount}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Square Meters
                 </label>
                 <div className="relative">
@@ -767,19 +771,19 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.square_meters ?? ''}
                   onChange={handleChange}
                     placeholder="Optional"
-                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                     tabIndex={4}
                   />
                   <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
-                    <div className="w-px h-6 bg-slate-300"></div>
+                    <div className="w-px h-6 bg-gray-300"></div>
                   </div>
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <span className="text-slate-500 text-sm font-medium">m²</span>
+                    <span className="text-gray-500 text-sm font-medium">m²</span>
                   </div>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Balcony m² (optional)
                 </label>
                 <div className="relative">
@@ -790,13 +794,13 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     value={formData.balcony_square_meters ?? ''}
                     onChange={handleChange}
                     placeholder="0"
-                    className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                   />
                   <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
-                    <div className="w-px h-6 bg-slate-300"></div>
+                    <div className="w-px h-6 bg-gray-300"></div>
                   </div>
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                    <span className="text-slate-500 text-sm font-medium">m²</span>
+                    <span className="text-gray-500 text-sm font-medium">m²</span>
                   </div>
                 </div>
               </div>
@@ -804,7 +808,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
             {/* Price row */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Asked Price (ILS)
               </label>
               <div className="relative max-w-md">
@@ -815,14 +819,14 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   onChange={handlePriceChange}
                   onKeyDown={handlePriceKeyDown}
                   onClick={handlePriceClick}
-                  className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                   tabIndex={7}
                 />
                 <div className="absolute inset-y-0 left-8 flex items-center pointer-events-none">
-                  <div className="w-px h-6 bg-slate-300"></div>
+                  <div className="w-px h-6 bg-gray-300"></div>
                 </div>
                 <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                  <span className="text-slate-500 text-sm font-medium">₪</span>
+                  <span className="text-gray-500 text-sm font-medium">₪</span>
                 </div>
               </div>
             </div>
@@ -833,23 +837,23 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               const effectiveArea = squareMeters + 0.5 * balcony
               return formData.asked_price != null && formData.asked_price > 0 && effectiveArea > 0
             })() && (
-              <div className="p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-                <p className="text-sm font-medium text-slate-700">
-                  Price per m²: ₪{(() => {
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm font-medium text-gray-700">
+                  Price per m²: <span className="font-numbers">₪{(() => {
                     const balcony = formData.balcony_square_meters ?? 0
                     const squareMeters = formData.square_meters ?? 0
                     const effectiveArea = squareMeters + 0.5 * balcony
                     return formData.asked_price && effectiveArea > 0 
                       ? (formData.asked_price / effectiveArea).toLocaleString('en-US', { maximumFractionDigits: 0 })
                       : 'N/A'
-                  })()}
+                  })()}</span>
                 </p>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Contact Name
                 </label>
                 <input
@@ -857,13 +861,13 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="contact_name"
                   value={formData.contact_name || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                   tabIndex={6}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Contact Phone
                 </label>
                 <input
@@ -871,15 +875,15 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="contact_phone"
                   value={formData.contact_phone || ''}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all"
                   tabIndex={7}
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Source *
                 </label>
                 <div className="relative">
@@ -887,7 +891,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     name="source"
                     value={formData.source}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all appearance-none cursor-pointer"
                     tabIndex={9}
                   >
                     {SOURCES.map(source => (
@@ -895,7 +899,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -903,7 +907,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Property Type *
                 </label>
                 <div className="relative">
@@ -911,7 +915,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     name="property_type"
                     value={formData.property_type}
                     onChange={handleChange}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all appearance-none cursor-pointer"
                     tabIndex={9}
                   >
                     {PROPERTY_TYPES.map(type => (
@@ -919,7 +923,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -928,7 +932,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Status *
               </label>
               <div className="relative">
@@ -936,7 +940,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all appearance-none cursor-pointer"
                   tabIndex={11}
                 >
                   {PROPERTY_STATUS_OPTIONS.map(status => (
@@ -952,7 +956,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Description
               </label>
               <div className="space-y-2">
@@ -961,11 +965,11 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   value={formData.description || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Additional details about the property"
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all text-right text-slate-900 min-h-[100px] max-h-[200px]"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent bg-white transition-all text-right text-gray-900 min-h-[100px] max-h-[200px]"
                   dir="rtl"
                   tabIndex={12}
                 />
-                <div className="flex justify-end text-xs text-slate-500">
+                <div className="flex justify-end text-xs text-gray-500">
                   <span>Enter for new line</span>
                 </div>
               </div>
@@ -990,20 +994,20 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             )}
 
             {!property?.id && (
-              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div className="flex items-start space-x-3">
-                  <svg className="w-5 h-5 text-slate-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm font-medium text-slate-700">Attachments</p>
-                    <p className="text-xs text-slate-500 mt-1">You can add photos and videos after creating the property.</p>
+                    <p className="text-sm font-medium text-gray-700">Attachments</p>
+                    <p className="text-xs text-gray-500 mt-1">You can add photos and videos after creating the property.</p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+            <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -1011,66 +1015,52 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                   name="apartment_broker"
                   checked={formData.apartment_broker || false}
                   onChange={handleCheckboxChange}
-                  className="w-5 h-5 text-primary bg-white border-2 border-slate-300 rounded focus:ring-primary focus:ring-2 transition-all"
+                  className="w-5 h-5 text-[oklch(0.5_0.22_280)] bg-white border-2 border-gray-300 rounded focus:ring-[oklch(0.5_0.22_280)] focus:ring-2 transition-all"
                   tabIndex={13}
                 />
-                <label htmlFor="apartment_broker" className="ml-3 text-sm font-semibold text-slate-700 cursor-pointer">
+                <label htmlFor="apartment_broker" className="ml-3 text-sm font-semibold text-gray-700 cursor-pointer">
                   Has Apartment Broker
                 </label>
               </div>
               <div className="flex-1">
-                <p className="text-xs text-slate-600">
+                <p className="text-xs text-gray-600">
                   Check this if the property listing includes an apartment broker service
                 </p>
               </div>
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
             </div>
 
-            <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
+            <div className="flex flex-col md:flex-row justify-end gap-3 md:gap-4 pt-6 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-6 py-3 text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 font-medium transition-all"
+                className="flex-1 md:flex-none px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-medium transition-all"
                 tabIndex={15}
               >
-                <div className="flex items-center space-x-2">
-                  <span>Cancel</span>
-                  <span className="text-xs text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
-                    ESC
-                  </span>
-                </div>
+                Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-6 py-3 bg-gradient-to-r from-primary to-primary/90 text-primary-foreground rounded-lg hover:brightness-90 disabled:opacity-50 font-medium transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                className="flex-1 md:flex-none px-6 py-3 bg-[oklch(0.5_0.22_280)] text-white rounded-lg hover:bg-[oklch(0.45_0.22_280)] disabled:opacity-50 font-medium transition-all"
                 tabIndex={14}
               >
                 {loading ? (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     <span>Saving...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={property ? "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" : "M12 4v16m8-8H4"} />
                     </svg>
                     <span>{property ? 'Update Property' : 'Create Property'}</span>
-                    </div>
-                    <span className="text-xs bg-white/20 px-2 py-1 rounded text-primary-foreground/80">
-                      ⌘↵
-                    </span>
                   </div>
                 )}
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
 

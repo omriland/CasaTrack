@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Assistant, JetBrains_Mono } from "next/font/google";
+import { Assistant, JetBrains_Mono, Montserrat } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
@@ -12,6 +12,12 @@ const assistant = Assistant({
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -29,7 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${assistant.variable} ${jetbrainsMono.variable} antialiased`}
+        className={`${assistant.variable} ${jetbrainsMono.variable} ${montserrat.variable} antialiased`}
       >
         <Script
           id="google-maps-init"

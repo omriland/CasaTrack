@@ -443,13 +443,21 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         
         {/* Details row: rooms, m², price - full width */}
         <div className="flex items-center gap-3 text-sm text-gray-500 mt-auto">
-          <span>{property.rooms} rooms</span>
+          <span><span className="font-numbers">{property.rooms}</span> rooms</span>
           <span>•</span>
-          <span>{property.square_meters ? `${property.square_meters} m²` : 'Unknown'}</span>
+          <span>
+            {property.square_meters ? (
+              <>
+                <span className="font-numbers">{property.square_meters}</span> m²
+              </>
+            ) : (
+              'Unknown'
+            )}
+          </span>
           {property.asked_price && (
             <>
               <span>•</span>
-              <span>{property.asked_price.toLocaleString()} ₪</span>
+              <span><span className="font-numbers">{property.asked_price.toLocaleString()}</span> ₪</span>
             </>
           )}
         </div>
@@ -525,16 +533,24 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <div className="flex items-start">
             <div className="flex-1">
               <div className="text-xs font-normal text-gray-600 mb-0.5">Rooms</div>
-              <div className="text-base font-semibold text-gray-900">{property.rooms}</div>
+              <div className="text-base font-semibold text-gray-900">
+                <span className="font-numbers">{property.rooms}</span>
+              </div>
             </div>
             <div className="flex-1">
               <div className="text-xs font-normal text-gray-600 mb-0.5">Size</div>
               <div className="text-base font-semibold text-gray-900">
-                {property.square_meters ? `${property.square_meters} m²` : 'Unknown'}
+                {property.square_meters ? (
+                  <>
+                    <span className="font-numbers">{property.square_meters}</span> m²
+                  </>
+                ) : (
+                  'Unknown'
+                )}
               </div>
               {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters && (
                 <div className="text-xs text-gray-500 mt-0.5">
-                  {property.balcony_square_meters} m² balcony
+                  <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
                 </div>
               )}
             </div>
@@ -546,13 +562,13 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <>
                 <div className="text-xs text-gray-500 mb-1.5">Asking Price</div>
                 <div className="text-xl font-bold text-gray-900 mb-3">
-                  {property.asked_price.toLocaleString()}₪
+                  <span className="font-numbers">{property.asked_price.toLocaleString()}</span>₪
                 </div>
                 {property.price_per_meter && (
                   <>
                     <div className="text-xs text-gray-500 mb-0.5">Price per m²</div>
                     <div className="text-sm text-gray-700">
-                      {Math.round(property.price_per_meter).toLocaleString()}₪
+                      <span className="font-numbers">{Math.round(property.price_per_meter).toLocaleString()}</span>₪
                     </div>
                   </>
                 )}
@@ -687,7 +703,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
             </svg>
             <span className={`text-xs font-medium ${localRooms === 0 ? 'text-amber-700' : 'text-slate-700'}`}>
-              {localRooms === 0 ? 'Add rooms' : `${localRooms} rooms`}
+              {localRooms === 0 ? 'Add rooms' : (
+                <>
+                  <span className="font-numbers">{localRooms}</span> rooms
+                </>
+              )}
             </span>
           </div>
         </div>
@@ -705,7 +725,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               </svg>
               <span className={`text-xs font-semibold ${property.rooms === 0 ? 'text-amber-700' : 'text-gray-600'}`}>Rooms</span>
             </div>
-            <span className={`text-xl font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-gray-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
+            <span className={`text-xl font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-gray-900'}`}>
+              {localRooms === 0 ? 'Add rooms' : <span className="font-numbers">{localRooms}</span>}
+            </span>
           {inlineEditing?.field === 'rooms' && (
             <div
               className="absolute left-3 top-3 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50"
@@ -725,7 +747,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                         : 'bg-white text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
                     }`}
                   >
-                    {roomCount}
+                    <span className="font-numbers">{roomCount}</span>
                   </button>
                 ))}
               </div>
@@ -761,10 +783,16 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           ) : (
             <div className="flex flex-col">
               <span className={`text-xl font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-gray-500' : 'text-gray-900'}`}>
-                {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : `${localSquareMeters} m²`}
+                {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : (
+                  <>
+                    <span className="font-numbers">{localSquareMeters}</span> m²
+                  </>
+                )}
               </span>
               {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
-                <span className="text-xs text-gray-600 mt-1">+ {property.balcony_square_meters} m² balcony</span>
+                <span className="text-xs text-gray-600 mt-1">
+                  + <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                </span>
               )}
             </div>
           )}
@@ -778,7 +806,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         property.asked_price !== null && property.asked_price !== 1 ? (
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs text-slate-500">Price:</span>
-            <span className="text-base font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+            <span className="text-base font-bold text-slate-900">
+              <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+            </span>
           </div>
         ) : property.asked_price === 1 ? (
           <div className="flex items-center gap-1.5 mb-2">
@@ -799,12 +829,16 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-5 mb-5 border border-primary/20 shadow-sm">
             <div className="flex justify-between items-center mb-2.5">
               <span className="text-sm font-semibold text-gray-600">Asking Price</span>
-              <span className="text-2xl font-bold text-gray-900">₪{formatPrice(property.asked_price)}</span>
+              <span className="text-2xl font-bold text-gray-900">
+                <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+              </span>
             </div>
             {property.price_per_meter !== null && (
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Price per m²</span>
-                <span className="font-semibold text-gray-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+                <span className="font-semibold text-gray-700">
+                  <span className="font-numbers">{formatPrice(Math.round(property.price_per_meter))}</span>₪
+                </span>
               </div>
             )}
           </div>

@@ -756,7 +756,9 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                   </svg>
                   <span className="text-xs font-medium text-slate-600">Rooms</span>
                 </div>
-                <span className="text-sm font-semibold text-slate-900">{hoveredProperty.rooms}</span>
+                <span className="text-sm font-semibold text-slate-900">
+                  <span className="font-numbers">{hoveredProperty.rooms}</span>
+                </span>
               </div>
 
               <div className={`rounded-lg p-2.5 ${hoveredProperty.square_meters === null ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}>
@@ -767,7 +769,11 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                   <span className={`text-xs font-medium ${hoveredProperty.square_meters === null ? 'text-amber-700' : 'text-slate-600'}`}>Size</span>
                 </div>
                 <span className={`text-sm font-semibold ${hoveredProperty.square_meters === null ? 'text-amber-700' : 'text-slate-900'}`}>
-                  {hoveredProperty.square_meters === null ? 'Not set' : `${hoveredProperty.square_meters} m²`}
+                  {hoveredProperty.square_meters === null ? 'Not set' : (
+                    <>
+                      <span className="font-numbers">{hoveredProperty.square_meters}</span> m²
+                    </>
+                  )}
                 </span>
               </div>
             </div>
@@ -777,12 +783,16 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-3 mb-3">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-medium text-slate-600">Asking Price</span>
-                  <span className="text-lg font-bold text-slate-900">₪{formatPrice(hoveredProperty.asked_price)}</span>
+                  <span className="text-lg font-bold text-slate-900">
+                    <span className="font-numbers">{formatPrice(hoveredProperty.asked_price)}</span>₪
+                  </span>
                 </div>
                 {hoveredProperty.price_per_meter !== null && (
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-slate-500">Price per m²</span>
-                    <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(hoveredProperty.price_per_meter))}</span>
+                    <span className="font-semibold text-slate-700">
+                      <span className="font-numbers">{formatPrice(Math.round(hoveredProperty.price_per_meter))}</span>₪
+                    </span>
                   </div>
                 )}
               </div>
