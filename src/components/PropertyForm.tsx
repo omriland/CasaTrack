@@ -488,34 +488,34 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
   return (
     <div 
-      className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
       onClick={onCancel}
     >
       <div 
-        className="bg-white/95 backdrop-blur-md shadow-2xl rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-white/20"
+        className="glass-strong rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-8">
-          <div className="flex items-center space-x-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center">
+        <div className="p-10">
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary to-primary/90 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
               {property ? (
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                 </svg>
               ) : (
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               )}
             </div>
-            <h2 className="text-2xl font-bold text-slate-900">
+            <h2 className="text-3xl font-semibold text-gray-900">
               {property ? 'Edit Property' : 'Add New Property'}
             </h2>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-7">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
                 Title *
               </label>
               <input
@@ -525,10 +525,10 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                 onChange={handleChange}
                 placeholder="Enter property title"
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/70 backdrop-blur-sm transition-all"
+                className="w-full px-5 py-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white/80 backdrop-blur-sm transition-all duration-300"
                 tabIndex={1}
               />
-              <p className="mt-1 text-xs text-slate-500">This will be auto-filled with the address if you enter the address first</p>
+              <p className="mt-2 text-xs text-gray-500">This will be auto-filled with the address if you enter the address first</p>
             </div>
 
             <div>

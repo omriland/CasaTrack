@@ -185,7 +185,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   const getStatusColor = (status: Property['status']) => {
     const colors = {
-      'Seen': 'bg-slate-100 text-slate-700 border-slate-200',
+      'Seen': 'bg-gray-100 text-gray-700 border-gray-200',
       'Interested': 'bg-emerald-100 text-emerald-800 border-emerald-400 font-semibold',
       'Contacted Realtor': 'bg-blue-50 text-blue-700 border-blue-200',
       'Visited': 'bg-indigo-100 text-indigo-800 border-indigo-300',
@@ -193,7 +193,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       'Irrelevant': 'bg-red-50 text-red-700 border-red-200',
       'Purchased': 'bg-emerald-50 text-emerald-700 border-emerald-200'
     }
-    return colors[status] || 'bg-slate-100 text-slate-700 border-slate-200'
+    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200'
   }
 
   const handleStatusChange = async (newStatus: PropertyStatus) => {
@@ -360,9 +360,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     // Don't trigger if user is selecting text
     if (window.getSelection()?.toString()) return
     
-    // On mobile, only handle clicks when expanded (to open modal)
-    // When collapsed, title click handles opening modal
-    if (mounted && isMobile && isExpanded) {
+    // On mobile simplified view (collapsed), always open modal
+    if (mounted && isMobile && !isExpanded) {
+      onViewNotes(property)
+    } else if (mounted && isMobile && isExpanded) {
+      // On mobile expanded view, open modal
       onViewNotes(property)
     } else if (!mounted || !isMobile) {
       // On desktop, always open modal
@@ -375,92 +377,302 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     setIsExpanded(!isExpanded)
   }
 
+  // Mobile-specific simplified card design matching the image
+  if (mounted && isMobile && !isExpanded) {
+    const isToContact = property.status === 'Interested'
+    const isContacted = property.status === 'Contacted Realtor'
+    const statusButtonText = isToContact ? 'To contact' : isContacted ? 'Contacted' : getStatusLabel(property.status)
+    
+    return (
+      <div 
+        className="relative bg-white rounded-[7px] border border-gray-200 p-4 transition-all duration-200 animate-fade-in h-[140px] flex flex-col"
+        onClick={handleCardClick}
+      >
+        {/* Header: Title and Status badge */}
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <h3 className="font-semibold text-gray-900 text-base leading-tight flex-1 min-w-0">
+            {property.title}
+          </h3>
+          
+          {/* Status button - top right */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap ${
+                isToContact 
+                  ? 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)]'
+                  : isContacted
+                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              {statusButtonText}
+            </button>
+            
+            {/* Status dropdown */}
+            {showStatusDropdown && (
+              <div 
+                className="absolute top-full right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                onClick={(e) => e.stopPropagation()}
+                ref={statusDropdownRef}
+              >
+                {PROPERTY_STATUS_OPTIONS.map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${
+                      status.value === property.status ? 'bg-gray-50 font-semibold' : ''
+                    }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Location with pin icon */}
+        <div className="flex items-center gap-1.5 mb-2">
+          <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="text-sm text-gray-500 line-clamp-1">{property.address}</span>
+        </div>
+        
+        {/* Details row: rooms, m², price - full width */}
+        <div className="flex items-center gap-3 text-sm text-gray-500 mt-auto">
+          <span>{property.rooms} rooms</span>
+          <span>•</span>
+          <span>{property.square_meters ? `${property.square_meters} m²` : 'Unknown'}</span>
+          {property.asked_price && (
+            <>
+              <span>•</span>
+              <span>{property.asked_price.toLocaleString()} ₪</span>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Desktop card design matching the image
+  if (!mounted || !isMobile) {
+    return (
+      <div 
+        className="group bg-white rounded-[7px] border border-gray-200 shadow-sm p-6 transition-all duration-200 animate-fade-in cursor-pointer hover:shadow-md h-[600px] flex flex-col"
+        onClick={handleCardClick}
+      >
+        {/* Header */}
+        <div className="mb-4">
+          <h3 className="font-semibold text-gray-900 text-lg mb-2 leading-tight">
+            {property.title}
+          </h3>
+          
+          {/* Location with pin icon */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="text-sm text-gray-500">{property.address}</span>
+          </div>
+          
+          {/* Date added with calendar icon */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span className="text-xs text-gray-500" title={formatExactDateTime(property.created_at)}>
+              Added {getRelativeTime(property.created_at)}
+            </span>
+          </div>
+          
+          {/* Status button */}
+          <div className="relative inline-block mb-3" ref={statusDropdownRef}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
+              className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all ${
+                property.status === 'Interested'
+                  ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)]'
+                  : property.status === 'Contacted Realtor'
+                  ? 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
+                  : 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
+              }`}
+            >
+              {getStatusLabel(property.status)}
+            </button>
+            
+            {showStatusDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                {PROPERTY_STATUS_OPTIONS.map((status) => (
+                  <button
+                    key={status.value}
+                    onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${
+                      status.value === property.status ? 'bg-gray-50 font-semibold' : ''
+                    }`}
+                  >
+                    {status.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Rooms and Size section */}
+          <div className="flex items-start">
+            <div className="flex-1">
+              <div className="text-xs font-normal text-gray-600 mb-0.5">Rooms</div>
+              <div className="text-base font-semibold text-gray-900">{property.rooms}</div>
+            </div>
+            <div className="flex-1">
+              <div className="text-xs font-normal text-gray-600 mb-0.5">Size</div>
+              <div className="text-base font-semibold text-gray-900">
+                {property.square_meters ? `${property.square_meters} m²` : 'Unknown'}
+              </div>
+              {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters && (
+                <div className="text-xs text-gray-500 mt-0.5">
+                  {property.balcony_square_meters} m² balcony
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Asking Price section - Grey inner section */}
+          <div className="bg-gray-50 rounded p-3 mt-3">
+            {property.asked_price && property.asked_price !== 1 ? (
+              <>
+                <div className="text-xs text-gray-500 mb-1.5">Asking Price</div>
+                <div className="text-xl font-bold text-gray-900 mb-3">
+                  {property.asked_price.toLocaleString()}₪
+                </div>
+                {property.price_per_meter && (
+                  <>
+                    <div className="text-xs text-gray-500 mb-0.5">Price per m²</div>
+                    <div className="text-sm text-gray-700">
+                      {Math.round(property.price_per_meter).toLocaleString()}₪
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="text-xs text-gray-500 mb-1">Asking Price</div>
+                <div className="text-sm text-gray-500">—</div>
+              </>
+            )}
+          </div>
+        </div>
+        
+        {/* Type/Source/Broker section - Simple two column layout */}
+        <div className="space-y-2 mb-4 flex-grow">
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">Type</span>
+            <span className="text-sm text-gray-700">{property.property_type}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">Source</span>
+            <span className="text-sm text-gray-700">{property.source}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">Broker</span>
+            <span className="text-sm text-gray-700">{property.apartment_broker ? 'Yes' : 'No'}</span>
+          </div>
+        </div>
+        
+        {/* Description */}
+        {property.description && (
+          <div className="mb-4">
+            <div className="text-xs text-gray-500 line-clamp-2" dir="rtl" style={{ unicodeBidi: 'plaintext' }}>
+              {property.description.replace(/<[^>]*>/g, '')}
+            </div>
+          </div>
+        )}
+        
+        {/* Attachments Gallery */}
+        <div className="mb-4">
+          {attachments.length > 0 ? (
+            <>
+              <div className="text-sm text-gray-500 mb-2">{attachments.length} files</div>
+              <div className="grid grid-cols-4 gap-2">
+                {attachments.slice(0, 4).map((attachment) => {
+                  const url = getAttachmentUrl(attachment.file_path)
+                  return (
+                    <div 
+                      key={attachment.id} 
+                      className="relative aspect-square rounded-md overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        const index = attachments.indexOf(attachment)
+                        setSelectedAttachmentIndex(index)
+                        setIsZoomed(false)
+                      }}
+                    >
+                      {attachment.file_type === 'image' ? (
+                        <img
+                          src={url}
+                          alt={attachment.file_name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="h-[80px]"></div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div 
-      className={`group bg-white rounded-lg shadow-sm border border-slate-200 ${mounted && isMobile ? (isExpanded ? 'p-6' : 'p-3') : 'p-6'} hover:shadow-lg hover:border-slate-300 transition-all duration-200 animate-fade-in ${mounted && isMobile && !isExpanded ? '' : 'cursor-pointer'}`}
+      className={`group card-glass rounded-2xl ${mounted && isMobile ? (isExpanded ? 'p-6' : 'p-4') : 'p-6'} transition-all duration-200 animate-fade-in ${mounted && isMobile && !isExpanded ? '' : 'cursor-pointer'} hover:bg-white/80`}
       onClick={mounted && isMobile && !isExpanded ? undefined : handleCardClick}
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-2 md:mb-4">
         <div className="flex-1 min-w-0">
           <h3 
-            className={`font-semibold text-slate-900 mb-1 line-clamp-2 leading-tight ${mounted && isMobile && !isExpanded ? 'text-base cursor-pointer hover:text-primary transition-colors' : 'text-lg'}`}
+            className={`font-semibold text-gray-900 mb-1.5 line-clamp-2 leading-tight ${mounted && isMobile && !isExpanded ? 'text-base cursor-pointer hover:text-primary transition-colors' : 'text-lg'}`}
             onClick={mounted && isMobile && !isExpanded ? handleTitleClick : undefined}
           >
             {property.title}
           </h3>
           <div 
-            className={`text-slate-500 mb-1 line-clamp-1 ${mounted && isMobile && !isExpanded ? 'text-xs cursor-pointer hover:text-primary transition-colors' : 'text-xs'}`} 
+            className={`text-gray-500 mb-1.5 line-clamp-1 ${mounted && isMobile && !isExpanded ? 'text-xs cursor-pointer hover:text-primary transition-colors' : 'text-xs'}`} 
             title={property.address}
             onClick={mounted && isMobile && !isExpanded ? handleTitleClick : undefined}
           >
             {property.address}
           </div>
-          {/* Status badge - show on collapsed mobile view */}
-          {mounted && isMobile && !isExpanded && (
-            <div className="mt-1.5">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(property.status)}`}>
-                <div className="w-1 h-1 rounded-full bg-current mr-1.5 opacity-60"></div>
-                {getStatusLabel(property.status)}
-              </span>
-            </div>
-          )}
-          {(mounted && (isExpanded || !isMobile)) && (
-            <>
-              <div className="hidden md:block text-xs text-slate-500 mb-2" title={formatExactDateTime(property.created_at)}>
-                Added {getRelativeTime(property.created_at)}
-              </div>
-              <div className="hidden md:block relative inline-block" ref={statusDropdownRef}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border transition-all hover:shadow-sm whitespace-nowrap ${getStatusColor(property.status)}`}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-current mr-2 opacity-60"></div>
-                {getStatusLabel(property.status)}
-                <svg className="w-3 h-3 ml-2 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-                </button>
-              
-                {showStatusDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
-                    {PROPERTY_STATUS_OPTIONS.map((status) => (
-                      <button
-                        key={status.value}
-                        onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
-                          status.value === property.status ? 'bg-slate-50 font-medium' : ''
-                        }`}
-                      >
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(status.value).split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                        <span>{status.label}</span>
-                        {status.value === property.status && (
-                          <svg className="w-3 h-3 ml-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
         </div>
         {/* Expand/Collapse Chevron - Mobile Only */}
         {mounted && isMobile && (
           <button
             onClick={handleExpandToggle}
-            className="ml-2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+            className="ml-2 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-300 flex-shrink-0"
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
             <svg 
-              className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+              className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
+              strokeWidth="2.5"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
         )}
@@ -481,19 +693,19 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
       ) : (
         // Full expanded view
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-2 gap-4 mb-5">
           <div
-            className={`relative rounded-lg p-3 select-none ${property.rooms === 0 ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+            className={`relative rounded-2xl p-4 select-none transition-all duration-300 ${property.rooms === 0 ? 'bg-amber-50/80 border border-amber-200/60' : 'bg-gray-50/80 border border-gray-200/40'}`}
             onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('rooms', property.rooms) }}
             title="Double-click to edit rooms"
           >
-            <div className="flex items-center space-x-2 mb-1">
-              <svg className={`w-4 h-4 ${property.rooms === 0 ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+            <div className="flex items-center space-x-2 mb-1.5">
+              <svg className={`w-4 h-4 ${property.rooms === 0 ? 'text-amber-600' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
               </svg>
-              <span className={`text-xs font-medium ${property.rooms === 0 ? 'text-amber-700' : 'text-slate-600'}`}>Rooms</span>
+              <span className={`text-xs font-semibold ${property.rooms === 0 ? 'text-amber-700' : 'text-gray-600'}`}>Rooms</span>
             </div>
-            <span className={`text-lg font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-slate-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
+            <span className={`text-xl font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-gray-900'}`}>{localRooms === 0 ? 'Add rooms' : localRooms}</span>
           {inlineEditing?.field === 'rooms' && (
             <div
               className="absolute left-3 top-3 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50"
@@ -521,12 +733,12 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           )}
         </div>
 
-        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-lg p-3 select-none ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : property.square_meters === 1 ? 'bg-slate-50' : 'bg-slate-50'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
-          <div className="flex items-center space-x-2 mb-1">
-            <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
+        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-2xl p-4 select-none transition-all duration-300 ${property.square_meters === null ? 'bg-amber-50/80 border border-amber-200/60' : property.square_meters === 1 ? 'bg-gray-50/80 border border-gray-200/40' : 'bg-gray-50/80 border border-gray-200/40'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
+          <div className="flex items-center space-x-2 mb-1.5">
+            <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
             </svg>
-            <span className={`text-xs font-medium ${property.square_meters === null ? 'text-amber-700' : 'text-slate-600'}`}>Size</span>
+            <span className={`text-xs font-semibold ${property.square_meters === null ? 'text-amber-700' : 'text-gray-600'}`}>Size</span>
           </div>
           {inlineEditing?.field === 'square_meters' ? (
             <div className="flex items-baseline space-x-2" onClick={(e) => e.stopPropagation()}>
@@ -548,11 +760,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </div>
           ) : (
             <div className="flex flex-col">
-              <span className={`text-lg font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-slate-500' : 'text-slate-900'}`}>
+              <span className={`text-xl font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-gray-500' : 'text-gray-900'}`}>
                 {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : `${localSquareMeters} m²`}
               </span>
               {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
-                <span className="text-xs text-slate-600 mt-0.5">+ {property.balcony_square_meters} m² balcony</span>
+                <span className="text-xs text-gray-600 mt-1">+ {property.balcony_square_meters} m² balcony</span>
               )}
             </div>
           )}
@@ -584,32 +796,32 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       ) : (
         // Full expanded price view
         property.asked_price !== null && property.asked_price !== 1 ? (
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-slate-600">Asking Price</span>
-              <span className="text-xl font-bold text-slate-900">₪{formatPrice(property.asked_price)}</span>
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-5 mb-5 border border-primary/20 shadow-sm">
+            <div className="flex justify-between items-center mb-2.5">
+              <span className="text-sm font-semibold text-gray-600">Asking Price</span>
+              <span className="text-2xl font-bold text-gray-900">₪{formatPrice(property.asked_price)}</span>
             </div>
             {property.price_per_meter !== null && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-slate-500">Price per m²</span>
-                <span className="font-semibold text-slate-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
+                <span className="text-gray-500">Price per m²</span>
+                <span className="font-semibold text-gray-700">₪{formatPrice(Math.round(property.price_per_meter))}</span>
               </div>
             )}
           </div>
         ) : property.asked_price === 1 ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+          <div className="bg-gray-50/80 border border-gray-200/60 rounded-2xl p-4 mb-5">
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-slate-600">Asking Price:</span>
-              <span className="text-sm font-medium text-slate-500">Unknown</span>
+              <span className="text-sm font-semibold text-gray-600">Asking Price:</span>
+              <span className="text-sm font-semibold text-gray-500">Unknown</span>
             </div>
           </div>
         ) : (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <div className="bg-amber-50/80 border border-amber-200/60 rounded-2xl p-4 mb-5">
             <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-sm font-medium text-amber-700">Price not set</span>
+              <span className="text-sm font-semibold text-amber-700">Price not set</span>
             </div>
           </div>
         )
