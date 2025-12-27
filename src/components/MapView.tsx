@@ -33,6 +33,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
   const labelOverlaysRef = useRef<google.maps.OverlayView[]>([])
+  const newBadgeOverlaysRef = useRef<google.maps.OverlayView[]>([])
 
   useEffect(() => {
     const initializeMap = () => {
@@ -152,11 +153,13 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       return
     }
 
-    // Clear existing markers and labels
+    // Clear existing markers, labels, and badges
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
     labelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
     labelOverlaysRef.current = []
+    newBadgeOverlaysRef.current.forEach(overlay => overlay.setMap(null))
+    newBadgeOverlaysRef.current = []
 
     // Add markers for properties with coordinates (filtered by toggle state)
     const filteredProperties = showIrrelevantProperties 
@@ -177,12 +180,20 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         markerColor = '#64748b'
         textColor = '#64748b'
       } else if (isInterested) {
-        markerColor = '#eab308' // Yellow-500
+        markerColor = '#ca8a04' // Dark yellow (yellow-600)
         textColor = '#713f12' // Yellow-900 for contrast
       } else {
         markerColor = 'oklch(0.72 0.13 160.9)'
         textColor = 'oklch(0.72 0.13 160.9)'
       }
+
+      // Check if property is "just added" (within last 7 days)
+      const isJustAdded = (() => {
+        const createdDate = new Date(property.created_at)
+        const now = new Date()
+        const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+        return daysDiff <= 7
+      })()
 
       const marker = new google.maps.Marker({
         position: { lat: property.latitude!, lng: property.longitude! },
@@ -289,6 +300,77 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       })
 
       markersRef.current.push(marker)
+
+      // Add "new" badge overlay for just added properties
+      if (isJustAdded) {
+        class NewBadgeOverlay extends google.maps.OverlayView {
+          private div: HTMLDivElement | null = null
+          private property: Property
+
+          constructor(property: Property) {
+            super()
+            this.property = property
+          }
+
+          onAdd() {
+            const div = document.createElement('div')
+            div.style.position = 'absolute'
+            div.style.pointerEvents = 'none'
+            div.style.zIndex = '1001'
+            div.style.transform = 'translate(-50%, -100%)'
+            
+            div.innerHTML = `
+              <div style="
+                background: #ef4444;
+                color: white;
+                border-radius: 8px;
+                padding: 2px 6px;
+                font-size: 9px;
+                font-weight: 700;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                white-space: nowrap;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                border: 1.5px solid white;
+                letter-spacing: 0.3px;
+              ">NEW</div>
+            `
+            
+            this.div = div
+            const panes = this.getPanes()
+            if (panes) {
+              panes.overlayMouseTarget.appendChild(div)
+            }
+          }
+
+          draw() {
+            if (!this.div) return
+            
+            const projection = this.getProjection()
+            if (!projection) return
+            
+            const position = projection.fromLatLngToDivPixel(
+              new google.maps.LatLng(this.property.latitude!, this.property.longitude!)
+            )
+            
+            if (position) {
+              // Position badge to the top-right of the marker
+              this.div.style.left = (position.x + 18) + 'px'
+              this.div.style.top = (position.y - 40) + 'px'
+            }
+          }
+
+          onRemove() {
+            if (this.div && this.div.parentNode) {
+              this.div.parentNode.removeChild(this.div)
+            }
+            this.div = null
+          }
+        }
+
+        const newBadgeOverlay = new NewBadgeOverlay(property)
+        newBadgeOverlay.setMap(mapInstanceRef.current)
+        newBadgeOverlaysRef.current.push(newBadgeOverlay)
+      }
     })
 
     // Adjust map bounds if there are properties
@@ -320,6 +402,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
       // Clear labels if not mobile or not zoomed in enough
       labelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
       labelOverlaysRef.current = []
+      // Note: Keep new badge overlays visible regardless of zoom level
       return
     }
 
