@@ -100,7 +100,7 @@ export default function PropertyDetailModal({
       useWebWorker: true,
       fileType: file.type,
     }
-    
+
     try {
       const compressedFile = await imageCompression(file, options)
       console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
@@ -149,7 +149,7 @@ export default function PropertyDetailModal({
       // Write input file to FFmpeg's virtual file system
       const inputFileName = 'input.' + file.name.split('.').pop()
       const outputFileName = 'output.mp4'
-      
+
       await ffmpeg.writeFile(inputFileName, await fetchFile(file))
 
       // Compress video: reduce bitrate and resolution if needed
@@ -178,7 +178,7 @@ export default function PropertyDetailModal({
         arrayBuffer = data as ArrayBuffer
       }
       const compressedBlob = new Blob([arrayBuffer], { type: 'video/mp4' })
-      
+
       // Clean up virtual files
       await ffmpeg.deleteFile(inputFileName)
       await ffmpeg.deleteFile(outputFileName)
@@ -189,7 +189,7 @@ export default function PropertyDetailModal({
       })
 
       console.log(`Video compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`)
-      
+
       // If compression didn't reduce size significantly, return original
       if (compressedFile.size >= file.size * 0.9) {
         console.log('Compression did not reduce size significantly, using original')
@@ -244,7 +244,7 @@ export default function PropertyDetailModal({
     setMounted(true)
     // Detect Mac for keyboard shortcut display
     setIsMac(typeof navigator !== 'undefined' && navigator.platform.includes('Mac'))
-    
+
     // Detect mobile for placeholder display
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768) // md breakpoint
@@ -465,7 +465,7 @@ export default function PropertyDetailModal({
     const then = new Date(dateString)
     const diffMs = now.getTime() - then.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 0) return 'Today'
     if (diffDays === 1) return '1 day ago'
     return `${diffDays} days ago`
@@ -516,7 +516,7 @@ export default function PropertyDetailModal({
       const element = e.currentTarget
       setTempDescription(element.innerHTML)
     }
-    
+
     // Handle Enter for line breaks
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -530,13 +530,13 @@ export default function PropertyDetailModal({
   const handleDescriptionInput = (e: React.FormEvent<HTMLDivElement>) => {
     const element = e.currentTarget
     let content = element.innerHTML
-    
+
     // Remove placeholder content if it exists
     if (content.includes('Add a description for this property')) {
       content = ''
       element.innerHTML = ''
     }
-    
+
     setTempDescription(content)
   }
 
@@ -601,7 +601,7 @@ export default function PropertyDetailModal({
               <h2 className="text-lg md:text-2xl font-bold text-white line-clamp-2 leading-tight">
                 {property.title}
               </h2>
-              
+
               {/* Location with pin icon */}
               <div className="flex items-center gap-1.5">
                 <svg className="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -617,13 +617,12 @@ export default function PropertyDetailModal({
               <div className="relative inline-block" ref={statusDropdownRef}>
                 <button
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all relative ${
-                    property.status === 'Interested'
+                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all relative ${property.status === 'Interested'
                       ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)] status-highlight'
                       : property.status === 'Contacted Realtor'
-                      ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)]'
-                      : 'bg-white/20 text-white hover:bg-white/30'
-                  }`}
+                        ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)]'
+                        : 'bg-white/20 text-white hover:bg-white/30'
+                    }`}
                 >
                   {getStatusLabel(property.status)}
                   <svg className="w-3 h-3 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -637,9 +636,8 @@ export default function PropertyDetailModal({
                       <button
                         key={status.value}
                         onClick={() => handleStatusChange(status.value)}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${
-                          status.value === property.status ? 'bg-slate-50 font-medium' : ''
-                        }`}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${status.value === property.status ? 'bg-slate-50 font-medium' : ''
+                          }`}
                       >
                         <div className={`w-2 h-2 rounded-full ${getStatusColor(status.value).split(' ')[0].replace('bg-', 'bg-')}`}></div>
                         <span>{status.label}</span>
@@ -728,6 +726,23 @@ export default function PropertyDetailModal({
                   <span className="text-sm text-gray-700">Added</span>
                   <span className="text-sm text-gray-700">{getRelativeTime(property.created_at)}</span>
                 </div>
+                {property.url && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-700">Listing</span>
+                    <a
+                      href={property.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline flex items-center gap-1 font-medium"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      View Link
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Description Section */}
@@ -764,9 +779,9 @@ export default function PropertyDetailModal({
                     className="cursor-pointer hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
                   >
                     {property.description ? (
-                      <div 
-                        className="text-gray-700 leading-relaxed text-base w-full text-right" 
-                        dir="rtl" 
+                      <div
+                        className="text-gray-700 leading-relaxed text-base w-full text-right"
+                        dir="rtl"
                         style={{ unicodeBidi: 'plaintext' }}
                         dangerouslySetInnerHTML={{ __html: property.description }}
                       />
@@ -873,11 +888,10 @@ export default function PropertyDetailModal({
                       />
                       <label
                         htmlFor="detail-attachment-upload"
-                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${
-                          uploadingAttachment 
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${uploadingAttachment
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                             : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        }`}
+                          }`}
                       >
                         {uploadingAttachment ? (
                           <>
@@ -895,7 +909,7 @@ export default function PropertyDetailModal({
                       </label>
                     </div>
                   </div>
-                  
+
                   {attachmentsLoading ? (
                     <div className="flex items-center justify-center py-8">
                       <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -909,9 +923,8 @@ export default function PropertyDetailModal({
                         return (
                           <div
                             key={attachment.id}
-                            className={`relative group aspect-video rounded-lg overflow-hidden border border-slate-200 cursor-pointer transition-all hover:shadow-lg ${
-                              isDeleting ? 'opacity-50' : ''
-                            }`}
+                            className={`relative group aspect-video rounded-lg overflow-hidden border border-slate-200 cursor-pointer transition-all hover:shadow-lg ${isDeleting ? 'opacity-50' : ''
+                              }`}
                             onClick={() => {
                               setSelectedAttachmentIndex(attachments.findIndex(a => a.id === attachment.id))
                               setIsZoomed(false)
@@ -1049,8 +1062,8 @@ export default function PropertyDetailModal({
                             </div>
                           </div>
                         ) : (
-                          <p 
-                            className="text-slate-900 whitespace-pre-wrap leading-relaxed text-base cursor-pointer hover:bg-slate-50 -m-2 p-2 rounded-lg transition-colors" 
+                          <p
+                            className="text-slate-900 whitespace-pre-wrap leading-relaxed text-base cursor-pointer hover:bg-slate-50 -m-2 p-2 rounded-lg transition-colors"
                             dir="auto"
                             onDoubleClick={() => handleEditNote(note)}
                             title="Double-click to edit"
@@ -1121,21 +1134,21 @@ export default function PropertyDetailModal({
         const currentAttachment = attachments[selectedAttachmentIndex]
         const hasPrev = selectedAttachmentIndex > 0
         const hasNext = selectedAttachmentIndex < attachments.length - 1
-        
+
         const handlePrev = () => {
           if (hasPrev) {
             setSelectedAttachmentIndex(selectedAttachmentIndex - 1)
             setIsZoomed(false)
           }
         }
-        
+
         const handleNext = () => {
           if (hasNext) {
             setSelectedAttachmentIndex(selectedAttachmentIndex + 1)
             setIsZoomed(false)
           }
         }
-        
+
         const handleKeyDown = (e: React.KeyboardEvent) => {
           if (e.key === 'ArrowLeft') {
             e.preventDefault()
@@ -1149,7 +1162,7 @@ export default function PropertyDetailModal({
             setIsZoomed(false)
           }
         }
-        
+
         const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
           e.stopPropagation()
           if (!isZoomed) {
@@ -1161,7 +1174,7 @@ export default function PropertyDetailModal({
           }
           setIsZoomed(!isZoomed)
         }
-        
+
         const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
           if (!isZoomed) return
           const rect = e.currentTarget.getBoundingClientRect()
@@ -1169,21 +1182,21 @@ export default function PropertyDetailModal({
           const y = ((e.clientY - rect.top) / rect.height) * 100
           setZoomPosition({ x, y })
         }
-        
+
         // Touch swipe handling for mobile
         const handleTouchStart = (e: React.TouchEvent) => {
           touchStartX.current = e.touches[0].clientX
           touchEndX.current = e.touches[0].clientX
         }
-        
+
         const handleTouchMove = (e: React.TouchEvent) => {
           touchEndX.current = e.touches[0].clientX
         }
-        
+
         const handleTouchEnd = () => {
           const swipeThreshold = 50
           const diff = touchStartX.current - touchEndX.current
-          
+
           if (Math.abs(diff) > swipeThreshold) {
             if (diff > 0 && hasNext) {
               // Swiped left - go to next
@@ -1194,7 +1207,7 @@ export default function PropertyDetailModal({
             }
           }
         }
-        
+
         return (
           <div
             className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[70] animate-fade-in"
@@ -1225,7 +1238,7 @@ export default function PropertyDetailModal({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              
+
               {/* Previous Button - hidden on mobile/tablet */}
               {hasPrev && (
                 <button
@@ -1241,7 +1254,7 @@ export default function PropertyDetailModal({
                   </svg>
                 </button>
               )}
-              
+
               {/* Next Button - hidden on mobile/tablet */}
               {hasNext && (
                 <button
@@ -1257,10 +1270,10 @@ export default function PropertyDetailModal({
                   </svg>
                 </button>
               )}
-              
+
               {/* Image/Video Display with Zoom */}
               {currentAttachment.file_type === 'image' ? (
-                <div 
+                <div
                   className={`relative overflow-hidden ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
                   onMouseMove={handleMouseMove}
                   style={{
@@ -1290,7 +1303,7 @@ export default function PropertyDetailModal({
                   <source src={getAttachmentUrl(currentAttachment.file_path)} type={currentAttachment.mime_type} />
                 </video>
               )}
-              
+
               {/* Bottom Info Bar */}
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
                 {/* Filename - hidden on mobile/tablet */}

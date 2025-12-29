@@ -95,12 +95,11 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
     <div
       ref={setNodeRef}
       style={style}
-      className={`group bg-white rounded-lg p-3 transition-all border border-slate-200 hover:border-slate-300 ${
-        isDragging ? 'opacity-50 scale-105 rotate-1 border-primary/40' : ''
-      }`}
+      className={`group bg-white rounded-lg p-3 transition-all border border-slate-200 hover:border-slate-300 ${isDragging ? 'opacity-50 scale-105 rotate-1 border-primary/40' : ''
+        }`}
       onClick={handleCardClick}
     >
-        <div className="space-y-3">
+      <div className="space-y-3">
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
             {/* Drag Handle */}
@@ -154,9 +153,8 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
         <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <div
-              className={`relative inline-flex items-center space-x-1.5 rounded px-2.5 py-1.5 text-sm font-medium ${
-                rooms === 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-700 border border-slate-200'
-              } cursor-pointer hover:bg-slate-100 transition-colors`}
+              className={`relative inline-flex items-center space-x-1.5 rounded px-2.5 py-1.5 text-sm font-medium ${rooms === 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-700 border border-slate-200'
+                } cursor-pointer hover:bg-slate-100 transition-colors`}
               onClick={(e) => { e.stopPropagation(); setShowRoomsPicker((v) => !v) }}
               title={rooms === 0 ? 'Add rooms' : 'Change rooms'}
               ref={roomsPickerRef}
@@ -174,11 +172,10 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                       <button
                         key={r}
                         onClick={(ev) => { ev.stopPropagation(); handleQuickSetRooms(r) }}
-                        className={`px-2.5 py-2 text-sm rounded font-medium transition-colors ${
-                          rooms === r 
-                            ? 'bg-primary text-white' 
+                        className={`px-2.5 py-2 text-sm rounded font-medium transition-colors ${rooms === r
+                            ? 'bg-primary text-white'
                             : 'text-slate-700 hover:bg-slate-100'
-                        }`}
+                          }`}
                       >
                         <span className="font-numbers">{r}</span>
                       </button>
@@ -235,6 +232,20 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
         <div className="flex justify-between items-center pt-2 border-t border-slate-100">
           <div className="flex items-center space-x-2">
             <span className="text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded px-2.5 py-1 font-medium">{property.source}</span>
+            {property.url && (
+              <a
+                href={property.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                title="View original listing"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            )}
             {property.apartment_broker && (
               <div className="flex items-center space-x-1" title="Has apartment broker">
                 <div className="w-2 h-2 bg-primary rounded-full"></div>

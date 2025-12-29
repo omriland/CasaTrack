@@ -44,10 +44,10 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   useEffect(() => {
     loadNotesCount()
     loadAttachments()
-    
+
     // Set mounted to true after initial render to avoid hydration mismatch
     setMounted(true)
-    
+
     // Detect mobile and set initial expanded state
     const checkMobile = () => {
       const mobile = window.innerWidth < 768
@@ -213,7 +213,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   const handleCopyPhone = async () => {
     if (!property.contact_phone) return
-    
+
     try {
       await navigator.clipboard.writeText(property.contact_phone)
       setCopiedPhone(true)
@@ -225,7 +225,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
   const handleNotesHover = async () => {
     if (notesCount === 0) return
-    
+
     try {
       setNotesLoading(true)
       setShowNotesPreview(true)
@@ -359,7 +359,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const handleCardClick = (e: React.MouseEvent) => {
     // Don't trigger if user is selecting text
     if (window.getSelection()?.toString()) return
-    
+
     // On mobile simplified view (collapsed), always open modal
     if (mounted && isMobile && !isExpanded) {
       onViewNotes(property)
@@ -382,9 +382,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     const isToContact = property.status === 'Interested'
     const isContacted = property.status === 'Contacted Realtor'
     const statusButtonText = isToContact ? 'To contact' : isContacted ? 'Contacted' : getStatusLabel(property.status)
-    
+
     return (
-      <div 
+      <div
         className="relative bg-white rounded-[7px] border border-gray-200 p-4 transition-all duration-200 animate-fade-in h-[140px] flex flex-col"
         onClick={handleCardClick}
       >
@@ -393,25 +393,24 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <h3 className="font-semibold text-gray-900 text-base leading-tight flex-1 min-w-0">
             {property.title}
           </h3>
-          
+
           {/* Status button - top right */}
           <div className="relative flex-shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap relative ${
-                isToContact 
-                  ? 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)] status-highlight'
-                  : isContacted
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap relative ${isToContact
+                ? 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)] status-highlight'
+                : isContacted
                   ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+                }`}
             >
               {statusButtonText}
             </button>
-            
+
             {/* Status dropdown */}
             {showStatusDropdown && (
-              <div 
+              <div
                 className="absolute top-full right-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
                 onClick={(e) => e.stopPropagation()}
                 ref={statusDropdownRef}
@@ -420,9 +419,8 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   <button
                     key={status.value}
                     onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${
-                      status.value === property.status ? 'bg-gray-50 font-semibold' : ''
-                    }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${status.value === property.status ? 'bg-gray-50 font-semibold' : ''
+                      }`}
                   >
                     {status.label}
                   </button>
@@ -431,7 +429,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             )}
           </div>
         </div>
-        
+
         {/* Location with pin icon */}
         <div className="flex items-center gap-1.5 mb-2">
           <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -440,7 +438,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           </svg>
           <span className="text-sm text-gray-500 line-clamp-1">{property.address}</span>
         </div>
-        
+
         {/* Details row: rooms, m², price - full width */}
         <div className="flex items-center gap-3 text-sm text-gray-500 mt-auto">
           <span><span className="font-numbers">{property.rooms}</span> rooms</span>
@@ -460,6 +458,23 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <span><span className="font-numbers">{property.asked_price.toLocaleString()}</span> ₪</span>
             </>
           )}
+          {property.url && (
+            <>
+              <span>•</span>
+              <a
+                href={property.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary flex items-center gap-1 font-medium hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Link
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </>
+          )}
         </div>
       </div>
     )
@@ -468,8 +483,8 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   // Desktop card design matching the image
   if (!mounted || !isMobile) {
     return (
-      <div 
-        className="group bg-white rounded-[7px] border border-gray-200 shadow-sm p-6 transition-all duration-200 animate-fade-in cursor-pointer hover:shadow-md h-[600px] flex flex-col"
+      <div
+        className="group bg-white rounded-[7px] border border-gray-200 shadow-sm p-6 transition-all duration-200 animate-fade-in cursor-pointer hover:shadow-md min-h-[600px] h-full flex flex-col"
         onClick={handleCardClick}
       >
         {/* Header */}
@@ -477,7 +492,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <h3 className="font-semibold text-gray-900 text-lg mb-2 leading-tight">
             {property.title}
           </h3>
-          
+
           {/* Location with pin icon */}
           <div className="flex items-center gap-1.5 mb-2">
             <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -486,7 +501,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </svg>
             <span className="text-sm text-gray-500">{property.address}</span>
           </div>
-          
+
           {/* Date added with calendar icon */}
           <div className="flex items-center gap-1.5 mb-2">
             <svg className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
@@ -496,31 +511,29 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               Added {getRelativeTime(property.created_at)}
             </span>
           </div>
-          
+
           {/* Status button */}
           <div className="relative inline-block mb-3" ref={statusDropdownRef}>
             <button
               onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-              className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all relative ${
-                property.status === 'Interested'
-                  ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)] status-highlight'
-                  : property.status === 'Contacted Realtor'
+              className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all relative ${property.status === 'Interested'
+                ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)] status-highlight'
+                : property.status === 'Contacted Realtor'
                   ? 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
                   : 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
-              }`}
+                }`}
             >
               {getStatusLabel(property.status)}
             </button>
-            
+
             {showStatusDropdown && (
               <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 {PROPERTY_STATUS_OPTIONS.map((status) => (
                   <button
                     key={status.value}
                     onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${
-                      status.value === property.status ? 'bg-gray-50 font-semibold' : ''
-                    }`}
+                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${status.value === property.status ? 'bg-gray-50 font-semibold' : ''
+                      }`}
                   >
                     {status.label}
                   </button>
@@ -528,7 +541,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               </div>
             )}
           </div>
-          
+
           {/* Rooms and Size section */}
           <div className="flex items-start">
             <div className="flex-1">
@@ -555,7 +568,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               )}
             </div>
           </div>
-          
+
           {/* Asking Price section - Grey inner section */}
           <div className="bg-gray-50 rounded p-3 mt-3">
             {property.asked_price && property.asked_price !== 1 ? (
@@ -581,7 +594,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             )}
           </div>
         </div>
-        
+
         {/* Type/Source/Broker section - Simple two column layout */}
         <div className="space-y-2 mb-4 flex-grow">
           <div className="flex justify-between items-center">
@@ -596,29 +609,46 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <span className="text-sm text-gray-700">Broker</span>
             <span className="text-sm text-gray-700">{property.apartment_broker ? 'Yes' : 'No'}</span>
           </div>
+          {property.url && (
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-700">Link</span>
+              <a
+                href={property.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline flex items-center gap-1 font-medium"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View Listing
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          )}
         </div>
-        
+
         {/* Description */}
         {property.description && (
-          <div className="mb-4">
+          <div className="mb-6">
             <div className="text-xs text-gray-500 line-clamp-2" dir="rtl" style={{ unicodeBidi: 'plaintext' }}>
               {property.description.replace(/<[^>]*>/g, '')}
             </div>
           </div>
         )}
-        
+
         {/* Attachments Gallery */}
-        <div className="mb-4">
+        <div className="mt-auto pt-4 mb-2">
           {attachments.length > 0 ? (
             <>
-              <div className="text-sm text-gray-500 mb-2">{attachments.length} files</div>
-              <div className="grid grid-cols-4 gap-2">
-                {attachments.slice(0, 4).map((attachment) => {
+              <div className="text-sm text-gray-500 mb-3">{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</div>
+              <div className="grid grid-cols-3 gap-3">
+                {attachments.slice(0, 3).map((attachment) => {
                   const url = getAttachmentUrl(attachment.file_path)
                   return (
-                    <div 
-                      key={attachment.id} 
-                      className="relative aspect-square rounded-md overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                    <div
+                      key={attachment.id}
+                      className="relative aspect-square rounded-md overflow-hidden border border-gray-200 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                       onClick={(e) => {
                         e.stopPropagation()
                         const index = attachments.indexOf(attachment)
@@ -642,6 +672,18 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                     </div>
                   )
                 })}
+                {attachments.length > 3 && (
+                  <div
+                    className="aspect-square rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedAttachmentIndex(3)
+                      setIsZoomed(false)
+                    }}
+                  >
+                    <span className="text-sm font-semibold text-gray-600">+{attachments.length - 3}</span>
+                  </div>
+                )}
               </div>
             </>
           ) : (
@@ -653,21 +695,21 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   }
 
   return (
-    <div 
+    <div
       className={`group card-glass rounded-2xl ${mounted && isMobile ? (isExpanded ? 'p-6' : 'p-4') : 'p-6'} transition-all duration-200 animate-fade-in ${mounted && isMobile && !isExpanded ? '' : 'cursor-pointer'} hover:bg-white/80`}
       onClick={mounted && isMobile && !isExpanded ? undefined : handleCardClick}
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-2 md:mb-4">
         <div className="flex-1 min-w-0">
-          <h3 
+          <h3
             className={`font-semibold text-gray-900 mb-1.5 line-clamp-2 leading-tight ${mounted && isMobile && !isExpanded ? 'text-base cursor-pointer hover:text-primary transition-colors' : 'text-lg'}`}
             onClick={mounted && isMobile && !isExpanded ? handleTitleClick : undefined}
           >
             {property.title}
           </h3>
-          <div 
-            className={`text-gray-500 mb-1.5 line-clamp-1 ${mounted && isMobile && !isExpanded ? 'text-xs cursor-pointer hover:text-primary transition-colors' : 'text-xs'}`} 
+          <div
+            className={`text-gray-500 mb-1.5 line-clamp-1 ${mounted && isMobile && !isExpanded ? 'text-xs cursor-pointer hover:text-primary transition-colors' : 'text-xs'}`}
             title={property.address}
             onClick={mounted && isMobile && !isExpanded ? handleTitleClick : undefined}
           >
@@ -681,10 +723,10 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             className="ml-2 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-300 flex-shrink-0"
             title={isExpanded ? 'Collapse' : 'Expand'}
           >
-            <svg 
-              className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} 
-              fill="none" 
-              stroke="currentColor" 
+            <svg
+              className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
               viewBox="0 0 24 24"
               strokeWidth="2.5"
             >
@@ -728,76 +770,75 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <span className={`text-xl font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-gray-900'}`}>
               {localRooms === 0 ? 'Add rooms' : <span className="font-numbers">{localRooms}</span>}
             </span>
-          {inlineEditing?.field === 'rooms' && (
-            <div
-              className="absolute left-3 top-3 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50"
-              onClick={(e) => e.stopPropagation()}
-              ref={roomsPickerRef}
-            >
-              <div className="text-xs font-semibold text-slate-600 mb-2">Set Rooms</div>
-              <div className="flex gap-2">
-                {[3, 3.5, 4, 4.5, 5, 5.5, 6].map((roomCount) => (
-                  <button
-                    key={roomCount}
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); quickSetRooms(roomCount) }}
-                    className={`w-10 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 flex items-center justify-center ${
-                      localRooms === roomCount
+            {inlineEditing?.field === 'rooms' && (
+              <div
+                className="absolute left-3 top-3 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50"
+                onClick={(e) => e.stopPropagation()}
+                ref={roomsPickerRef}
+              >
+                <div className="text-xs font-semibold text-slate-600 mb-2">Set Rooms</div>
+                <div className="flex gap-2">
+                  {[3, 3.5, 4, 4.5, 5, 5.5, 6].map((roomCount) => (
+                    <button
+                      key={roomCount}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); quickSetRooms(roomCount) }}
+                      className={`w-10 h-10 rounded-full text-sm font-medium transition-all flex-shrink-0 flex items-center justify-center ${localRooms === roomCount
                         ? 'bg-primary text-primary-foreground shadow'
                         : 'bg-white text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
-                    }`}
-                  >
-                    <span className="font-numbers">{roomCount}</span>
-                  </button>
-                ))}
+                        }`}
+                    >
+                      <span className="font-numbers">{roomCount}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-
-        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-2xl p-4 select-none transition-all duration-300 ${property.square_meters === null ? 'bg-amber-50/80 border border-amber-200/60' : property.square_meters === 1 ? 'bg-gray-50/80 border border-gray-200/40' : 'bg-gray-50/80 border border-gray-200/40'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
-          <div className="flex items-center space-x-2 mb-1.5">
-            <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
-            </svg>
-            <span className={`text-xs font-semibold ${property.square_meters === null ? 'text-amber-700' : 'text-gray-600'}`}>Size</span>
+            )}
           </div>
-          {inlineEditing?.field === 'square_meters' ? (
-            <div className="flex items-baseline space-x-2" onClick={(e) => e.stopPropagation()}>
-              <input
-                type="number"
-                autoFocus
-                value={inlineEditing.value ?? ''}
-                onChange={(e) => setInlineEditing({ field: 'square_meters', value: e.target.value === '' ? null : Number(e.target.value) })}
-                onBlur={commitInlineEdit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitInlineEdit()
-                  if (e.key === 'Escape') setInlineEditing(null)
-                }}
-                className="w-24 px-3 py-1.5 text-base border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-slate-400"
-                min={0}
-                placeholder="Optional"
-              />
-              <span className="text-xs text-slate-500">m²</span>
+
+          <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} relative rounded-2xl p-4 select-none transition-all duration-300 ${property.square_meters === null ? 'bg-amber-50/80 border border-amber-200/60' : property.square_meters === 1 ? 'bg-gray-50/80 border border-gray-200/40' : 'bg-gray-50/80 border border-gray-200/40'}`} onDoubleClick={(e) => { e.stopPropagation(); openInlineEditor('square_meters', localSquareMeters) }} title="Double-click to edit size">
+            <div className="flex items-center space-x-2 mb-1.5">
+              <svg className={`w-4 h-4 ${property.square_meters === null ? 'text-amber-600' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
+              </svg>
+              <span className={`text-xs font-semibold ${property.square_meters === null ? 'text-amber-700' : 'text-gray-600'}`}>Size</span>
             </div>
-          ) : (
-            <div className="flex flex-col">
-              <span className={`text-xl font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-gray-500' : 'text-gray-900'}`}>
-                {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : (
-                  <>
-                    <span className="font-numbers">{localSquareMeters}</span> m²
-                  </>
-                )}
-              </span>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
-                <span className="text-xs text-gray-600 mt-1">
-                  + <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+            {inlineEditing?.field === 'square_meters' ? (
+              <div className="flex items-baseline space-x-2" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="number"
+                  autoFocus
+                  value={inlineEditing.value ?? ''}
+                  onChange={(e) => setInlineEditing({ field: 'square_meters', value: e.target.value === '' ? null : Number(e.target.value) })}
+                  onBlur={commitInlineEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') commitInlineEdit()
+                    if (e.key === 'Escape') setInlineEditing(null)
+                  }}
+                  className="w-24 px-3 py-1.5 text-base border border-slate-300 rounded-md focus:outline-none focus:ring-0 focus:border-slate-400"
+                  min={0}
+                  placeholder="Optional"
+                />
+                <span className="text-xs text-slate-500">m²</span>
+              </div>
+            ) : (
+              <div className="flex flex-col">
+                <span className={`text-xl font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-gray-500' : 'text-gray-900'}`}>
+                  {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : (
+                    <>
+                      <span className="font-numbers">{localSquareMeters}</span> m²
+                    </>
+                  )}
                 </span>
-              )}
-            </div>
-          )}
+                {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
+                  <span className="text-xs text-gray-600 mt-1">
+                    + <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Price Section */}
@@ -928,13 +969,13 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Attachments</span>
             <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
           </div>
-          <div className="grid grid-cols-4 gap-2">
-            {attachments.slice(0, 4).map((attachment, index) => {
+          <div className="grid grid-cols-3 gap-3">
+            {attachments.slice(0, 3).map((attachment, index) => {
               const url = getAttachmentUrl(attachment.file_path)
               return (
-                <div 
-                  key={attachment.id} 
-                  className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all" 
+                <div
+                  key={attachment.id}
+                  className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
                   onClick={(e) => {
                     e.stopPropagation()
                     setSelectedAttachmentIndex(index)
@@ -957,16 +998,16 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 </div>
               )
             })}
-            {attachments.length > 4 && (
-              <div 
+            {attachments.length > 3 && (
+              <div
                 className="aspect-square rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
-                  setSelectedAttachmentIndex(4)
+                  setSelectedAttachmentIndex(3)
                   setIsZoomed(false)
                 }}
               >
-                <span className="text-xs font-medium text-slate-600">+{attachments.length - 4}</span>
+                <span className="text-xs font-medium text-slate-600">+{attachments.length - 3}</span>
               </div>
             )}
           </div>
@@ -1070,7 +1111,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
           {/* Notes Preview Tooltip */}
           {showNotesPreview && notesCount > 0 && (
-            <div 
+            <div
               className="absolute bottom-full left-0 mb-2 w-80 bg-white rounded-lg shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
               onMouseEnter={() => setShowNotesPreview(true)}
               onMouseLeave={() => setShowNotesPreview(false)}
@@ -1079,7 +1120,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 <h4 className="font-medium text-slate-900">Recent Notes</h4>
                 <span className="text-xs text-slate-500">{notesCount} total</span>
               </div>
-              
+
               {notesLoading ? (
                 <div className="text-center py-4">
                   <div className="text-sm text-slate-500">Loading...</div>
@@ -1103,7 +1144,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   )}
                 </div>
               )}
-              
+
               {/* Arrow pointing down */}
               <div className="absolute top-full left-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>
               <div className="absolute top-full left-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-slate-200 transform translate-y-px"></div>
@@ -1113,11 +1154,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       </div>
 
       {showDeleteConfirm && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
           onClick={() => setShowDeleteConfirm(false)}
         >
-          <div 
+          <div
             className="bg-white rounded-lg shadow-2xl border border-slate-200 p-6 max-w-sm w-full animate-fade-in"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1161,21 +1202,21 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         const currentAttachment = attachments[selectedAttachmentIndex]
         const hasPrev = selectedAttachmentIndex > 0
         const hasNext = selectedAttachmentIndex < attachments.length - 1
-        
+
         const handlePrev = () => {
           if (hasPrev) {
             setSelectedAttachmentIndex(selectedAttachmentIndex - 1)
             setIsZoomed(false)
           }
         }
-        
+
         const handleNext = () => {
           if (hasNext) {
             setSelectedAttachmentIndex(selectedAttachmentIndex + 1)
             setIsZoomed(false)
           }
         }
-        
+
         const handleKeyDown = (e: React.KeyboardEvent) => {
           if (e.key === 'ArrowLeft') {
             e.preventDefault()
@@ -1189,7 +1230,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             setIsZoomed(false)
           }
         }
-        
+
         const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
           e.stopPropagation()
           if (!isZoomed) {
@@ -1201,7 +1242,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           }
           setIsZoomed(!isZoomed)
         }
-        
+
         const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
           if (!isZoomed) return
           const rect = e.currentTarget.getBoundingClientRect()
@@ -1209,7 +1250,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           const y = ((e.clientY - rect.top) / rect.height) * 100
           setZoomPosition({ x, y })
         }
-        
+
         return (
           <div
             className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-[70] animate-fade-in"
@@ -1237,7 +1278,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              
+
               {/* Previous Button */}
               {hasPrev && (
                 <button
@@ -1253,7 +1294,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   </svg>
                 </button>
               )}
-              
+
               {/* Next Button */}
               {hasNext && (
                 <button
@@ -1269,10 +1310,10 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   </svg>
                 </button>
               )}
-              
+
               {/* Image/Video Display with Zoom */}
               {currentAttachment.file_type === 'image' ? (
-                <div 
+                <div
                   className={`relative overflow-hidden ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
                   onMouseMove={handleMouseMove}
                   style={{
@@ -1302,7 +1343,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   <source src={getAttachmentUrl(currentAttachment.file_path)} type={currentAttachment.mime_type} />
                 </video>
               )}
-              
+
               {/* Bottom Info Bar */}
               <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center space-x-4">
                 <div className="bg-black/50 text-white px-4 py-2 rounded-lg text-sm">
