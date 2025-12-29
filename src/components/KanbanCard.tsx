@@ -197,7 +197,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                   )}
                 </span>
               </div>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters !== null && property.square_meters !== 1 && (
+              {property.balcony_square_meters && property.balcony_square_meters !== 1 && property.balcony_square_meters > 0 && property.square_meters !== null && property.square_meters !== 1 && (
                 <span className="text-xs text-slate-500 mt-0.5 ml-5">
                   + <span>{property.balcony_square_meters}</span> m² balcony
                 </span>

@@ -7,9 +7,10 @@ import { getStatusLabel } from '@/constants/statuses'
 interface MapViewProps {
   properties: Property[]
   onPropertyClick?: (property: Property) => void
+  onCoordinateUpdate?: (propertyId: string, coordinates: { latitude: number; longitude: number }) => Promise<void>
 }
 
-export default function MapView({ properties, onPropertyClick }: MapViewProps) {
+export default function MapView({ properties, onPropertyClick, onCoordinateUpdate }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<google.maps.Marker[]>([])
@@ -32,6 +33,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
   const [zoomLevel, setZoomLevel] = useState<number>(10)
   const [isMobile, setIsMobile] = useState(false)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
+  const [draggingPropertyId, setDraggingPropertyId] = useState<string | null>(null)
   const labelOverlaysRef = useRef<google.maps.OverlayView[]>([])
   const newBadgeOverlaysRef = useRef<google.maps.OverlayView[]>([])
 
@@ -195,10 +197,13 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         return daysDiff <= 7
       })()
 
+      // Check if mobile directly to ensure accuracy
+      const isMobileDevice = window.innerWidth < 768
       const marker = new google.maps.Marker({
         position: { lat: property.latitude!, lng: property.longitude! },
         map: mapInstanceRef.current,
-        title: property.title,
+        draggable: !isMobileDevice && !!onCoordinateUpdate, // Only draggable on desktop/web when callback is provided
+        cursor: !isMobileDevice && !!onCoordinateUpdate ? 'grab' : 'pointer',
         icon: {
           url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
             <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -249,8 +254,60 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
         })
       })
 
+      // Add drag listeners for coordinate updates (desktop only)
+      if (!isMobileDevice && onCoordinateUpdate) {
+        marker.addListener('dragstart', () => {
+          setDraggingPropertyId(property.id)
+          // Change cursor to grabbing
+          marker.setCursor('grabbing')
+          // Slightly increase marker size during drag for visual feedback
+          marker.setIcon({
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+              <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="${markerColor}"/>
+                <circle cx="18" cy="18" r="10" fill="white"/>
+                <text x="18" y="23" text-anchor="middle" fill="${textColor}" font-family="Varela Round, sans-serif" font-size="14" font-weight="700">₪</text>
+              </svg>
+            `)}`
+          })
+        })
+
+        marker.addListener('dragend', async (event: google.maps.MapMouseEvent) => {
+          const newPosition = event.latLng
+          if (newPosition && onCoordinateUpdate) {
+            try {
+              await onCoordinateUpdate(property.id, {
+                latitude: newPosition.lat(),
+                longitude: newPosition.lng()
+              })
+            } catch (error) {
+              console.error('Error updating coordinates:', error)
+              // Revert marker position on error
+              marker.setPosition({ lat: property.latitude!, lng: property.longitude! })
+            }
+          }
+          // Reset cursor and icon
+          marker.setCursor('grab')
+          marker.setIcon({
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+              <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="${markerColor}"/>
+                <circle cx="16" cy="16" r="8" fill="white"/>
+                <text x="16" y="20" text-anchor="middle" fill="${textColor}" font-family="Varela Round, sans-serif" font-size="12" font-weight="600">₪</text>
+              </svg>
+            `)}`
+          })
+          setDraggingPropertyId(null)
+        })
+      }
+
       // Add click listener
       marker.addListener('click', () => {
+        // Don't trigger click if we just finished dragging
+        if (draggingPropertyId === property.id) {
+          return
+        }
+        
         // Clear hover UI when selecting a marker
         setHoveredProperty(null)
         setHoverPosition(null)
@@ -851,8 +908,8 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
                   </svg>
                   <span className={`text-xs font-medium ${hoveredProperty.square_meters === null ? 'text-amber-700' : 'text-slate-600'}`}>Size</span>
                 </div>
-                <span className={`text-sm font-semibold ${hoveredProperty.square_meters === null ? 'text-amber-700' : 'text-slate-900'}`}>
-                  {hoveredProperty.square_meters === null ? 'Not set' : (
+                <span className={`text-sm font-semibold ${hoveredProperty.square_meters === null || hoveredProperty.square_meters === 1 ? 'text-amber-700' : 'text-slate-900'}`}>
+                  {hoveredProperty.square_meters === null ? 'Not set' : hoveredProperty.square_meters === 1 ? 'Unknown' : (
                     <>
                       <span>{hoveredProperty.square_meters}</span> m²
                     </>
@@ -862,7 +919,7 @@ export default function MapView({ properties, onPropertyClick }: MapViewProps) {
             </div>
 
             {/* Price Section */}
-            {hoveredProperty.asked_price !== null ? (
+            {hoveredProperty.asked_price !== null && hoveredProperty.asked_price !== 1 ? (
               <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-3 mb-3">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-medium text-slate-600">Asking Price</span>

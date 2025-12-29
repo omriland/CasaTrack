@@ -685,7 +685,7 @@ export default function PropertyDetailModal({
                           <span className="text-gray-500">Unknown</span>
                         )}
                       </div>
-                      {property.balcony_square_meters && property.balcony_square_meters > 0 && (
+                      {property.balcony_square_meters && property.balcony_square_meters !== 1 && property.balcony_square_meters > 0 && (
                         <div className="text-xs text-gray-500">
                           <span>{property.balcony_square_meters}</span> m² balcony
                         </div>

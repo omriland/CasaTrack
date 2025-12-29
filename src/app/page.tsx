@@ -111,6 +111,18 @@ export default function Home() {
     }
   }
 
+  const handleCoordinateUpdate = async (propertyId: string, coordinates: { latitude: number; longitude: number }) => {
+    try {
+      const updatedProperty = await updateProperty(propertyId, coordinates)
+      setProperties(prev => prev.map(p => p.id === updatedProperty.id ? updatedProperty : p))
+      // Optionally refresh to ensure consistency
+      await loadProperties()
+    } catch (error) {
+      console.error('Error updating coordinates:', error)
+      throw error // Re-throw so MapView can handle the error (revert marker position)
+    }
+  }
+
   const handleDeleteProperty = async (id: string) => {
     try {
       await deleteProperty(id)
@@ -542,6 +554,7 @@ export default function Home() {
             <MapView
               properties={properties}
               onPropertyClick={handleViewNotes}
+              onCoordinateUpdate={handleCoordinateUpdate}
             />
           </div>
         )}

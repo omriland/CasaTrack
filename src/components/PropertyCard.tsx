@@ -444,7 +444,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <span><span>{property.rooms}</span> rooms</span>
           <span>•</span>
           <span>
-            {property.square_meters ? (
+            {property.square_meters && property.square_meters !== 1 ? (
               <>
                 <span>{property.square_meters}</span> m²
               </>
@@ -452,7 +452,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               'Unknown'
             )}
           </span>
-          {property.asked_price && (
+          {property.asked_price && property.asked_price !== 1 && (
             <>
               <span>•</span>
               <span><span>{property.asked_price.toLocaleString()}</span> ₪</span>
@@ -553,7 +553,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <div className="flex-1">
               <div className="text-xs font-normal text-gray-600 mb-0.5">Size</div>
               <div className="text-base font-semibold text-gray-900">
-                {property.square_meters ? (
+                {property.square_meters && property.square_meters !== 1 ? (
                   <>
                     <span>{property.square_meters}</span> m²
                   </>
@@ -561,7 +561,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                   'Unknown'
                 )}
               </div>
-              {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters && (
+              {property.balcony_square_meters && property.balcony_square_meters !== 1 && property.balcony_square_meters > 0 && property.square_meters && property.square_meters !== 1 && (
                 <div className="text-xs text-gray-500 mt-0.5">
                   <span>{property.balcony_square_meters}</span> m² balcony
                 </div>
@@ -585,6 +585,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                     </div>
                   </>
                 )}
+              </>
+            ) : property.asked_price === 1 ? (
+              <>
+                <div className="text-xs text-gray-500 mb-1">Asking Price</div>
+                <div className="text-sm text-gray-500">Unknown</div>
               </>
             ) : (
               <>
