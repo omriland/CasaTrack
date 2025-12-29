@@ -328,11 +328,11 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
                 </div>
                 <div class="flex justify-between">
                   <span>Size:</span>
-                  <span class="font-medium">${property.square_meters !== null ? property.square_meters + 'm²' : 'Not set'}</span>
+                  <span class="font-medium">${property.square_meters !== null && property.square_meters !== 1 ? property.square_meters + 'm²' : property.square_meters === 1 ? 'Unknown' : 'Not set'}</span>
                 </div>
                 <div class="flex justify-between">
                   <span>Price:</span>
-                  <span class="font-medium">${property.asked_price !== null ? '₪' + property.asked_price.toLocaleString() : 'Not set'}</span>
+                  <span class="font-medium">${property.asked_price !== null && property.asked_price !== 1 ? '₪' + property.asked_price.toLocaleString() : property.asked_price === 1 ? 'Unknown' : 'Not set'}</span>
                 </div>
                 ${property.price_per_meter !== null ? `
                 <div class="flex justify-between">

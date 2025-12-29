@@ -835,7 +835,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                     </>
                   )}
                 </span>
-                {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
+                {property.balcony_square_meters && property.balcony_square_meters !== 1 && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
                   <span className="text-xs text-gray-600 mt-1">
                     + <span>{property.balcony_square_meters}</span> m² balcony
                   </span>
