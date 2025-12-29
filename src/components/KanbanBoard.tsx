@@ -385,11 +385,13 @@ export default function KanbanBoard({
                     <span className="font-semibold text-slate-900">
                       ₪{new Intl.NumberFormat('en-US').format(activeProperty.asked_price)}
                     </span>
-                    {activeProperty.price_per_meter !== null && (
-                      <span className="text-slate-500">
-                        ₪{new Intl.NumberFormat('en-US').format(Math.round(activeProperty.price_per_meter))}/m²
-                      </span>
-                    )}
+                    <span className="text-slate-500">
+                      {activeProperty.price_per_meter !== null && activeProperty.asked_price !== null && activeProperty.asked_price !== 1 && activeProperty.square_meters !== null && activeProperty.square_meters !== 1 ? (
+                        `₪${new Intl.NumberFormat('en-US').format(Math.round(activeProperty.price_per_meter))}/m²`
+                      ) : (
+                        'N/A'
+                      )}
+                    </span>
                   </div>
                 ) : activeProperty.asked_price === 1 ? (
                   <div className="flex items-center space-x-2 pt-1 border-t border-slate-100">

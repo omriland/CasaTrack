@@ -849,25 +849,21 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
               </div>
             </div>
 
-            {(() => {
-              const balcony = formData.balcony_square_meters ?? 0
-              const squareMeters = formData.square_meters ?? 0
-              const effectiveArea = squareMeters + 0.5 * balcony
-              return formData.asked_price != null && formData.asked_price > 0 && effectiveArea > 0
-            })() && (
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm font-medium text-gray-700">
-                  Price per m²: <span>₪{(() => {
-                    const balcony = formData.balcony_square_meters ?? 0
-                    const squareMeters = formData.square_meters ?? 0
-                    const effectiveArea = squareMeters + 0.5 * balcony
-                    return formData.asked_price && effectiveArea > 0 
-                      ? (formData.asked_price / effectiveArea).toLocaleString('en-US', { maximumFractionDigits: 0 })
-                      : 'N/A'
-                  })()}</span>
-                </p>
-              </div>
-            )}
+            <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm font-medium text-gray-700">
+                Price per m²: <span>{(() => {
+                  const balcony = formData.balcony_square_meters ?? 0
+                  const squareMeters = formData.square_meters ?? 0
+                  const effectiveArea = squareMeters + 0.5 * balcony
+                  // Check if both price and size are present and valid (not null, not 1)
+                  const hasValidPrice = formData.asked_price != null && formData.asked_price !== 1 && formData.asked_price > 0
+                  const hasValidSize = formData.square_meters != null && formData.square_meters !== 1 && effectiveArea > 0
+                  return hasValidPrice && hasValidSize
+                    ? `₪${(formData.asked_price! / effectiveArea).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+                    : 'N/A'
+                })()}</span>
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div>

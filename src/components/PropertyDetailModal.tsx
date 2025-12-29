@@ -667,11 +667,13 @@ export default function PropertyDetailModal({
                       <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                         <span>{formatPrice(property.asked_price)}</span>₪
                       </div>
-                      {property.price_per_meter !== null && (
-                        <div className="text-sm text-gray-500 mb-1">
-                          <span>{formatPrice(Math.round(property.price_per_meter))}</span>₪ per m²
-                        </div>
-                      )}
+                      <div className="text-sm text-gray-500 mb-1">
+                        {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? (
+                          <span>{formatPrice(Math.round(property.price_per_meter))}₪ per m²</span>
+                        ) : (
+                          'N/A'
+                        )}
+                      </div>
                     </div>
                     {/* Size Column */}
                     <div>

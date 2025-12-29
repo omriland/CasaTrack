@@ -209,11 +209,13 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
               <span className="text-lg font-bold text-slate-900">
                 <span>{formatPrice(property.asked_price)}</span>₪
               </span>
-              {property.price_per_meter !== null && (
-                <span className="text-sm text-slate-500 font-medium">
-                  <span>{formatPrice(Math.round(property.price_per_meter))}</span>₪/m²
-                </span>
-              )}
+              <span className="text-sm text-slate-500 font-medium">
+                {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? (
+                  <span>{formatPrice(Math.round(property.price_per_meter))}₪/m²</span>
+                ) : (
+                  'N/A'
+                )}
+              </span>
             </div>
           ) : property.asked_price === 1 ? (
             <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-100">

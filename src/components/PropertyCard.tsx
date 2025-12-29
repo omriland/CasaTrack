@@ -577,14 +577,14 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 <div className="text-xl font-bold text-gray-900 mb-3">
                   <span>{property.asked_price.toLocaleString()}</span>₪
                 </div>
-                {property.price_per_meter && (
-                  <>
-                    <div className="text-xs text-gray-500 mb-0.5">Price per m²</div>
-                    <div className="text-sm text-gray-700">
-                      <span>{Math.round(property.price_per_meter).toLocaleString()}</span>₪
-                    </div>
-                  </>
-                )}
+                <div className="text-xs text-gray-500 mb-0.5">Price per m²</div>
+                <div className="text-sm text-gray-700">
+                  {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? (
+                    <span>{Math.round(property.price_per_meter).toLocaleString()}₪</span>
+                  ) : (
+                    'N/A'
+                  )}
+                </div>
               </>
             ) : property.asked_price === 1 ? (
               <>
@@ -601,7 +601,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
 
         {/* Type/Source/Broker section - Simple two column layout */}
-        <div className="space-y-2 mb-4 flex-grow">
+        <div className="space-y-2 mb-0 flex-grow">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">Type</span>
             <span className="text-sm text-gray-700">{property.property_type}</span>
@@ -635,8 +635,8 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
         {/* Description */}
         {property.description && (
-          <div className="mb-6">
-            <div className="text-xs text-gray-500 line-clamp-2" dir="rtl" style={{ unicodeBidi: 'plaintext' }}>
+          <div className="mb-3">
+            <div className="text-sm text-gray-500 line-clamp-4" dir="rtl" style={{ unicodeBidi: 'plaintext' }}>
               {property.description.replace(/<[^>]*>/g, '')}
             </div>
           </div>
@@ -879,14 +879,16 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 <span>{formatPrice(property.asked_price)}</span>₪
               </span>
             </div>
-            {property.price_per_meter !== null && (
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500">Price per m²</span>
-                <span className="font-semibold text-gray-700">
-                  <span>{formatPrice(Math.round(property.price_per_meter))}</span>₪
-                </span>
-              </div>
-            )}
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Price per m²</span>
+              <span className="font-semibold text-gray-700">
+                {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? (
+                  <span>{formatPrice(Math.round(property.price_per_meter))}₪</span>
+                ) : (
+                  'N/A'
+                )}
+              </span>
+            </div>
           </div>
         ) : property.asked_price === 1 ? (
           <div className="bg-gray-50/80 border border-gray-200/60 rounded-2xl p-4 mb-5">
@@ -1061,10 +1063,10 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
       {/* Description */}
       {property.description && (
-        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100 relative`} ref={descPreviewRef}>
-          <h4 className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Description</h4>
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} ${property.contact_name ? 'mt-4 pt-3' : 'pt-2'} border-t border-slate-100 relative`} ref={descPreviewRef}>
+          <h4 className="text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Description</h4>
           <div
-            className="text-sm text-slate-600 leading-relaxed line-clamp-3 text-right cursor-help"
+            className="text-base text-slate-600 leading-relaxed line-clamp-5 text-right cursor-help"
             dir="rtl"
             style={{ unicodeBidi: 'plaintext' }}
             onClick={(e) => e.stopPropagation()}

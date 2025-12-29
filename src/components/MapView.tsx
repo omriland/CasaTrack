@@ -36,6 +36,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
   const [draggingPropertyId, setDraggingPropertyId] = useState<string | null>(null)
   const labelOverlaysRef = useRef<google.maps.OverlayView[]>([])
   const newBadgeOverlaysRef = useRef<google.maps.OverlayView[]>([])
+  const nameLabelOverlaysRef = useRef<google.maps.OverlayView[]>([])
 
   useEffect(() => {
     const initializeMap = () => {
@@ -162,6 +163,8 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
     labelOverlaysRef.current = []
     newBadgeOverlaysRef.current.forEach(overlay => overlay.setMap(null))
     newBadgeOverlaysRef.current = []
+    nameLabelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
+    nameLabelOverlaysRef.current = []
 
     // Add markers for properties with coordinates (filtered by toggle state)
     const filteredProperties = showIrrelevantProperties 
@@ -175,6 +178,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       // Determine marker color based on property status
       const isIrrelevant = property.status === 'Irrelevant'
       const isInterested = property.status === 'Interested'
+      const isVisited = property.status === 'Visited'
       let markerColor: string
       let textColor: string
       
@@ -184,13 +188,20 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       } else if (isInterested) {
         markerColor = '#ca8a04' // Dark yellow (yellow-600)
         textColor = '#713f12' // Yellow-900 for contrast
+      } else if (isVisited) {
+        markerColor = '#60a5fa' // Light blue (blue-400)
+        textColor = '#1e40af' // Dark blue for contrast
       } else {
         markerColor = 'oklch(0.72 0.13 160.9)'
         textColor = 'oklch(0.72 0.13 160.9)'
       }
 
-      // Check if property is "just added" (within last 7 days)
+      // Check if property is "just added" (within last 7 days) and not "Visited"
       const isJustAdded = (() => {
+        // Don't show "new" badge for visited properties
+        if (property.status === 'Visited') {
+          return false
+        }
         const createdDate = new Date(property.created_at)
         const now = new Date()
         const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -258,6 +269,9 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       if (!isMobileDevice && onCoordinateUpdate) {
         marker.addListener('dragstart', () => {
           setDraggingPropertyId(property.id)
+          // Hide hover card when dragging starts
+          setHoveredProperty(null)
+          setHoverPosition(null)
           // Change cursor to grabbing
           marker.setCursor('grabbing')
           // Slightly increase marker size during drag for visual feedback
@@ -334,12 +348,10 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
                   <span>Price:</span>
                   <span class="font-medium">${property.asked_price !== null && property.asked_price !== 1 ? '₪' + property.asked_price.toLocaleString() : property.asked_price === 1 ? 'Unknown' : 'Not set'}</span>
                 </div>
-                ${property.price_per_meter !== null ? `
                 <div class="flex justify-between">
                   <span>Per m²:</span>
-                  <span class="font-medium">₪${property.price_per_meter.toLocaleString()}</span>
+                  <span class="font-medium">${property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? '₪' + property.price_per_meter.toLocaleString() : 'N/A'}</span>
                 </div>
-                ` : ''}
                 <div class="flex justify-between">
                   <span>Status:</span>
                   <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
@@ -428,6 +440,77 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
         newBadgeOverlay.setMap(mapInstanceRef.current)
         newBadgeOverlaysRef.current.push(newBadgeOverlay)
       }
+
+      // Add property name label overlay under each marker
+      class PropertyNameLabelOverlay extends google.maps.OverlayView {
+        private div: HTMLDivElement | null = null
+        private property: Property
+
+        constructor(property: Property) {
+          super()
+          this.property = property
+        }
+
+        onAdd() {
+          const div = document.createElement('div')
+          div.style.position = 'absolute'
+          div.style.pointerEvents = 'none'
+          div.style.zIndex = '1000'
+          div.style.transform = 'translate(-50%, 0)'
+          
+          div.innerHTML = `
+            <div style="
+              background: white;
+              color: #1e293b;
+              border-radius: 6px;
+              padding: 3px 8px;
+              font-size: 10px;
+              font-weight: 600;
+              font-family: 'Varela Round', sans-serif;
+              white-space: nowrap;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+              border: 1px solid #e2e8f0;
+              max-width: 150px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            ">${property.title || property.address || 'Property'}</div>
+          `
+          
+          this.div = div
+          const panes = this.getPanes()
+          if (panes) {
+            panes.overlayMouseTarget.appendChild(div)
+          }
+        }
+
+        draw() {
+          if (!this.div) return
+          
+          const projection = this.getProjection()
+          if (!projection) return
+          
+          const position = projection.fromLatLngToDivPixel(
+            new google.maps.LatLng(this.property.latitude!, this.property.longitude!)
+          )
+          
+          if (position) {
+            // Position label below the marker (marker is 40px tall, anchor is at bottom)
+            this.div.style.left = position.x + 'px'
+            this.div.style.top = (position.y + 8) + 'px'
+          }
+        }
+
+        onRemove() {
+          if (this.div && this.div.parentNode) {
+            this.div.parentNode.removeChild(this.div)
+          }
+          this.div = null
+        }
+      }
+
+      const nameLabelOverlay = new PropertyNameLabelOverlay(property)
+      nameLabelOverlay.setMap(mapInstanceRef.current)
+      nameLabelOverlaysRef.current.push(nameLabelOverlay)
     })
 
     // Adjust map bounds if there are properties
@@ -859,15 +942,51 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       <div ref={mapRef} className={`w-full h-full ${isMobile ? 'touch-none' : ''}`} />
 
       {/* Floating Hover Card */}
-      {hoveredProperty && hoverPosition && (
-        <div
-          className="fixed z-40 pointer-events-none"
-          style={{
-            left: `${hoverPosition.x + 15}px`,
-            top: `${hoverPosition.y - 10}px`,
-            transform: hoverPosition.x > window.innerWidth - 350 ? 'translateX(-100%)' : 'none'
-          }}
-        >
+      {hoveredProperty && hoverPosition && (() => {
+        const cardWidth = 320 // w-80 = 320px
+        const cardHeight = 400 // Approximate max height
+        const padding = 15
+        const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+        
+        // Calculate horizontal position
+        let left = hoverPosition.x + padding
+        let horizontalTransform = 'none'
+        
+        // If too close to right edge, flip to left side
+        if (hoverPosition.x + padding + cardWidth > viewportWidth) {
+          left = hoverPosition.x - padding
+          horizontalTransform = 'translateX(-100%)'
+        }
+        
+        // Ensure it doesn't go off the left edge
+        if (left < 0) {
+          left = padding
+          horizontalTransform = 'none'
+        }
+        
+        // Calculate vertical position
+        let top = hoverPosition.y - 10
+        
+        // If tooltip would go below viewport, shift it up just enough to be visible
+        if (top + cardHeight > viewportHeight) {
+          top = viewportHeight - cardHeight - padding
+        }
+        
+        // If tooltip would go above viewport, shift it down just enough to be visible
+        if (top < 0) {
+          top = padding
+        }
+        
+        return (
+          <div
+            className="fixed z-40 pointer-events-none"
+            style={{
+              left: `${left}px`,
+              top: `${top}px`,
+              transform: horizontalTransform
+            }}
+          >
           <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-2xl border border-slate-200/50 p-4 w-80 animate-fade-in">
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
@@ -927,14 +1046,16 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
                     <span>{formatPrice(hoveredProperty.asked_price)}</span>₪
                   </span>
                 </div>
-                {hoveredProperty.price_per_meter !== null && (
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Price per m²</span>
-                    <span className="font-semibold text-slate-700">
-                      <span>{formatPrice(Math.round(hoveredProperty.price_per_meter))}</span>₪
-                    </span>
-                  </div>
-                )}
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-slate-500">Price per m²</span>
+                  <span className="font-semibold text-slate-700">
+                    {hoveredProperty.price_per_meter !== null && hoveredProperty.asked_price !== null && hoveredProperty.asked_price !== 1 && hoveredProperty.square_meters !== null && hoveredProperty.square_meters !== 1 ? (
+                      <span>{formatPrice(Math.round(hoveredProperty.price_per_meter))}₪</span>
+                    ) : (
+                      'N/A'
+                    )}
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
@@ -987,7 +1108,8 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
             <div className="absolute -bottom-2 left-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white/95"></div>
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {filteredProperties.length > 0 && propertiesWithCoords.length === 0 && (
         <div className="absolute inset-x-0 top-4 mx-4">
