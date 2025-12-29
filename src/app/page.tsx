@@ -424,7 +424,7 @@ export default function Home() {
             {/* Properties Header - Mobile */}
             {relevantProperties.length > 0 && (
               <h2 className="text-gray-900 font-medium text-base md:hidden mb-4">
-                <span className="font-numbers">{relevantProperties.length}</span> {relevantProperties.length === 1 ? 'PROPERTY' : 'PROPERTIES'}
+                <span>{relevantProperties.length}</span> {relevantProperties.length === 1 ? 'PROPERTY' : 'PROPERTIES'}
               </h2>
             )}
             

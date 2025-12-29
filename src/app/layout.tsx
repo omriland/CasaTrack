@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
-import { Assistant, JetBrains_Mono, Montserrat } from "next/font/google";
+import { Varela_Round, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const assistant = Assistant({
-  variable: "--font-assistant",
+const varelaRound = Varela_Round({
+  variable: "--font-varela-round",
   subsets: ["latin", "hebrew"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
   subsets: ["latin"],
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -33,9 +27,9 @@ export default function RootLayout({
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   return (
-    <html lang="en">
+    <html lang="en" className={varelaRound.variable}>
       <body
-        className={`${assistant.variable} ${jetbrainsMono.variable} ${montserrat.variable} antialiased`}
+        className={`${varelaRound.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <Script
           id="google-maps-init"

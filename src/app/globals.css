@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&subset=latin,hebrew&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -36,11 +36,10 @@
   --sidebar-border: oklch(0.9 0 0);
   --sidebar-ring: oklch(0.55 0.22 250);
   
-  /* Typography - Assistant font from Google */
-  --font-sans: var(--font-assistant), 'Assistant', sans-serif;
+  /* Typography - Varela Round font from Google */
+  --font-sans: var(--font-varela-round), 'Varela Round', sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  --font-numbers: var(--font-montserrat), 'Montserrat', sans-serif;
   
   /* Apple Liquid Glass Design Tokens - Ultra Flat */
   --radius: 1rem; /* Rounded but not excessive */
@@ -103,7 +102,7 @@
   --sidebar-accent-foreground: oklch(0.9851 0 0);
   --sidebar-border: oklch(0.2809 0 0);
   --sidebar-ring: oklch(0.8003 0.1821 151.7110);
-  --font-sans: var(--font-assistant), 'Assistant', sans-serif;
+  --font-sans: var(--font-varela-round), 'Varela Round', sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-mono: monospace;
   --radius: 0.5rem;
@@ -163,7 +162,6 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
-  --font-numbers: var(--font-numbers);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -200,10 +198,13 @@
   border-color: var(--border);
 }
 
+html, body, input, textarea, select, button {
+  font-family: var(--font-varela-round), 'Varela Round', sans-serif !important;
+}
+
 body {
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   color: var(--foreground);
-  font-family: var(--font-sans);
   font-feature-settings: "rlig" 1, "calt" 1, "kern" 1;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -412,12 +413,6 @@ input[type=number] {
   box-shadow: none;
 }
 
-/* Montserrat font for numbers only */
-.font-numbers {
-  font-family: var(--font-numbers);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-}
 
 /* Status badge highlight effect for "To contact" */
 @keyframes status-glow {

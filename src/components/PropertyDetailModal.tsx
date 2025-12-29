@@ -665,11 +665,11 @@ export default function PropertyDetailModal({
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Asking Price</div>
                       <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                        <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+                        <span>{formatPrice(property.asked_price)}</span>₪
                       </div>
                       {property.price_per_meter !== null && (
                         <div className="text-sm text-gray-500 mb-1">
-                          <span className="font-numbers">{formatPrice(Math.round(property.price_per_meter))}</span>₪ per m²
+                          <span>{formatPrice(Math.round(property.price_per_meter))}</span>₪ per m²
                         </div>
                       )}
                     </div>
@@ -679,7 +679,7 @@ export default function PropertyDetailModal({
                       <div className="text-lg md:text-xl font-bold text-gray-900 mb-1">
                         {property.square_meters && property.square_meters !== 1 ? (
                           <>
-                            <span className="font-numbers">{property.square_meters}</span> m²
+                            <span>{property.square_meters}</span> m²
                           </>
                         ) : (
                           <span className="text-gray-500">Unknown</span>
@@ -687,7 +687,7 @@ export default function PropertyDetailModal({
                       </div>
                       {property.balcony_square_meters && property.balcony_square_meters > 0 && (
                         <div className="text-xs text-gray-500">
-                          <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                          <span>{property.balcony_square_meters}</span> m² balcony
                         </div>
                       )}
                     </div>
@@ -695,7 +695,7 @@ export default function PropertyDetailModal({
                     <div>
                       <div className="text-xs text-gray-500 mb-1">Rooms</div>
                       <div className="text-lg md:text-xl font-bold text-gray-900">
-                        <span className="font-numbers">{property.rooms}</span>
+                        <span>{property.rooms}</span>
                       </div>
                     </div>
                   </div>
@@ -795,22 +795,57 @@ export default function PropertyDetailModal({
               </div>
 
               {/* Photos Section - Mobile */}
-              {attachments.length > 0 && (
-                <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-gray-200 md:hidden">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-xs text-gray-500 uppercase font-semibold">
-                      Photos ({attachments.length})
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedAttachmentIndex(0)
-                        setIsZoomed(false)
-                      }}
-                      className="text-sm text-[oklch(0.5_0.22_280)] font-medium"
-                    >
-                      View All
-                    </button>
+              <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-gray-200 md:hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs text-gray-500 uppercase font-semibold">
+                    {attachments.length > 0 ? `Photos (${attachments.length})` : 'Photos'}
                   </div>
+                  <div className="flex items-center gap-3">
+                    {attachments.length > 0 && (
+                      <button
+                        onClick={() => {
+                          setSelectedAttachmentIndex(0)
+                          setIsZoomed(false)
+                        }}
+                        className="text-sm text-[oklch(0.5_0.22_280)] font-medium"
+                      >
+                        View All
+                      </button>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={handleFileUpload}
+                      disabled={uploadingAttachment}
+                      className="hidden"
+                      id="mobile-attachment-upload"
+                    />
+                    <label
+                      htmlFor="mobile-attachment-upload"
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all ${uploadingAttachment
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)]'
+                        }`}
+                    >
+                      {uploadingAttachment ? (
+                        <>
+                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span>Add</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </div>
+                {attachments.length > 0 ? (
                   <div className="grid grid-cols-4 gap-2">
                     {attachments.slice(0, 4).map((attachment, index) => {
                       const url = getAttachmentUrl(attachment.file_path)
@@ -841,8 +876,15 @@ export default function PropertyDetailModal({
                       )
                     })}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="text-center py-6">
+                    <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-xs text-gray-500">No photos yet</p>
+                  </div>
+                )}
+              </div>
 
               {/* Contact Section */}
               {property.contact_name && (

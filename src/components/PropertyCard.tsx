@@ -441,12 +441,12 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
         {/* Details row: rooms, m², price - full width */}
         <div className="flex items-center gap-3 text-sm text-gray-500 mt-auto">
-          <span><span className="font-numbers">{property.rooms}</span> rooms</span>
+          <span><span>{property.rooms}</span> rooms</span>
           <span>•</span>
           <span>
             {property.square_meters ? (
               <>
-                <span className="font-numbers">{property.square_meters}</span> m²
+                <span>{property.square_meters}</span> m²
               </>
             ) : (
               'Unknown'
@@ -455,17 +455,17 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           {property.asked_price && (
             <>
               <span>•</span>
-              <span><span className="font-numbers">{property.asked_price.toLocaleString()}</span> ₪</span>
+              <span><span>{property.asked_price.toLocaleString()}</span> ₪</span>
             </>
           )}
           {property.url && (
             <>
-              <span>•</span>
+              <span className="hidden md:inline">•</span>
               <a
                 href={property.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary flex items-center gap-1 font-medium hover:underline"
+                className="hidden md:flex text-primary items-center gap-1 font-medium hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 Link
@@ -547,7 +547,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <div className="flex-1">
               <div className="text-xs font-normal text-gray-600 mb-0.5">Rooms</div>
               <div className="text-base font-semibold text-gray-900">
-                <span className="font-numbers">{property.rooms}</span>
+                <span>{property.rooms}</span>
               </div>
             </div>
             <div className="flex-1">
@@ -555,7 +555,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <div className="text-base font-semibold text-gray-900">
                 {property.square_meters ? (
                   <>
-                    <span className="font-numbers">{property.square_meters}</span> m²
+                    <span>{property.square_meters}</span> m²
                   </>
                 ) : (
                   'Unknown'
@@ -563,7 +563,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               </div>
               {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters && (
                 <div className="text-xs text-gray-500 mt-0.5">
-                  <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                  <span>{property.balcony_square_meters}</span> m² balcony
                 </div>
               )}
             </div>
@@ -575,13 +575,13 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <>
                 <div className="text-xs text-gray-500 mb-1.5">Asking Price</div>
                 <div className="text-xl font-bold text-gray-900 mb-3">
-                  <span className="font-numbers">{property.asked_price.toLocaleString()}</span>₪
+                  <span>{property.asked_price.toLocaleString()}</span>₪
                 </div>
                 {property.price_per_meter && (
                   <>
                     <div className="text-xs text-gray-500 mb-0.5">Price per m²</div>
                     <div className="text-sm text-gray-700">
-                      <span className="font-numbers">{Math.round(property.price_per_meter).toLocaleString()}</span>₪
+                      <span>{Math.round(property.price_per_meter).toLocaleString()}</span>₪
                     </div>
                   </>
                 )}
@@ -747,7 +747,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <span className={`text-xs font-medium ${localRooms === 0 ? 'text-amber-700' : 'text-slate-700'}`}>
               {localRooms === 0 ? 'Add rooms' : (
                 <>
-                  <span className="font-numbers">{localRooms}</span> rooms
+                  <span>{localRooms}</span> rooms
                 </>
               )}
             </span>
@@ -768,7 +768,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               <span className={`text-xs font-semibold ${property.rooms === 0 ? 'text-amber-700' : 'text-gray-600'}`}>Rooms</span>
             </div>
             <span className={`text-xl font-semibold ${localRooms === 0 ? 'text-amber-700' : 'text-gray-900'}`}>
-              {localRooms === 0 ? 'Add rooms' : <span className="font-numbers">{localRooms}</span>}
+              {localRooms === 0 ? 'Add rooms' : <span>{localRooms}</span>}
             </span>
             {inlineEditing?.field === 'rooms' && (
               <div
@@ -788,7 +788,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                         : 'bg-white text-slate-700 border border-slate-300 hover:bg-primary/10 hover:border-primary/30'
                         }`}
                     >
-                      <span className="font-numbers">{roomCount}</span>
+                      <span>{roomCount}</span>
                     </button>
                   ))}
                 </div>
@@ -826,13 +826,13 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 <span className={`text-xl font-semibold ${localSquareMeters === null ? 'text-amber-700' : localSquareMeters === 1 ? 'text-gray-500' : 'text-gray-900'}`}>
                   {localSquareMeters === null ? 'Add size' : localSquareMeters === 1 ? 'Unknown' : (
                     <>
-                      <span className="font-numbers">{localSquareMeters}</span> m²
+                      <span>{localSquareMeters}</span> m²
                     </>
                   )}
                 </span>
                 {property.balcony_square_meters && property.balcony_square_meters > 0 && localSquareMeters !== null && localSquareMeters !== 1 && (
                   <span className="text-xs text-gray-600 mt-1">
-                    + <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                    + <span>{property.balcony_square_meters}</span> m² balcony
                   </span>
                 )}
               </div>
@@ -848,7 +848,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs text-slate-500">Price:</span>
             <span className="text-base font-bold text-slate-900">
-              <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+              <span>{formatPrice(property.asked_price)}</span>₪
             </span>
           </div>
         ) : property.asked_price === 1 ? (
@@ -871,14 +871,14 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <div className="flex justify-between items-center mb-2.5">
               <span className="text-sm font-semibold text-gray-600">Asking Price</span>
               <span className="text-2xl font-bold text-gray-900">
-                <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+                <span>{formatPrice(property.asked_price)}</span>₪
               </span>
             </div>
             {property.price_per_meter !== null && (
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500">Price per m²</span>
                 <span className="font-semibold text-gray-700">
-                  <span className="font-numbers">{formatPrice(Math.round(property.price_per_meter))}</span>₪
+                  <span>{formatPrice(Math.round(property.price_per_meter))}</span>₪
                 </span>
               </div>
             )}
@@ -940,9 +940,9 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
       </div>
 
-      {/* Property URL */}
+      {/* Property URL - Hidden on mobile, shown on desktop */}
       {property.url && (
-        <div className={`${mounted && isMobile && !isExpanded ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
+        <div className={`${mounted && isMobile ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Property Link</span>
             <a

@@ -145,18 +145,32 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
 
     // Ensure address present
     const address = (formData.address || '').trim()
+    const addressChanged = property?.address && property.address !== address
     let payload = { ...formData, address }
 
-    // If we have address but missing coords, attempt geocode before submit
-    if (address && (!payload.latitude || !payload.longitude)) {
-      const coords = await geocodeNormalized(address)
-      if (coords) {
-        payload = { ...payload, latitude: coords.lat, longitude: coords.lng }
+    // Always attempt to geocode if:
+    // 1. Address is present and coordinates are missing, OR
+    // 2. Address has changed (to update coordinates for new address)
+    if (address && ((!payload.latitude || !payload.longitude) || addressChanged)) {
+      try {
+        const coords = await geocodeNormalized(address)
+        if (coords) {
+          payload = { ...payload, latitude: coords.lat, longitude: coords.lng }
+        } else if (addressChanged) {
+          // If address changed but geocoding failed, clear old coordinates
+          payload = { ...payload, latitude: null, longitude: null }
+        }
+      } catch (error) {
+        console.error('Error geocoding address:', error)
+        // If address changed but geocoding failed, clear old coordinates
+        if (addressChanged) {
+          payload = { ...payload, latitude: null, longitude: null }
+        }
       }
     }
 
     onSubmit(payload)
-  }, [formData, onSubmit])
+  }, [formData, property?.address, onSubmit])
 
   // Add keyboard shortcut handler
   useEffect(() => {
@@ -195,12 +209,16 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     setFormData(prev => {
       // Auto-populate title with address if title is empty
       const newTitle = prev.title.trim() === '' ? address : prev.title
+      // If address changed, always update coordinates (clear old ones if new address doesn't have coordinates yet)
+      const addressChanged = prev.address !== address
       return {
         ...prev,
         title: newTitle,
         address,
-        latitude: coordinates?.lat || prev.latitude,
-        longitude: coordinates?.lng || prev.longitude
+        // If coordinates provided, use them. If address changed but no coordinates, clear old ones.
+        // Otherwise keep existing coordinates (for when coordinates are fetched asynchronously)
+        latitude: coordinates?.lat ?? (addressChanged ? null : prev.latitude),
+        longitude: coordinates?.lng ?? (addressChanged ? null : prev.longitude)
       }
     })
   }
@@ -752,7 +770,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
                     }`}
                     tabIndex={4}
                   >
-                    <span className="font-numbers">{roomCount}</span>
+                    <span>{roomCount}</span>
                   </button>
                 ))}
               </div>
@@ -839,7 +857,7 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
             })() && (
               <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-sm font-medium text-gray-700">
-                  Price per m²: <span className="font-numbers">₪{(() => {
+                  Price per m²: <span>₪{(() => {
                     const balcony = formData.balcony_square_meters ?? 0
                     const squareMeters = formData.square_meters ?? 0
                     const effectiveArea = squareMeters + 0.5 * balcony

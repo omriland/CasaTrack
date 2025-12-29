@@ -163,7 +163,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
               </svg>
               <span>
-                {rooms === 0 ? 'Add rooms' : <span className="font-numbers">{rooms}</span>}
+                {rooms === 0 ? 'Add rooms' : <span>{rooms}</span>}
               </span>
               {showRoomsPicker && (
                 <div className="absolute left-0 top-full mt-1.5 bg-white rounded-lg border border-slate-200 p-2 z-50">
@@ -177,7 +177,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                             : 'text-slate-700 hover:bg-slate-100'
                           }`}
                       >
-                        <span className="font-numbers">{r}</span>
+                        <span>{r}</span>
                       </button>
                     ))}
                   </div>
@@ -192,14 +192,14 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
                 <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : property.square_meters === 1 ? 'text-slate-500' : 'text-slate-700'}`}>
                   {property.square_meters === null ? 'Add size' : property.square_meters === 1 ? 'Unknown' : (
                     <>
-                      <span className="font-numbers">{property.square_meters}</span> m²
+                      <span>{property.square_meters}</span> m²
                     </>
                   )}
                 </span>
               </div>
               {property.balcony_square_meters && property.balcony_square_meters > 0 && property.square_meters !== null && property.square_meters !== 1 && (
                 <span className="text-xs text-slate-500 mt-0.5 ml-5">
-                  + <span className="font-numbers">{property.balcony_square_meters}</span> m² balcony
+                  + <span>{property.balcony_square_meters}</span> m² balcony
                 </span>
               )}
             </div>
@@ -207,11 +207,11 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
           {property.asked_price !== null && property.asked_price !== 1 ? (
             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
               <span className="text-lg font-bold text-slate-900">
-                <span className="font-numbers">{formatPrice(property.asked_price)}</span>₪
+                <span>{formatPrice(property.asked_price)}</span>₪
               </span>
               {property.price_per_meter !== null && (
                 <span className="text-sm text-slate-500 font-medium">
-                  <span className="font-numbers">{formatPrice(Math.round(property.price_per_meter))}</span>₪/m²
+                  <span>{formatPrice(Math.round(property.price_per_meter))}</span>₪/m²
                 </span>
               )}
             </div>

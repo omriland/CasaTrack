@@ -361,7 +361,7 @@ export default function KanbanBoard({
                   <div className="flex items-center space-x-2">
                     <span className="text-slate-500">Rooms:</span>
                     <span className="font-medium text-slate-700">
-                      {activeProperty.rooms ? <span className="font-numbers">{activeProperty.rooms}</span> : '—'}
+                      {activeProperty.rooms ? <span>{activeProperty.rooms}</span> : '—'}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -369,10 +369,10 @@ export default function KanbanBoard({
                     <span className={`font-medium ${activeProperty.square_meters === null ? 'text-amber-700' : activeProperty.square_meters === 1 ? 'text-slate-500' : 'text-slate-700'}`}>
                       {activeProperty.square_meters === null ? 'Not set' : activeProperty.square_meters === 1 ? 'Unknown' : (
                         <>
-                          <span className="font-numbers">{activeProperty.square_meters}</span> m²
+                          <span>{activeProperty.square_meters}</span> m²
                           {activeProperty.balcony_square_meters && activeProperty.balcony_square_meters > 0 && (
                             <span className="text-slate-500 ml-1">
-                              + <span className="font-numbers">{activeProperty.balcony_square_meters}</span>
+                              + <span>{activeProperty.balcony_square_meters}</span>
                             </span>
                           )}
                         </>
