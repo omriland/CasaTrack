@@ -648,7 +648,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <>
               <div className="text-sm text-gray-500 mb-3">{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</div>
               <div className="grid grid-cols-3 gap-3">
-                {attachments.slice(0, 3).map((attachment) => {
+                {attachments.slice(0, attachments.length > 3 ? 2 : 3).map((attachment) => {
                   const url = getAttachmentUrl(attachment.file_path)
                   return (
                     <div
@@ -682,11 +682,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                     className="aspect-square rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
                     onClick={(e) => {
                       e.stopPropagation()
-                      setSelectedAttachmentIndex(3)
+                      setSelectedAttachmentIndex(2)
                       setIsZoomed(false)
                     }}
                   >
-                    <span className="text-sm font-semibold text-gray-600">+{attachments.length - 3}</span>
+                    <span className="text-sm font-semibold text-gray-600">+{attachments.length - 2}</span>
                   </div>
                 )}
               </div>
@@ -1010,7 +1010,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {attachments.slice(0, 3).map((attachment, index) => {
+            {attachments.slice(0, attachments.length > 3 ? 2 : 3).map((attachment, index) => {
               const url = getAttachmentUrl(attachment.file_path)
               return (
                 <div
@@ -1043,11 +1043,11 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 className="aspect-square rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center cursor-pointer hover:bg-slate-200 transition-colors"
                 onClick={(e) => {
                   e.stopPropagation()
-                  setSelectedAttachmentIndex(3)
+                  setSelectedAttachmentIndex(2)
                   setIsZoomed(false)
                 }}
               >
-                <span className="text-xs font-medium text-slate-600">+{attachments.length - 3}</span>
+                <span className="text-xs font-medium text-slate-600">+{attachments.length - 2}</span>
               </div>
             )}
           </div>
