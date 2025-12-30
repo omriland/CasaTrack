@@ -601,7 +601,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
 
         {/* Type/Source/Broker section - Simple two column layout */}
-        <div className="space-y-2 mb-0 flex-grow">
+        <div className="space-y-2 mb-0">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">Type</span>
             <span className="text-sm text-gray-700">{property.property_type}</span>
@@ -635,7 +635,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
         {/* Description */}
         {property.description && (
-          <div className="mb-3">
+          <div className="mt-3 pt-3 border-t border-gray-100">
             <div className="text-sm text-gray-500 line-clamp-4" dir="rtl" style={{ unicodeBidi: 'plaintext' }}>
               {property.description.replace(/<[^>]*>/g, '')}
             </div>
@@ -643,7 +643,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         )}
 
         {/* Attachments Gallery */}
-        <div className="mt-auto pt-4 mb-2">
+        <div className={`${attachments.length > 0 ? 'mt-auto pt-4' : ''} mb-2`}>
           {attachments.length > 0 ? (
             <>
               <div className="text-sm text-gray-500 mb-3">{attachments.length} {attachments.length === 1 ? 'file' : 'files'}</div>
@@ -947,6 +947,39 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
         </div>
       </div>
 
+      {/* Description - Right after Type/Source/Broker */}
+      {property.description && (
+        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} mt-3 pt-3 border-t border-slate-100 relative`} ref={descPreviewRef}>
+          <h4 className="text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Description</h4>
+          <div
+            className="text-base text-slate-600 leading-relaxed line-clamp-5 text-right cursor-help"
+            dir="rtl"
+            style={{ unicodeBidi: 'plaintext' }}
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={() => setShowDescPreview(true)}
+            onMouseLeave={() => setShowDescPreview(false)}
+            dangerouslySetInnerHTML={{ __html: property.description }}
+          />
+
+          {showDescPreview && (
+            <div
+              className="absolute bottom-full right-0 mb-2 w-96 max-w-[85vw] bg-white rounded-lg shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
+              onMouseEnter={() => setShowDescPreview(true)}
+              onMouseLeave={() => setShowDescPreview(false)}
+            >
+              <div
+                className="text-sm text-slate-700 leading-relaxed max-h-60 overflow-auto text-right"
+                dir="rtl"
+                style={{ unicodeBidi: 'plaintext' }}
+                dangerouslySetInnerHTML={{ __html: property.description }}
+              />
+              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>
+              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-slate-200 transform translate-y-px"></div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Property URL - Hidden on mobile, shown on desktop */}
       {property.url && (
         <div className={`${mounted && isMobile ? 'hidden' : 'block'} mt-4 pt-4 border-t border-slate-100`}>
@@ -1058,39 +1091,6 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
               )}
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Description */}
-      {property.description && (
-        <div className={`${isMobile && !isExpanded ? 'hidden' : 'block'} ${property.contact_name ? 'mt-4 pt-3' : 'pt-2'} border-t border-slate-100 relative`} ref={descPreviewRef}>
-          <h4 className="text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Description</h4>
-          <div
-            className="text-base text-slate-600 leading-relaxed line-clamp-5 text-right cursor-help"
-            dir="rtl"
-            style={{ unicodeBidi: 'plaintext' }}
-            onClick={(e) => e.stopPropagation()}
-            onMouseEnter={() => setShowDescPreview(true)}
-            onMouseLeave={() => setShowDescPreview(false)}
-            dangerouslySetInnerHTML={{ __html: property.description }}
-          />
-
-          {showDescPreview && (
-            <div
-              className="absolute bottom-full right-0 mb-2 w-96 max-w-[85vw] bg-white rounded-lg shadow-lg border border-slate-200 p-4 z-50 animate-fade-in"
-              onMouseEnter={() => setShowDescPreview(true)}
-              onMouseLeave={() => setShowDescPreview(false)}
-            >
-              <div
-                className="text-sm text-slate-700 leading-relaxed max-h-60 overflow-auto text-right"
-                dir="rtl"
-                style={{ unicodeBidi: 'plaintext' }}
-                dangerouslySetInnerHTML={{ __html: property.description }}
-              />
-              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white"></div>
-              <div className="absolute top-full right-6 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-slate-200 transform translate-y-px"></div>
-            </div>
-          )}
         </div>
       )}
 

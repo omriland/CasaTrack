@@ -34,7 +34,6 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
   const [isMobile, setIsMobile] = useState(false)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
   const [draggingPropertyId, setDraggingPropertyId] = useState<string | null>(null)
-  const labelOverlaysRef = useRef<google.maps.OverlayView[]>([])
   const newBadgeOverlaysRef = useRef<google.maps.OverlayView[]>([])
   const nameLabelOverlaysRef = useRef<google.maps.OverlayView[]>([])
 
@@ -159,8 +158,6 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
     // Clear existing markers, labels, and badges
     markersRef.current.forEach(marker => marker.setMap(null))
     markersRef.current = []
-    labelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
-    labelOverlaysRef.current = []
     newBadgeOverlaysRef.current.forEach(overlay => overlay.setMap(null))
     newBadgeOverlaysRef.current = []
     nameLabelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
@@ -522,131 +519,6 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       mapInstanceRef.current.fitBounds(bounds)
     }
   }, [properties, isLoading, onPropertyClick, showIrrelevantProperties])
-
-  const formatPriceShort = (price: number) => {
-    if (price === 1) return 'Unknown'
-    if (price >= 1000000) {
-      const millions = price / 1000000
-      return `${millions % 1 === 0 ? millions : millions.toFixed(1)}M`
-    }
-    if (price >= 1000) {
-      const thousands = price / 1000
-      return `${thousands % 1 === 0 ? thousands : thousands.toFixed(1)}K`
-    }
-    return price.toString()
-  }
-
-  // Create/update labels when zoomed in on mobile
-  useEffect(() => {
-    if (!mapInstanceRef.current || !isMobile || zoomLevel < 14) {
-      // Clear labels if not mobile or not zoomed in enough
-      labelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
-      labelOverlaysRef.current = []
-      // Note: Keep new badge overlays visible regardless of zoom level
-      return
-    }
-
-    // Clear existing labels
-    labelOverlaysRef.current.forEach(overlay => overlay.setMap(null))
-    labelOverlaysRef.current = []
-
-    const filteredProperties = showIrrelevantProperties 
-      ? properties 
-      : properties.filter(p => p.status !== 'Irrelevant')
-    const propertiesWithCoords = filteredProperties.filter(p => p.latitude && p.longitude)
-
-    propertiesWithCoords.forEach(property => {
-      if (!mapInstanceRef.current) return
-
-      // Create custom label overlay
-      class LabelOverlay extends google.maps.OverlayView {
-        private div: HTMLDivElement | null = null
-        private property: Property
-
-        constructor(property: Property) {
-          super()
-          this.property = property
-        }
-
-        onAdd() {
-          const div = document.createElement('div')
-          div.style.position = 'absolute'
-          div.style.pointerEvents = 'none'
-          div.style.zIndex = '1000'
-          div.style.transform = 'translate(-50%, -100%)'
-          div.style.marginBottom = '8px'
-          
-          const priceText = this.property.asked_price !== null && this.property.asked_price !== 1
-            ? `₪${formatPriceShort(this.property.asked_price)}`
-            : this.property.asked_price === 1
-            ? 'Unknown'
-            : '—'
-          
-          div.innerHTML = `
-            <div style="
-              background: white;
-              border: 1px solid #e2e8f0;
-              border-radius: 6px;
-              padding: 4px 8px;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-              white-space: nowrap;
-              font-family: 'Varela Round', sans-serif;
-              font-size: 11px;
-              line-height: 1.3;
-              max-width: 200px;
-              text-align: center;
-            ">
-              <div style="
-                color: #475569;
-                font-weight: 600;
-                margin-bottom: 2px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-              ">${property.address}</div>
-              <div style="
-                color: #0f172a;
-                font-weight: 700;
-                font-size: 12px;
-              ">${priceText}</div>
-            </div>
-          `
-          
-          this.div = div
-          const panes = this.getPanes()
-          if (panes) {
-            panes.overlayMouseTarget.appendChild(div)
-          }
-        }
-
-        draw() {
-          if (!this.div) return
-          
-          const projection = this.getProjection()
-          if (!projection) return
-          
-          const position = projection.fromLatLngToDivPixel(
-            new google.maps.LatLng(this.property.latitude!, this.property.longitude!)
-          )
-          
-          if (position) {
-            this.div.style.left = position.x + 'px'
-            this.div.style.top = (position.y - 50) + 'px'
-          }
-        }
-
-        onRemove() {
-          if (this.div && this.div.parentNode) {
-            this.div.parentNode.removeChild(this.div)
-          }
-          this.div = null
-        }
-      }
-
-      const labelOverlay = new LabelOverlay(property)
-      labelOverlay.setMap(mapInstanceRef.current)
-      labelOverlaysRef.current.push(labelOverlay)
-    })
-  }, [zoomLevel, isMobile, properties, showIrrelevantProperties])
 
   // Handle layer toggles
   useEffect(() => {
