@@ -96,7 +96,7 @@ export type Database = {
           property_id: string
           file_name: string
           file_path: string
-          file_type: 'image' | 'video'
+          file_type: 'image' | 'video' | 'pdf'
           file_size: number
           mime_type: string
           created_at: string
@@ -107,7 +107,7 @@ export type Database = {
           property_id: string
           file_name: string
           file_path: string
-          file_type: 'image' | 'video'
+          file_type: 'image' | 'video' | 'pdf'
           file_size: number
           mime_type: string
           created_at?: string
@@ -118,7 +118,7 @@ export type Database = {
           property_id?: string
           file_name?: string
           file_path?: string
-          file_type?: 'image' | 'video'
+          file_type?: 'image' | 'video' | 'pdf'
           file_size?: number
           mime_type?: string
           created_at?: string

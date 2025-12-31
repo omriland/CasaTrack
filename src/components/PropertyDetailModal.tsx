@@ -55,6 +55,8 @@ export default function PropertyDetailModal({
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
   const [uploadingAttachment, setUploadingAttachment] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const ffmpegRef = useRef<FFmpeg | null>(null)
 
@@ -204,8 +206,7 @@ export default function PropertyDetailModal({
     }
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
+  const processAndUploadFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return
 
     setUploadingAttachment(true)
@@ -220,6 +221,9 @@ export default function PropertyDetailModal({
           // Compress videos (only if larger than 50MB)
           const compressed = await compressVideo(file)
           processedFiles.push(compressed)
+        } else if (file.type === 'application/pdf') {
+          // PDFs don't need compression
+          processedFiles.push(file)
         } else {
           processedFiles.push(file)
         }
@@ -237,6 +241,66 @@ export default function PropertyDetailModal({
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
+    }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    await processAndUploadFiles(files)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragging(true)
+    }
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // Only set dragging to false if we're leaving the modal itself
+    if (e.currentTarget === e.target) {
+      setIsDragging(false)
+    }
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) {
+      await processAndUploadFiles(files)
+    }
+  }
+
+  const handleCopyUrl = async () => {
+    const url = `${window.location.origin}?property=${property.id}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiedUrl(true)
+      setTimeout(() => setCopiedUrl(false), 2000)
+    } catch (error) {
+      console.error('Failed to copy URL:', error)
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = url
+      textArea.style.position = 'fixed'
+      textArea.style.opacity = '0'
+      document.body.appendChild(textArea)
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopiedUrl(true)
+        setTimeout(() => setCopiedUrl(false), 2000)
+      } catch (err) {
+        alert('Failed to copy URL. Please copy manually: ' + url)
+      }
+      document.body.removeChild(textArea)
     }
   }
 
@@ -580,21 +644,59 @@ export default function PropertyDetailModal({
         onClick={onClose}
       >
         <div
-          className="bg-white md:rounded-lg md:shadow-2xl md:border md:border-slate-200 w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in"
+          className={`bg-white md:rounded-lg md:shadow-2xl md:border md:border-slate-200 w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in relative ${
+            isDragging ? 'ring-4 ring-primary ring-offset-2' : ''
+          }`}
           onClick={(e) => e.stopPropagation()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
+          {/* Drag overlay */}
+          {isDragging && (
+            <div className="absolute inset-0 bg-primary/10 border-4 border-dashed border-primary rounded-lg z-50 flex items-center justify-center pointer-events-none">
+              <div className="text-center">
+                <svg className="w-16 h-16 text-primary mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                <p className="text-lg font-semibold text-primary">Drop files here to upload</p>
+                <p className="text-sm text-slate-600 mt-2">Images, Videos, or PDFs</p>
+              </div>
+            </div>
+          )}
           {/* Header - Purple Gradient */}
           <div className="relative bg-gradient-to-r from-[oklch(0.4_0.22_280)] to-[oklch(0.5_0.22_280)] px-4 py-4 md:px-10 md:py-6">
-            {/* Close Button - Top Right Corner */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 md:top-6 md:right-10 p-2 text-white hover:bg-white/20 rounded-lg transition-all z-10"
-              title="Close"
-            >
-              <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            {/* Action Buttons - Top Right Corner */}
+            <div className="absolute top-4 right-4 md:top-6 md:right-10 flex items-center space-x-2 z-10">
+              {/* Copy URL Button */}
+              <button
+                onClick={handleCopyUrl}
+                className={`p-2 text-white hover:bg-white/20 rounded-lg transition-all ${
+                  copiedUrl ? 'bg-white/30' : ''
+                }`}
+                title={copiedUrl ? 'URL Copied!' : 'Copy shareable link'}
+              >
+                {copiedUrl ? (
+                  <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                )}
+              </button>
+              {/* Close Button */}
+              <button
+                onClick={onClose}
+                className="p-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                title="Close"
+              >
+                <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
             <div className="flex flex-col space-y-2 md:space-y-3 pr-10">
               {/* Title */}
@@ -818,7 +920,7 @@ export default function PropertyDetailModal({
                       ref={fileInputRef}
                       type="file"
                       multiple
-                      accept="image/*,video/*"
+                      accept="image/*,video/*,application/pdf"
                       onChange={handleFileUpload}
                       disabled={uploadingAttachment}
                       className="hidden"
@@ -866,12 +968,23 @@ export default function PropertyDetailModal({
                               alt={attachment.file_name}
                               className="w-full h-full object-cover"
                             />
-                          ) : (
+                          ) : attachment.file_type === 'video' ? (
                             <div className="w-full h-full bg-gray-100 flex items-center justify-center">
                               <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
+                            </div>
+                          ) : (
+                            <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-1">
+                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              </svg>
+                              <p className="text-[10px] font-medium text-gray-600 mt-1 px-1 text-center truncate w-full">
+                                {attachment.file_name.length > 15 
+                                  ? `${attachment.file_name.substring(0, 15)}...` 
+                                  : attachment.file_name}
+                              </p>
                             </div>
                           )}
                         </div>
@@ -924,7 +1037,7 @@ export default function PropertyDetailModal({
                         ref={fileInputRef}
                         type="file"
                         multiple
-                        accept="image/*,video/*"
+                        accept="image/*,video/*,application/pdf"
                         onChange={handleFileUpload}
                         disabled={uploadingAttachment}
                         className="hidden"
@@ -980,7 +1093,7 @@ export default function PropertyDetailModal({
                                 alt={attachment.file_name}
                                 className="w-full h-full object-cover"
                               />
-                            ) : (
+                            ) : attachment.file_type === 'video' ? (
                               <>
                                 <video
                                   src={url}
@@ -996,6 +1109,17 @@ export default function PropertyDetailModal({
                                   </svg>
                                 </div>
                               </>
+                            ) : (
+                              <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center p-2">
+                                <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <p className="text-xs font-medium text-slate-600 mt-2 px-2 text-center truncate w-full">
+                                  {attachment.file_name.length > 15 
+                                    ? `${attachment.file_name.substring(0, 15)}...` 
+                                    : attachment.file_name}
+                                </p>
+                              </div>
                             )}
                             <button
                               onClick={(e) => {
@@ -1315,7 +1439,7 @@ export default function PropertyDetailModal({
                 </button>
               )}
 
-              {/* Image/Video Display with Zoom */}
+              {/* Image/Video/PDF Display with Zoom */}
               {currentAttachment.file_type === 'image' ? (
                 <div
                   className={`relative overflow-hidden ${isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'}`}
@@ -1337,7 +1461,7 @@ export default function PropertyDetailModal({
                     } : undefined}
                   />
                 </div>
-              ) : (
+              ) : currentAttachment.file_type === 'video' ? (
                 <video
                   src={getAttachmentUrl(currentAttachment.file_path)}
                   controls
@@ -1346,6 +1470,21 @@ export default function PropertyDetailModal({
                 >
                   <source src={getAttachmentUrl(currentAttachment.file_path)} type={currentAttachment.mime_type} />
                 </video>
+              ) : (
+                <div className="flex flex-col items-center justify-center max-w-full max-h-[85vh] p-8">
+                  <svg className="w-24 h-24 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-lg font-medium text-slate-700 mb-2">{currentAttachment.file_name}</p>
+                  <a
+                    href={getAttachmentUrl(currentAttachment.file_path)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    Open PDF
+                  </a>
+                </div>
               )}
 
               {/* Bottom Info Bar */}
@@ -1364,6 +1503,12 @@ export default function PropertyDetailModal({
                 {currentAttachment.file_type === 'image' && (
                   <div className="hidden lg:block bg-black/50 text-white px-3 py-2 rounded-lg text-xs">
                     {isZoomed ? 'Click to zoom out' : 'Click to zoom in'}
+                  </div>
+                )}
+                {/* PDF hint - hidden on mobile/tablet */}
+                {currentAttachment.file_type === 'pdf' && (
+                  <div className="hidden lg:block bg-black/50 text-white px-3 py-2 rounded-lg text-xs">
+                    Click "Open PDF" to view
                   </div>
                 )}
               </div>

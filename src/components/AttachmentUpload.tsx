@@ -159,6 +159,9 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
           // For videos, compress if they're large
           const compressed = await compressVideo(file)
           processedFiles.push(compressed)
+        } else if (file.type === 'application/pdf') {
+          // PDFs don't need compression
+          processedFiles.push(file)
         } else {
           processedFiles.push(file)
         }
@@ -224,14 +227,14 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-semibold text-slate-700 mb-2">
-          Attachments (Photos/Videos)
+          Attachments (Photos/Videos/PDFs)
         </label>
         <div className="flex items-center space-x-3">
           <input
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*,video/*"
+            accept="image/*,video/*,application/pdf"
             onChange={handleFileSelect}
             disabled={uploading}
             className="hidden"
@@ -261,7 +264,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
               ) : 'Add Files'}
             </span>
           </label>
-          <span className="text-xs text-slate-500">Max 1GB per file (supports videos up to 4 minutes)</span>
+          <span className="text-xs text-slate-500">Max 2GB per file</span>
         </div>
         {uploading && Object.keys(uploadProgress).length > 0 && (
           <div className="mt-3">
@@ -306,7 +309,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
                     alt={attachment.file_name}
                     className="w-full h-32 object-cover"
                   />
-                ) : (
+                ) : attachment.file_type === 'video' ? (
                   <video
                     src={url}
                     className="w-full h-32 object-cover"
@@ -314,6 +317,17 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
                   >
                     <source src={url} type={attachment.mime_type} />
                   </video>
+                ) : (
+                  <div className="w-full h-32 bg-slate-100 flex flex-col items-center justify-center relative">
+                    <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-xs font-medium text-slate-600 mt-2 px-2 text-center truncate w-full">
+                      {attachment.file_name.length > 15 
+                        ? `${attachment.file_name.substring(0, 15)}...` 
+                        : attachment.file_name}
+                    </p>
+                  </div>
                 )}
                 
                 <div className="p-2">

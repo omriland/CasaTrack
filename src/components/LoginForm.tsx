@@ -56,12 +56,18 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? 'text' : 'tel'}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   required
                   className="w-full px-5 py-4 glass-subtle rounded-2xl focus:ring-2 focus:ring-primary/50 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    // Only allow numeric input
+                    const numericValue = e.target.value.replace(/[^0-9]/g, '')
+                    setPassword(numericValue)
+                  }}
                   disabled={loading}
                 />
                 <button

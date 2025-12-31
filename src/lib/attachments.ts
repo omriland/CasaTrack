@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 import { Attachment, AttachmentInsert } from '@/types/property'
 
 const BUCKET_NAME = 'property-attachments'
-const MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1GB (supports videos up to 4 minutes)
+const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2GB
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
@@ -17,9 +17,12 @@ export async function uploadAttachment(
   }
 
   // Validate file type
-  const fileType = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : null
+  const fileType = file.type.startsWith('image/') ? 'image' 
+    : file.type.startsWith('video/') ? 'video' 
+    : file.type === 'application/pdf' ? 'pdf' 
+    : null
   if (!fileType) {
-    throw new Error('File must be an image or video')
+    throw new Error('File must be an image, video, or PDF')
   }
 
   // Generate unique file path

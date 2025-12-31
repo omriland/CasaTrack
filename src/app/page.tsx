@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { isAuthenticated, clearAuth } from '@/lib/auth'
 import { getProperties, createProperty, updateProperty, deleteProperty, updatePropertyStatus } from '@/lib/properties'
 import { Property, PropertyInsert } from '@/types/property'
@@ -10,8 +11,10 @@ import PropertyCard from '@/components/PropertyCard'
 import PropertyDetailModal from '@/components/PropertyDetailModal'
 import KanbanBoard from '@/components/KanbanBoard'
 import MapView from '@/components/MapView'
+import PropertyMetaTags from '@/components/PropertyMetaTags'
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,6 +23,7 @@ export default function Home() {
   const [formLoading, setFormLoading] = useState(false)
   const [showPropertyDetail, setShowPropertyDetail] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [pendingPropertyId, setPendingPropertyId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'cards' | 'kanban' | 'map'>('cards')
   const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
@@ -41,22 +45,47 @@ export default function Home() {
     }
 
     checkAuth()
+
+    // Check for property ID in URL
+    const propertyId = searchParams?.get('property')
+    if (propertyId) {
+      setPendingPropertyId(propertyId)
+    }
+  }, [searchParams])
+
+  const loadProperties = useCallback(async () => {
+    try {
+      const data = await getProperties()
+      setProperties(data)
+      return data
+    } catch (error) {
+      console.error('Error loading properties:', error)
+      return []
+    }
   }, [])
 
   useEffect(() => {
     if (isLoggedIn) {
       loadProperties()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn])
 
-  const loadProperties = async () => {
-    try {
-      const data = await getProperties()
-      setProperties(data)
-    } catch (error) {
-      console.error('Error loading properties:', error)
+  useEffect(() => {
+    if (isLoggedIn && pendingPropertyId && properties.length > 0) {
+      // After properties are loaded, check if we need to open a property modal
+      const property = properties.find(p => p.id === pendingPropertyId)
+      if (property) {
+        setSelectedProperty(property)
+        setShowPropertyDetail(true)
+      }
+      setPendingPropertyId(null)
+      // Clean up URL
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', window.location.pathname)
+      }
     }
-  }
+  }, [isLoggedIn, pendingPropertyId, properties])
 
   const handleNotesChanged = () => {
     setNotesRefreshKey((k) => k + 1)
@@ -68,6 +97,7 @@ export default function Home() {
 
   const handleLogin = () => {
     setIsLoggedIn(true)
+    // If there's a pending property ID, it will be handled in the useEffect above
   }
 
   const handleLogout = () => {
@@ -206,11 +236,18 @@ export default function Home() {
   }
 
   if (!isLoggedIn) {
-    return <LoginForm onLogin={handleLogin} />
+    return (
+      <>
+        <PropertyMetaTags />
+        <LoginForm onLogin={handleLogin} />
+      </>
+    )
   }
 
   return (
-    <div className="min-h-screen pb-20 md:pb-8">
+    <>
+      <PropertyMetaTags />
+      <div className="min-h-screen pb-20 md:pb-8">
       {/* Top Header - Purple Accent */}
       <header className="sticky top-0 z-50 bg-gradient-to-r from-[oklch(0.4_0.22_280)] to-[oklch(0.5_0.22_280)] border-b border-[oklch(0.45_0.22_280)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -582,6 +619,19 @@ export default function Home() {
           onNotesDelta={handleNotesDelta}
         />
       )}
-    </div>
+      </div>
+    </>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   )
 }

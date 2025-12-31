@@ -17,6 +17,16 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "CasaTrack - Property Management",
   description: "Track and manage your property search with CasaTrack",
+  openGraph: {
+    title: "CasaTrack - Property Management",
+    description: "Track and manage your property search with CasaTrack",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "CasaTrack - Property Management",
+    description: "Track and manage your property search with CasaTrack",
+  },
 };
 
 export default function RootLayout({
