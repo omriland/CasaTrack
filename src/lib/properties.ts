@@ -122,3 +122,39 @@ export async function deleteNote(id: string): Promise<void> {
 
   if (error) throw error
 }
+
+/**
+ * Update property rating
+ */
+export async function updatePropertyRating(id: string, rating: number): Promise<Property> {
+  try {
+    const { data, error } = await supabase
+      .from('properties')
+      .update({ rating })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Supabase error updating rating:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      throw new Error(error.message || 'Failed to update rating')
+    }
+    
+    if (!data) {
+      throw new Error('No data returned from update')
+    }
+    
+    return data
+  } catch (error) {
+    // Re-throw with better error message
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('Unknown error updating rating')
+  }
+}

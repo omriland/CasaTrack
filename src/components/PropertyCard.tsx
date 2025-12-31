@@ -5,6 +5,7 @@ import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
 import { useState, useEffect, useRef } from 'react'
 import { getPropertyNotes, updatePropertyStatus, updateProperty } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl } from '@/lib/attachments'
+import StarRating from './StarRating'
 
 interface PropertyCardProps {
   property: Property
@@ -12,11 +13,12 @@ interface PropertyCardProps {
   onDelete: (id: string) => void
   onViewNotes: (property: Property) => void
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
+  onRatingUpdate?: (propertyId: string, rating: number) => void
   notesRefreshKey?: number
   notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate, notesRefreshKey, notesBump }: PropertyCardProps) {
+export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate, onRatingUpdate, notesRefreshKey, notesBump }: PropertyCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [notesCount, setNotesCount] = useState<number>(0)
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
@@ -394,8 +396,15 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             {property.title}
           </h3>
 
-          {/* Status button - top right */}
-          <div className="relative flex-shrink-0">
+          {/* Rating and Status badges - top right */}
+          <div className="relative flex-shrink-0 flex items-center gap-2">
+            <StarRating
+              rating={property.rating}
+              onRatingChange={(rating) => onRatingUpdate?.(property.id, rating)}
+              size="sm"
+              interactive={true}
+            />
+            <div className="relative">
             <button
               onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
               className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap relative ${isToContact
@@ -427,6 +436,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
 
@@ -512,34 +522,42 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </span>
           </div>
 
-          {/* Status button */}
-          <div className="relative inline-block mb-3" ref={statusDropdownRef}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
-              className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all relative ${property.status === 'Interested'
-                ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)] status-highlight'
-                : property.status === 'Contacted Realtor'
-                  ? 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
-                  : 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
-                }`}
-            >
-              {getStatusLabel(property.status)}
-            </button>
+          {/* Rating and Status */}
+          <div className="flex items-center gap-3 mb-3">
+            <StarRating
+              rating={property.rating}
+              onRatingChange={(rating) => onRatingUpdate?.(property.id, rating)}
+              size="md"
+              interactive={true}
+            />
+            <div className="relative inline-block" ref={statusDropdownRef}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
+                className={`px-3 py-1.5 rounded text-xs font-medium text-white transition-all relative ${property.status === 'Interested'
+                  ? 'bg-[oklch(0.5_0.22_280)] hover:bg-[oklch(0.45_0.22_280)] status-highlight'
+                  : property.status === 'Contacted Realtor'
+                    ? 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
+                    : 'bg-[oklch(0.7_0.18_280)] hover:bg-[oklch(0.65_0.18_280)]'
+                  }`}
+              >
+                {getStatusLabel(property.status)}
+              </button>
 
-            {showStatusDropdown && (
-              <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                {PROPERTY_STATUS_OPTIONS.map((status) => (
-                  <button
-                    key={status.value}
-                    onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
-                    className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${status.value === property.status ? 'bg-gray-50 font-semibold' : ''
-                      }`}
-                  >
-                    {status.label}
-                  </button>
-                ))}
-              </div>
-            )}
+              {showStatusDropdown && (
+                <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  {PROPERTY_STATUS_OPTIONS.map((status) => (
+                    <button
+                      key={status.value}
+                      onClick={(e) => { e.stopPropagation(); handleStatusChange(status.value) }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-all ${status.value === property.status ? 'bg-gray-50 font-semibold' : ''
+                        }`}
+                    >
+                      {status.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Rooms and Size section */}

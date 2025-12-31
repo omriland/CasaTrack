@@ -25,6 +25,7 @@ export interface Property {
   balcony_square_meters: number | null
   created_at: string
   updated_at: string
+  rating?: number // User rating 0-5 stars
 }
 
 export interface PropertyInsert {
@@ -44,6 +45,7 @@ export interface PropertyInsert {
   longitude?: number | null
   apartment_broker?: boolean
   balcony_square_meters?: number | null
+  rating?: number // User rating 0-5 stars
 }
 
 export interface Note {

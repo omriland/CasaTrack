@@ -8,6 +8,7 @@ import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
+import StarRating from './StarRating'
 
 interface PropertyDetailModalProps {
   property: Property
@@ -16,6 +17,7 @@ interface PropertyDetailModalProps {
   onDelete: (id: string) => void
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
   onPropertyUpdate?: (updatedProperty: Property) => void
+  onRatingUpdate?: (propertyId: string, rating: number) => void
   onDataRefresh?: () => void
   onNotesChanged?: () => void
   onNotesDelta?: (propertyId: string, delta: number) => void
@@ -28,6 +30,7 @@ export default function PropertyDetailModal({
   onDelete,
   onStatusUpdate,
   onPropertyUpdate,
+  onRatingUpdate,
   onDataRefresh,
   onNotesChanged,
   onNotesDelta
@@ -759,6 +762,21 @@ export default function PropertyDetailModal({
           {/* Content */}
           <div className="flex-1 overflow-y-auto bg-gray-50 md:bg-white">
             <div className="px-4 py-4 md:px-10 md:py-6 bg-white">
+              {/* Rating Section */}
+              <div className="mb-4 md:mb-6 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-1">Rating</h3>
+                    <p className="text-xs text-slate-500">Click stars to rate this property</p>
+                  </div>
+                  <StarRating
+                    rating={property.rating}
+                    onRatingChange={(rating) => onRatingUpdate?.(property.id, rating)}
+                    size="lg"
+                    interactive={true}
+                  />
+                </div>
+              </div>
               {/* Asking Price Section - Mobile: Single Column, Desktop: 3 Columns */}
               {property.asked_price !== null && property.asked_price !== 1 ? (
                 <div className="bg-gray-50 rounded-lg p-4 md:bg-gray-50 md:rounded md:p-6 mb-4 md:mb-6 pb-4 md:pb-6 border-b md:border md:border-gray-300 md:border-b border-gray-200">

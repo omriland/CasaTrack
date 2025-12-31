@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, Suspense } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { isAuthenticated, clearAuth } from '@/lib/auth'
-import { getProperties, createProperty, updateProperty, deleteProperty, updatePropertyStatus } from '@/lib/properties'
+import { getProperties, createProperty, updateProperty, deleteProperty, updatePropertyStatus, updatePropertyRating } from '@/lib/properties'
 import { Property, PropertyInsert } from '@/types/property'
 import LoginForm from '@/components/LoginForm'
 import PropertyForm from '@/components/PropertyForm'
@@ -205,6 +205,27 @@ export default function HomeContent() {
     }
     // Refresh data to ensure consistency
     await loadProperties()
+  }
+
+  const handleRatingUpdate = async (propertyId: string, rating: number) => {
+    try {
+      const updatedProperty = await updatePropertyRating(propertyId, rating)
+      setProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p))
+      // Update the selected property if it's the one being updated
+      if (selectedProperty && selectedProperty.id === propertyId) {
+        setSelectedProperty(updatedProperty)
+      }
+    } catch (error) {
+      console.error('Error updating rating:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      // Check if it's a column doesn't exist error
+      if (errorMessage.includes('column') && errorMessage.includes('rating')) {
+        alert('Rating column not found. Please run the SQL migration: add-rating-field.sql')
+      } else {
+        alert(`Error updating rating: ${errorMessage}`)
+      }
+    }
   }
 
   const handleCloseForm = () => {
@@ -531,6 +552,7 @@ export default function HomeContent() {
                           onDelete={handleDeleteProperty}
                           onViewNotes={handleViewNotes}
                           onStatusUpdate={handleUpdatePropertyStatus}
+                          onRatingUpdate={handleRatingUpdate}
                           notesRefreshKey={notesRefreshKey}
                           notesBump={notesBump}
                         />
@@ -604,6 +626,7 @@ export default function HomeContent() {
           onDelete={handleDeleteProperty}
           onStatusUpdate={handleUpdatePropertyStatus}
           onPropertyUpdate={handlePropertyUpdate}
+          onRatingUpdate={handleRatingUpdate}
           onDataRefresh={loadProperties}
           onNotesChanged={handleNotesChanged}
           onNotesDelta={handleNotesDelta}

@@ -26,6 +26,7 @@ export type Database = {
           url: string | null
           latitude: number | null
           longitude: number | null
+          rating: number | null
           created_at: string
           updated_at: string
         }
@@ -46,6 +47,7 @@ export type Database = {
           url?: string | null
           latitude?: number | null
           longitude?: number | null
+          rating?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -66,6 +68,7 @@ export type Database = {
           url?: string | null
           latitude?: number | null
           longitude?: number | null
+          rating?: number | null
           created_at?: string
           updated_at?: string
         }
@@ -121,6 +124,55 @@ export type Database = {
           file_type?: 'image' | 'video' | 'pdf'
           file_size?: number
           mime_type?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      property_scores: {
+        Row: {
+          id: string
+          property_id: string
+          score: number
+          calculated_at: string
+        }
+        Insert: {
+          id?: string
+          property_id: string
+          score: number
+          calculated_at?: string
+        }
+        Update: {
+          id?: string
+          property_id?: string
+          score?: number
+          calculated_at?: string
+        }
+      }
+      scoring_config: {
+        Row: {
+          id: string
+          criterion: string
+          weight: number
+          enabled: boolean
+          preference: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          criterion: string
+          weight: number
+          enabled?: boolean
+          preference?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          criterion?: string
+          weight?: number
+          enabled?: boolean
+          preference?: string | null
           created_at?: string
           updated_at?: string
         }
