@@ -225,7 +225,6 @@ function HomeContent() {
       return 0
     })
   const irrelevantProperties = properties.filter(property => property.status === 'Irrelevant')
-  const relevantPropertiesCount = relevantProperties.length
 
   if (loading) {
     return (

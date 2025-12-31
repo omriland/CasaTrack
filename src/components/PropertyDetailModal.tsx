@@ -1508,7 +1508,7 @@ export default function PropertyDetailModal({
                 {/* PDF hint - hidden on mobile/tablet */}
                 {currentAttachment.file_type === 'pdf' && (
                   <div className="hidden lg:block bg-black/50 text-white px-3 py-2 rounded-lg text-xs">
-                    Click "Open PDF" to view
+                    Click &quot;Open PDF&quot; to view
                   </div>
                 )}
               </div>
