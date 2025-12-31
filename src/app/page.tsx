@@ -10,6 +10,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
   const params = await searchParams
   const propertyId = params?.property
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '') || 'https://casatrack.app'
+  const ogImageUrl = `${siteUrl}/og-image`
+
   if (!propertyId) {
     return {
       title: "CasaTrack - Property Management",
@@ -18,11 +21,20 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
         title: "CasaTrack - Property Management",
         description: "Track and manage your property search with CasaTrack",
         type: "website",
+        images: [
+          {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: "CasaTrack",
+          },
+        ],
       },
       twitter: {
-        card: "summary",
+        card: "summary_large_image",
         title: "CasaTrack - Property Management",
         description: "Track and manage your property search with CasaTrack",
+        images: [ogImageUrl],
       },
     }
   }
@@ -35,7 +47,6 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     if (property) {
       const title = property.title
       const description = `${property.address} • ${property.rooms} rooms`
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('/rest/v1', '') || 'https://casatrack.app'
       const url = `${siteUrl}?property=${propertyId}`
 
       return {
@@ -46,11 +57,20 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
           description,
           type: "website",
           url,
+          images: [
+            {
+              url: ogImageUrl,
+              width: 1200,
+              height: 630,
+              alt: title,
+            },
+          ],
         },
         twitter: {
-          card: "summary",
+          card: "summary_large_image",
           title,
           description,
+          images: [ogImageUrl],
         },
       }
     }
