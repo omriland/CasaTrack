@@ -216,18 +216,6 @@
      - Status colors adapted to new theme while maintaining functionality
      - Full dark mode support with appropriate contrast adjustments
 
-### 🎯 Next Priorities
-1. **Search & Filters**: Enhanced property discovery and filtering
-2. **Real-time Updates**: Leverage Supabase real-time capabilities
-3. **Performance**: Loading skeletons and error boundaries
-4. **Map Enhancements**: Property clustering and advanced map features
-
-### 🔧 Technical Debt
-- Real-time updates available but not utilized
-- No loading skeletons or error boundaries
-- Notes count could use real-time updates when notes are added/deleted
-- Google Maps script loading could be optimized with proper error handling
-
 ## Session 2 - UI Polish (September 22, 2025)
 
 ### ✅ Completed Tasks
@@ -239,22 +227,107 @@
 ## Session 3 - Balcony Metrage & UX Fixes (October 28, 2025)
 
 ### ✅ Completed Tasks
-1. Balcony Metrage & Pricing Rule
+1. **Balcony Metrage & Pricing Rule**
    - Added `balcony_square_meters` (optional) to properties schema
    - Updated computed `price_per_meter` to count half of balcony area
    - Updated TypeScript types and PropertyForm
    - Form layout: metrage fields on one row; price in its own row; preview uses half-balcony rule
 
-2. Hebrew RTL Editing Fixes
+2. **Hebrew RTL Editing Fixes**
    - Replaced contentEditable editors with RTL-safe textareas where needed
    - Fixed placeholder clearing and ensured typed text is black
    - Reordered notes view: existing notes now appear above the add-note form
 
-3. Cards UX Enhancements
+3. **Cards UX Enhancements**
    - Truncated descriptions now show full text on hover (tooltip)
-   - Added “Added X ago” with exact timestamp on hover
+   - Added "Added X ago" with exact timestamp on hover
 
 ### 📊 Current Status
 - Balcony pricing logic live; UI/DB aligned
 - Description and notes editing UX solid for RTL
 - Card info density improved with helpful hover previews
+
+## Session 4 - Advanced Map Features & Property Enhancements
+
+### ✅ Completed Tasks
+1. **Enhanced Map View Features**
+   - Custom property markers with ₪ symbol and status-based colors
+   - Marker dragging for coordinate updates (desktop only)
+   - Hover tooltips with comprehensive property information
+   - Info windows on marker click with property details
+   - Map layers: Transit, Traffic, Bicycle lanes, Schools
+   - Property name labels under markers
+   - "New" badges for properties added within 7 days
+   - Toggle for showing/hiding irrelevant properties
+   - Property count display
+   - Attachment indicators in hover tooltips
+
+2. **Property Title Field**
+   - Added title field to database schema
+   - Updated TypeScript interfaces
+   - Added title input to PropertyForm
+   - Title displayed prominently in cards and detail modal
+
+3. **Apartment Broker Field**
+   - Added apartment_broker boolean field to schema
+   - Checkbox in PropertyForm
+   - Visual indicator in property cards and detail modal
+
+4. **Rating System**
+   - Added rating field (0-5 stars) to database schema
+   - Created StarRating component
+   - Rating display and editing in PropertyDetailModal
+   - Rating shown in property cards
+
+5. **Attachments System**
+   - Created attachments table in database
+   - Supabase Storage integration for file uploads
+   - AttachmentUpload component for file management
+   - Image, video, and PDF support
+   - Attachment gallery in PropertyDetailModal
+   - Attachment thumbnails in PropertyCard
+   - Attachment deletion functionality
+   - Attachment indicators on map hover tooltips
+
+6. **Yad2 URL Extraction**
+   - API endpoint for extracting property data from Yad2 URLs
+   - Automatic field population from Yad2 listings
+   - URL field integration
+
+## Session 5 - Contact Features & Phone Integration
+
+### ✅ Completed Tasks
+1. **WhatsApp Integration**
+   - Created phone utility library (`src/lib/phone.ts`)
+   - WhatsApp button next to phone numbers
+   - Israeli number formatting (972 prefix)
+   - Automatic formatting for WhatsApp links
+
+2. **Click-to-Call Functionality**
+   - Phone numbers are now clickable tel: links
+   - Works on both mobile and desktop
+   - Proper phone number formatting for tel links
+
+3. **Contact UI Enhancements**
+   - WhatsApp button in PropertyCard contact section
+   - WhatsApp button in PropertyDetailModal contact section
+   - Visual indicators for clickable phone numbers
+   - Consistent styling across components
+
+### 📊 Current Status
+- Contact features fully functional
+- WhatsApp integration working with Israeli number support
+- Phone numbers are clickable for calling
+- All contact features integrated into existing UI
+
+### 🎯 Next Priorities
+1. **Search & Filters**: Enhanced property discovery and filtering
+2. **Real-time Updates**: Leverage Supabase real-time capabilities
+3. **Performance**: Loading skeletons and error boundaries
+4. **Map Enhancements**: Property clustering and advanced map features
+
+### 🔧 Technical Debt
+- Real-time updates available but not utilized
+- No loading skeletons or error boundaries
+- Notes count could use real-time updates when notes are added/deleted
+- Google Maps script loading could be optimized with proper error handling
