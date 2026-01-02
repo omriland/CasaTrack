@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Property } from '@/types/property'
 import { getStatusLabel } from '@/constants/statuses'
+import { getPropertyAttachments } from '@/lib/attachments'
 
 interface MapViewProps {
   properties: Property[]
@@ -23,6 +24,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
   const [error, setError] = useState<string | null>(null)
   const [hoveredProperty, setHoveredProperty] = useState<Property | null>(null)
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null)
+  const [hoveredPropertyHasAttachments, setHoveredPropertyHasAttachments] = useState(false)
   const [showIrrelevantProperties, setShowIrrelevantProperties] = useState(false)
   const [layers, setLayers] = useState({
     transit: false,
@@ -224,17 +226,27 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       })
 
       // Add hover listeners
-      marker.addListener('mouseover', (event: google.maps.MapMouseEvent) => {
+      marker.addListener('mouseover', async (event: google.maps.MapMouseEvent) => {
         if (event.domEvent) {
           const mouseEvent = event.domEvent as MouseEvent
           setHoverPosition({ x: mouseEvent.clientX, y: mouseEvent.clientY })
           setHoveredProperty(property)
+          
+          // Check if property has attachments
+          try {
+            const attachments = await getPropertyAttachments(property.id)
+            setHoveredPropertyHasAttachments(attachments.length > 0)
+          } catch (error) {
+            console.error('Error checking attachments:', error)
+            setHoveredPropertyHasAttachments(false)
+          }
         }
       })
 
       marker.addListener('mouseout', () => {
         setHoveredProperty(null)
         setHoverPosition(null)
+        setHoveredPropertyHasAttachments(false)
       })
 
       // Update marker icon on hover
@@ -859,7 +871,18 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
               transform: horizontalTransform
             }}
           >
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-2xl border border-slate-200/50 p-4 w-80 animate-fade-in">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg shadow-2xl border border-slate-200/50 p-4 w-80 animate-fade-in relative">
+            {/* Attachment Indicator - Top Right */}
+            {hoveredPropertyHasAttachments && (
+              <div className="absolute top-3 right-3 z-10">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 border border-primary/20">
+                  <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                </div>
+              </div>
+            )}
+            
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex-1 min-w-0">
