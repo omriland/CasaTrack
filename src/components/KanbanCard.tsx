@@ -95,8 +95,11 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
     <div
       ref={setNodeRef}
       style={style}
-      className={`group bg-white rounded-lg p-3 transition-all border border-slate-200 hover:border-slate-300 ${isDragging ? 'opacity-50 scale-105 rotate-1 border-primary/40' : ''
-        }`}
+      className={`group rounded-lg p-3 transition-all border ${
+        property.is_flagged
+          ? 'bg-amber-50 border-amber-300 hover:border-amber-400'
+          : 'bg-white border-slate-200 hover:border-slate-300'
+      } ${isDragging ? 'opacity-50 scale-105 rotate-1 border-primary/40' : ''}`}
       onClick={handleCardClick}
     >
       <div className="space-y-3">

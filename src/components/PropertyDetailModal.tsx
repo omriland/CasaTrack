@@ -284,6 +284,71 @@ export default function PropertyDetailModal({
     }
   }
 
+  // Handle paste event to attach images from clipboard
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // Only handle paste when modal is open
+      const modalElement = document.querySelector('[data-property-modal]')
+      if (!modalElement) return
+
+      // Don't intercept paste if user is typing in an input/textarea
+      const activeElement = document.activeElement
+      if (
+        activeElement &&
+        (activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          (activeElement instanceof HTMLElement && activeElement.isContentEditable))
+      ) {
+        return
+      }
+
+      const items = e.clipboardData?.items
+      if (!items) return
+
+      // Check if clipboard contains image data
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        if (item.type.indexOf('image') !== -1) {
+          e.preventDefault()
+          e.stopPropagation()
+
+          const blob = item.getAsFile()
+          if (!blob) continue
+
+          // Convert blob to File with a proper name
+          const file = new File([blob], `pasted-image-${Date.now()}.png`, { type: blob.type || 'image/png' })
+          
+          // Upload the pasted image using the existing upload function
+          setUploadingAttachment(true)
+          try {
+            // Process the file (compress if needed)
+            let processedFile: File = file
+            if (file.type.startsWith('image/')) {
+              processedFile = await compressImage(file)
+            }
+            
+            // Upload the file
+            const newAttachment = await uploadAttachment(property.id, processedFile)
+            setAttachments(prev => [...prev, newAttachment])
+          } catch (error) {
+            console.error('Error uploading pasted image:', error)
+            alert(error instanceof Error ? error.message : 'Failed to upload pasted image')
+          } finally {
+            setUploadingAttachment(false)
+          }
+          break
+        }
+      }
+    }
+
+    // Add paste event listener to window (works even when modal doesn't have focus)
+    window.addEventListener('paste', handlePaste)
+    
+    return () => {
+      window.removeEventListener('paste', handlePaste)
+    }
+  }, [property.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleCopyUrl = async () => {
     const url = `${window.location.origin}?property=${property.id}`
     try {
@@ -650,6 +715,7 @@ export default function PropertyDetailModal({
         onClick={onClose}
       >
         <div
+          data-property-modal
           className={`md:rounded-lg md:shadow-2xl md:border w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in relative ${
             isDragging ? 'ring-4 ring-primary ring-offset-2' : ''
           } ${

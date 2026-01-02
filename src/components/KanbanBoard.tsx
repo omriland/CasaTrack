@@ -194,7 +194,7 @@ export default function KanbanBoard({
   const [activeProperty, setActiveProperty] = useState<Property | null>(null)
   const [isDraggingSomething, setIsDraggingSomething] = useState(false)
   const [collapsedColumns, setCollapsedColumns] = useState<Set<PropertyStatus>>(
-    new Set(['On Hold', 'Irrelevant', 'Purchased'])
+    new Set(['Irrelevant', 'Purchased'])
   )
 
   const sensors = useSensors(
