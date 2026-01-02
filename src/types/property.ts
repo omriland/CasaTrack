@@ -23,6 +23,7 @@ export interface Property {
   longitude: number | null
   apartment_broker: boolean
   balcony_square_meters: number | null
+  is_flagged: boolean
   created_at: string
   updated_at: string
   rating?: number // User rating 0-5 stars
@@ -45,6 +46,7 @@ export interface PropertyInsert {
   longitude?: number | null
   apartment_broker?: boolean
   balcony_square_meters?: number | null
+  is_flagged?: boolean
   rating?: number // User rating 0-5 stars
 }
 

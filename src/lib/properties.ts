@@ -158,3 +158,18 @@ export async function updatePropertyRating(id: string, rating: number): Promise<
     throw new Error('Unknown error updating rating')
   }
 }
+
+/**
+ * Toggle property flag status
+ */
+export async function togglePropertyFlag(id: string, isFlagged: boolean): Promise<Property> {
+  const { data, error } = await supabase
+    .from('properties')
+    .update({ is_flagged: isFlagged })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}

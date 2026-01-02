@@ -195,33 +195,33 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
         textColor = 'oklch(0.72 0.13 160.9)'
       }
 
-      // Check if property is "just added" (within last 7 days) and not "Visited"
-      const isJustAdded = (() => {
-        // Don't show "new" badge for visited properties
-        if (property.status === 'Visited') {
-          return false
-        }
-        const createdDate = new Date(property.created_at)
-        const now = new Date()
-        const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
-        return daysDiff <= 7
-      })()
+      // Check if property should show "new" badge - only for "Seen" (Just Added) or "Interested" (To contact) statuses
+      const isJustAdded = property.status === 'Seen' || property.status === 'Interested'
 
       // Check if mobile directly to ensure accuracy
       const isMobileDevice = window.innerWidth < 768
+      
+      // Create marker icon - yellow pin for flagged properties
+      const flaggedMarkerColor = '#f59e0b' // Amber/yellow color for flagged
+      const flaggedTextColor = '#713f12' // Dark amber for text contrast
+      const pinColor = property.is_flagged ? flaggedMarkerColor : markerColor
+      const pinTextColor = property.is_flagged ? flaggedTextColor : textColor
+      
+      const markerIconSvg = `
+        <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="${pinColor}"/>
+          <circle cx="16" cy="16" r="8" fill="white"/>
+          <text x="16" y="20" text-anchor="middle" fill="${pinTextColor}" font-family="Varela Round, sans-serif" font-size="12" font-weight="600">₪</text>
+        </svg>
+      `
+      
       const marker = new google.maps.Marker({
         position: { lat: property.latitude!, lng: property.longitude! },
         map: mapInstanceRef.current,
         draggable: !isMobileDevice && !!onCoordinateUpdate, // Only draggable on desktop/web when callback is provided
         cursor: !isMobileDevice && !!onCoordinateUpdate ? 'grab' : 'pointer',
         icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-            <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="${markerColor}"/>
-              <circle cx="16" cy="16" r="8" fill="white"/>
-              <text x="16" y="20" text-anchor="middle" fill="${textColor}" font-family="Varela Round, sans-serif" font-size="12" font-weight="600">₪</text>
-            </svg>
-          `)}`
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(markerIconSvg)}`
         }
       })
 
@@ -251,26 +251,23 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
 
       // Update marker icon on hover
       marker.addListener('mouseover', () => {
+        const hoverPinColor = property.is_flagged ? flaggedMarkerColor : markerColor
+        const hoverPinTextColor = property.is_flagged ? flaggedTextColor : textColor
+        const hoverIconSvg = `
+          <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="${hoverPinColor}"/>
+            <circle cx="18" cy="18" r="10" fill="white"/>
+            <text x="18" y="23" text-anchor="middle" fill="${hoverPinTextColor}" font-family="Varela Round, sans-serif" font-size="14" font-weight="700">₪</text>
+          </svg>
+        `
         marker.setIcon({
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-            <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="${markerColor}"/>
-              <circle cx="18" cy="18" r="10" fill="white"/>
-              <text x="18" y="23" text-anchor="middle" fill="${textColor}" font-family="Varela Round, sans-serif" font-size="14" font-weight="700">₪</text>
-            </svg>
-          `)}`
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(hoverIconSvg)}`
         })
       })
 
       marker.addListener('mouseout', () => {
         marker.setIcon({
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-            <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 16 16 24 16 24s16-8 16-24c0-8.837-7.163-16-16-16z" fill="${markerColor}"/>
-              <circle cx="16" cy="16" r="8" fill="white"/>
-              <text x="16" y="20" text-anchor="middle" fill="${textColor}" font-family="Varela Round, sans-serif" font-size="12" font-weight="600">₪</text>
-            </svg>
-          `)}`
+          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(markerIconSvg)}`
         })
       })
 
@@ -284,14 +281,17 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
           // Change cursor to grabbing
           marker.setCursor('grabbing')
           // Slightly increase marker size during drag for visual feedback
+          const dragPinColor = property.is_flagged ? flaggedMarkerColor : markerColor
+          const dragPinTextColor = property.is_flagged ? flaggedTextColor : textColor
+          const dragIconSvg = `
+            <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="${dragPinColor}"/>
+              <circle cx="18" cy="18" r="10" fill="white"/>
+              <text x="18" y="23" text-anchor="middle" fill="${dragPinTextColor}" font-family="Varela Round, sans-serif" font-size="14" font-weight="700">₪</text>
+            </svg>
+          `
           marker.setIcon({
-            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-              <svg width="36" height="44" viewBox="0 0 36 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 0C8.059 0 0 8.059 0 18c0 18 18 26 18 26s18-8 18-26c0-9.941-8.059-18-18-18z" fill="${markerColor}"/>
-                <circle cx="18" cy="18" r="10" fill="white"/>
-                <text x="18" y="23" text-anchor="middle" fill="${textColor}" font-family="Varela Round, sans-serif" font-size="14" font-weight="700">₪</text>
-              </svg>
-            `)}`
+            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(dragIconSvg)}`
           })
         })
 
@@ -450,6 +450,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
         newBadgeOverlaysRef.current.push(newBadgeOverlay)
       }
 
+
       // Add property name label overlay under each marker
       class PropertyNameLabelOverlay extends google.maps.OverlayView {
         private div: HTMLDivElement | null = null
@@ -467,9 +468,12 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
           div.style.zIndex = '1000'
           div.style.transform = 'translate(-50%, 0)'
           
+          const labelBackground = property.is_flagged ? '#fef3c7' : 'white' // Light yellow for flagged
+          const labelBorder = property.is_flagged ? '#fcd34d' : '#e2e8f0' // Amber border for flagged
+          
           div.innerHTML = `
             <div style="
-              background: white;
+              background: ${labelBackground};
               color: #1e293b;
               border-radius: 6px;
               padding: 3px 8px;
@@ -478,7 +482,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
               font-family: 'Varela Round', sans-serif;
               white-space: nowrap;
               box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-              border: 1px solid #e2e8f0;
+              border: 1px solid ${labelBorder};
               max-width: 150px;
               overflow: hidden;
               text-overflow: ellipsis;

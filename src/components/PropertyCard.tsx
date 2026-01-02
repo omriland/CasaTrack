@@ -3,7 +3,7 @@
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
 import { useState, useEffect, useRef } from 'react'
-import { getPropertyNotes, updatePropertyStatus, updateProperty } from '@/lib/properties'
+import { getPropertyNotes, updatePropertyStatus, updateProperty, togglePropertyFlag } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl } from '@/lib/attachments'
 import { formatPhoneForWhatsApp } from '@/lib/phone'
 import StarRating from './StarRating'
@@ -15,11 +15,12 @@ interface PropertyCardProps {
   onViewNotes: (property: Property) => void
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
   onRatingUpdate?: (propertyId: string, rating: number) => void
+  onFlagToggle?: (propertyId: string, isFlagged: boolean) => void
   notesRefreshKey?: number
   notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate, onRatingUpdate, notesRefreshKey, notesBump }: PropertyCardProps) {
+export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate, onRatingUpdate, onFlagToggle, notesRefreshKey, notesBump }: PropertyCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [notesCount, setNotesCount] = useState<number>(0)
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
@@ -214,6 +215,22 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     }
   }
 
+  const handleFlagToggle = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const newFlagState = !property.is_flagged
+      if (onFlagToggle) {
+        await onFlagToggle(property.id, newFlagState)
+      } else {
+        // Fallback to direct API call if no callback provided
+        await togglePropertyFlag(property.id, newFlagState)
+      }
+    } catch (error) {
+      console.error('Error toggling flag:', error)
+      alert('Error updating flag. Please try again.')
+    }
+  }
+
   const handleCopyPhone = async () => {
     if (!property.contact_phone) return
 
@@ -388,14 +405,33 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
 
     return (
       <div
-        className="relative bg-white rounded-[7px] border border-gray-200 p-4 transition-all duration-200 animate-fade-in h-[140px] flex flex-col"
+        className={`relative rounded-[7px] border p-4 transition-all duration-200 animate-fade-in h-[140px] flex flex-col ${
+          property.is_flagged 
+            ? 'bg-amber-50 border-amber-300 shadow-md' 
+            : 'bg-white border-gray-200'
+        }`}
         onClick={handleCardClick}
       >
         {/* Header: Title and Status badge */}
         <div className="flex items-start justify-between gap-2 mb-1.5">
-          <h3 className="font-semibold text-gray-900 text-base leading-tight flex-1 min-w-0">
-            {property.title}
-          </h3>
+          <div className="flex items-start gap-2 flex-1 min-w-0">
+            <button
+              onClick={handleFlagToggle}
+              className={`flex-shrink-0 mt-0.5 p-1 rounded transition-all ${
+                property.is_flagged 
+                  ? 'text-amber-600 hover:text-amber-700' 
+                  : 'text-gray-300 hover:text-amber-500'
+              }`}
+              title={property.is_flagged ? 'Unflag property' : 'Flag property'}
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 3h2v18H3V3zm3 2h12l-2 4 2 4H6V5z"/>
+              </svg>
+            </button>
+            <h3 className="font-semibold text-gray-900 text-base leading-tight flex-1 min-w-0">
+              {property.title}
+            </h3>
+          </div>
 
           {/* Rating and Status badges - top right */}
           <div className="relative flex-shrink-0 flex items-center gap-2">
@@ -495,14 +531,33 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   if (!mounted || !isMobile) {
     return (
       <div
-        className="group bg-white rounded-[7px] border border-gray-200 shadow-sm p-6 transition-all duration-200 animate-fade-in cursor-pointer hover:shadow-md min-h-[600px] h-full flex flex-col"
+        className={`group rounded-[7px] border shadow-sm p-6 transition-all duration-200 animate-fade-in cursor-pointer hover:shadow-md min-h-[600px] h-full flex flex-col ${
+          property.is_flagged 
+            ? 'bg-amber-50 border-amber-300 shadow-md' 
+            : 'bg-white border-gray-200'
+        }`}
         onClick={handleCardClick}
       >
         {/* Header */}
         <div className="mb-4">
-          <h3 className="font-semibold text-gray-900 text-lg mb-2 leading-tight">
-            {property.title}
-          </h3>
+          <div className="flex items-start gap-2 mb-2">
+            <button
+              onClick={handleFlagToggle}
+              className={`flex-shrink-0 mt-0.5 p-1 rounded transition-all ${
+                property.is_flagged 
+                  ? 'text-amber-600 hover:text-amber-700' 
+                  : 'text-gray-300 hover:text-amber-500'
+              }`}
+              title={property.is_flagged ? 'Unflag property' : 'Flag property'}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 3h2v18H3V3zm3 2h12l-2 4 2 4H6V5z"/>
+              </svg>
+            </button>
+            <h3 className="font-semibold text-gray-900 text-lg leading-tight flex-1">
+              {property.title}
+            </h3>
+          </div>
 
           {/* Location with pin icon */}
           <div className="flex items-center gap-1.5 mb-2">

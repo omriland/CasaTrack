@@ -6,7 +6,7 @@ import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
-import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty } from '@/lib/properties'
+import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty, togglePropertyFlag } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
 import { formatPhoneForWhatsApp } from '@/lib/phone'
 import StarRating from './StarRating'
@@ -19,6 +19,7 @@ interface PropertyDetailModalProps {
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
   onPropertyUpdate?: (updatedProperty: Property) => void
   onRatingUpdate?: (propertyId: string, rating: number) => void
+  onFlagToggle?: (propertyId: string, isFlagged: boolean) => void
   onDataRefresh?: () => void
   onNotesChanged?: () => void
   onNotesDelta?: (propertyId: string, delta: number) => void
@@ -32,6 +33,7 @@ export default function PropertyDetailModal({
   onStatusUpdate,
   onPropertyUpdate,
   onRatingUpdate,
+  onFlagToggle,
   onDataRefresh,
   onNotesChanged,
   onNotesDelta
@@ -648,8 +650,12 @@ export default function PropertyDetailModal({
         onClick={onClose}
       >
         <div
-          className={`bg-white md:rounded-lg md:shadow-2xl md:border md:border-slate-200 w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in relative ${
+          className={`md:rounded-lg md:shadow-2xl md:border w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in relative ${
             isDragging ? 'ring-4 ring-primary ring-offset-2' : ''
+          } ${
+            property.is_flagged 
+              ? 'bg-amber-50 md:border-amber-300' 
+              : 'bg-white md:border-slate-200'
           }`}
           onClick={(e) => e.stopPropagation()}
           onDragOver={handleDragOver}
@@ -672,6 +678,34 @@ export default function PropertyDetailModal({
           <div className="relative bg-gradient-to-r from-[oklch(0.4_0.22_280)] to-[oklch(0.5_0.22_280)] px-4 py-4 md:px-10 md:py-6">
             {/* Action Buttons - Top Right Corner */}
             <div className="absolute top-4 right-4 md:top-6 md:right-10 flex items-center space-x-2 z-10">
+              {/* Flag Button */}
+              <button
+                onClick={async () => {
+                  try {
+                    const newFlagState = !property.is_flagged
+                    if (onFlagToggle) {
+                      await onFlagToggle(property.id, newFlagState)
+                    } else {
+                      await togglePropertyFlag(property.id, newFlagState)
+                      if (onPropertyUpdate) {
+                        const updated = await updateProperty(property.id, { is_flagged: newFlagState })
+                        onPropertyUpdate(updated)
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error toggling flag:', error)
+                    alert('Error updating flag. Please try again.')
+                  }
+                }}
+                className={`p-2 text-white hover:bg-white/20 rounded-lg transition-all ${
+                  property.is_flagged ? 'bg-white/30' : ''
+                }`}
+                title={property.is_flagged ? 'Unflag property' : 'Flag property'}
+              >
+                <svg className="w-6 h-6 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3 3h2v18H3V3zm3 2h12l-2 4 2 4H6V5z"/>
+                </svg>
+              </button>
               {/* Copy URL Button */}
               <button
                 onClick={handleCopyUrl}

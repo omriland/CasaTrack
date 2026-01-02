@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { isAuthenticated, clearAuth } from '@/lib/auth'
-import { getProperties, createProperty, updateProperty, deleteProperty, updatePropertyStatus, updatePropertyRating } from '@/lib/properties'
+import { getProperties, createProperty, updateProperty, deleteProperty, updatePropertyStatus, updatePropertyRating, togglePropertyFlag } from '@/lib/properties'
 import { Property, PropertyInsert } from '@/types/property'
 import LoginForm from '@/components/LoginForm'
 import PropertyForm from '@/components/PropertyForm'
@@ -225,6 +225,20 @@ export default function HomeContent() {
       } else {
         alert(`Error updating rating: ${errorMessage}`)
       }
+    }
+  }
+
+  const handleFlagToggle = async (propertyId: string, isFlagged: boolean) => {
+    try {
+      const updatedProperty = await togglePropertyFlag(propertyId, isFlagged)
+      setProperties(prev => prev.map(p => p.id === propertyId ? updatedProperty : p))
+      // Update the selected property if it's the one being updated
+      if (selectedProperty && selectedProperty.id === propertyId) {
+        setSelectedProperty(updatedProperty)
+      }
+    } catch (error) {
+      console.error('Error toggling flag:', error)
+      alert('Error updating flag. Please try again.')
     }
   }
 
@@ -503,6 +517,7 @@ export default function HomeContent() {
                       onDelete={handleDeleteProperty}
                       onViewNotes={handleViewNotes}
                       onStatusUpdate={handleUpdatePropertyStatus}
+                      onFlagToggle={handleFlagToggle}
                       notesRefreshKey={notesRefreshKey}
                       notesBump={notesBump}
                     />
@@ -553,6 +568,7 @@ export default function HomeContent() {
                           onViewNotes={handleViewNotes}
                           onStatusUpdate={handleUpdatePropertyStatus}
                           onRatingUpdate={handleRatingUpdate}
+                          onFlagToggle={handleFlagToggle}
                           notesRefreshKey={notesRefreshKey}
                           notesBump={notesBump}
                         />
@@ -627,6 +643,7 @@ export default function HomeContent() {
           onStatusUpdate={handleUpdatePropertyStatus}
           onPropertyUpdate={handlePropertyUpdate}
           onRatingUpdate={handleRatingUpdate}
+          onFlagToggle={handleFlagToggle}
           onDataRefresh={loadProperties}
           onNotesChanged={handleNotesChanged}
           onNotesDelta={handleNotesDelta}
