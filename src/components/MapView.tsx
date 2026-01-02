@@ -1026,7 +1026,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
       )}
 
       {/* Map Controls */}
-      <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
+      <div className="absolute top-[36px] right-4 flex flex-col gap-2 items-end">
         {isMobile ? (
           <>
             <button
@@ -1103,7 +1103,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
 
       {/* Property Count Display */}
       {propertiesWithCoords.length > 0 && (
-        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-3">
+        <div className="absolute bottom-[36px] left-4 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-slate-200/50 p-3">
           <div className="flex items-center space-x-2 text-sm">
             <div className="w-4 h-4 bg-primary rounded-full"></div>
             <span className="text-slate-600">
