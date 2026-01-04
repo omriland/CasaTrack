@@ -30,8 +30,7 @@ A modern, single-user web application for managing the home-purchasing process. 
 - **Backend**: Supabase (PostgreSQL + Storage + Real-time)
 - **State Management**: TanStack Query (React Query)
 - **Maps**: Google Maps API with Places integration
-- **Testing**: Vitest + React Testing Library + Playwright
-- **Code Quality**: ESLint + Prettier + Husky
+- **Code Quality**: ESLint + Prettier
 
 ## Getting Started
 
@@ -107,11 +106,6 @@ src/
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check code formatting
-- `npm run test` - Run unit tests with Vitest
-- `npm run test:ui` - Run tests with UI
-- `npm run test:coverage` - Run tests with coverage
-- `npm run test:e2e` - Run E2E tests with Playwright
-- `npm run test:e2e:ui` - Run E2E tests with UI
 
 ## Architecture
 
@@ -142,28 +136,7 @@ src/
 - **Zod Validation**: Runtime validation for API inputs
 - **Type Generation**: Type-safe API responses
 
-## Testing
-
-### Unit Tests
-Tests are located in `src/__tests__/` and use Vitest + React Testing Library.
-
-```bash
-npm run test
-```
-
-### E2E Tests
-E2E tests are located in `e2e/` and use Playwright.
-
-```bash
-npm run test:e2e
-```
-
 ## Code Quality
-
-### Pre-commit Hooks
-Husky runs lint-staged before each commit to:
-- Run ESLint on staged files
-- Format code with Prettier
 
 ### Code Formatting
 Prettier is configured to maintain consistent code style.

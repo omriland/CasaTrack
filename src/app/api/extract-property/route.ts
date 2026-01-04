@@ -206,7 +206,7 @@ Your objective is: Extract property details from a Yad2 listing screenshot/image
   ]
 }
 
-function buildMessages(url: string, pageText: string) {
+function buildMessages(_url: string, pageText: string) {
   return [
     {
       role: "system",

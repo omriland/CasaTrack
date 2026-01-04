@@ -55,7 +55,6 @@ Thank you for your interest in contributing to CasaTrack! This document provides
 
 2. **Make your changes**
    - Write clean, readable code
-   - Add tests for new features
    - Update documentation as needed
 
 3. **Commit your changes**
@@ -69,7 +68,6 @@ Thank you for your interest in contributing to CasaTrack! This document provides
    - `docs:` for documentation changes
    - `style:` for formatting changes
    - `refactor:` for code refactoring
-   - `test:` for test additions/changes
    - `chore:` for maintenance tasks
 
 4. **Push your changes**
@@ -80,18 +78,6 @@ Thank you for your interest in contributing to CasaTrack! This document provides
 5. **Open a Pull Request**
    - Provide a clear description of your changes
    - Reference any related issues
-   - Ensure all tests pass
-
-## Testing
-
-### Unit Tests
-- Write tests for new features
-- Maintain >70% test coverage
-- Use descriptive test names
-
-### E2E Tests
-- Add E2E tests for critical user flows
-- Test on multiple browsers
 
 ## Code Review Process
 
