@@ -2,7 +2,7 @@
  * API response types and utilities
  */
 
-import { Property, PropertyInsert, Note, Attachment } from './property'
+import { Property, Note, Attachment } from './property'
 
 export interface ApiResponse<T> {
   data?: T

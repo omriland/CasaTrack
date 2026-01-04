@@ -3,12 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  getPropertyNotes,
-  createNote,
-  updateNote,
-  deleteNote,
-} from '@/services/noteService'
+import { getPropertyNotes, createNote, updateNote, deleteNote } from '@/services/noteService'
 import { useToast } from '@/components/ui/Toast'
 import { useErrorHandler } from '@/hooks/common/useErrorHandler'
 
@@ -45,7 +40,7 @@ export function useCreateNote() {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.list(variables.propertyId) })
       toast.success('Note created successfully')
     },
-    onError: (error) => {
+    onError: error => {
       handleError(error)
       toast.error('Failed to create note')
     },
@@ -61,16 +56,15 @@ export function useUpdateNote() {
   const { handleError } = useErrorHandler()
 
   return useMutation({
-    mutationFn: ({ id, content }: { id: string; content: string }) =>
-      updateNote(id, content),
-    onSuccess: (updatedNote) => {
+    mutationFn: ({ id, content }: { id: string; content: string }) => updateNote(id, content),
+    onSuccess: updatedNote => {
       // Invalidate notes for this property
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.list(updatedNote.property_id),
       })
       toast.success('Note updated successfully')
     },
-    onError: (error) => {
+    onError: error => {
       handleError(error)
       toast.error('Failed to update note')
     },
@@ -87,12 +81,12 @@ export function useDeleteNote() {
 
   return useMutation({
     mutationFn: deleteNote,
-    onSuccess: (_, deletedId) => {
+    onSuccess: () => {
       // Invalidate all notes lists (we don't know which property it belonged to)
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() })
       toast.success('Note deleted successfully')
     },
-    onError: (error) => {
+    onError: error => {
       handleError(error)
       toast.error('Failed to delete note')
     },

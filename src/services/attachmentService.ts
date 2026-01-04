@@ -32,11 +32,7 @@ export async function getPropertyAttachments(propertyId: string): Promise<Attach
  * Get a single attachment by ID
  */
 export async function getAttachment(id: string): Promise<Attachment> {
-  const { data, error } = await supabase
-    .from('attachments')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data, error } = await supabase.from('attachments').select('*').eq('id', id).single()
 
   if (error) {
     if (error.code === 'PGRST116') {
@@ -62,19 +58,17 @@ export async function uploadAttachment(
 ): Promise<Attachment> {
   // Validate file size
   if (file.size > MAX_FILE_SIZE) {
-    throw new ValidationError(
-      `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`
-    )
+    throw new ValidationError(`File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`)
   }
 
   // Validate file type
   const fileType = file.type.startsWith('image/')
     ? 'image'
     : file.type.startsWith('video/')
-    ? 'video'
-    : file.type === 'application/pdf'
-    ? 'pdf'
-    : null
+      ? 'video'
+      : file.type === 'application/pdf'
+        ? 'pdf'
+        : null
 
   if (!fileType) {
     throw new ValidationError('File must be an image, video, or PDF')
@@ -123,8 +117,8 @@ export async function uploadAttachment(
 
   await uploadPromise
 
-  // Get public URL
-  const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath)
+  // Note: Public URL is available via getAttachmentUrl() function
+  // We don't need to store it here since we have the file_path
 
   // Insert attachment record
   const attachmentData: AttachmentInsert = {

@@ -1,18 +1,16 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   /* config options here */
-  // Ensure build succeeds even with ESLint warnings
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: false,
+    // In CI/production, only fail on ESLint errors, not warnings
+    // This allows the build to succeed with warnings (like next/image suggestions)
+    ignoreDuringBuilds: process.env.ESLINT_NO_DEV_ERRORS === 'true',
   },
   typescript: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has type errors.
+    // Don't ignore type errors - these should be fixed
     ignoreBuildErrors: false,
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

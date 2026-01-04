@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { getErrorMessage, logError, AppError } from '@/lib/errors'
+import { getErrorMessage, logError } from '@/lib/errors'
 
 interface UseErrorHandlerOptions {
   onError?: (message: string) => void
@@ -13,10 +13,10 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
   const handleError = useCallback(
     (error: unknown, context?: Record<string, unknown>) => {
       const message = getErrorMessage(error)
-      
+
       // Log error for debugging
       logError(error, context)
-      
+
       // Call custom error handler if provided
       if (options.onError) {
         options.onError(message)
@@ -36,7 +36,7 @@ export function useErrorHandler(options: UseErrorHandlerOptions = {}) {
 /**
  * Wrapper for async functions with error handling
  */
-export function withErrorHandler<T extends (...args: any[]) => Promise<any>>(
+export function withErrorHandler<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   errorHandler: (error: unknown) => void
 ): T {

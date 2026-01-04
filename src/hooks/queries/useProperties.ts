@@ -56,12 +56,12 @@ export function useCreateProperty() {
 
   return useMutation({
     mutationFn: createProperty,
-    onSuccess: (newProperty) => {
+    onSuccess: () => {
       // Invalidate and refetch properties list
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() })
       toast.success('Property created successfully')
     },
-    onError: (error) => {
+    onError: error => {
       handleError(error)
       toast.error('Failed to create property')
     },
@@ -79,13 +79,13 @@ export function useUpdateProperty() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<PropertyInsert> }) =>
       updateProperty(id, updates),
-    onSuccess: (updatedProperty) => {
+    onSuccess: updatedProperty => {
       // Update cache for both list and detail
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() })
       queryClient.setQueryData(QUERY_KEYS.detail(updatedProperty.id), updatedProperty)
       toast.success('Property updated successfully')
     },
-    onError: (error) => {
+    onError: error => {
       handleError(error)
       toast.error('Failed to update property')
     },
@@ -108,7 +108,7 @@ export function useDeleteProperty() {
       queryClient.removeQueries({ queryKey: QUERY_KEYS.detail(deletedId) })
       toast.success('Property deleted successfully')
     },
-    onError: (error) => {
+    onError: error => {
       handleError(error)
       toast.error('Failed to delete property')
     },
@@ -125,7 +125,7 @@ export function useUpdatePropertyStatus() {
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: Property['status'] }) =>
       updatePropertyStatus(id, status),
-    onSuccess: (updatedProperty) => {
+    onSuccess: updatedProperty => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() })
       queryClient.setQueryData(QUERY_KEYS.detail(updatedProperty.id), updatedProperty)
     },
@@ -145,7 +145,7 @@ export function useUpdatePropertyRating() {
   return useMutation({
     mutationFn: ({ id, rating }: { id: string; rating: number }) =>
       updatePropertyRating(id, rating),
-    onSuccess: (updatedProperty) => {
+    onSuccess: updatedProperty => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() })
       queryClient.setQueryData(QUERY_KEYS.detail(updatedProperty.id), updatedProperty)
     },
@@ -165,7 +165,7 @@ export function useTogglePropertyFlag() {
   return useMutation({
     mutationFn: ({ id, isFlagged }: { id: string; isFlagged: boolean }) =>
       togglePropertyFlag(id, isFlagged),
-    onSuccess: (updatedProperty) => {
+    onSuccess: updatedProperty => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.lists() })
       queryClient.setQueryData(QUERY_KEYS.detail(updatedProperty.id), updatedProperty)
     },

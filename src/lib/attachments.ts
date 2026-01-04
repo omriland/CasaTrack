@@ -17,10 +17,13 @@ export async function uploadAttachment(
   }
 
   // Validate file type
-  const fileType = file.type.startsWith('image/') ? 'image' 
-    : file.type.startsWith('video/') ? 'video' 
-    : file.type === 'application/pdf' ? 'pdf' 
-    : null
+  const fileType = file.type.startsWith('image/')
+    ? 'image'
+    : file.type.startsWith('video/')
+      ? 'video'
+      : file.type === 'application/pdf'
+        ? 'pdf'
+        : null
   if (!fileType) {
     throw new Error('File must be an image, video, or PDF')
   }
@@ -35,11 +38,11 @@ export async function uploadAttachment(
   // RLS policies on the storage bucket allow public access
   const uploadPromise = new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
-    
+
     // Get the upload URL
     const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${BUCKET_NAME}/${filePath}`
-    
-    xhr.upload.addEventListener('progress', (e) => {
+
+    xhr.upload.addEventListener('progress', e => {
       if (e.lengthComputable && onProgress) {
         const percentComplete = Math.round((e.loaded / e.total) * 100)
         onProgress(percentComplete)
@@ -72,10 +75,8 @@ export async function uploadAttachment(
 
   await uploadPromise
 
-  // Get public URL
-  const { data: urlData } = supabase.storage
-    .from(BUCKET_NAME)
-    .getPublicUrl(filePath)
+  // Note: Public URL is available via getAttachmentUrl() function
+  // We don't need to store it here since we have the file_path
 
   // Insert attachment record
   const attachmentData: AttachmentInsert = {
@@ -84,7 +85,7 @@ export async function uploadAttachment(
     file_path: filePath,
     file_type: fileType,
     file_size: file.size,
-    mime_type: file.type
+    mime_type: file.type,
   }
 
   const { data, error } = await supabase
@@ -136,18 +137,21 @@ export async function deleteAttachment(attachmentId: string): Promise<void> {
 
   if (storageError) {
     // Check if it's an RLS/policy error
-    if (storageError.message.includes('policy') || storageError.message.includes('permission') || storageError.message.includes('RLS')) {
-      throw new Error(`Delete denied by security policy. Please ensure RLS policies are set up correctly. Error: ${storageError.message}`)
+    if (
+      storageError.message.includes('policy') ||
+      storageError.message.includes('permission') ||
+      storageError.message.includes('RLS')
+    ) {
+      throw new Error(
+        `Delete denied by security policy. Please ensure RLS policies are set up correctly. Error: ${storageError.message}`
+      )
     }
     console.error('Failed to delete file from storage:', storageError)
     // Continue with database deletion even if storage deletion fails
   }
 
   // Delete from database
-  const { error: deleteError } = await supabase
-    .from('attachments')
-    .delete()
-    .eq('id', attachmentId)
+  const { error: deleteError } = await supabase.from('attachments').delete().eq('id', attachmentId)
 
   if (deleteError) {
     throw new Error(`Failed to delete attachment: ${deleteError.message}`)
@@ -156,19 +160,16 @@ export async function deleteAttachment(attachmentId: string): Promise<void> {
 
 /**
  * Get the URL for an attachment file
- * 
+ *
  * Note: This uses public URLs. RLS policies control access at the storage level.
  * If you set the bucket to private, you'll need to use signed URLs instead.
- * 
+ *
  * For private buckets, you would need to:
  * 1. Change this function to async
  * 2. Use: const { data, error } = await supabase.storage.from(BUCKET_NAME).createSignedUrl(filePath, 3600)
  * 3. Update all call sites to handle async URLs
  */
 export function getAttachmentUrl(filePath: string): string {
-  const { data } = supabase.storage
-    .from(BUCKET_NAME)
-    .getPublicUrl(filePath)
+  const { data } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath)
   return data.publicUrl
 }
-

@@ -66,10 +66,7 @@ export function Select({
   return (
     <div className={cn('flex flex-col', fullWidth && 'w-full', className)}>
       {label && (
-        <label
-          htmlFor={selectId}
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor={selectId} className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
@@ -83,33 +80,23 @@ export function Select({
             'w-full px-4 py-2 text-left bg-white border rounded-lg',
             'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
             'disabled:bg-gray-100 disabled:cursor-not-allowed',
-            error
-              ? 'border-red-500 focus:ring-red-500'
-              : 'border-gray-300 focus:ring-primary',
+            error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-primary',
             'flex items-center justify-between'
           )}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? `${selectId}-error` : undefined}
         >
           <span className={cn(!selectedOption && 'text-gray-500')}>
             {selectedOption ? selectedOption.label : placeholder}
           </span>
           <svg
-            className={cn(
-              'w-5 h-5 text-gray-400 transition-transform',
-              isOpen && 'rotate-180'
-            )}
+            className={cn('w-5 h-5 text-gray-400 transition-transform', isOpen && 'rotate-180')}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </button>
 
@@ -145,9 +132,7 @@ export function Select({
           {error}
         </p>
       )}
-      {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">{helperText}</p>
-      )}
+      {helperText && !error && <p className="mt-1 text-sm text-gray-500">{helperText}</p>}
     </div>
   )
 }

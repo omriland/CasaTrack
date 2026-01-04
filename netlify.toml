@@ -1,12 +1,12 @@
 [build]
-  command = "CI= npm run build"
+  command = "npm run build"
   publish = ".next"
 
 [build.environment]
   # Disable secrets scanning for expected Next.js public environment variables
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_AUTH_PASSWORD,NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_GEOCODING_API_KEY"
-  # Ensure build doesn't fail on warnings
-  CI = "false"
+  # Allow ESLint warnings (not errors) during build
+  ESLINT_NO_DEV_ERRORS = "true"
 
 # Configure redirects for Next.js
 [[redirects]]

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -11,11 +11,7 @@ export interface Toast {
   duration?: number
 }
 
-interface ToastContextValue {
-  toasts: Toast[]
-  showToast: (message: string, type?: ToastType, duration?: number) => void
-  removeToast: (id: string) => void
-}
+// ToastContextValue interface removed - using global state instead
 
 // Simple toast implementation using React state
 // For production, consider using a library like react-hot-toast or sonner
@@ -29,16 +25,16 @@ function notifyListeners(): void {
 function addToast(message: string, type: ToastType = 'info', duration = 5000): string {
   const id = Math.random().toString(36).substring(7)
   const toast: Toast = { id, message, type, duration }
-  
+
   toastQueue.push(toast)
   notifyListeners()
-  
+
   if (duration > 0) {
     setTimeout(() => {
       removeToast(id)
     }, duration)
   }
-  
+
   return id
 }
 
@@ -66,10 +62,10 @@ export function ToastContainer() {
     const listener = (newToasts: Toast[]) => {
       setToasts(newToasts)
     }
-    
+
     toastListeners.push(listener)
     setToasts([...toastQueue])
-    
+
     return () => {
       toastListeners = toastListeners.filter(l => l !== listener)
     }
@@ -89,10 +85,10 @@ export function ToastContainer() {
               toast.type === 'success'
                 ? 'bg-green-50 border border-green-200 text-green-900'
                 : toast.type === 'error'
-                ? 'bg-red-50 border border-red-200 text-red-900'
-                : toast.type === 'warning'
-                ? 'bg-yellow-50 border border-yellow-200 text-yellow-900'
-                : 'bg-blue-50 border border-blue-200 text-blue-900'
+                  ? 'bg-red-50 border border-red-200 text-red-900'
+                  : toast.type === 'warning'
+                    ? 'bg-yellow-50 border border-yellow-200 text-yellow-900'
+                    : 'bg-blue-50 border border-blue-200 text-blue-900'
             }
           `}
         >
