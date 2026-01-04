@@ -1,36 +1,214 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CasaTrack
+
+A modern, single-user web application for managing the home-purchasing process. Track properties of interest, manage notes, attachments, and visualize them through multiple views (Cards, Kanban, and Map).
+
+## Features
+
+### Core Features
+- **Property Management**: Full CRUD operations for properties
+- **Status Tracking**: 7 statuses with visual indicators
+- **Notes System**: Timestamped notes with full CRUD
+- **Attachments**: Image, video, and PDF file uploads
+- **Multiple Views**: Cards, Kanban board, and Map view
+- **Google Maps Integration**: Interactive map with custom markers
+- **Address Autocomplete**: Google Places API integration
+- **WhatsApp Integration**: Direct messaging with Israeli number formatting
+- **Star Ratings**: 0-5 star rating system for properties
+
+### Technical Features
+- **Modern Stack**: Next.js 15, React 19, TypeScript, Tailwind CSS 4
+- **Database**: Supabase PostgreSQL with real-time capabilities
+- **State Management**: React Query (TanStack Query) for server state
+- **Error Handling**: Comprehensive error boundaries and toast notifications
+- **Type Safety**: Strict TypeScript with Zod validation
+- **Testing**: Vitest for unit tests, Playwright for E2E tests
+- **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS 4
+- **Backend**: Supabase (PostgreSQL + Storage + Real-time)
+- **State Management**: TanStack Query (React Query)
+- **Maps**: Google Maps API with Places integration
+- **Testing**: Vitest + React Testing Library + Playwright
+- **Code Quality**: ESLint + Prettier + Husky
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js >=20 <21
+- npm or yarn
+- Supabase account
+- Google Maps API key
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
+cd CasaTrack
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+Create a `.env.local` file in the root directory:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+NEXT_PUBLIC_AUTH_PASSWORD=your_password
+OPENAI_API_KEY=your_openai_api_key  # Optional: for property extraction
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Set up the database:
+Run the SQL schema from `supabase-schema.sql` in your Supabase SQL editor.
 
-## Learn More
+5. Set up storage:
+Follow instructions in `setup-storage-bucket.md` to configure Supabase Storage.
 
-To learn more about Next.js, take a look at the following resources:
+6. Run the development server:
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/                    # Next.js app router
+│   ├── api/               # API routes
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Home page
+├── components/            # React components
+│   ├── ui/                # Shared UI components
+│   └── ...                # Feature components
+├── hooks/                  # Custom React hooks
+│   ├── common/            # Common reusable hooks
+│   └── queries/           # React Query hooks
+├── services/              # API/service layer
+├── lib/                   # Utilities and helpers
+├── types/                 # TypeScript types
+├── utils/                 # Pure utility functions
+└── providers/             # React context providers
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Available Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
+- `npm run test` - Run unit tests with Vitest
+- `npm run test:ui` - Run tests with UI
+- `npm run test:coverage` - Run tests with coverage
+- `npm run test:e2e` - Run E2E tests with Playwright
+- `npm run test:e2e:ui` - Run E2E tests with UI
+
+## Architecture
+
+### Code Organization
+
+- **Services Layer**: Abstract API calls (`src/services/`)
+- **Hooks**: Reusable React hooks (`src/hooks/`)
+- **Components**: UI components organized by feature (`src/components/`)
+- **Types**: TypeScript type definitions (`src/types/`)
+- **Utils**: Pure utility functions (`src/utils/`)
+
+### State Management
+
+- **Server State**: React Query for data fetching and caching
+- **Client State**: React useState for local component state
+- **UI State**: Context API for shared UI state (modals, theme)
+
+### Error Handling
+
+- **Error Boundaries**: Catch React component errors
+- **Error Types**: Custom error classes for different error types
+- **Toast Notifications**: User-friendly error messages
+- **Error Logging**: Centralized error logging (ready for production monitoring)
+
+### Type Safety
+
+- **Strict TypeScript**: Enabled with strict null checks
+- **Zod Validation**: Runtime validation for API inputs
+- **Type Generation**: Type-safe API responses
+
+## Testing
+
+### Unit Tests
+Tests are located in `src/__tests__/` and use Vitest + React Testing Library.
+
+```bash
+npm run test
+```
+
+### E2E Tests
+E2E tests are located in `e2e/` and use Playwright.
+
+```bash
+npm run test:e2e
+```
+
+## Code Quality
+
+### Pre-commit Hooks
+Husky runs lint-staged before each commit to:
+- Run ESLint on staged files
+- Format code with Prettier
+
+### Code Formatting
+Prettier is configured to maintain consistent code style.
+
+```bash
+npm run format
+```
+
+## Database Schema
+
+### Properties Table
+- Core fields: id, title, address, rooms, square_meters, asked_price
+- Optional fields: balcony_square_meters, description, url, contact info
+- Computed: price_per_meter (auto-calculated with 50% balcony rule)
+- Status: ENUM with 7 statuses
+- Coordinates: latitude, longitude for map display
+
+### Notes Table
+- Fields: id, property_id (FK), content, created_at
+- Cascade delete with properties
+
+### Attachments Table
+- Fields: id, property_id (FK), file_name, file_path, file_type, file_size
+- Storage: Supabase Storage buckets
+
+## Authentication
+
+Simple password-based authentication for single-user access. Password is configured via `NEXT_PUBLIC_AUTH_PASSWORD` environment variable.
+
+## Deployment
+
+See `DEPLOYMENT.md` for deployment instructions.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is private and for personal use only.
+
+## Support
+
+For issues and questions, please open an issue in the repository.

@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Varela_Round, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
+import { QueryProvider } from "@/providers/QueryProvider";
+import { ToastContainer } from "@/components/ui/Toast";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const varelaRound = Varela_Round({
   variable: "--font-varela-round",
@@ -54,7 +57,12 @@ export default function RootLayout({
             strategy="beforeInteractive"
           />
         )}
-        {children}
+        <ErrorBoundary>
+          <QueryProvider>
+            {children}
+            <ToastContainer />
+          </QueryProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
