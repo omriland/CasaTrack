@@ -32,7 +32,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
     bicycle: false,
     schools: false
   })
-  const [zoomLevel, setZoomLevel] = useState<number>(10)
+  const [, setZoomLevel] = useState<number>(10)
   const [isMobile, setIsMobile] = useState(false)
   const [isLayerDrawerOpen, setIsLayerDrawerOpen] = useState(false)
   const [draggingPropertyId, setDraggingPropertyId] = useState<string | null>(null)
@@ -124,6 +124,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
 
     if (typeof google !== 'undefined' && google.maps) {
       initializeMap()
+      return undefined
     } else {
       // Wait for Google Maps to load
       const handleGoogleMapsLoad = () => {
@@ -132,6 +133,7 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
 
       if ((window as typeof window & { googleMapsLoaded?: boolean }).googleMapsLoaded) {
         initializeMap()
+        return undefined
       } else {
         window.addEventListener('google-maps-loaded', handleGoogleMapsLoad)
 

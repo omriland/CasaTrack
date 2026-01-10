@@ -40,7 +40,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
   }
 
   const ffmpegRef = useRef<FFmpeg | null>(null)
-  const [ffmpegLoading, setFfmpegLoading] = useState(false)
+  const [, setFfmpegLoading] = useState(false)
 
   const loadFFmpeg = async () => {
     if (ffmpegRef.current) return ffmpegRef.current

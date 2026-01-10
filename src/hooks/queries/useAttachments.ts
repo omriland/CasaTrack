@@ -46,7 +46,7 @@ export function useUploadAttachment() {
       file: File
       onProgress?: (progress: number) => void
     }) => uploadAttachment(propertyId, file, onProgress),
-    onSuccess: (attachment, variables) => {
+    onSuccess: (_attachment, variables) => {
       // Invalidate attachments for this property
       queryClient.invalidateQueries({
         queryKey: QUERY_KEYS.list(variables.propertyId),

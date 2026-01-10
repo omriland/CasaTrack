@@ -90,10 +90,3 @@ function updateMetaTag(property: string, content: string) {
   }
 }
 
-function removeMetaTag(property: string) {
-  if (typeof document === 'undefined') return
-  const element = document.querySelector(`meta[property="${property}"]`)
-  if (element) {
-    element.remove()
-  }
-}

@@ -10,7 +10,6 @@ import StarRating from './StarRating'
 
 interface PropertyCardProps {
   property: Property
-  onEdit: (property: Property) => void
   onDelete: (id: string) => void
   onViewNotes: (property: Property) => void
   onStatusUpdate?: (propertyId: string, newStatus: PropertyStatus) => void
@@ -20,11 +19,11 @@ interface PropertyCardProps {
   notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, onStatusUpdate, onRatingUpdate, onFlagToggle, notesRefreshKey, notesBump }: PropertyCardProps) {
+export default function PropertyCard({ property, onDelete, onViewNotes, onStatusUpdate, onRatingUpdate, onFlagToggle, notesRefreshKey, notesBump }: PropertyCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [notesCount, setNotesCount] = useState<number>(0)
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
-  const [copiedPhone, setCopiedPhone] = useState(false)
+  const [_setCopiedPhone] = useState(false)
   const [showNotesPreview, setShowNotesPreview] = useState(false)
   const [previewNotes, setPreviewNotes] = useState<Note[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
@@ -37,7 +36,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
   const [localSquareMeters, setLocalSquareMeters] = useState<number | null>(property.square_meters)
   const roomsPickerRef = useRef<HTMLDivElement>(null)
   const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [attachmentsLoading, setAttachmentsLoading] = useState(false)
+  const [, setAttachmentsLoading] = useState(false)
   const [selectedAttachmentIndex, setSelectedAttachmentIndex] = useState<number | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
@@ -105,6 +104,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
       document.addEventListener('mousedown', handleOutside)
       return () => document.removeEventListener('mousedown', handleOutside)
     }
+    return undefined
   }, [inlineEditing])
 
   // Handle click outside for status dropdown
@@ -187,18 +187,6 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     return rtf.format(years, 'year')
   }
 
-  const getStatusColor = (status: Property['status']) => {
-    const colors = {
-      'Seen': 'bg-gray-100 text-gray-700 border-gray-200',
-      'Interested': 'bg-emerald-100 text-emerald-800 border-emerald-400 font-semibold',
-      'Contacted Realtor': 'bg-blue-50 text-blue-700 border-blue-200',
-      'Visited': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-      'On Hold': 'bg-orange-100 text-orange-700 border-orange-200',
-      'Irrelevant': 'bg-red-50 text-red-700 border-red-200',
-      'Purchased': 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    }
-    return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200'
-  }
 
   const handleStatusChange = async (newStatus: PropertyStatus) => {
     try {
@@ -231,17 +219,6 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     }
   }
 
-  const handleCopyPhone = async () => {
-    if (!property.contact_phone) return
-
-    try {
-      await navigator.clipboard.writeText(property.contact_phone)
-      setCopiedPhone(true)
-      setTimeout(() => setCopiedPhone(false), 2000)
-    } catch (error) {
-      console.error('Failed to copy phone number:', error)
-    }
-  }
 
   const handleNotesHover = async () => {
     if (notesCount === 0) return
@@ -376,7 +353,7 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
     }
   }
 
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = (_e: React.MouseEvent) => {
     // Don't trigger if user is selecting text
     if (window.getSelection()?.toString()) return
 
@@ -433,15 +410,8 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
             </h3>
           </div>
 
-          {/* Rating and Status badges - top right */}
-          <div className="relative flex-shrink-0 flex items-center gap-2">
-            <StarRating
-              rating={property.rating}
-              onRatingChange={(rating) => onRatingUpdate?.(property.id, rating)}
-              size="sm"
-              interactive={true}
-            />
-            <div className="relative">
+          {/* Status badge - top right (stars hidden on mobile) */}
+          <div className="relative flex-shrink-0">
             <button
               onClick={(e) => { e.stopPropagation(); setShowStatusDropdown(!showStatusDropdown) }}
               className={`px-2.5 py-1 rounded text-xs font-medium transition-all whitespace-nowrap relative ${isToContact
@@ -473,7 +443,6 @@ export default function PropertyCard({ property, onEdit, onDelete, onViewNotes, 
                 ))}
               </div>
             )}
-            </div>
           </div>
         </div>
 

@@ -28,7 +28,6 @@ export default function AddressAutocomplete({
   const [error, setError] = useState<string | null>(null)
   const lastKnownValue = useRef(value || '')
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
-  const fetchedForValueRef = useRef<string>('')
 
   useEffect(() => {
     const initializeAutocomplete = () => {

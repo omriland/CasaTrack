@@ -35,8 +35,8 @@ export default function PropertyDetailModal({
   onRatingUpdate,
   onFlagToggle,
   onDataRefresh,
-  onNotesChanged,
-  onNotesDelta
+  onNotesChanged: _onNotesChanged,
+  onNotesDelta: _onNotesDelta
 }: PropertyDetailModalProps) {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
@@ -368,7 +368,7 @@ export default function PropertyDetailModal({
         document.execCommand('copy')
         setCopiedUrl(true)
         setTimeout(() => setCopiedUrl(false), 2000)
-      } catch (err) {
+      } catch {
         alert('Failed to copy URL. Please copy manually: ' + url)
       }
       document.body.removeChild(textArea)
@@ -640,48 +640,6 @@ export default function PropertyDetailModal({
   const handleDescriptionCancel = () => {
     setEditingDescription(false)
     setTempDescription(property.description || '')
-  }
-
-  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Handle Cmd+B for bold
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-      e.preventDefault()
-      document.execCommand('bold', false)
-      // Update the temp description with the new HTML content
-      const element = e.currentTarget
-      setTempDescription(element.innerHTML)
-    }
-
-    // Handle Enter for line breaks
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      document.execCommand('insertHTML', false, '<br>')
-      // Update the temp description with the new HTML content
-      const element = e.currentTarget
-      setTempDescription(element.innerHTML)
-    }
-  }
-
-  const handleDescriptionInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    let content = element.innerHTML
-
-    // Remove placeholder content if it exists
-    if (content.includes('Add a description for this property')) {
-      content = ''
-      element.innerHTML = ''
-    }
-
-    setTempDescription(content)
-  }
-
-  const handleDescriptionFocus = (e: React.FocusEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    // Clear placeholder on focus
-    if (element.innerHTML.includes('Add a description for this property')) {
-      element.innerHTML = ''
-      setTempDescription('')
-    }
   }
 
   const handleNoteKeyDown = async (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1070,7 +1028,7 @@ export default function PropertyDetailModal({
                 </div>
                 {attachments.length > 0 ? (
                   <div className="grid grid-cols-4 gap-2">
-                    {attachments.slice(0, 4).map((attachment, index) => {
+                    {attachments.slice(0, 4).map((attachment, _index) => {
                       const url = getAttachmentUrl(attachment.file_path)
                       return (
                         <div

@@ -231,69 +231,6 @@ export default function PropertyForm({ property, onSubmit, onCancel, loading = f
     }))
   }
 
-  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Handle Cmd+B for bold
-    if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-      e.preventDefault()
-      document.execCommand('bold', false)
-      // Update form data with the new HTML content
-      const element = e.currentTarget
-      setFormData(prev => ({
-        ...prev,
-        description: element.innerHTML
-      }))
-    }
-    
-    // Handle Enter for line breaks
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      document.execCommand('insertHTML', false, '<br>')
-      // Update form data with the new HTML content
-      const element = e.currentTarget
-      setFormData(prev => ({
-        ...prev,
-        description: element.innerHTML
-      }))
-    }
-  }
-
-  const handleDescriptionInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    let content = element.innerHTML
-    
-    // Remove placeholder content if it exists
-    if (content.includes('Additional details about the property')) {
-      content = ''
-      element.innerHTML = ''
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      description: content
-    }))
-  }
-
-  // Ensure placeholder disappears before the first typed character is inserted
-  const handleDescriptionBeforeInput = (e: React.FormEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    if (element.innerHTML.includes('Additional details about the property')) {
-      element.innerHTML = ''
-      setFormData(prev => ({ ...prev, description: '' }))
-    }
-  }
-
-  const handleDescriptionFocus = (e: React.FocusEvent<HTMLDivElement>) => {
-    const element = e.currentTarget
-    // Clear placeholder on focus
-    if (element.innerHTML.includes('Additional details about the property')) {
-      element.innerHTML = ''
-      setFormData(prev => ({
-        ...prev,
-        description: ''
-      }))
-    }
-  }
-
   // Unified extraction handler
   const handleExtract = async () => {
     if (extractionMode === 'image' && !pastedImage) {

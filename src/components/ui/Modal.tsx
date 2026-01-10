@@ -33,7 +33,7 @@ export function Modal({
 }: ModalProps) {
   const modalRef = React.useRef<HTMLDivElement>(null)
 
-  useClickOutside(modalRef, () => {
+  useClickOutside<HTMLDivElement>(modalRef, () => {
     if (closeOnOverlayClick && isOpen) {
       onClose()
     }

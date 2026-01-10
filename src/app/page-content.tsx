@@ -513,7 +513,6 @@ export default function HomeContent() {
                   >
                     <PropertyCard
                       property={property}
-                      onEdit={handleEditProperty}
                       onDelete={handleDeleteProperty}
                       onViewNotes={handleViewNotes}
                       onStatusUpdate={handleUpdatePropertyStatus}
@@ -563,7 +562,6 @@ export default function HomeContent() {
                       >
                         <PropertyCard
                           property={property}
-                          onEdit={handleEditProperty}
                           onDelete={handleDeleteProperty}
                           onViewNotes={handleViewNotes}
                           onStatusUpdate={handleUpdatePropertyStatus}
