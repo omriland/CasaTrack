@@ -5,7 +5,7 @@ import imageCompression from 'browser-image-compression'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
-import { PROPERTY_STATUS_OPTIONS, getStatusLabel } from '@/constants/statuses'
+import { PROPERTY_STATUS_OPTIONS, getStatusLabel, getStatusColor } from '@/constants/statuses'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty, togglePropertyFlag } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
 import { formatPhoneForWhatsApp } from '@/lib/phone'
@@ -539,60 +539,13 @@ export default function PropertyDetailModal({
   const formatNoteDate = (dateString: string) => {
     const now = new Date()
     const noteDate = new Date(dateString)
-    const diffMs = now.getTime() - noteDate.getTime()
-    const diffMinutes = Math.floor(diffMs / (1000 * 60))
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const diffInSeconds = Math.floor((now.getTime() - noteDate.getTime()) / 1000)
 
-    // Less than a minute ago
-    if (diffMinutes < 1) {
-      return 'Just now'
-    }
-
-    // Less than an hour ago - show minutes
-    if (diffMinutes < 60) {
-      return `${diffMinutes} min ago`
-    }
-
-    // Less than 24 hours ago - show hours
-    if (diffHours < 24) {
-      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
-    }
-
-    // Yesterday
-    if (diffDays === 1) {
-      const timeStr = noteDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
-      return `Yesterday, ${timeStr}`
-    }
-
-    // Today (more than 24 hours but same calendar day)
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const noteDay = new Date(noteDate.getFullYear(), noteDate.getMonth(), noteDate.getDate())
-    if (today.getTime() === noteDay.getTime()) {
-      const timeStr = noteDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
-      return `Today, ${timeStr}`
-    }
-
-    // Within a couple of days (2-3 days)
-    if (diffDays <= 3) {
-      const timeStr = noteDate.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
-      return `${diffDays} days ago, ${timeStr}`
-    }
-
-    // Older than a couple of days - use full date format
-    return formatDate(dateString)
+    if (diffInSeconds < 60) return 'just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    return noteDate.toLocaleDateString()
   }
 
   const getRelativeTime = (dateString: string) => {
@@ -606,18 +559,6 @@ export default function PropertyDetailModal({
     return `${diffDays} days ago`
   }
 
-  const getStatusColor = (status: PropertyStatus) => {
-    const colors = {
-      'Seen': 'bg-slate-100 text-slate-700 border-slate-200',
-      'Interested': 'bg-emerald-100 text-emerald-800 border-emerald-400 font-semibold',
-      'Contacted Realtor': 'bg-blue-50 text-blue-700 border-blue-200',
-      'Visited': 'bg-indigo-100 text-indigo-800 border-indigo-300',
-      'On Hold': 'bg-orange-100 text-orange-700 border-orange-200',
-      'Irrelevant': 'bg-red-50 text-red-700 border-red-200',
-      'Purchased': 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    }
-    return colors[status] || 'bg-slate-100 text-slate-700 border-slate-200'
-  }
 
   const handleDescriptionEdit = () => {
     setEditingDescription(true)
@@ -674,12 +615,12 @@ export default function PropertyDetailModal({
       >
         <div
           data-property-modal
-          className={`md:rounded-lg md:shadow-2xl md:border w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in relative ${
-            isDragging ? 'ring-4 ring-primary ring-offset-2' : ''
+          className={`md:rounded-2xl md:shadow-2xl md:border w-full h-full md:h-auto md:max-w-5xl md:max-h-[85vh] overflow-hidden flex flex-col animate-fade-in relative ${
+            isDragging ? 'ring-4 ring-black ring-offset-2' : ''
           } ${
             property.is_flagged 
-              ? 'bg-amber-50 md:border-amber-300' 
-              : 'bg-white md:border-slate-200'
+              ? 'bg-[#FFFCF2] md:border-[#FEF3C7]' 
+              : 'bg-white md:border-[rgba(0,0,0,0.06)]'
           }`}
           onClick={(e) => e.stopPropagation()}
           onDragOver={handleDragOver}
@@ -698,10 +639,10 @@ export default function PropertyDetailModal({
               </div>
             </div>
           )}
-          {/* Header - Purple Gradient */}
-          <div className="relative bg-gradient-to-r from-[oklch(0.4_0.22_280)] to-[oklch(0.5_0.22_280)] px-4 py-4 md:px-10 md:py-6">
+          {/* Header - Black background matching mobile app */}
+          <div className="relative bg-black px-6 py-5">
             {/* Action Buttons - Top Right Corner */}
-            <div className="absolute top-4 right-4 md:top-6 md:right-10 flex items-center space-x-2 z-10">
+            <div className="absolute top-5 right-6 flex items-center gap-3 z-10">
               {/* Flag Button */}
               <button
                 onClick={async () => {
@@ -721,112 +662,105 @@ export default function PropertyDetailModal({
                     alert('Error updating flag. Please try again.')
                   }
                 }}
-                className={`p-2 text-white hover:bg-white/20 rounded-lg transition-all ${
-                  property.is_flagged ? 'bg-white/30' : ''
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${
+                  property.is_flagged ? 'bg-white/30' : 'bg-white/10 hover:bg-white/20'
                 }`}
                 title={property.is_flagged ? 'Unflag property' : 'Flag property'}
               >
-                <svg className="w-6 h-6 md:w-5 md:h-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4.5 h-4.5 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M3 3h2v18H3V3zm3 2h12l-2 4 2 4H6V5z"/>
                 </svg>
               </button>
-              {/* Copy URL Button */}
+              {/* Share Button */}
               <button
                 onClick={handleCopyUrl}
-                className={`p-2 text-white hover:bg-white/20 rounded-lg transition-all ${
-                  copiedUrl ? 'bg-white/30' : ''
+                className={`w-9 h-9 flex items-center justify-center rounded-full transition-all ${
+                  copiedUrl ? 'bg-white/30' : 'bg-white/10 hover:bg-white/20'
                 }`}
                 title={copiedUrl ? 'URL Copied!' : 'Copy shareable link'}
               >
                 {copiedUrl ? (
-                  <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
-                  <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                 )}
               </button>
               {/* Close Button */}
               <button
                 onClick={onClose}
-                className="p-2 text-white hover:bg-white/20 rounded-lg transition-all"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all"
                 title="Close"
               >
-                <svg className="w-6 h-6 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            <div className="flex flex-col space-y-2 md:space-y-3 pr-10">
+            <div className="flex flex-col space-y-3 pr-20">
               {/* Title */}
-              <h2 className="text-lg md:text-2xl font-bold text-white line-clamp-2 leading-tight">
-                {property.title}
+              <h2 className="text-[22px] font-extrabold text-white leading-tight" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                {property.title || 'Untitled Property'}
               </h2>
 
               {/* Location with pin icon */}
               <div className="flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <svg className="w-3 h-3 text-white/70 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <span className="text-sm text-white line-clamp-1" title={property.address}>
+                <span className="text-sm text-white/70 line-clamp-1" style={{ fontFamily: 'Varela Round, sans-serif' }}>
                   {property.address}
                 </span>
               </div>
+              </div>
 
-              {/* Status Button */}
-              <div className="relative inline-block" ref={statusDropdownRef}>
+            {/* Status Pill - Below header */}
+            <div className="relative mt-4 inline-block" ref={statusDropdownRef}>
                 <button
                   onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium transition-all relative ${property.status === 'Interested'
-                      ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)] status-highlight'
-                      : property.status === 'Contacted Realtor'
-                        ? 'bg-[oklch(0.6_0.22_280)] text-white hover:bg-[oklch(0.65_0.22_280)]'
-                        : 'bg-white/20 text-white hover:bg-white/30'
-                    }`}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-extrabold text-white transition-all"
+                style={{ 
+                  backgroundColor: getStatusColor(property.status),
+                  fontFamily: 'Varela Round, sans-serif'
+                }}
                 >
                   {getStatusLabel(property.status)}
-                  <svg className="w-3 h-3 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
                   </svg>
                 </button>
 
                 {showStatusDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fade-in">
+                <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50 animate-fade-in">
                     {PROPERTY_STATUS_OPTIONS.map((status) => (
                       <button
                         key={status.value}
                         onClick={() => handleStatusChange(status.value)}
-                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors flex items-center space-x-2 ${status.value === property.status ? 'bg-slate-50 font-medium' : ''
-                          }`}
-                      >
-                        <div className={`w-2 h-2 rounded-full ${getStatusColor(status.value).split(' ')[0].replace('bg-', 'bg-')}`}></div>
-                        <span>{status.label}</span>
-                        {status.value === property.status && (
-                          <svg className="w-3 h-3 ml-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors ${status.value === property.status ? 'bg-gray-50 font-semibold' : ''
+                        }`}
+                    >
+                      {status.label}
                       </button>
                     ))}
                   </div>
                 )}
-              </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto bg-gray-50 md:bg-white">
-            <div className="px-4 py-4 md:px-10 md:py-6 bg-white">
-              {/* Rating Section */}
-              <div className="mb-4 md:mb-6 p-4 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200">
+          <div className="flex-1 overflow-y-auto bg-white">
+            <div className="px-6 py-6">
+              {/* Rating Section - Card */}
+              <div className="mb-4 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-700 mb-1">Rating</h3>
-                    <p className="text-xs text-slate-500">Click stars to rate this property</p>
+                    <h3 className="text-[13px] font-bold text-[#4B5563] mb-1" style={{ fontFamily: 'Varela Round, sans-serif' }}>Rating</h3>
+                    <p className="text-[11px] text-[#9CA3AF]" style={{ fontFamily: 'Varela Round, sans-serif' }}>Click stars to rate this property</p>
                   </div>
                   <StarRating
                     rating={property.rating}
@@ -836,119 +770,108 @@ export default function PropertyDetailModal({
                   />
                 </div>
               </div>
-              {/* Asking Price Section - Mobile: Single Column, Desktop: 3 Columns */}
+              {/* Primary Specs - Asking Price Card */}
+              <div className="mb-4 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                <div className="text-[13px] font-bold text-[#4B5563] mb-1" style={{ fontFamily: 'Varela Round, sans-serif' }}>Asking Price</div>
               {property.asked_price !== null && property.asked_price !== 1 ? (
-                <div className="bg-gray-50 rounded-lg p-4 md:bg-gray-50 md:rounded md:p-6 mb-4 md:mb-6 pb-4 md:pb-6 border-b md:border md:border-gray-300 md:border-b border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                    {/* Price Column */}
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Asking Price</div>
-                      <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                        <span>{formatPrice(property.asked_price)}</span>₪
+                  <>
+                    <div className="text-2xl font-extrabold text-[#111827] mb-3" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                      {formatPrice(property.asked_price)} ₪
                       </div>
-                      <div className="text-sm text-gray-500 mb-1">
-                        {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? (
-                          <span>{formatPrice(Math.round(property.price_per_meter))}₪ per m²</span>
-                        ) : (
-                          'N/A'
-                        )}
+                    {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 && (
+                      <div className="text-sm font-semibold text-[#4B5563]" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                        {formatPrice(Math.round(property.price_per_meter))} ₪/m²
                       </div>
-                    </div>
-                    {/* Size Column */}
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Size</div>
-                      <div className="text-lg md:text-xl font-bold text-gray-900 mb-1">
-                        {property.square_meters && property.square_meters !== 1 ? (
-                          <>
-                            <span>{property.square_meters}</span> m²
+                    )}
                           </>
                         ) : (
-                          <span className="text-gray-500">Unknown</span>
+                  <div className="text-sm text-[#9CA3AF]">Unknown</div>
                         )}
                       </div>
-                      {property.balcony_square_meters && property.balcony_square_meters !== 1 && property.balcony_square_meters > 0 && (
-                        <div className="text-xs text-gray-500">
-                          <span>{property.balcony_square_meters}</span> m² balcony
+
+              {/* Size & Rooms Row - Two cards side-by-side */}
+              <div className="flex gap-3 mb-4">
+                <div className="flex-1 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                  <div className="text-[13px] font-bold text-[#4B5563] mb-1" style={{ fontFamily: 'Varela Round, sans-serif' }}>Size</div>
+                  <div className="text-2xl font-extrabold text-[#111827]" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                    {property.square_meters && property.square_meters !== 1 ? `${property.square_meters}m²` : 'Unknown'}
                         </div>
-                      )}
                     </div>
-                    {/* Rooms Column */}
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Rooms</div>
-                      <div className="text-lg md:text-xl font-bold text-gray-900">
-                        <span>{property.rooms}</span>
+                <div className="flex-1 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                  <div className="text-[13px] font-bold text-[#4B5563] mb-1" style={{ fontFamily: 'Varela Round, sans-serif' }}>Rooms</div>
+                  <div className="text-2xl font-extrabold text-[#111827]" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                    {property.rooms || '—'}
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-gray-200">
-                  <div className="text-xs text-gray-500 mb-1">Asking Price</div>
-                  <div className="text-sm text-gray-500">—</div>
-                </div>
-              )}
 
-              {/* Details Section - Tabular Format */}
-              <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-gray-200 space-y-3">
-                <div className="text-xs text-gray-500 mb-3 uppercase font-semibold md:hidden">Details</div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700">Type</span>
-                  <span className="text-sm text-gray-700">{property.property_type}</span>
+              {/* Details Section - Card */}
+              <div className="mb-6 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                <div className="text-xs font-extrabold text-[#9CA3AF] mb-4 uppercase tracking-wider" style={{ fontFamily: 'Varela Round, sans-serif', letterSpacing: '1px' }}>DETAILS</div>
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-[15px] text-[#4B5563] font-medium" style={{ fontFamily: 'Varela Round, sans-serif' }}>Type</span>
+                    <span className="text-[15px] text-[#111827] font-bold" style={{ fontFamily: 'Varela Round, sans-serif' }}>{property.property_type || 'Unknown'}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700">Source</span>
-                  <span className="text-sm text-gray-700">{property.source}</span>
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-[15px] text-[#4B5563] font-medium" style={{ fontFamily: 'Varela Round, sans-serif' }}>Source</span>
+                    <span className="text-[15px] text-[#111827] font-bold" style={{ fontFamily: 'Varela Round, sans-serif' }}>{property.source || 'Unknown'}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700">Broker</span>
-                  <span className="text-sm text-gray-700">{property.apartment_broker ? 'Yes' : 'No'}</span>
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-[15px] text-[#4B5563] font-medium" style={{ fontFamily: 'Varela Round, sans-serif' }}>Broker</span>
+                    <span className="text-[15px] text-[#111827] font-bold" style={{ fontFamily: 'Varela Round, sans-serif' }}>{property.apartment_broker ? 'Yes' : 'No'}</span>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-700">Added</span>
-                  <span className="text-sm text-gray-700">{getRelativeTime(property.created_at)}</span>
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-[15px] text-[#4B5563] font-medium" style={{ fontFamily: 'Varela Round, sans-serif' }}>Added</span>
+                    <span className="text-[15px] text-[#111827] font-bold" style={{ fontFamily: 'Varela Round, sans-serif' }}>{new Date(property.created_at).toLocaleDateString()}</span>
                 </div>
                 {property.url && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-700">Listing</span>
+                    <div className="flex justify-between items-center py-2.5">
+                      <span className="text-[15px] text-[#4B5563] font-medium" style={{ fontFamily: 'Varela Round, sans-serif' }}>Listing</span>
                     <a
                       href={property.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline flex items-center gap-1 font-medium"
+                        className="text-[15px] text-[#2563EB] hover:underline flex items-center gap-1 font-bold"
+                        style={{ fontFamily: 'Varela Round, sans-serif' }}
                       onClick={(e) => e.stopPropagation()}
                     >
                       View Link
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
                   </div>
                 )}
+                </div>
               </div>
 
-              {/* Description Section */}
-              <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-gray-200">
-                <div className="text-xs text-gray-500 mb-3 uppercase font-semibold">Description</div>
+              {/* Description Section - Card */}
+              <div className="mb-6 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                <div className="text-xs font-extrabold text-[#9CA3AF] mb-4 uppercase tracking-wider" style={{ fontFamily: 'Varela Round, sans-serif', letterSpacing: '1px' }}>DESCRIPTION</div>
                 {editingDescription ? (
                   <div className="space-y-4">
                     <textarea
                       value={tempDescription}
                       onChange={(e) => setTempDescription(e.target.value)}
                       placeholder="Add a description for this property..."
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[oklch(0.5_0.22_280)] focus:border-transparent text-base text-right text-gray-900 min-h-[150px] max-h-[300px]"
+                      className="w-full px-4 py-3 bg-white border border-[rgba(0,0,0,0.1)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-transparent text-base text-right text-[#111827] min-h-[120px]"
+                      style={{ fontFamily: 'Varela Round, sans-serif' }}
                       dir="rtl"
                       rows={6}
                     />
-                    <div className="flex justify-end space-x-3">
+                    <div className="flex justify-end gap-3">
                       <button
                         onClick={handleDescriptionCancel}
-                        className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-4 py-2 text-[#9CA3AF] font-semibold transition-colors"
+                        style={{ fontFamily: 'Varela Round, sans-serif' }}
                       >
                         Cancel
                       </button>
                       <button
                         onClick={handleDescriptionSave}
-                        className="px-4 py-2 bg-[oklch(0.5_0.22_280)] text-white rounded-lg hover:bg-[oklch(0.45_0.22_280)] transition-colors"
+                        className="px-5 py-2 bg-[#2563EB] text-white rounded-[10px] hover:bg-[#1d4ed8] transition-colors font-bold"
+                        style={{ fontFamily: 'Varela Round, sans-serif' }}
                       >
                         Save
                       </button>
@@ -957,42 +880,51 @@ export default function PropertyDetailModal({
                 ) : (
                   <div
                     onDoubleClick={handleDescriptionEdit}
-                    className="cursor-pointer hover:bg-gray-50 rounded-lg p-3 -m-3 transition-colors"
+                    className="cursor-pointer hover:bg-white/50 rounded-2xl p-3 -m-3 transition-colors"
                   >
                     {property.description ? (
                       <div
-                        className="text-gray-700 leading-relaxed text-base w-full text-right"
+                        className="text-[16px] text-[#4B5563] leading-relaxed w-full text-right"
+                        style={{ fontFamily: 'Varela Round, sans-serif', unicodeBidi: 'plaintext' }}
                         dir="rtl"
-                        style={{ unicodeBidi: 'plaintext' }}
                         dangerouslySetInnerHTML={{ __html: property.description }}
                       />
                     ) : (
-                      <p className="text-gray-400 italic text-left">
-                        No description yet. Double-click to add one.
+                      <p className="text-[#9CA3AF] italic text-left" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                        Double tap to add description...
                       </p>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Photos Section - Mobile */}
-              <div className="mb-4 md:mb-6 pb-4 md:pb-6 border-b border-gray-200 md:hidden">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs text-gray-500 uppercase font-semibold">
-                    {attachments.length > 0 ? `Photos (${attachments.length})` : 'Photos'}
+              {/* Attachments Section - Card with horizontal scroll */}
+              <div className="mb-6 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-extrabold text-[#9CA3AF] uppercase tracking-wider" style={{ fontFamily: 'Varela Round, sans-serif', letterSpacing: '1px' }}>
+                    ATTACHMENTS ({attachments.length})
                   </div>
-                  <div className="flex items-center gap-3">
                     {attachments.length > 0 && (
                       <button
                         onClick={() => {
                           setSelectedAttachmentIndex(0)
                           setIsZoomed(false)
                         }}
-                        className="text-sm text-[oklch(0.5_0.22_280)] font-medium"
+                      className="text-sm font-bold text-[#2563EB]"
+                      style={{ fontFamily: 'Varela Round, sans-serif' }}
                       >
                         View All
                       </button>
                     )}
+                </div>
+                
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                  <style jsx>{`
+                    div::-webkit-scrollbar {
+                      display: none;
+                    }
+                  `}</style>
+                  {/* Add Button */}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -1001,41 +933,36 @@ export default function PropertyDetailModal({
                       onChange={handleFileUpload}
                       disabled={uploadingAttachment}
                       className="hidden"
-                      id="mobile-attachment-upload"
+                    id="attachment-upload"
                     />
                     <label
-                      htmlFor="mobile-attachment-upload"
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all ${uploadingAttachment
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                          : 'bg-[oklch(0.5_0.22_280)] text-white hover:bg-[oklch(0.45_0.22_280)]'
+                    htmlFor="attachment-upload"
+                    className={`flex-shrink-0 w-[100px] h-[100px] rounded-2xl bg-[rgba(0,0,0,0.05)] flex flex-col items-center justify-center cursor-pointer transition-all ${uploadingAttachment
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-[rgba(0,0,0,0.08)]'
                         }`}
                     >
                       {uploadingAttachment ? (
-                        <>
-                          <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                          <span>Uploading...</span>
-                        </>
+                      <div className="w-6 h-6 border-2 border-[#9CA3AF] border-t-transparent rounded-full animate-spin"></div>
                       ) : (
                         <>
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                           </svg>
-                          <span>Add</span>
+                        <span className="text-xs font-bold text-[#9CA3AF] mt-2" style={{ fontFamily: 'Varela Round, sans-serif' }}>Add</span>
                         </>
                       )}
                     </label>
-                  </div>
-                </div>
-                {attachments.length > 0 ? (
-                  <div className="grid grid-cols-4 gap-2">
-                    {attachments.slice(0, 4).map((attachment, _index) => {
+                  
+                  {/* Attachment Thumbnails */}
+                  {attachments.map((attachment, index) => {
                       const url = getAttachmentUrl(attachment.file_path)
                       return (
                         <div
                           key={attachment.id}
-                          className="aspect-square rounded-lg overflow-hidden border border-gray-200 cursor-pointer"
+                        className="flex-shrink-0 w-[120px] h-[100px] rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.1)] cursor-pointer hover:ring-2 hover:ring-[#2563EB]/50 transition-all"
                           onClick={() => {
-                            setSelectedAttachmentIndex(attachments.findIndex(a => a.id === attachment.id))
+                          setSelectedAttachmentIndex(index)
                             setIsZoomed(false)
                           }}
                         >
@@ -1046,18 +973,25 @@ export default function PropertyDetailModal({
                               className="w-full h-full object-cover"
                             />
                           ) : attachment.file_type === 'video' ? (
-                            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full h-full bg-[rgba(0,0,0,0.05)] flex items-center justify-center relative">
+                            <img
+                              src={url}
+                              alt={attachment.file_name}
+                              className="w-full h-full object-cover absolute inset-0"
+                            />
+                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
                             </div>
+                            </div>
                           ) : (
-                            <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center p-1">
-                              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-full h-full bg-[#F8FAFC] border border-[#E2E8F0] flex flex-col items-center justify-center p-2">
+                            <svg className="w-8 h-8 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                               </svg>
-                              <p className="text-[10px] font-medium text-gray-600 mt-1 px-1 text-center truncate w-full">
+                            <p className="text-[10px] font-medium text-[#64748B] mt-2 px-1 text-center truncate w-full" style={{ fontFamily: 'Varela Round, sans-serif' }}>
                                 {attachment.file_name.length > 15 
                                   ? `${attachment.file_name.substring(0, 15)}...` 
                                   : attachment.file_name}
@@ -1068,35 +1002,34 @@ export default function PropertyDetailModal({
                       )
                     })}
                   </div>
-                ) : (
-                  <div className="text-center py-6">
-                    <svg className="w-10 h-10 text-gray-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-xs text-gray-500">No photos yet</p>
-                  </div>
-                )}
               </div>
 
-              {/* Contact Section */}
+              {/* Contact Section - Card */}
               {property.contact_name && (
-                <div className="mb-4 md:mb-6">
-                  <div className="text-xs text-gray-500 mb-3 uppercase font-semibold">Contact</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="mb-6 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                  <div className="text-xs font-extrabold text-[#9CA3AF] mb-4 uppercase tracking-wider" style={{ fontFamily: 'Varela Round, sans-serif', letterSpacing: '1px' }}>CONTACT</div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 py-3">
+                      <div className="w-9 h-9 rounded-full bg-[rgba(0,0,0,0.05)] flex items-center justify-center">
+                        <svg className="w-4.5 h-4.5 text-[#4B5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      <span className="text-sm font-medium text-gray-900">{property.contact_name}</span>
+                      </div>
+                      <span className="text-[16px] font-bold text-[#111827]" style={{ fontFamily: 'Varela Round, sans-serif' }}>
+                        {property.contact_name || 'No contact name'}
+                      </span>
                     </div>
                     {property.contact_phone && (
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="flex items-center gap-3 py-3">
+                        <div className="w-9 h-9 rounded-full bg-[rgba(0,0,0,0.05)] flex items-center justify-center">
+                          <svg className="w-4.5 h-4.5 text-[#4B5563]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
+                        </div>
                         <a
                           href={`tel:${property.contact_phone.replace(/\D/g, '')}`}
-                          className="text-sm text-[oklch(0.5_0.22_280)] hover:text-[oklch(0.4_0.22_280)] transition-colors"
+                          className="flex-1 text-[16px] font-bold text-[#2563EB] hover:text-[#1d4ed8] transition-colors"
+                          style={{ fontFamily: 'Varela Round, sans-serif' }}
                           title="Click to call"
                         >
                           {property.contact_phone}
@@ -1105,10 +1038,10 @@ export default function PropertyDetailModal({
                           href={`https://wa.me/${formatPhoneForWhatsApp(property.contact_phone)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-center w-7 h-7 rounded-full bg-green-500 hover:bg-green-600 transition-colors text-white flex-shrink-0"
+                          className="w-9 h-9 rounded-full bg-[#25D366] hover:bg-[#20ba5a] transition-colors flex items-center justify-center text-white flex-shrink-0"
                           title="Send WhatsApp message"
                         >
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
                           </svg>
                         </a>
@@ -1118,193 +1051,41 @@ export default function PropertyDetailModal({
                 </div>
               )}
 
-              {/* Attachments Section - Desktop Only */}
-              <div className="mb-8 mt-8 hidden md:block">
-                <div className="bg-slate-50 rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Attachments</h3>
-                    <div className="flex items-center space-x-3">
-                      {attachments.length > 0 && (
-                        <span className="text-xs text-slate-500">{attachments.length} file{attachments.length !== 1 ? 's' : ''}</span>
-                      )}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept="image/*,video/*,application/pdf"
-                        onChange={handleFileUpload}
-                        disabled={uploadingAttachment}
-                        className="hidden"
-                        id="detail-attachment-upload"
-                      />
-                      <label
-                        htmlFor="detail-attachment-upload"
-                        className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${uploadingAttachment
-                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                          }`}
-                      >
-                        {uploadingAttachment ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            <span>Uploading...</span>
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                            </svg>
-                            <span>Add Files</span>
-                          </>
-                        )}
-                      </label>
-                    </div>
-                  </div>
 
-                  {attachmentsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                      <span className="ml-2 text-sm text-slate-600">Loading attachments...</span>
-                    </div>
-                  ) : attachments.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {attachments.map((attachment) => {
-                        const url = getAttachmentUrl(attachment.file_path)
-                        const isDeleting = deletingAttachment === attachment.id
-                        return (
-                          <div
-                            key={attachment.id}
-                            className={`relative group aspect-video rounded-lg overflow-hidden border border-slate-200 cursor-pointer transition-all hover:shadow-lg ${isDeleting ? 'opacity-50' : ''
-                              }`}
-                            onClick={() => {
-                              setSelectedAttachmentIndex(attachments.findIndex(a => a.id === attachment.id))
-                              setIsZoomed(false)
-                            }}
-                          >
-                            {attachment.file_type === 'image' ? (
-                              <img
-                                src={url}
-                                alt={attachment.file_name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : attachment.file_type === 'video' ? (
-                              <>
-                                <video
-                                  src={url}
-                                  className="w-full h-full object-cover"
-                                  muted
-                                >
-                                  <source src={url} type={attachment.mime_type} />
-                                </video>
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                </div>
-                              </>
-                            ) : (
-                              <div className="w-full h-full bg-slate-100 flex flex-col items-center justify-center p-2">
-                                <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                <p className="text-xs font-medium text-slate-600 mt-2 px-2 text-center truncate w-full">
-                                  {attachment.file_name.length > 15 
-                                    ? `${attachment.file_name.substring(0, 15)}...` 
-                                    : attachment.file_name}
-                                </p>
-                              </div>
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteAttachment(attachment.id)
-                              }}
-                              disabled={isDeleting}
-                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
-                              title="Delete attachment"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-sm text-slate-500">No attachments yet</p>
-                      <p className="text-xs text-slate-400 mt-1">Click &quot;Add Files&quot; to upload photos or videos</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Notes Section */}
-              <div className="border-t border-slate-200 pt-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-slate-900">Notes</h3>
-                  <span className="text-sm text-slate-500">{notes.length} {notes.length === 1 ? 'note' : 'notes'}</span>
+              {/* Notes Section - Card */}
+              <div className="mb-6 p-5 bg-[#F9FAFB] rounded-[20px] border border-[rgba(0,0,0,0.03)]">
+                <div className="text-xs font-extrabold text-[#9CA3AF] mb-4 uppercase tracking-wider" style={{ fontFamily: 'Varela Round, sans-serif', letterSpacing: '1px' }}>
+                  Notes ({notes.length})
                 </div>
 
                 {/* Notes List */}
                 {loading ? (
                   <div className="text-center py-12">
-                    <div className="text-slate-500">Loading notes...</div>
+                    <div className="text-[#9CA3AF]">Loading notes...</div>
                   </div>
                 ) : notes.length === 0 ? (
                   <div className="text-center py-12">
-                    <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg className="w-10 h-10 text-[#9CA3AF] mx-auto mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    <div className="text-slate-500 mb-2">No notes yet</div>
-                    <div className="text-sm text-slate-400">Add your first note above</div>
+                    <div className="text-base font-extrabold text-[#111827] mb-1" style={{ fontFamily: 'Varela Round, sans-serif' }}>No notes yet</div>
+                    <div className="text-sm text-[#9CA3AF]" style={{ fontFamily: 'Varela Round, sans-serif' }}>Add your first note below</div>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4 mb-6">
                     {notes.map((note) => (
-                      <div key={note.id} className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="text-sm text-slate-500 font-medium">
+                      <div key={note.id} className="bg-white border-b border-[rgba(0,0,0,0.05)] pb-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="text-xs font-bold text-[#9CA3AF]" style={{ fontFamily: 'Varela Round, sans-serif' }}>
                             {formatNoteDate(note.created_at)}
                           </div>
-                          <div className="flex items-center space-x-1">
-                            {editingNoteId === note.id && (
-                              <>
-                                <button
-                                  onClick={handleSaveNoteEdit}
-                                  className="text-slate-400 hover:text-primary transition-colors p-1 hover:bg-primary/10 rounded-lg"
-                                  title="Save changes"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={handleCancelNoteEdit}
-                                  className="text-slate-400 hover:text-slate-600 transition-colors p-1 hover:bg-slate-50 rounded-lg"
-                                  title="Cancel editing"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </>
-                            )}
                             <button
                               onClick={() => handleDeleteNote(note.id)}
-                              className="text-slate-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded-lg"
-                              title="Delete note"
+                            className="text-xs font-bold text-[#DC2626] hover:text-[#B91C1C] transition-colors"
+                            style={{ fontFamily: 'Varela Round, sans-serif' }}
                             >
-                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 3a1 1 0 012 0v4a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V8z" clipRule="evenodd" />
-                              </svg>
+                            Delete
                             </button>
-                          </div>
                         </div>
                         {editingNoteId === note.id ? (
                           <div className="space-y-3">
@@ -1312,21 +1093,35 @@ export default function PropertyDetailModal({
                               value={editingNoteContent}
                               onChange={(e) => setEditingNoteContent(e.target.value)}
                               onKeyDown={handleNoteEditKeyDown}
-                              className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none text-base"
+                              className="w-full px-4 py-3 bg-white border border-[rgba(0,0,0,0.1)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-transparent resize-none text-base min-h-[60px]"
+                              style={{ fontFamily: 'Varela Round, sans-serif', textAlign: 'right' }}
+                              dir="rtl"
                               rows={4}
-                              dir="auto"
                               autoFocus
                             />
-                            <div className="flex justify-end space-x-2 text-xs text-slate-500">
-                              <span>{mounted && isMac ? 'Cmd' : 'Ctrl'}+Enter to save</span>
-                              <span>•</span>
-                              <span>ESC to cancel</span>
+                            <div className="flex justify-end gap-3">
+                              <button
+                                onClick={handleCancelNoteEdit}
+                                className="px-4 py-2 text-[#9CA3AF] font-semibold transition-colors"
+                                style={{ fontFamily: 'Varela Round, sans-serif' }}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleSaveNoteEdit}
+                                className="px-5 py-2 bg-[#2563EB] text-white rounded-[10px] hover:bg-[#1d4ed8] transition-colors font-bold disabled:opacity-50"
+                                style={{ fontFamily: 'Varela Round, sans-serif' }}
+                                disabled={isSavingNote}
+                              >
+                                {isSavingNote ? 'Saving...' : 'Save'}
+                              </button>
                             </div>
                           </div>
                         ) : (
                           <p
-                            className="text-slate-900 whitespace-pre-wrap leading-relaxed text-base cursor-pointer hover:bg-slate-50 -m-2 p-2 rounded-lg transition-colors"
-                            dir="auto"
+                            className="text-[15px] text-[#4B5563] leading-relaxed cursor-pointer hover:bg-white/50 -m-2 p-2 rounded-lg transition-colors"
+                            style={{ fontFamily: 'Varela Round, sans-serif', textAlign: 'right' }}
+                            dir="rtl"
                             onDoubleClick={() => handleEditNote(note)}
                             title="Double-click to edit"
                           >
@@ -1338,53 +1133,53 @@ export default function PropertyDetailModal({
                   </div>
                 )}
 
-                {/* Add Note Form (moved below notes) */}
-                <div className="mt-8">
-                  <form onSubmit={handleAddNote} className="space-y-4">
+                {/* Add Note Form */}
+                <div className="mt-6">
+                  <form onSubmit={handleAddNote} className="space-y-3">
                     <textarea
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                       onKeyDown={handleNoteKeyDown}
-                      placeholder={mounted && isMobile ? 'Add a note...' : mounted ? `Add a note... (${isMac ? 'Cmd' : 'Ctrl'}+Enter to submit)` : 'Add a note...'}
+                      placeholder="Add a note..."
                       rows={4}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base"
+                      className="w-full px-4 py-3 bg-white border border-[rgba(0,0,0,0.1)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-black/20 focus:border-transparent resize-none text-base"
+                      style={{ fontFamily: 'Varela Round, sans-serif', textAlign: 'right' }}
+                      dir="rtl"
                       disabled={submitting}
-                      dir="auto"
                     />
-                    <div className="flex justify-end">
                       <button
                         type="submit"
                         disabled={submitting || !newNote.trim()}
-                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                      className="w-full px-5 py-3.5 bg-[#2563EB] text-white rounded-2xl hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-extrabold"
+                      style={{ fontFamily: 'Varela Round, sans-serif' }}
                       >
                         {submitting ? 'Adding...' : 'Add Note'}
                       </button>
-                    </div>
                   </form>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Footer Buttons - Mobile and Desktop */}
-          <div className="flex items-center justify-between gap-3 md:gap-4 px-4 md:px-10 py-4 bg-white border-t border-gray-200">
+          {/* Footer Buttons - Sticky bottom actions matching mobile */}
+          <div className="sticky bottom-0 flex items-center gap-3 px-6 py-4 bg-white border-t border-[rgba(0,0,0,0.05)]">
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center justify-center gap-2 flex-1 md:flex-none px-4 md:px-6 py-3 bg-white border border-red-300 md:border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-red-600 md:text-gray-900 font-medium"
+              className="flex items-center justify-center gap-2 flex-1 px-6 py-3.5 bg-white border-2 border-[#DC2626] rounded-2xl hover:bg-red-50 transition-colors"
             >
-              <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4.5 h-4.5 text-[#DC2626]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
-              <span>Delete</span>
+              <span className="text-[#DC2626] font-extrabold" style={{ fontFamily: 'Varela Round, sans-serif' }}>Delete</span>
             </button>
             <button
               onClick={() => onEdit(property)}
-              className="flex items-center justify-center gap-2 flex-1 md:flex-none px-4 md:px-6 py-3 bg-[oklch(0.5_0.22_280)] text-white rounded-lg hover:bg-[oklch(0.45_0.22_280)] transition-colors font-medium"
+              className="flex items-center justify-center gap-2 flex-1 px-6 py-3.5 bg-[#2563EB] text-white rounded-2xl hover:bg-[#1d4ed8] transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
-              <span>Edit</span>
+              <span className="font-extrabold" style={{ fontFamily: 'Varela Round, sans-serif' }}>Edit</span>
             </button>
           </div>
         </div>

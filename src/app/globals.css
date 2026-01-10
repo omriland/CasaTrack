@@ -9,7 +9,7 @@
   --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.55 0.22 250); /* Apple Blue */
+  --primary: oklch(0 0 0); /* Black - matching mobile app */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.15 0 0);
@@ -59,14 +59,14 @@
   --glass-border: rgba(255, 255, 255, 0.18);
   --glass-blur: blur(40px);
 
-  /* Status Colors - Apple-inspired palette */
-  --status-seen: oklch(0.7 0.05 160);
-  --status-interested: oklch(0.65 0.18 140); /* Apple Green */
-  --status-contacted: oklch(0.55 0.22 250); /* Apple Blue */
-  --status-visited: oklch(0.7 0.18 280); /* Apple Purple */
-  --status-hold: oklch(0.7 0.18 50); /* Apple Orange */
-  --status-irrelevant: oklch(0.55 0.22 15); /* Apple Red */
-  --status-purchased: oklch(0.65 0.18 140); /* Apple Green */
+  /* Status Colors - Matching mobile app */
+  --status-seen: #6366f1; /* Indigo */
+  --status-interested: #22c55e; /* Green */
+  --status-contacted: #3b82f6; /* Blue */
+  --status-visited: #8b5cf6; /* Purple */
+  --status-hold: #f59e0b; /* Orange */
+  --status-irrelevant: #64748b; /* Slate */
+  --status-purchased: #10b981; /* Emerald */
 }
 
 .dark {
@@ -200,10 +200,11 @@
 
 html, body, input, textarea, select, button {
   font-family: var(--font-varela-round), 'Varela Round', sans-serif !important;
+  font-weight: 400; /* Regular weight by default */
 }
 
 body {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  background: white;
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1, "kern" 1;
   font-synthesis: none;

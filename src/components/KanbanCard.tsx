@@ -3,8 +3,8 @@
 import { Property } from '@/types/property'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useState, useEffect, useRef } from 'react'
-import { getPropertyNotes, updateProperty } from '@/lib/properties'
+import { useState, useEffect } from 'react'
+import { getPropertyNotes } from '@/lib/properties'
 
 interface KanbanCardProps {
   property: Property
@@ -15,11 +15,8 @@ interface KanbanCardProps {
   notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, notesRefreshKey, notesBump }: KanbanCardProps) {
+export default function KanbanCard({ property, onViewNotes, notesRefreshKey, notesBump }: KanbanCardProps) {
   const [notesCount, setNotesCount] = useState<number>(0)
-  const [rooms, setRooms] = useState<number>(property.rooms)
-  const [showRoomsPicker, setShowRoomsPicker] = useState<boolean>(false)
-  const roomsPickerRef = useRef<HTMLDivElement>(null)
 
   const {
     attributes,
@@ -43,31 +40,7 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
     if (!notesBump) return
     if (notesBump.id !== property.id) return
     setNotesCount((prev) => Math.max(0, prev + notesBump.delta))
-  }, [notesBump?.nonce])
-
-  useEffect(() => {
-    setRooms(property.rooms)
-  }, [property.rooms])
-
-  useEffect(() => {
-    const onDocClick = (e: MouseEvent) => {
-      if (roomsPickerRef.current && !roomsPickerRef.current.contains(e.target as Node)) {
-        setShowRoomsPicker(false)
-      }
-    }
-    if (showRoomsPicker) document.addEventListener('mousedown', onDocClick)
-    return () => document.removeEventListener('mousedown', onDocClick)
-  }, [showRoomsPicker])
-
-  const handleQuickSetRooms = async (value: number) => {
-    try {
-      await updateProperty(property.id, { rooms: value })
-      setRooms(value)
-      setShowRoomsPicker(false)
-    } catch (e) {
-      console.error('Failed updating rooms:', e)
-    }
-  }
+  }, [notesBump?.nonce, property.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadNotesCount = async () => {
     try {
@@ -82,193 +55,82 @@ export default function KanbanCard({ property, onEdit, onDelete, onViewNotes, no
     return new Intl.NumberFormat('en-US').format(price)
   }
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Don't trigger if user is selecting text or if dragging
-    if (window.getSelection()?.toString() || isDragging) return
-    // Don't trigger if clicking on interactive elements
-    const target = e.target as HTMLElement
-    if (target.closest('button') || target.closest('[role="button"]')) return
-    onViewNotes(property)
-  }
-
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group rounded-lg p-3 transition-all border ${
+      className={`group relative rounded-2xl p-4 transition-all border cursor-pointer hover:border-black/20 hover:bg-gray-50/50 ${
         property.is_flagged
-          ? 'bg-amber-50 border-amber-300 hover:border-amber-400'
-          : 'bg-white border-slate-200 hover:border-slate-300'
-      } ${isDragging ? 'opacity-50 scale-105 rotate-1 border-primary/40' : ''}`}
-      onClick={handleCardClick}
+          ? 'bg-[#FFFCF2] border-[#FEF3C7]'
+          : 'bg-white border-[rgba(0,0,0,0.06)]'
+      } ${isDragging ? 'opacity-50 scale-105 rotate-1 border-black/20 z-50 shadow-2xl' : ''}`}
+      onClick={() => onViewNotes(property)}
     >
+      {/* Drag Handle - Overlay on hover */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 bg-black text-white rounded-lg cursor-grab active:cursor-grabbing transition-all duration-200 z-10"
+        title="Drag to move"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 8h16M4 16h16" />
+        </svg>
+      </div>
+
       <div className="space-y-3">
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex-1 min-w-0">
-            {/* Drag Handle */}
-            <div
-              {...attributes}
-              {...listeners}
-              className="cursor-grab active:cursor-grabbing mb-1 -ml-1 -mt-1 p-1 rounded hover:bg-slate-50 transition-colors inline-block touch-none"
-              title="Drag to move"
-            >
-              <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8h16M4 16h16" />
-              </svg>
-            </div>
-            <h4 className="font-semibold text-base text-slate-900 line-clamp-2 leading-tight">
-              {property.title}
-            </h4>
-            <div className="text-xs text-slate-500 line-clamp-1 mt-0.5" title={property.address}>
+        <div className="pr-6">
+          <h4 className="font-extrabold text-sm text-black line-clamp-2 leading-tight">
+            {property.title}
+          </h4>
+          <div className="flex items-center gap-1 mt-1 opacity-40">
+            <svg className="w-2.5 h-2.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            </svg>
+            <span className="text-[10px] font-bold truncate italic" title={property.address}>
               {property.address}
-            </div>
-          </div>
-          <div className="flex space-x-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit(property)
-              }}
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100 transition-colors"
-              title="Edit"
-            >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                if (confirm('Delete this property?')) {
-                  onDelete(property.id)
-                }
-              }}
-              className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition-colors"
-              title="Delete"
-            >
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9zM4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 3a1 1 0 012 0v4a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v4a1 1 0 11-2 0V8z" clipRule="evenodd" />
-              </svg>
-            </button>
+            </span>
           </div>
         </div>
 
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div
-              className={`relative inline-flex items-center space-x-1.5 rounded px-2.5 py-1.5 text-sm font-medium ${rooms === 0 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-slate-50 text-slate-700 border border-slate-200'
-                } cursor-pointer hover:bg-slate-100 transition-colors`}
-              onClick={(e) => { e.stopPropagation(); setShowRoomsPicker((v) => !v) }}
-              title={rooms === 0 ? 'Add rooms' : 'Change rooms'}
-              ref={roomsPickerRef}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
-              </svg>
-              <span>
-                {rooms === 0 ? 'Add rooms' : <span>{rooms}</span>}
-              </span>
-              {showRoomsPicker && (
-                <div className="absolute left-0 top-full mt-1.5 bg-white rounded-lg border border-slate-200 p-2 z-50">
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {[3, 3.5, 4, 4.5, 5, 5.5, 6].map((r) => (
-                      <button
-                        key={r}
-                        onClick={(ev) => { ev.stopPropagation(); handleQuickSetRooms(r) }}
-                        className={`px-2.5 py-2 text-sm rounded font-medium transition-colors ${rooms === r
-                            ? 'bg-primary text-white'
-                            : 'text-slate-700 hover:bg-slate-100'
-                          }`}
-                      >
-                        <span>{r}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className={`inline-flex flex-col items-start rounded px-2.5 py-1.5 ${property.square_meters === null ? 'bg-amber-50 border border-amber-200' : property.square_meters === 1 ? 'bg-slate-50 border border-slate-200' : 'bg-slate-50 border border-slate-200'}`}>
-              <div className="flex items-center space-x-1.5">
-                <svg className={`w-3.5 h-3.5 ${property.square_meters === null ? 'text-amber-600' : 'text-slate-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4a1 1 0 011-1h4m11 12v4a1 1 0 01-1 1h-4M4 16v4a1 1 0 001 1h4m11-12V4a1 1 0 00-1-1h-4" />
-                </svg>
-                <span className={`text-sm font-medium ${property.square_meters === null ? 'text-amber-700' : property.square_meters === 1 ? 'text-slate-500' : 'text-slate-700'}`}>
-                  {property.square_meters === null ? 'Add size' : property.square_meters === 1 ? 'Unknown' : (
-                    <>
-                      <span>{property.square_meters}</span> m²
-                    </>
-                  )}
+        <div className="flex items-center gap-2 pt-2 border-t border-[rgba(0,0,0,0.04)] overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[10px] font-black text-black/60">{property.rooms || '—'}</span>
+            <span className="text-[8px] font-black text-black/30 uppercase tracking-tighter">R</span>
+          </div>
+          <span className="text-black/10 text-[10px] flex-shrink-0">•</span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <span className="text-[10px] font-black text-black/60">{property.square_meters && property.square_meters !== 1 ? `${property.square_meters}` : '—'}</span>
+            <span className="text-[8px] font-black text-black/30 uppercase tracking-tighter">m²</span>
+          </div>
+          {property.asked_price && property.asked_price !== 1 && (
+            <>
+              <span className="text-black/10 text-[10px] flex-shrink-0">•</span>
+              <div className="flex items-center gap-1 flex-shrink-0 ml-auto">
+                <span className="text-[11px] font-black text-black">
+                  {formatPrice(property.asked_price)} ₪
                 </span>
               </div>
-              {property.balcony_square_meters && property.balcony_square_meters !== 1 && property.balcony_square_meters > 0 && property.square_meters !== null && property.square_meters !== 1 && (
-                <span className="text-xs text-slate-500 mt-0.5 ml-5">
-                  + <span>{property.balcony_square_meters}</span> m² balcony
-                </span>
-              )}
-            </div>
-          </div>
-          {property.asked_price !== null && property.asked_price !== 1 ? (
-            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-              <span className="text-lg font-bold text-slate-900">
-                <span>{formatPrice(property.asked_price)}</span>₪
-              </span>
-              <span className="text-sm text-slate-500 font-medium">
-                {property.price_per_meter !== null && property.asked_price !== null && property.asked_price !== 1 && property.square_meters !== null && property.square_meters !== 1 ? (
-                  <span>{formatPrice(Math.round(property.price_per_meter))}₪/m²</span>
-                ) : (
-                  'N/A'
-                )}
-              </span>
-            </div>
-          ) : property.asked_price === 1 ? (
-            <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-100">
-              <span className="text-sm font-medium text-slate-500">Price: Unknown</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-1.5 pt-2 border-t border-slate-100">
-              <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium text-amber-700">Price not set</span>
-            </div>
+            </>
           )}
         </div>
 
-        <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-slate-600 bg-slate-100 border border-slate-200 rounded px-2.5 py-1 font-medium">{property.source}</span>
-            {property.url && (
-              <a
-                href={property.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                title="View original listing"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-              </a>
-            )}
-            {property.apartment_broker && (
-              <div className="flex items-center space-x-1" title="Has apartment broker">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-              </div>
-            )}
+        {/* Footer info: Notes & Source */}
+        <div className="flex justify-between items-center opacity-40 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] font-black uppercase tracking-wider bg-black/5 px-1.5 py-0.5 rounded-md">
+              {property.source}
+            </span>
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onViewNotes(property)
-            }}
-            className="flex items-center text-sm text-slate-600 hover:text-primary transition-colors font-medium"
-          >
-            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            {notesCount > 0 && <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md text-xs font-semibold">{notesCount}</span>}
-          </button>
+          {notesCount > 0 && (
+            <div className="flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-[10px] font-black">{notesCount}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

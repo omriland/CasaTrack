@@ -50,38 +50,39 @@ function DroppableColumn({
   if (isCollapsed) {
     return (
       <div
-        className={`flex flex-col bg-slate-50/50 rounded-lg h-full transition-all duration-300 ${
-          isOver ? 'ring-2 ring-primary/20 ring-offset-2' : ''
+        className={`flex flex-col bg-gray-50 rounded-2xl h-full transition-all duration-300 border border-[rgba(0,0,0,0.06)] ${
+          isOver ? 'ring-2 ring-black/10 ring-offset-2' : ''
         }`}
         style={{ width: '100px' }}
       >
         <button
           onClick={onToggleCollapse}
-          className={`flex flex-col items-center justify-start p-2 pt-4 rounded-md transition-all hover:bg-white/50 flex-1`}
+          className={`flex flex-col items-center justify-start p-2 pt-6 rounded-2xl transition-all hover:bg-black/5 flex-1`}
         >
           <div className="flex items-center justify-center">
             <h3
-              className="font-semibold text-sm text-slate-700 text-center leading-tight"
+              className="font-extrabold text-xs text-black/40 text-center leading-tight uppercase tracking-wider"
               style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
               {title}
             </h3>
           </div>
-          <div className="mt-3">
+          <div className="mt-4">
             <span
-              className="text-xs text-slate-500 font-medium"
+              className="text-xs text-black font-black"
               style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
             >
               {count}
             </span>
           </div>
           <svg 
-            className="w-4 h-4 text-slate-400 mt-2 transform rotate-90" 
+            className="w-4 h-4 text-black/20 mt-4 transform rotate-90" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
+            strokeWidth="3"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
         <div 
@@ -89,8 +90,8 @@ function DroppableColumn({
           className="flex-1 flex items-center justify-center p-2"
         >
           {count > 0 && (
-            <div className="text-center text-slate-400 text-sm">
-              <div className="transform rotate-90 whitespace-nowrap font-medium">
+            <div className="text-center text-black/40 text-sm">
+              <div className="transform rotate-90 whitespace-nowrap font-black">
                 {count}
               </div>
             </div>
@@ -103,55 +104,56 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col bg-slate-50/50 rounded-lg h-full transition-all ${
-        isOver ? 'ring-2 ring-primary/20 ring-offset-2' : ''
+      className={`flex flex-col bg-gray-50 rounded-2xl h-full transition-all border border-[rgba(0,0,0,0.06)] ${
+        isOver ? 'ring-2 ring-black/10 ring-offset-2' : ''
       }`}
     >
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 py-3 rounded-t-lg">
+      <div className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-sm border-b border-[rgba(0,0,0,0.06)] px-5 py-4 rounded-t-2xl">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2 flex-1 min-w-0">
+          <div className="flex items-center space-x-3 flex-1 min-w-0">
             <button
               onClick={onToggleCollapse}
-              className="p-1 hover:bg-slate-100 rounded transition-colors flex-shrink-0 -ml-1"
+              className="p-1.5 hover:bg-black/5 rounded-lg transition-colors flex-shrink-0 -ml-1.5"
               title={isCollapsed ? 'Expand column' : 'Collapse column'}
             >
               <svg 
-                className={`w-4 h-4 text-slate-500 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} 
+                className={`w-4 h-4 text-black/30 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} 
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
+                strokeWidth="3"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
-            <div className="flex items-center space-x-2.5 flex-1 min-w-0">
-              <div className={`w-1 h-5 ${bgColor} rounded-full flex-shrink-0`}></div>
-              <h3 className="font-semibold text-sm text-slate-700 text-left truncate">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="w-1.5 h-6 rounded-full flex-shrink-0" style={{ backgroundColor: bgColor.replace('bg-', '') === 'gray-100' ? '#e5e7eb' : bgColor.replace('bg-', '') }}></div>
+              <h3 className="font-extrabold text-xs text-black uppercase tracking-wider truncate">
                 {title}
               </h3>
             </div>
           </div>
-          <span className="text-sm text-slate-500 ml-2 flex-shrink-0 font-medium">{count}</span>
+          <span className="bg-black/5 text-black/40 px-2 py-0.5 rounded-lg text-xs font-black ml-3 flex-shrink-0">{count}</span>
         </div>
       </div>
-      <div className="px-2.5 py-2 flex-1 flex flex-col overflow-y-auto">
+      <div className="px-3 py-3 flex-1 flex flex-col overflow-y-auto no-scrollbar">
         {isEmpty ? (
           isDragging ? (
             <div
-              className={`flex-1 grid place-items-center rounded-lg border-2 border-dashed transition-all ${
-                isOver ? 'border-primary/40 bg-primary/5 text-primary' : 'border-slate-200 text-slate-400'
+              className={`flex-1 grid place-items-center rounded-2xl border-2 border-dashed transition-all ${
+                isOver ? 'border-black/20 bg-black/5 text-black' : 'border-black/5 text-black/20'
               }`}
             >
-              <div className="flex flex-col items-center space-y-2 text-xs">
-                <svg className={`w-5 h-5 ${isOver ? 'text-primary' : 'text-slate-400'} transition-transform`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v12m0 0l-4-4m4 4l4-4" />
+              <div className="flex flex-col items-center space-y-2 text-[10px] uppercase font-black tracking-widest">
+                <svg className={`w-6 h-6 ${isOver ? 'text-black' : 'text-black/10'} transition-transform`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4" />
                 </svg>
-                <span className="font-medium">{isOver ? 'Release to drop' : 'Drop here'}</span>
+                <span>{isOver ? 'Drop it' : 'Drop here'}</span>
               </div>
             </div>
           ) : (
-            <div className="flex-1 grid place-items-center">
-              <div className="text-xs text-slate-400 font-medium">No properties</div>
+            <div className="flex-1 grid place-items-center opacity-20">
+              <div className="text-[10px] text-black font-black uppercase tracking-widest">Empty</div>
             </div>
           )
         ) : (
@@ -173,13 +175,13 @@ interface KanbanBoardProps {
 }
 
 const STATUSES: { status: PropertyStatus; color: string; bgColor: string }[] = [
-  { status: 'Seen', color: 'text-gray-700', bgColor: 'bg-gray-100' },
-  { status: 'Interested', color: 'text-emerald-800', bgColor: 'bg-emerald-100' },
-  { status: 'Contacted Realtor', color: 'text-blue-700', bgColor: 'bg-blue-50' },
-  { status: 'Visited', color: 'text-indigo-800', bgColor: 'bg-indigo-100' },
-  { status: 'On Hold', color: 'text-orange-700', bgColor: 'bg-orange-100' },
-  { status: 'Irrelevant', color: 'text-red-700', bgColor: 'bg-red-50' },
-  { status: 'Purchased', color: 'text-green-700', bgColor: 'bg-green-50' },
+  { status: 'Seen', color: 'text-gray-700', bgColor: '#6366f1' },
+  { status: 'Interested', color: 'text-emerald-800', bgColor: '#22c55e' },
+  { status: 'Contacted Realtor', color: 'text-blue-700', bgColor: '#3b82f6' },
+  { status: 'Visited', color: 'text-indigo-800', bgColor: '#8b5cf6' },
+  { status: 'On Hold', color: 'text-orange-700', bgColor: '#f59e0b' },
+  { status: 'Irrelevant', color: 'text-red-700', bgColor: '#64748b' },
+  { status: 'Purchased', color: 'text-green-700', bgColor: '#10b981' },
 ]
 
 export default function KanbanBoard({
