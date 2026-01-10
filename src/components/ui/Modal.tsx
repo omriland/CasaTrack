@@ -84,26 +84,26 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'bg-white rounded-2xl shadow-xl w-full animate-in zoom-in-95',
+          'bg-white rounded-[32px] border border-[rgba(0,0,0,0.06)] overflow-hidden w-full animate-in zoom-in-95',
           sizes[size],
           className
         )}
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between px-8 py-6 bg-black">
             {title && (
-              <h2 id="modal-title" className="text-xl font-semibold text-gray-900">
+              <h2 id="modal-title" className="text-xl font-extrabold text-white" style={{ fontFamily: 'Varela Round, sans-serif' }}>
                 {title}
               </h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-all active:scale-90 ml-auto"
                 aria-label="Close modal"
               >
                 <svg
-                  className="w-6 h-6"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -111,7 +111,7 @@ export function Modal({
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={2.5}
                     d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
@@ -119,7 +119,7 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-8">{children}</div>
       </div>
     </div>
   )

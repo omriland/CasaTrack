@@ -742,93 +742,72 @@ export default function MapView({ properties, onPropertyClick, onCoordinateUpdat
     <div className="space-y-1">
       <button
         onClick={() => setLayers(prev => ({ ...prev, transit: !prev.transit }))}
-        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all ${
           layers.transit
-            ? 'bg-primary/10 text-primary'
-            : 'text-slate-600 hover:bg-slate-50'
+            ? 'bg-black text-white shadow-sm'
+            : 'text-black/40 hover:bg-black/5 hover:text-black'
         }`}
       >
         <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
           </svg>
-          <span>Transit</span>
+          <span className="uppercase tracking-wider">Transit</span>
         </div>
-        {layers.transit && (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
-        )}
       </button>
       <button
         onClick={() => setLayers(prev => ({ ...prev, traffic: !prev.traffic }))}
-        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all ${
           layers.traffic
-            ? 'bg-primary/10 text-primary'
-            : 'text-slate-600 hover:bg-slate-50'
+            ? 'bg-black text-white shadow-sm'
+            : 'text-black/40 hover:bg-black/5 hover:text-black'
         }`}
       >
         <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
-          <span>Traffic</span>
+          <span className="uppercase tracking-wider">Traffic</span>
         </div>
-        {layers.traffic && (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
-        )}
       </button>
       <button
         onClick={() => setLayers(prev => ({ ...prev, bicycle: !prev.bicycle }))}
-        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all ${
           layers.bicycle
-            ? 'bg-primary/10 text-primary'
-            : 'text-slate-600 hover:bg-slate-50'
+            ? 'bg-black text-white shadow-sm'
+            : 'text-black/40 hover:bg-black/5 hover:text-black'
         }`}
       >
         <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle cx="5.5" cy="17.5" r="3.5" strokeWidth="2" />
-            <circle cx="18.5" cy="17.5" r="3.5" strokeWidth="2" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.5 17.5l3-7.5m10.5 0l-3 7.5M8.5 10h7M12 10v7.5M9 4l3 1.5 3-1.5" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+            <circle cx="5.5" cy="17.5" r="3.5" strokeWidth="2.5" />
+            <circle cx="18.5" cy="17.5" r="3.5" strokeWidth="2.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5.5 17.5l3-7.5m10.5 0l-3 7.5M8.5 10h7M12 10v7.5M9 4l3 1.5 3-1.5" />
           </svg>
-          <span>Bike lanes</span>
+          <span className="uppercase tracking-wider">Bikes</span>
         </div>
-        {layers.bicycle && (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
-        )}
       </button>
       <button
         onClick={() => setLayers(prev => ({ ...prev, schools: !prev.schools }))}
-        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm transition-colors ${
+        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all ${
           layers.schools
-            ? 'bg-primary/10 text-primary'
-            : 'text-slate-600 hover:bg-slate-50'
+            ? 'bg-black text-white shadow-sm'
+            : 'text-black/40 hover:bg-black/5 hover:text-black'
         }`}
       >
         <div className="flex items-center space-x-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l9-5-9-5-9 5 9 5z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 14v7m0-7l-6.16-3.422a12.083 12.083 0 00-.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 006.824-2.998 12.078 12.078 0 00-.665-6.479L12 14z" />
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
           </svg>
-          <span>Schools</span>
+          <span className="uppercase tracking-wider">Schools</span>
         </div>
-        {layers.schools && (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
-        )}
       </button>
     </div>
   )
 
   return (
-    <div className="h-full relative bg-white rounded-lg overflow-hidden shadow-sm">
+    <div className="h-full relative bg-white rounded-2xl overflow-hidden border border-[rgba(0,0,0,0.06)]">
       <div ref={mapRef} className={`w-full h-full ${isMobile ? 'touch-none' : ''}`} />
 
       {/* Floating Hover Card */}
