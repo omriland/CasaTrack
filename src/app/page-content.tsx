@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { isAuthenticated, clearAuth } from '@/lib/auth'
@@ -342,6 +343,13 @@ export default function HomeContent() {
 
             {/* Right Side Actions */}
             <div className="flex items-center space-x-2 md:space-x-4 ml-auto">
+              <Link
+                href="/renovation"
+                className="flex items-center text-[11px] sm:text-sm font-bold text-black/50 hover:text-black px-1.5 sm:px-2 py-1 rounded-lg hover:bg-black/5 transition-colors shrink-0"
+              >
+                <span className="hidden min-[400px]:inline">Renovation</span>
+                <span className="min-[400px]:hidden">Reno</span>
+              </Link>
               {/* Add Property Button - Minimalist black circle */}
               <button
                 onClick={() => setShowForm(true)}

@@ -1,7 +1,7 @@
 # CasaTrack - Project Overview
 
 ## Project Summary
-**CasaTrack** is a single-user web application for managing the home-purchasing process. It allows tracking properties of interest, managing notes, attachments, and visualizing them through multiple views (Cards, Kanban, and Map).
+**CasaTrack** is a single-user web application for managing the home-purchasing process and (separately) a **Renovation** hub at `/renovation` for budget, expenses, tasks, and photo gallery. Property hunt: Cards, Kanban, Map. Renovation: run SQL in `supabase/renovation/` on Supabase first.
 
 ## Current Status: Feature-Complete MVP ✅
 - **Authentication**: Modern login with glassmorphism design

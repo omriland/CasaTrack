@@ -7,7 +7,7 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util'
 import { Property, PropertyStatus, Note, Attachment } from '@/types/property'
 import { PROPERTY_STATUS_OPTIONS, getStatusLabel, getStatusColor } from '@/constants/statuses'
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty, togglePropertyFlag } from '@/lib/properties'
-import { getPropertyAttachments, getAttachmentUrl, deleteAttachment, uploadAttachment } from '@/lib/attachments'
+import { getPropertyAttachments, getAttachmentUrl, uploadAttachment } from '@/lib/attachments'
 import { formatPhoneForWhatsApp } from '@/lib/phone'
 import StarRating from './StarRating'
 
@@ -48,13 +48,10 @@ export default function PropertyDetailModal({
   const [tempDescription, setTempDescription] = useState(property.description || '')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editingNoteContent, setEditingNoteContent] = useState('')
-  const [isMac, setIsMac] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [mounted, setMounted] = useState(false)
+  const [isSavingNote, setIsSavingNote] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const [attachments, setAttachments] = useState<Attachment[]>([])
-  const [attachmentsLoading, setAttachmentsLoading] = useState(false)
-  const [deletingAttachment, setDeletingAttachment] = useState<string | null>(null)
+  const [, setAttachmentsLoading] = useState(false)
   const [selectedAttachmentIndex, setSelectedAttachmentIndex] = useState<number | null>(null)
   const [isZoomed, setIsZoomed] = useState(false)
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 })
@@ -80,24 +77,6 @@ export default function PropertyDetailModal({
       console.error('Error loading attachments:', error)
     } finally {
       setAttachmentsLoading(false)
-    }
-  }
-
-  const handleDeleteAttachment = async (attachmentId: string) => {
-    if (!confirm('Are you sure you want to delete this attachment?')) return
-
-    setDeletingAttachment(attachmentId)
-    try {
-      await deleteAttachment(attachmentId)
-      setAttachments(attachments.filter(a => a.id !== attachmentId))
-      if (selectedAttachmentIndex !== null && attachments[selectedAttachmentIndex]?.id === attachmentId) {
-        setSelectedAttachmentIndex(null)
-      }
-    } catch (error) {
-      console.error('Error deleting attachment:', error)
-      alert(error instanceof Error ? error.message : 'Failed to delete attachment')
-    } finally {
-      setDeletingAttachment(null)
     }
   }
 
@@ -375,20 +354,6 @@ export default function PropertyDetailModal({
     }
   }
 
-  useEffect(() => {
-    setMounted(true)
-    // Detect Mac for keyboard shortcut display
-    setIsMac(typeof navigator !== 'undefined' && navigator.platform.includes('Mac'))
-
-    // Detect mobile for placeholder display
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768) // md breakpoint
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
   // Focus the contentEditable div when editing starts
   useEffect(() => {
     if (editingDescription) {
@@ -477,18 +442,20 @@ export default function PropertyDetailModal({
   const handleSaveNoteEdit = async () => {
     if (!editingNoteId || !editingNoteContent.trim()) return
 
+    setIsSavingNote(true)
     try {
       const updatedNote = await updateNote(editingNoteId, editingNoteContent.trim())
       setNotes(prev => prev.map(note => note.id === editingNoteId ? updatedNote : note))
       setEditingNoteId(null)
       setEditingNoteContent('')
-      // Trigger data refresh to ensure consistency
       if (onDataRefresh) {
         await onDataRefresh()
       }
     } catch (error) {
       console.error('Error updating note:', error)
       alert('Error updating note. Please try again.')
+    } finally {
+      setIsSavingNote(false)
     }
   }
 
@@ -525,17 +492,6 @@ export default function PropertyDetailModal({
     return new Intl.NumberFormat('en-US').format(price)
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false // Use 24-hour format
-    })
-  }
-
   const formatNoteDate = (dateString: string) => {
     const now = new Date()
     const noteDate = new Date(dateString)
@@ -547,18 +503,6 @@ export default function PropertyDetailModal({
     if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
     return noteDate.toLocaleDateString()
   }
-
-  const getRelativeTime = (dateString: string) => {
-    const now = new Date()
-    const then = new Date(dateString)
-    const diffMs = now.getTime() - then.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return '1 day ago'
-    return `${diffDays} days ago`
-  }
-
 
   const handleDescriptionEdit = () => {
     setEditingDescription(true)

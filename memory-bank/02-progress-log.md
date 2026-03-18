@@ -1,5 +1,16 @@
 # Development Progress Log
 
+## Renovation app (March 2025)
+
+### Completed
+- **SQL (manual Supabase):** [`supabase/renovation/01_schema.sql`](supabase/renovation/01_schema.sql) tables + RLS; [`02_storage.sql`](supabase/renovation/02_storage.sql) bucket `renovation-gallery`.
+- **Routes:** `/renovation` (dashboard, create project), `/renovation/expenses`, `/budget`, `/tasks`, `/gallery`, `/settings` — Apple-style UI, system font stack, mobile tab bar + desktop sidebar.
+- **Features:** One active project (new project archives previous); budget + contingency + category lines; expenses + receipt upload; tasks (assignee, labels, urgency, due date, status); gallery (rooms, photo tags, lightbox); settings (team, rooms, task labels, photo tags, archive).
+- **Entry:** Property hunt header link “Renovation” / “Reno” → `/renovation`.
+- **Build fixes:** PropertyCard `onFlagToggle`, PropertyDetailModal unused state + `isSavingNote` for note save.
+
+---
+
 ## Session 1 - Initial Setup & MVP (September 21, 2025)
 
 ### ✅ Completed Tasks

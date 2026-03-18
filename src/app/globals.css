@@ -159,7 +159,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-assistant), var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
@@ -432,4 +432,15 @@ input[type=number] {
   border: 2px solid rgba(196, 181, 253, 0.6) !important;
   position: relative;
   z-index: 1;
+}
+
+/* Renovation sub-app — Custom layout padding */
+.reno-app {}
+.reno-app .pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+@media (min-width: 768px) {
+  .reno-app .pt-safe {
+    padding-top: 0;
+  }
 }

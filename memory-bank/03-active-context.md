@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Feature-Complete Application with Full Integration
-**Status**: ✅ Complete - All major features implemented and working
+**Priority**: Renovation sub-app shipped (needs Supabase SQL run by user)
+**Status**: Code complete — run `supabase/renovation/*.sql` then use `/renovation`
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session

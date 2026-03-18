@@ -1,0 +1,158 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import type { ReactNode } from 'react'
+import { useRenovation } from './RenovationContext'
+
+const nav = [
+  { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
+  { href: '/renovation/expenses', label: 'Spend', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
+  { href: '/renovation/budget', label: 'Budget', icon: ChartIcon, match: (p: string) => p.startsWith('/renovation/budget') },
+  { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
+  { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
+  { href: '/renovation/settings', label: 'More', icon: GearIcon, match: (p: string) => p.startsWith('/renovation/settings') },
+]
+
+export function RenovationShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+  const { loading, project } = useRenovation()
+
+  if (loading) {
+    return (
+      <div className="reno-app min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
+        <div className="relative flex justify-center items-center w-12 h-12">
+          <div className="absolute inset-0 border-4 border-indigo-100 rounded-full" />
+          <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin" />
+        </div>
+        <p className="text-slate-400 text-sm font-medium tracking-wide uppercase animate-pulse">Loading</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="reno-app min-h-screen bg-slate-50/50 text-slate-900 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-0 md:pl-64 flex selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Desktop Sidebar Dashboard Menu */}
+      <aside className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white/70 backdrop-blur-3xl border-r border-slate-200/60 pt-safe z-40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
+        <div className="px-6 pt-8 pb-6 bg-gradient-to-b from-white to-transparent">
+          <Link href="/" className="group inline-flex items-center text-[13px] font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
+            <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+            Property Hunt
+          </Link>
+          <div className="mt-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Renovation</h1>
+              <p className="text-[13px] font-medium text-slate-500 mt-1 line-clamp-1">{project?.name || 'Project Hub'}</p>
+            </div>
+            {project && (
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" title="Active Project"></div>
+            )}
+          </div>
+        </div>
+        
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pb-6 scrollbar-hide">
+          {nav.map((item) => {
+            const active = item.match(pathname)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`group flex items-center gap-3.5 px-3.5 py-3 rounded-md text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
+                  active 
+                    ? 'text-indigo-700 bg-indigo-50/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_4px_rgba(79,70,229,0.05)] ring-1 ring-indigo-100' 
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-600 rounded-r-full" />}
+                <div className={`p-1.5 rounded-md transition-colors ${active ? 'bg-indigo-600/10 text-indigo-600' : 'bg-slate-100 group-hover:bg-white text-slate-400 group-hover:text-slate-600 shadow-sm'}`}>
+                  <Icon className="w-5 h-5" active={active} />
+                </div>
+                {item.label}
+              </Link>
+            )
+          })}
+        </nav>
+      </aside>
+
+      {/* Main Content Pane */}
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-8 pt-safe mt-6 md:mt-12 md:pt-6 pb-12 min-h-screen animate-fade-in">
+        {children}
+      </main>
+
+      {/* Mobile Bottom Tab Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/85 backdrop-blur-xl border-t border-slate-200/50 z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.04)] ring-1 ring-white/50">
+        <div className="flex justify-evenly items-end px-1 h-[4.25rem] max-w-lg mx-auto pb-1">
+          {nav.map((item) => {
+            const active = item.match(pathname)
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group relative flex flex-col items-center justify-center w-full min-w-0 py-1.5"
+              >
+                {active && (
+                  <span className="absolute -top-[1.125rem] w-8 h-1 bg-indigo-600 rounded-b-full shadow-[0_2px_8px_rgba(79,70,229,0.6)] animate-fade-in-up" />
+                )}
+                <div className={`relative flex items-center justify-center w-11 h-8 rounded-full mb-1 transition-all duration-300 ${active ? 'bg-indigo-50/80 scale-110' : 'group-hover:bg-slate-100 bg-transparent scale-100'}`}>
+                   <Icon className={`w-6 h-6 transition-colors ${active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} active={active} />
+                </div>
+                <span className={`text-[11px] font-semibold transition-colors truncate max-w-full px-1 ${
+                  active ? 'text-indigo-600' : 'text-slate-500'
+                }`}>
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+    </div>
+  )
+}
+
+function HomeIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+       <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+    </svg>
+  )
+}
+function CardIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+       <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  )
+}
+function ChartIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+    </svg>
+  )
+}
+function CheckIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  )
+}
+function PhotoIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  )
+}
+function GearIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+       <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  )
+}

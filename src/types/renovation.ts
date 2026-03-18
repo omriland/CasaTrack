@@ -1,0 +1,101 @@
+export type RenovationProjectStatus = 'active' | 'archived'
+
+export interface RenovationProject {
+  id: string
+  name: string
+  notes: string | null
+  address_text: string | null
+  status: RenovationProjectStatus
+  start_date: string | null
+  target_end_date: string | null
+  total_budget: number
+  contingency_amount: number
+  currency: string
+  created_at: string
+  updated_at: string
+  archived_at: string | null
+}
+
+export interface RenovationTeamMember {
+  id: string
+  project_id: string
+  name: string
+  phone: string | null
+  email: string | null
+  sort_order: number
+}
+
+export interface RenovationBudgetLine {
+  id: string
+  project_id: string
+  category_name: string
+  amount_allocated: number
+  sort_order: number
+}
+
+export interface RenovationExpense {
+  id: string
+  project_id: string
+  amount: number
+  expense_date: string
+  vendor: string | null
+  category: string | null
+  notes: string | null
+  payment_method: string | null
+  receipt_storage_path: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RenovationLabel {
+  id: string
+  project_id: string
+  name: string
+  color: string
+  sort_order: number
+}
+
+export type TaskStatus = 'open' | 'in_progress' | 'blocked' | 'done'
+export type TaskUrgency = 'low' | 'medium' | 'high' | 'critical'
+
+export interface RenovationTask {
+  id: string
+  project_id: string
+  title: string
+  body: string | null
+  status: TaskStatus
+  assignee_id: string | null
+  due_date: string | null
+  start_date: string | null
+  urgency: TaskUrgency
+  sort_order: number
+  created_at: string
+  updated_at: string
+  label_ids?: string[]
+  assignee?: RenovationTeamMember | null
+}
+
+export interface RenovationRoom {
+  id: string
+  project_id: string
+  name: string
+  sort_order: number
+}
+
+export interface RenovationGalleryTag {
+  id: string
+  project_id: string
+  name: string
+}
+
+export interface RenovationGalleryItem {
+  id: string
+  project_id: string
+  storage_path: string
+  caption: string | null
+  taken_at: string | null
+  room_id: string | null
+  created_at: string
+  tag_ids?: string[]
+  public_url?: string
+}

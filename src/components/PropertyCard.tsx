@@ -25,7 +25,7 @@ interface PropertyCardProps {
   notesBump?: { id: string; delta: number; nonce: number } | null
 }
 
-export default function PropertyCard({ property, onViewNotes, onStatusUpdate, onRatingUpdate, onFlagToggle }: PropertyCardProps) {
+export default function PropertyCard({ property, onViewNotes, onStatusUpdate, onRatingUpdate, onFlagToggle: _onFlagToggle }: PropertyCardProps) {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const statusDropdownRef = useRef<HTMLDivElement>(null)
   const [mounted, setMounted] = useState(false)
