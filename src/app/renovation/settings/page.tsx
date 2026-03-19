@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
@@ -32,6 +33,7 @@ export default function RenovationSettingsPage() {
   const [gTags, setGTags] = useState<RenovationGalleryTag[]>([])
   const [nm, setNm] = useState({ name: '', phone: '', email: '' })
   const [roomName, setRoomName] = useState('')
+  const [roomNotes, setRoomNotes] = useState('')
   const [lbName, setLbName] = useState('')
   const [lbColor, setLbColor] = useState('#6366f1') // Default to indigo-500
   const [gtName, setGtName] = useState('')
@@ -181,9 +183,14 @@ export default function RenovationSettingsPage() {
       </section>
 
       <section className="bg-white rounded-md border border-black/[0.06] overflow-hidden">
-        <div className="p-4 border-b border-black/[0.06]">
-          <h2 className="text-[17px] font-semibold">Rooms</h2>
-          <p className="text-[13px] text-black/45 mt-0.5">For photo organization</p>
+        <div className="p-4 border-b border-black/[0.06] flex justify-between items-center flex-wrap gap-2">
+          <div>
+            <h2 className="text-[17px] font-semibold">Rooms</h2>
+            <p className="text-[13px] text-black/45 mt-0.5">Link tasks and photos to rooms; add a paragraph per room.</p>
+          </div>
+          <Link href="/renovation/rooms" className="text-[13px] font-semibold text-indigo-600 hover:text-indigo-700">
+            View by room →
+          </Link>
         </div>
         <div className="divide-y divide-black/[0.06]">
           {rooms.map((r) => (
@@ -194,25 +201,34 @@ export default function RenovationSettingsPage() {
               </button>
             </div>
           ))}
-          <div className="p-4 flex gap-2">
+          <div className="p-4 space-y-2">
             <input
               dir="auto"
-              placeholder="Kitchen, bath…"
+              placeholder="Room name (e.g. Kitchen, Bath)"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="flex-1 h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+              className="w-full h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+            />
+            <textarea
+              dir="auto"
+              placeholder="Optional paragraph about this room…"
+              value={roomNotes}
+              onChange={(e) => setRoomNotes(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 rounded-md border border-black/[0.12] text-[15px] resize-none"
             />
             <button
               type="button"
               onClick={async () => {
                 if (!roomName.trim()) return
-                await createRoom(project.id, roomName.trim())
+                await createRoom(project.id, roomName.trim(), roomNotes.trim() || null)
                 setRoomName('')
+                setRoomNotes('')
                 await load()
               }}
               className="h-10 px-4 rounded-md bg-[#007AFF] text-white font-semibold text-[15px]"
             >
-              Add
+              Add room
             </button>
           </div>
         </div>

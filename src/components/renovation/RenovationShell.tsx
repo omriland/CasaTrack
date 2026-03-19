@@ -11,6 +11,7 @@ const nav = [
   { href: '/renovation/budget', label: 'Budget', icon: ChartIcon, match: (p: string) => p.startsWith('/renovation/budget') },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
   { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
+  { href: '/renovation/rooms', label: 'Rooms', icon: RoomIcon, match: (p: string) => p.startsWith('/renovation/rooms') },
   { href: '/renovation/settings', label: 'More', icon: GearIcon, match: (p: string) => p.startsWith('/renovation/settings') },
 ]
 
@@ -145,6 +146,13 @@ function PhotoIcon({ className, active }: { className?: string; active?: boolean
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+  )
+}
+function RoomIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
     </svg>
   )
 }

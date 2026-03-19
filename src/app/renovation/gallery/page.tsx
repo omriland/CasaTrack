@@ -4,15 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   createGalleryItem,
-  deleteGalleryItem,
   listGalleryItems,
   listGalleryTags,
   listRooms,
-  updateGalleryItem,
   uploadGalleryPhoto,
 } from '@/lib/renovation'
 import { Dropdown } from '@/components/renovation/Dropdown'
-import { formatDateDisplay } from '@/lib/renovation-format'
+import { Lightbox } from '@/components/renovation/Lightbox'
 import type { RenovationGalleryItem, RenovationGalleryTag, RenovationRoom } from '@/types/renovation'
 
 export default function GalleryPage() {
@@ -23,9 +21,6 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState<RenovationGalleryItem | null>(null)
-  const [editCaption, setEditCaption] = useState('')
-  const [editRoom, setEditRoom] = useState('')
-  const [editTags, setEditTags] = useState<string[]>([])
   const [filterRoom, setFilterRoom] = useState<string>('')
   const [filterTag, setFilterTag] = useState<string>('')
 
@@ -60,8 +55,9 @@ export default function GalleryPage() {
       }
       await load()
     } catch (e) {
-      console.error(e)
-      alert('Upload failed. Check storage bucket and SQL.')
+      console.error('Gallery upload error:', e)
+      const msg = e instanceof Error ? e.message : String(e)
+      alert(`Upload failed: ${msg}. Ensure you ran 02_storage.sql and that the bucket "renovation-gallery" exists.`)
     } finally {
       setUploading(false)
     }
@@ -69,24 +65,6 @@ export default function GalleryPage() {
 
   const openLightbox = (item: RenovationGalleryItem) => {
     setLightbox(item)
-    setEditCaption(item.caption || '')
-    setEditRoom(item.room_id || '')
-    setEditTags(item.tag_ids || [])
-  }
-
-  const saveMeta = async () => {
-    if (!lightbox) return
-    await updateGalleryItem(
-      lightbox.id,
-      {
-        caption: editCaption || null,
-        taken_at: lightbox.taken_at,
-        room_id: editRoom || null,
-      },
-      editTags
-    )
-    setLightbox(null)
-    await load()
   }
 
   const filtered = items.filter((it) => {
@@ -176,86 +154,14 @@ export default function GalleryPage() {
       )}
 
       {lightbox && (
-        <div
-          className="fixed inset-0 z-[110] bg-black/95 flex flex-col"
-          onClick={() => setLightbox(null)}
-        >
-          <div className="flex justify-end p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            <button type="button" className="text-white text-[17px] font-medium px-4" onClick={() => setLightbox(null)}>
-              Done
-            </button>
-          </div>
-          <div className="flex-1 flex items-center justify-center p-4 min-h-0" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={lightbox.public_url} alt="" className="max-w-full max-h-[50vh] object-contain rounded-md" />
-          </div>
-          <div
-            className="bg-[#1C1C1E] rounded-t-[14px] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-white space-y-3 max-h-[45vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {lightbox.taken_at && <p className="text-[13px] text-white/50">{formatDateDisplay(lightbox.taken_at)}</p>}
-            <input
-              dir="auto"
-              value={editCaption}
-              onChange={(e) => setEditCaption(e.target.value)}
-              placeholder="Caption"
-              className="w-full h-11 px-3 rounded-md bg-white/10 border border-white/20 text-[16px] placeholder:text-white/40"
-            />
-            <div>
-              <p className="text-[13px] text-slate-400 font-semibold uppercase tracking-widest mb-2">Room</p>
-              <div className="relative">
-                <Dropdown
-                  value={editRoom}
-                  onChange={(val) => setEditRoom(val)}
-                  options={[{ value: '', label: 'Unassigned' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
-                  className="w-full h-12 rounded-md bg-white/10 border border-white/20 text-[15px] font-medium text-white focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all shadow-sm"
-                />
-              </div>
-            </div>
-            {tags.length > 0 && (
-              <div>
-                <p className="text-[13px] text-white/50 mb-2">Tags</p>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() =>
-                        setEditTags((prev) => (prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id]))
-                      }
-                      className={`text-[13px] px-3 py-1.5 rounded-full ${
-                        editTags.includes(t.id) ? 'bg-[#007AFF] text-white' : 'bg-white/15 text-white/80'
-                      }`}
-                    >
-                      {t.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex gap-2 pt-2">
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!confirm('Delete this photo?')) return
-                  await deleteGalleryItem(lightbox)
-                  setLightbox(null)
-                  await load()
-                }}
-                className="text-[#FF453A] text-[15px] font-medium px-2"
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                onClick={saveMeta}
-                className="flex-1 h-12 rounded-md bg-[#007AFF] text-white font-semibold"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
+        <Lightbox
+          images={filtered}
+          initialIndex={filtered.findIndex(i => i.id === lightbox.id)}
+          rooms={rooms}
+          tags={tags}
+          onClose={() => setLightbox(null)}
+          onChanged={() => load()}
+        />
       )}
     </div>
   )

@@ -345,9 +345,13 @@ export async function listTasks(projectId: string): Promise<RenovationTask[]> {
   const memberMap = new Map(members.map((m) => [m.id, m]))
   const labelMap = await loadTaskLabelIds(tasks.map((t) => t.id))
 
+  const rooms = await listRooms(projectId)
+  const roomMap = new Map(rooms.map((r) => [r.id, r]))
+
   return tasks.map((t) => ({
     ...t,
     assignee: t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null,
+    room: t.room_id ? roomMap.get(t.room_id) ?? null : null,
     label_ids: labelMap.get(t.id) || [],
   }))
 }
@@ -359,6 +363,7 @@ export async function createTask(
     body?: string | null
     status?: TaskStatus
     assignee_id?: string | null
+    room_id?: string | null
     due_date?: string | null
     start_date?: string | null
     urgency?: TaskUrgency
@@ -373,6 +378,7 @@ export async function createTask(
       body: row.body ?? null,
       status: row.status ?? 'open',
       assignee_id: row.assignee_id ?? null,
+      room_id: row.room_id ?? null,
       due_date: row.due_date ?? null,
       start_date: row.start_date ?? null,
       urgency: row.urgency ?? 'medium',
@@ -395,7 +401,7 @@ export async function updateTask(
   updates: Partial<
     Pick<
       RenovationTask,
-      'title' | 'body' | 'status' | 'assignee_id' | 'due_date' | 'start_date' | 'urgency' | 'sort_order'
+      'title' | 'body' | 'status' | 'assignee_id' | 'room_id' | 'due_date' | 'start_date' | 'urgency' | 'sort_order'
     >
   >
 ): Promise<void> {
@@ -431,15 +437,23 @@ export async function listRooms(projectId: string): Promise<RenovationRoom[]> {
   return (data || []) as RenovationRoom[]
 }
 
-export async function createRoom(projectId: string, name: string): Promise<RenovationRoom> {
+export async function createRoom(projectId: string, name: string, notes?: string | null): Promise<RenovationRoom> {
   const { data, error } = await supabase
     .from('renovation_rooms')
-    .insert({ project_id: projectId, name })
+    .insert({ project_id: projectId, name, notes: notes ?? null })
     .select()
     .single()
 
   if (error) throw error
   return data as RenovationRoom
+}
+
+export async function updateRoom(
+  id: string,
+  updates: Partial<Pick<RenovationRoom, 'name' | 'notes'>>
+): Promise<void> {
+  const { error } = await supabase.from('renovation_rooms').update(updates).eq('id', id)
+  if (error) throw error
 }
 
 export async function deleteRoom(id: string): Promise<void> {

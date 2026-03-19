@@ -65,6 +65,7 @@ export interface RenovationTask {
   body: string | null
   status: TaskStatus
   assignee_id: string | null
+  room_id: string | null
   due_date: string | null
   start_date: string | null
   urgency: TaskUrgency
@@ -73,12 +74,14 @@ export interface RenovationTask {
   updated_at: string
   label_ids?: string[]
   assignee?: RenovationTeamMember | null
+  room?: RenovationRoom | null
 }
 
 export interface RenovationRoom {
   id: string
   project_id: string
   name: string
+  notes: string | null
   sort_order: number
 }
 
