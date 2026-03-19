@@ -11,13 +11,20 @@ import type {
   RenovationRoom,
   RenovationGalleryTag,
   RenovationGalleryItem,
+  RenovationFile,
 } from '@/types/renovation'
 
 const BUCKET = 'renovation-gallery'
+const FILES_BUCKET = 'renovation-files'
 
 export function renovationPublicUrl(path: string): string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') || ''
   return `${base}/storage/v1/object/public/${BUCKET}/${path}`
+}
+
+export function renovationFilesPublicUrl(path: string): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') || ''
+  return `${base}/storage/v1/object/public/${FILES_BUCKET}/${path}`
 }
 
 /** Effective budget cap = total + contingency */
@@ -586,6 +593,74 @@ export async function uploadGalleryPhoto(projectId: string, file: File): Promise
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: false })
   if (error) throw error
   return path
+}
+
+// --- Project files (renovation-files bucket) ---
+
+export async function listProjectFiles(projectId: string): Promise<RenovationFile[]> {
+  const { data, error } = await supabase
+    .from('renovation_files')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+  const rows = (data || []) as RenovationFile[]
+  const rooms = await listRooms(projectId)
+  const roomMap = new Map(rooms.map((r) => [r.id, r]))
+  return rows.map((f) => ({
+    ...f,
+    public_url: renovationFilesPublicUrl(f.storage_path),
+    room: f.room_id ? roomMap.get(f.room_id) ?? null : null,
+  }))
+}
+
+export async function uploadProjectFile(
+  projectId: string,
+  file: File,
+  roomId?: string | null
+): Promise<RenovationFile> {
+  const safeName = file.name.replace(/[^\w.\-()\s\u0590-\u05FF]+/g, '_').trim() || 'file'
+  const ext = safeName.includes('.') ? safeName.split('.').pop() || 'bin' : 'bin'
+  const path = `${projectId}/files/${crypto.randomUUID()}.${ext}`
+  const { error: upErr } = await supabase.storage.from(FILES_BUCKET).upload(path, file, { upsert: false })
+  if (upErr) throw upErr
+
+  const displayName = safeName
+  const { data, error } = await supabase
+    .from('renovation_files')
+    .insert({
+      project_id: projectId,
+      storage_path: path,
+      display_name: displayName,
+      original_name: file.name,
+      mime_type: file.type || null,
+      file_size: file.size,
+      room_id: roomId ?? null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  const row = data as RenovationFile
+  return {
+    ...row,
+    public_url: renovationFilesPublicUrl(row.storage_path),
+  }
+}
+
+export async function updateProjectFile(
+  id: string,
+  updates: Partial<Pick<RenovationFile, 'display_name' | 'room_id'>>
+): Promise<void> {
+  const { error } = await supabase.from('renovation_files').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteProjectFile(file: RenovationFile): Promise<void> {
+  await supabase.storage.from(FILES_BUCKET).remove([file.storage_path])
+  const { error } = await supabase.from('renovation_files').delete().eq('id', file.id)
+  if (error) throw error
 }
 
 export function expensesThisMonth(expenses: RenovationExpense[]): number {

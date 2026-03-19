@@ -133,15 +133,15 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
         className="w-full md:max-w-[500px] bg-white rounded-t-xl md:rounded-lg shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
       >
         {/* Header */}
-        <div className="px-6 py-4 md:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
-          <div className="w-12 h-1.5 bg-slate-200 rounded-full absolute top-2 left-1/2 -translate-x-1/2 md:hidden" />
-          <h2 className="text-[18px] md:text-[20px] font-bold text-slate-800 tracking-tight mt-2 md:mt-0">{editing ? 'Edit Task' : 'New Task'}</h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 mt-2 md:mt-0 active:scale-90">
+        <div className="px-6 py-1.5 md:py-2 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
+          <div className="w-12 h-0.5 bg-slate-200 rounded-full absolute top-1 left-1/2 -translate-x-1/2 md:hidden" />
+          <h2 className="text-[15px] font-bold text-slate-800 tracking-tight">{editing ? 'Edit Task' : 'New Task'}</h2>
+          <button onClick={onClose} className="p-1 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         
-        <form onSubmit={save} className="p-6 overflow-y-auto max-h-[85vh] space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <form onSubmit={save} className="p-5 overflow-y-auto max-h-[85vh] space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           
           {/* Main Title Input */}
           <div className="relative group">
@@ -150,7 +150,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task name..."
-              className="w-full bg-transparent text-[20px] md:text-[24px] font-bold text-slate-900 outline-none pb-2 placeholder-slate-200 transition-all font-display"
+              className="w-full bg-transparent text-[20px] font-bold text-slate-900 outline-none pb-1 placeholder-slate-200 transition-all font-display"
               required
               autoFocus
             />
@@ -265,19 +265,19 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                <div className="absolute left-3.5 top-3.5 text-slate-400">
                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
                </div>
-               <textarea
-                 dir="auto"
-                 value={body}
-                 onChange={(e) => setBody(e.target.value)}
-                 placeholder="Add context, measurements, or specs..."
-                 rows={3}
-                 className="w-full pl-10 pr-3 py-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none"
-               />
+                <textarea
+                  dir="auto"
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Add context, measurements, or specs..."
+                  rows={2}
+                  className="w-full pl-10 pr-3 py-2 rounded border border-slate-200 bg-slate-50 text-[14px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none"
+                />
             </div>
           </div>
 
           {/* Actions */}
-          <div className="pt-4 flex gap-3">
+          <div className="pt-2 flex gap-3">
             {editing && (
               <button
                 type="button"

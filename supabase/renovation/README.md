@@ -4,6 +4,7 @@
 2. Run **`01_schema.sql`** in full (creates tables, indexes, triggers, RLS).
 3. Run **`02_storage.sql`** (creates bucket + storage policies).
 4. Run **`03_rooms_and_task_room.sql`** (room notes + task→room link).
+5. Run **`04_files.sql`** (Files tab: table + bucket `renovation-files`).
 
 If a script fails, read the error; fix any naming conflict and re-run only missing parts.
 

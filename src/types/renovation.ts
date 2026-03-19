@@ -102,3 +102,18 @@ export interface RenovationGalleryItem {
   tag_ids?: string[]
   public_url?: string
 }
+
+export interface RenovationFile {
+  id: string
+  project_id: string
+  room_id: string | null
+  storage_path: string
+  display_name: string
+  original_name: string | null
+  mime_type: string | null
+  file_size: number | null
+  created_at: string
+  updated_at: string
+  public_url?: string
+  room?: RenovationRoom | null
+}
