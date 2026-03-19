@@ -306,13 +306,28 @@ export default function RenovationFilesPage() {
                 </div>
                 
                 <div className="w-full space-y-1">
-                  <input
-                    dir="auto"
-                    defaultValue={f.display_name}
-                    onBlur={(e) => saveName(f, e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                    className="w-full text-[14px] font-bold text-slate-900 bg-transparent border-none text-center outline-none p-0 h-auto overflow-hidden text-ellipsis whitespace-nowrap"
-                  />
+                  {editingFileId === f.id ? (
+                    <input
+                      autoFocus
+                      dir="auto"
+                      value={editingFileName}
+                      onChange={(e) => setEditingFileName(e.target.value)}
+                      onBlur={() => saveName(f, editingFileName)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveName(f, editingFileName)
+                        if (e.key === 'Escape') setEditingFileId(null)
+                      }}
+                      className="w-full text-[14px] font-bold text-indigo-600 bg-white border border-indigo-200 rounded-lg text-center outline-none px-2 py-0.5"
+                    />
+                  ) : (
+                    <span
+                      onDoubleClick={() => startEditing(f)}
+                      title="Double click to rename"
+                      className="block w-full text-[14px] font-bold text-slate-900 truncate text-center cursor-edit hover:text-indigo-600 transition-colors"
+                    >
+                      {f.display_name}
+                    </span>
+                  )}
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{formatBytes(f.file_size)}</p>
                 </div>
 
@@ -336,7 +351,7 @@ export default function RenovationFilesPage() {
                     )}
                     <button 
                       onClick={() => confirm('Delete this file?') && deleteProjectFile(f).then(load)}
-                      className="p-1.5 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
+                      className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all"
                       title="Delete file"
                     >
                       <IconTrash />
@@ -361,13 +376,28 @@ export default function RenovationFilesPage() {
                 
                 <div className="flex-1 min-w-0 flex items-center gap-4">
                   <div className="flex-1 min-w-0 flex items-center gap-3">
-                    <input
-                      dir="auto"
-                      defaultValue={f.display_name}
-                      onBlur={(e) => saveName(f, e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                      className="flex-1 text-[15px] font-bold text-slate-900 bg-transparent border-none outline-none p-0 focus:text-indigo-600 transition-colors truncate"
-                    />
+                    {editingFileId === f.id ? (
+                      <input
+                        autoFocus
+                        dir="auto"
+                        value={editingFileName}
+                        onChange={(e) => setEditingFileName(e.target.value)}
+                        onBlur={() => saveName(f, editingFileName)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveName(f, editingFileName)
+                          if (e.key === 'Escape') setEditingFileId(null)
+                        }}
+                        className="flex-1 text-[15px] font-bold text-indigo-600 bg-white border border-indigo-200 rounded-lg px-2 py-1 outline-none"
+                      />
+                    ) : (
+                      <span
+                        onDoubleClick={() => startEditing(f)}
+                        title="Double click to rename"
+                        className="flex-1 text-[15px] font-bold text-slate-900 cursor-edit hover:text-indigo-600 transition-colors truncate"
+                      >
+                        {f.display_name}
+                      </span>
+                    )}
                     <div className="hidden lg:flex items-center gap-2 shrink-0">
                       <span className="text-[12px] font-medium text-slate-400">{formatBytes(f.file_size)}</span>
                       {f.room && (
@@ -391,7 +421,7 @@ export default function RenovationFilesPage() {
                     ))}
                   </select>
                   
-                  <div className="flex items-center gap-1 group/actions">
+                  <div className="flex items-center gap-1">
                     {f.public_url && (
                       <a 
                         href={f.public_url} 
@@ -405,7 +435,7 @@ export default function RenovationFilesPage() {
                     )}
                     <button 
                       onClick={() => confirm('Delete this file?') && deleteProjectFile(f).then(load)}
-                      className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100 group-hover/actions:opacity-100 transition-opacity"
+                      className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                       title="Delete file"
                     >
                       <IconTrash />
