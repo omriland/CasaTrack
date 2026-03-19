@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { createExpense, updateExpense } from '@/lib/renovation'
+import { DatePicker } from '@/components/renovation/DatePicker'
 import type { RenovationExpense } from '@/types/renovation'
 
 interface ExpenseModalProps {
@@ -149,10 +150,10 @@ export function ExpenseModal({ editing, onClose, onSave }: ExpenseModalProps) {
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Date</label>
               <div className="relative group">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none z-10">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full h-11 pl-10 pr-3 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer" required />
+                <DatePicker value={date} onChange={setDate} />
               </div>
             </div>
             <div className="space-y-1.5">

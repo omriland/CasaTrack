@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from 'react'
 export interface DropdownOption {
   value: string
   label: string
+  icon?: React.ReactNode
 }
 
 interface DropdownProps {
@@ -38,9 +39,10 @@ export function Dropdown({ value, onChange, options, className = '', placeholder
         onClick={() => setOpen(!open)}
         className="w-full h-full text-left focus:outline-none flex items-center justify-between px-3.5"
       >
-        <span className={`block truncate ${!selectedOption && placeholder ? 'opacity-50' : ''}`}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+        <div className={`flex items-center truncate ${!selectedOption && placeholder ? 'opacity-50' : ''}`}>
+          {selectedOption?.icon && <span className="mr-2 flex-shrink-0">{selectedOption.icon}</span>}
+          <span className="block truncate">{selectedOption ? selectedOption.label : placeholder}</span>
+        </div>
         <svg
           className={`w-4 h-4 opacity-50 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
           fill="none"
@@ -66,11 +68,12 @@ export function Dropdown({ value, onChange, options, className = '', placeholder
                     onChange(option.value)
                     setOpen(false)
                   }}
-                  className={`w-full text-left px-3.5 py-2.5 text-sm transition-colors ${
+                  className={`w-full text-left px-3.5 py-2.5 text-sm transition-colors flex items-center ${
                     isActive ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 >
-                  {option.label}
+                  {option.icon && <span className="mr-2 flex-shrink-0">{option.icon}</span>}
+                  <span className="truncate">{option.label}</span>
                 </button>
               )
             })
