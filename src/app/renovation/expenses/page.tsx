@@ -80,7 +80,7 @@ export default function ExpensesPage() {
         <button
           type="button"
           onClick={openNew}
-          className="h-10 px-4 rounded-md bg-[#007AFF] text-white text-[15px] font-semibold active:scale-[0.98]"
+          className="h-10 px-4 rounded bg-[#007AFF] text-white text-[15px] font-semibold active:scale-[0.98]"
         >
           Add
         </button>
@@ -89,18 +89,18 @@ export default function ExpensesPage() {
       {loading ? (
         <div className="space-y-2 animate-pulse">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-white rounded-md border border-black/[0.06]" />
+            <div key={i} className="h-16 bg-white rounded border border-black/[0.06]" />
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="bg-white rounded-md border border-black/[0.06] p-10 text-center">
+        <div className="bg-white rounded border border-black/[0.06] p-10 text-center">
           <p className="text-[15px] text-black/45">No expenses yet</p>
           <button type="button" onClick={openNew} className="mt-4 text-[#007AFF] font-semibold text-[17px]">
             Add expense
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-md border border-black/[0.06] overflow-hidden divide-y divide-black/[0.06]">
+        <div className="bg-white rounded border border-black/[0.06] overflow-hidden divide-y divide-black/[0.06]">
           {list.map((row) => (
             <div key={row.id} className="flex items-center gap-3 p-4 active:bg-black/[0.02]">
               <button type="button" onClick={() => openEdit(row)} className="flex-1 text-left min-w-0">

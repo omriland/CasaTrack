@@ -203,7 +203,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                     value={editCaption}
                     onChange={(e) => setEditCaption(e.target.value)}
                     placeholder="Describe this photo..."
-                    className="w-full h-24 pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-[15px] placeholder:text-white/30 focus:bg-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none outline-none text-white font-medium shadow-inner"
+                    className="w-full h-24 pl-10 pr-4 py-3 rounded-md bg-white/5 border border-white/10 text-[15px] placeholder:text-white/30 focus:bg-white/10 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 transition-all resize-none outline-none text-white font-medium shadow-inner"
                   />
                 </div>
               </div>
@@ -216,7 +216,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                     value={editRoom}
                     onChange={(val) => setEditRoom(val)}
                     options={[{ value: '', label: 'No Room' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
-                    className="w-full h-12 rounded-xl bg-white/5 border border-white/10 text-[15px] font-bold text-white focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:bg-white/10 transition-all shadow-sm !placeholder-white/30"
+                    className="w-full h-12 rounded-md bg-white/5 border border-white/10 text-[15px] font-bold text-white focus-within:ring-2 focus-within:ring-indigo-500/50 focus-within:bg-white/10 transition-all shadow-sm !placeholder-white/30"
                   />
                 </div>
               </div>
@@ -233,7 +233,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                           key={t.id}
                           type="button"
                           onClick={() => setEditTags((prev) => (prev.includes(t.id) ? prev.filter((x) => x !== t.id) : [...prev, t.id]))}
-                          className={`text-[13px] font-bold px-4 py-1.5 rounded-full transition-all active:scale-95 ${
+                          className={`text-[13px] font-bold px-4 py-1.5 rounded transition-all active:scale-95 ${
                             isActive 
                             ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.4)] scale-105 border border-transparent' 
                             : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
@@ -253,7 +253,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                   type="button"
                   disabled={saving}
                   onClick={handleDelete}
-                  className="w-14 h-14 shrink-0 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 flex items-center justify-center transition-all disabled:opacity-50 active:scale-95"
+                  className="w-14 h-14 shrink-0 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 flex items-center justify-center transition-all disabled:opacity-50 active:scale-95"
                   title="Delete Photo"
                 >
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -262,7 +262,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                   type="button"
                   disabled={saving}
                   onClick={handleSave}
-                  className="flex-1 h-14 rounded-xl bg-white text-black font-bold text-[16px] shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="flex-1 h-14 rounded-md bg-white text-black font-bold text-[16px] shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(255,255,255,0.25)] hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving ? <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin" /> : 'Save Changes'}
                 </button>
@@ -281,7 +281,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                       setIndex(i)
                       setActiveTab('info')
                     }}
-                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`relative aspect-square rounded overflow-hidden border-2 transition-all ${
                       isActive ? 'border-white opacity-100 scale-95 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-transparent opacity-50 hover:opacity-100'
                     }`}
                   >

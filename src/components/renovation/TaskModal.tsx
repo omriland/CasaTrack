@@ -130,7 +130,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}>
       <div
         onClick={(ev) => ev.stopPropagation()}
-        className="w-full md:max-w-[500px] bg-white rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
+        className="w-full md:max-w-[500px] bg-white rounded-t-xl md:rounded-lg shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
       >
         {/* Header */}
         <div className="px-6 py-4 md:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
@@ -150,7 +150,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task name..."
-              className="w-full bg-transparent text-[28px] md:text-[32px] font-bold text-slate-900 outline-none pb-2 placeholder-slate-200 transition-all"
+              className="w-full bg-transparent text-[20px] md:text-[24px] font-bold text-slate-900 outline-none pb-2 placeholder-slate-200 transition-all font-display"
               required
               autoFocus
             />
@@ -166,7 +166,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                   value={status}
                   onChange={(val) => setStatus(val as TaskStatus)}
                   options={STATUSES.map(s => ({ value: s, label: s.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }))}
-                  className="w-full h-11 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize"
+                  className="w-full h-11 rounded border border-slate-200 bg-slate-50 text-[14px] font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize"
                 />
               </div>
             </div>
@@ -177,7 +177,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                   value={urgency}
                   onChange={(val) => setUrgency(val as TaskUrgency)}
                   options={URGENCY.map(u => ({ value: u, label: u.replace(/\b\w/g, l => l.toUpperCase()), icon: PRIORITY_ICONS[u] }))}
-                  className="w-full h-11 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize"
+                  className="w-full h-11 rounded border border-slate-200 bg-slate-50 text-[14px] font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize"
                 />
               </div>
             </div>
@@ -201,7 +201,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                   const target = addDaysToIso(preset.offset)
                   const act = due === target
                   return (
-                    <button key={preset.label} type="button" onClick={() => setDue(target)} className={`px-2 py-1 text-[11px] font-bold rounded-md transition-all flex-1 text-center ${act ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'}`}>
+                    <button key={preset.label} type="button" onClick={() => setDue(target)} className={`px-2 py-1 text-[11px] font-bold rounded transition-all flex-1 text-center ${act ? 'bg-indigo-100 text-indigo-700 shadow-sm' : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'}`}>
                       {preset.label}
                     </button>
                   )
@@ -215,7 +215,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                   value={assigneeId}
                   onChange={(val) => setAssigneeId(val)}
                   options={[{ value: '', label: 'Unassigned' }, ...members.map(m => ({ value: m.id, label: m.name }))]}
-                  className="w-full h-11 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all"
+                  className="w-full h-11 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all"
                 />
               </div>
             </div>
@@ -227,7 +227,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                     value={roomId}
                     onChange={(val) => setRoomId(val)}
                     options={[{ value: '', label: 'No room' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
-                    className="w-full h-11 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all"
+                    className="w-full h-11 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all"
                   />
                 </div>
               </div>
@@ -271,7 +271,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                  onChange={(e) => setBody(e.target.value)}
                  placeholder="Add context, measurements, or specs..."
                  rows={3}
-                 className="w-full pl-10 pr-3 py-3 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none"
+                 className="w-full pl-10 pr-3 py-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none"
                />
             </div>
           </div>
@@ -286,12 +286,12 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                   await deleteTask(editing.id)
                   onSave()
                 }}
-                className="h-12 w-12 shrink-0 rounded-md bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center hover:bg-rose-100 active:scale-[0.98] transition-all shadow-sm"
+                className="h-12 w-12 shrink-0 rounded bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center hover:bg-rose-100 active:scale-[0.98] transition-all shadow-sm"
               >
                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
               </button>
             )}
-            <button id="save-task-btn" type="submit" disabled={saving} className="flex-1 h-12 rounded-md bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-md hover:shadow-lg hover:from-indigo-500 hover:to-indigo-400 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+            <button id="save-task-btn" type="submit" disabled={saving} className="flex-1 h-12 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-md hover:shadow-lg hover:from-indigo-500 hover:to-indigo-400 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
               {saving ? (
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (

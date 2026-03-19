@@ -11,12 +11,11 @@ import {
   listTasks,
   expensesThisMonth,
 } from '@/lib/renovation'
-import { ExpenseModal } from '@/components/renovation/ExpenseModal'
 import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
 import type { RenovationExpense, RenovationGalleryItem, RenovationTask } from '@/types/renovation'
 
 export default function RenovationDashboardPage() {
-  const { project, loading, refresh } = useRenovation()
+  const { project, loading, refresh, setExpenseModalOpen } = useRenovation()
   const [name, setName] = useState('')
   const [budget, setBudget] = useState('')
   const [contingency, setContingency] = useState('')
@@ -27,7 +26,6 @@ export default function RenovationDashboardPage() {
   const [tasks, setTasks] = useState<RenovationTask[]>([])
   const [gallery, setGallery] = useState<RenovationGalleryItem[]>([])
   const [dashLoading, setDashLoading] = useState(false)
-  const [showExpenseModal, setShowExpenseModal] = useState(false)
 
   const loadDash = useCallback(async () => {
     if (!project) return
@@ -82,7 +80,7 @@ export default function RenovationDashboardPage() {
     return (
       <div className="max-w-xl mx-auto pt-8 md:pt-16 animate-fade-in-up">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-md bg-indigo-50 text-indigo-600 mb-6 shadow-sm ring-1 ring-indigo-100">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded bg-indigo-50 text-indigo-600 mb-6 shadow-sm ring-1 ring-indigo-100">
              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
@@ -93,7 +91,7 @@ export default function RenovationDashboardPage() {
           </p>
         </div>
 
-        <form onSubmit={handleCreate} className="space-y-6 bg-white/70 backdrop-blur-xl rounded-md p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/50">
+        <form onSubmit={handleCreate} className="space-y-6 bg-white/70 backdrop-blur-xl rounded p-6 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200/50">
           <div>
             <label className="block text-[13px] font-bold text-slate-600 uppercase tracking-widest mb-2 px-1">
               Project name
@@ -103,7 +101,7 @@ export default function RenovationDashboardPage() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Dream House Rothschild"
-              className="w-full h-14 px-4 rounded-md bg-white border border-slate-200 text-slate-900 text-lg shadow-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-normal"
+              className="w-full h-14 px-4 rounded bg-white border border-slate-200 text-slate-900 text-lg shadow-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400 placeholder:font-normal"
               required
             />
           </div>
@@ -118,7 +116,7 @@ export default function RenovationDashboardPage() {
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
                 placeholder="0"
-                className="w-full h-14 px-4 rounded-md bg-white border border-slate-200 text-slate-900 text-lg shadow-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                className="w-full h-14 px-4 rounded bg-white border border-slate-200 text-slate-900 text-lg shadow-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
               />
             </div>
             <div>
@@ -131,14 +129,14 @@ export default function RenovationDashboardPage() {
                 value={contingency}
                 onChange={(e) => setContingency(e.target.value)}
                 placeholder="0"
-                className="w-full h-14 px-4 rounded-md bg-white border border-slate-200 text-slate-900 text-lg shadow-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                className="w-full h-14 px-4 rounded bg-white border border-slate-200 text-slate-900 text-lg shadow-sm font-medium outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder:text-slate-400"
               />
             </div>
           </div>
           <button
             type="submit"
             disabled={creating}
-            className="w-full h-14 mt-4 rounded-md bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-lg font-bold shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full h-14 mt-4 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white text-lg font-bold shadow-md shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {creating ? (
                <>
@@ -178,7 +176,7 @@ export default function RenovationDashboardPage() {
           </h1>
         </div>
         <div className="hidden md:flex gap-3">
-           <button onClick={() => setShowExpenseModal(true)} className="px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded-md text-[14px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+           <button onClick={() => setExpenseModalOpen(true)} className="px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded text-[14px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
               + Add Expense
            </button>
         </div>
@@ -195,7 +193,7 @@ export default function RenovationDashboardPage() {
       ) : (
         <>
           {/* Main Budget Card */}
-          <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-md shadow-xl text-white">
+          <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded shadow-xl text-white">
             <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none text-white">
                <svg className="w-64 h-64 -mt-16 -mr-16 transform rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
             </div>
@@ -215,10 +213,10 @@ export default function RenovationDashboardPage() {
                   <p className={`text-4xl md:text-5xl font-bold tracking-tight tabular-nums mt-1 ${over ? 'text-rose-400' : 'text-white'}`}>
                     {formatIls(cap - spent)}
                   </p>
-                  {over && <p className="inline-block mt-2 px-2.5 py-1 bg-rose-500/20 text-rose-300 text-[13px] font-bold rounded-md backdrop-blur-md">Exceeded by {formatIls(spent - cap)}</p>}
+                  {over && <p className="inline-block mt-2 px-2.5 py-1 bg-rose-500/20 text-rose-300 text-[13px] font-bold rounded backdrop-blur-md">Exceeded by {formatIls(spent - cap)}</p>}
                 </div>
                 
-                <div className="flex-1 max-w-sm w-full bg-slate-800/50 rounded-md p-4 backdrop-blur-md border border-white/5">
+                <div className="flex-1 max-w-sm w-full bg-slate-800/50 rounded p-4 backdrop-blur-md border border-white/5">
                   <div className="flex justify-between text-[13px] font-medium text-slate-300 mb-2 tabular-nums">
                     <span>{formatIls(spent)} spent</span>
                     <span>{formatIls(cap)} budget</span>
@@ -243,10 +241,10 @@ export default function RenovationDashboardPage() {
 
           <section className="grid md:grid-cols-2 gap-5">
             {/* Tasks Widget */}
-            <div className="bg-white rounded-md border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <div className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-indigo-50 rounded-md text-indigo-600">
+                  <div className="p-2 bg-indigo-50 rounded text-indigo-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
@@ -259,11 +257,11 @@ export default function RenovationDashboardPage() {
               </div>
               
               <div className="flex gap-4 mb-6">
-                <div className="flex-1 bg-slate-50 rounded-md p-4 border border-slate-100 text-center">
+                <div className="flex-1 bg-slate-50 rounded p-4 border border-slate-100 text-center">
                   <p className="text-3xl font-extrabold text-slate-900 tabular-nums">{openTasks}</p>
                   <p className="text-[12px] font-bold uppercase tracking-widest text-slate-500 mt-1">Open</p>
                 </div>
-                <div className="flex-1 bg-rose-50/50 rounded-md p-4 border border-rose-100 text-center">
+                <div className="flex-1 bg-rose-50/50 rounded p-4 border border-rose-100 text-center">
                   <p className={`text-3xl font-extrabold tabular-nums ${overdue ? 'text-rose-600' : 'text-slate-700'}`}>{overdue}</p>
                   <p className="text-[12px] font-bold uppercase tracking-widest text-rose-500/70 mt-1">Overdue</p>
                 </div>
@@ -274,14 +272,14 @@ export default function RenovationDashboardPage() {
                   <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Upcoming Deadlines</p>
                   <ul className="space-y-2">
                     {upcoming.map((t) => (
-                      <li key={t.id} className="group flex items-center justify-between p-3 rounded-md hover:bg-slate-50 transition-colors text-[14px]">
+                      <li key={t.id} className="group flex items-center justify-between p-3 rounded hover:bg-slate-50 transition-colors text-[14px]">
                         <div className="flex items-center gap-3 overflow-hidden">
                           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${t.urgency === 'high' || t.urgency === 'critical' ? 'bg-amber-500' : 'bg-slate-300'}`} />
                           <span className="font-medium text-slate-800 truncate" dir="auto">
                             {t.title}
                           </span>
                         </div>
-                        <span className="text-slate-500 font-medium tabular-nums ml-4 text-[13px] bg-slate-100 px-2 py-0.5 rounded-md group-hover:bg-white transition-colors border border-slate-200">
+                        <span className="text-slate-500 font-medium tabular-nums ml-4 text-[13px] bg-slate-100 px-2 py-0.5 rounded group-hover:bg-white transition-colors border border-slate-200">
                           {formatDateDisplay(t.due_date!)}
                         </span>
                       </li>
@@ -292,10 +290,10 @@ export default function RenovationDashboardPage() {
             </div>
 
             {/* Expenses Widget */}
-            <div className="bg-white rounded-md border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <div className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-50 rounded-md text-emerald-600">
+                  <div className="p-2 bg-emerald-50 rounded text-emerald-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
@@ -317,7 +315,7 @@ export default function RenovationDashboardPage() {
               ) : (
                 <ul className="space-y-2.5">
                   {recentExpenses.map((e) => (
-                    <li key={e.id} className="flex items-center justify-between p-3 rounded-md hover:bg-slate-50 transition-colors">
+                    <li key={e.id} className="flex items-center justify-between p-3 rounded hover:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0 text-[14px] font-bold uppercase">
                           {(e.vendor || e.category || 'X')[0]}
@@ -342,10 +340,10 @@ export default function RenovationDashboardPage() {
           </section>
 
           {/* Gallery Snapshot */}
-          <section className="bg-white rounded-md border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+          <section className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
             <div className="flex justify-between items-center mb-6">
                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-pink-50 rounded-md text-pink-600">
+                  <div className="p-2 bg-pink-50 rounded text-pink-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -358,7 +356,7 @@ export default function RenovationDashboardPage() {
             </div>
             
             {gallery.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 bg-slate-50/50 rounded-md border border-dashed border-slate-200">
+              <div className="flex flex-col items-center justify-center py-12 bg-slate-50/50 rounded border border-dashed border-slate-200">
                 <p className="text-[15px] font-medium text-slate-500">No photos added yet</p>
                 <Link href="/renovation/gallery" className="mt-3 text-indigo-600 text-sm font-bold hover:underline">Upload your first photo</Link>
               </div>
@@ -368,7 +366,7 @@ export default function RenovationDashboardPage() {
                   <Link
                     key={item.id}
                     href="/renovation/gallery"
-                    className="group relative aspect-square rounded-md overflow-hidden bg-slate-100 transform active:scale-95 transition-all shadow-sm ring-1 ring-slate-900/5"
+                    className="group relative aspect-square rounded overflow-hidden bg-slate-100 transform active:scale-95 transition-all shadow-sm ring-1 ring-slate-900/5"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item.public_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -379,17 +377,6 @@ export default function RenovationDashboardPage() {
             )}
           </section>
         </>
-      )}
-      
-      {showExpenseModal && (
-        <ExpenseModal
-          onClose={() => setShowExpenseModal(false)}
-          onSave={() => {
-            setShowExpenseModal(false)
-            loadDash()
-            refresh()
-          }}
-        />
       )}
     </div>
   )

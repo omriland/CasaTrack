@@ -6,22 +6,36 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   archiveProject,
+  createBudgetLine,
   createGalleryTag,
   createLabel,
   createRoom,
   createTeamMember,
+  deleteBudgetLine,
   deleteGalleryTag,
   deleteLabel,
   deleteRoom,
   deleteTeamMember,
+  effectiveBudget,
   getArchivedProjects,
+  listBudgetLines,
+  listExpenses,
   listGalleryTags,
   listLabels,
   listRooms,
   listTeamMembers,
+  updateBudgetLine,
   updateProject,
 } from '@/lib/renovation'
-import type { RenovationGalleryTag, RenovationLabel, RenovationProject, RenovationRoom, RenovationTeamMember } from '@/types/renovation'
+import { formatIls } from '@/lib/renovation-format'
+import type {
+  RenovationBudgetLine,
+  RenovationGalleryTag,
+  RenovationLabel,
+  RenovationProject,
+  RenovationRoom,
+  RenovationTeamMember,
+} from '@/types/renovation'
 
 export default function RenovationSettingsPage() {
   const router = useRouter()
@@ -31,6 +45,13 @@ export default function RenovationSettingsPage() {
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [gTags, setGTags] = useState<RenovationGalleryTag[]>([])
+  const [lines, setLines] = useState<RenovationBudgetLine[]>([])
+  const [spent, setSpent] = useState(0)
+  const [total, setTotal] = useState('')
+  const [cont, setCont] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [newCat, setBudgetCat] = useState('')
+  const [newAmt, setBudgetAmt] = useState('')
   const [nm, setNm] = useState({ name: '', phone: '', email: '' })
   const [roomName, setRoomName] = useState('')
   const [roomNotes, setRoomNotes] = useState('')
@@ -42,18 +63,29 @@ export default function RenovationSettingsPage() {
 
   const load = useCallback(async () => {
     if (!project) return
-    const [m, r, l, g] = await Promise.all([
-      listTeamMembers(project.id),
-      listRooms(project.id),
-      listLabels(project.id),
-      listGalleryTags(project.id),
-    ])
-    setMembers(m)
-    setRooms(r)
-    setLabels(l)
-    setGTags(g)
-    setProjNotes(project.notes || '')
-    setProjAddr(project.address_text || '')
+    setLoading(true)
+    try {
+      const [m, r, l, g, bl, ex] = await Promise.all([
+        listTeamMembers(project.id),
+        listRooms(project.id),
+        listLabels(project.id),
+        listGalleryTags(project.id),
+        listBudgetLines(project.id),
+        listExpenses(project.id),
+      ])
+      setMembers(m)
+      setRooms(r)
+      setLabels(l)
+      setGTags(g)
+      setLines(bl)
+      setSpent(ex.reduce((s, e) => s + Number(e.amount), 0))
+      setTotal(String(project.total_budget))
+      setCont(String(project.contingency_amount))
+      setProjNotes(project.notes || '')
+      setProjAddr(project.address_text || '')
+    } finally {
+      setLoading(false)
+    }
   }, [project])
 
   useEffect(() => {
@@ -70,6 +102,36 @@ export default function RenovationSettingsPage() {
     await refresh()
   }
 
+  const saveTotals = async () => {
+    if (!project) return
+    try {
+      await updateProject(project.id, {
+        total_budget: Number(total) || 0,
+        contingency_amount: Number(cont) || 0,
+      })
+      await refresh()
+    } catch (e) {
+      console.error(e)
+      alert('Failed to save totals')
+    }
+  }
+
+  const addBudgetLine = async () => {
+    if (!project || !newCat.trim()) return
+    try {
+      await createBudgetLine(project.id, newCat.trim(), Number(newAmt) || 0)
+      setBudgetCat('')
+      setBudgetAmt('')
+      await load()
+    } catch (e) {
+      console.error(e)
+      alert('Failed to add budget line')
+    }
+  }
+
+  const lineSum = lines.reduce((s, l) => s + Number(l.amount_allocated), 0)
+  const cap = project ? effectiveBudget({ ...project, total_budget: Number(total) || 0, contingency_amount: Number(cont) || 0 }) : 0
+
   if (!project) {
     return (
       <div className="max-w-md mx-auto pt-8 text-center">
@@ -80,7 +142,7 @@ export default function RenovationSettingsPage() {
         {archived.length > 0 && (
           <div className="mt-10 text-left">
             <p className="text-[13px] font-semibold text-black/45 uppercase tracking-wide mb-2">Archived</p>
-            <ul className="bg-white rounded-md border border-black/[0.06] divide-y divide-black/[0.06]">
+            <ul className="bg-white rounded border border-black/[0.06] divide-y divide-black/[0.06]">
               {archived.map((p) => (
                 <li key={p.id} className="p-4 text-[15px]" dir="auto">
                   {p.name}
@@ -100,7 +162,7 @@ export default function RenovationSettingsPage() {
         <h1 className="text-[28px] font-semibold tracking-tight">Settings</h1>
       </header>
 
-      <section className="bg-white rounded-md border border-black/[0.06] p-4 space-y-3">
+      <section className="bg-white rounded border border-black/[0.06] p-4 space-y-3">
         <h2 className="text-[17px] font-semibold">Details</h2>
         <div>
           <label className="text-[13px] text-black/45">Notes</label>
@@ -110,7 +172,7 @@ export default function RenovationSettingsPage() {
             onChange={(e) => setProjNotes(e.target.value)}
             onBlur={saveProjectMeta}
             rows={2}
-            className="mt-1 w-full px-3 py-2 rounded-md border border-black/[0.12] text-[15px]"
+            className="mt-1 w-full px-3 py-2 rounded border border-black/[0.12] text-[15px]"
           />
         </div>
         <div>
@@ -120,12 +182,106 @@ export default function RenovationSettingsPage() {
             value={projAddr}
             onChange={(e) => setProjAddr(e.target.value)}
             onBlur={saveProjectMeta}
-            className="mt-1 w-full h-11 px-3 rounded-md border border-black/[0.12] text-[15px]"
+            className="mt-1 w-full h-11 px-3 rounded border border-black/[0.12] text-[15px]"
           />
         </div>
       </section>
 
-      <section className="bg-white rounded-md border border-black/[0.06] overflow-hidden">
+      <section className="bg-white rounded border border-black/[0.06] p-4 space-y-4">
+        <h2 className="text-[17px] font-semibold">Budget Totals</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[13px] text-black/45">Total Budget (₪)</label>
+            <input
+              type="number"
+              value={total}
+              onChange={(e) => setTotal(e.target.value)}
+              onBlur={saveTotals}
+              className="mt-1 w-full h-11 px-3 rounded border border-black/[0.12] text-[17px] tabular-nums"
+            />
+          </div>
+          <div>
+            <label className="text-[13px] text-black/45">Contingency (₪)</label>
+            <input
+              type="number"
+              value={cont}
+              onChange={(e) => setCont(e.target.value)}
+              onBlur={saveTotals}
+              className="mt-1 w-full h-11 px-3 rounded border border-black/[0.12] text-[17px] tabular-nums"
+            />
+          </div>
+        </div>
+        <div className="flex justify-between text-[15px] pt-1">
+          <p className="text-black/45">
+            Effective cap: <span className="font-semibold text-slate-900 tabular-nums">{formatIls(cap)}</span>
+          </p>
+          <p className="text-black/45">
+            Spent: <span className="font-semibold text-slate-900 tabular-nums">{loading ? '…' : formatIls(spent)}</span>
+          </p>
+        </div>
+      </section>
+
+      <section className="bg-white rounded border border-black/[0.06] overflow-hidden">
+        <div className="p-4 border-b border-black/[0.06] flex justify-between items-center">
+          <div>
+            <h2 className="text-[17px] font-semibold">Budget by Category</h2>
+            <p className="text-[13px] text-black/45 mt-0.5">Allocate budget to specific work areas</p>
+          </div>
+          {lineSum > 0 && cap > 0 && Math.abs(lineSum - cap) > 1 && (
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wider">Mismatch</span>
+          )}
+        </div>
+        <div className="divide-y divide-black/[0.06]">
+          {lines.map((line) => (
+            <div key={line.id} className="flex items-center gap-2 p-4">
+              <input
+                dir="auto"
+                defaultValue={line.category_name}
+                onBlur={async (e) => {
+                  const v = e.target.value.trim()
+                  if (v && v !== line.category_name) await updateBudgetLine(line.id, { category_name: v })
+                  await load()
+                }}
+                className="flex-1 min-w-0 h-10 px-2 rounded border border-transparent hover:border-black/[0.08] text-[15px]"
+              />
+              <input
+                type="number"
+                defaultValue={line.amount_allocated}
+                onBlur={async (e) => {
+                  const v = Number(e.target.value)
+                  if (!Number.isNaN(v)) await updateBudgetLine(line.id, { amount_allocated: v })
+                  await load()
+                }}
+                className="w-28 h-10 px-2 rounded border border-black/[0.12] text-[15px] tabular-nums text-right"
+              />
+              <button type="button" onClick={() => deleteBudgetLine(line.id).then(load)} className="text-[#FF3B30] text-[13px] px-2 font-medium">
+                Remove
+              </button>
+            </div>
+          ))}
+          <div className="p-4 flex gap-2 flex-wrap bg-slate-50/50">
+            <input
+              dir="auto"
+              placeholder="Ex: Kitchen Cabinets"
+              value={newCat}
+              onChange={(e) => setBudgetCat(e.target.value)}
+              className="flex-1 min-w-[150px] h-10 px-3 rounded border border-black/[0.12] text-[15px] bg-white"
+            />
+            <input
+              type="number"
+              placeholder="₪"
+              value={newAmt}
+              onChange={(e) => setBudgetAmt(e.target.value)}
+              className="w-24 h-10 px-3 rounded border border-black/[0.12] text-[15px] bg-white"
+            />
+            <button type="button" onClick={addBudgetLine} className="h-10 px-5 rounded bg-slate-900 text-white text-[14px] font-bold hover:bg-slate-800 transition-colors">
+              Add Item
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white rounded border border-black/[0.06] overflow-hidden">
         <div className="p-4 border-b border-black/[0.06]">
           <h2 className="text-[17px] font-semibold">Team</h2>
           <p className="text-[13px] text-black/45 mt-0.5">Assign tasks to people</p>
@@ -150,20 +306,20 @@ export default function RenovationSettingsPage() {
               placeholder="Name"
               value={nm.name}
               onChange={(e) => setNm((s) => ({ ...s, name: e.target.value }))}
-              className="w-full h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+              className="w-full h-10 px-3 rounded border border-black/[0.12] text-[15px]"
             />
             <div className="flex gap-2">
               <input
                 placeholder="Phone"
                 value={nm.phone}
                 onChange={(e) => setNm((s) => ({ ...s, phone: e.target.value }))}
-                className="flex-1 h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+                className="flex-1 h-10 px-3 rounded border border-black/[0.12] text-[15px]"
               />
               <input
                 placeholder="Email"
                 value={nm.email}
                 onChange={(e) => setNm((s) => ({ ...s, email: e.target.value }))}
-                className="flex-1 h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+                className="flex-1 h-10 px-3 rounded border border-black/[0.12] text-[15px]"
               />
             </div>
             <button
@@ -174,7 +330,7 @@ export default function RenovationSettingsPage() {
                 setNm({ name: '', phone: '', email: '' })
                 await load()
               }}
-              className="w-full h-10 rounded-md bg-[#007AFF] text-white font-semibold text-[15px]"
+              className="w-full h-10 rounded bg-[#007AFF] text-white font-semibold text-[15px]"
             >
               Add person
             </button>
@@ -182,7 +338,7 @@ export default function RenovationSettingsPage() {
         </div>
       </section>
 
-      <section className="bg-white rounded-md border border-black/[0.06] overflow-hidden">
+      <section className="bg-white rounded border border-black/[0.06] overflow-hidden">
         <div className="p-4 border-b border-black/[0.06] flex justify-between items-center flex-wrap gap-2">
           <div>
             <h2 className="text-[17px] font-semibold">Rooms</h2>
@@ -207,7 +363,7 @@ export default function RenovationSettingsPage() {
               placeholder="Room name (e.g. Kitchen, Bath)"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
-              className="w-full h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+              className="w-full h-10 px-3 rounded border border-black/[0.12] text-[15px]"
             />
             <textarea
               dir="auto"
@@ -215,7 +371,7 @@ export default function RenovationSettingsPage() {
               value={roomNotes}
               onChange={(e) => setRoomNotes(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 rounded-md border border-black/[0.12] text-[15px] resize-none"
+              className="w-full px-3 py-2 rounded border border-black/[0.12] text-[15px] resize-none"
             />
             <button
               type="button"
@@ -226,7 +382,7 @@ export default function RenovationSettingsPage() {
                 setRoomNotes('')
                 await load()
               }}
-              className="h-10 px-4 rounded-md bg-[#007AFF] text-white font-semibold text-[15px]"
+              className="h-10 px-4 rounded bg-[#007AFF] text-white font-semibold text-[15px]"
             >
               Add room
             </button>
@@ -234,7 +390,7 @@ export default function RenovationSettingsPage() {
         </div>
       </section>
 
-      <section className="bg-white rounded-md border border-slate-200/60 shadow-sm overflow-hidden">
+      <section className="bg-white rounded border border-slate-200/60 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 bg-slate-50/50">
           <h2 className="text-[17px] font-bold text-slate-800">Task labels</h2>
           <p className="text-[13px] text-slate-500 mt-0.5">Organize tasks with customizable colored tags.</p>
@@ -244,7 +400,7 @@ export default function RenovationSettingsPage() {
           {labels.map((l) => (
             <span
               key={l.id}
-              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-2.5 py-1 rounded-md shadow-sm"
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-2.5 py-1 rounded shadow-sm"
               style={{ backgroundColor: l.color }}
             >
               {l.name}
@@ -268,7 +424,7 @@ export default function RenovationSettingsPage() {
                   key={color}
                   type="button"
                   onClick={() => setLbColor(color)}
-                  className={`w-7 h-7 rounded-sm transition-all focus:outline-none ${lbColor === color ? 'border-2 border-white ring-2 ring-slate-900 scale-110 shadow-md' : 'border border-black/10 hover:scale-110 shadow-sm'}`}
+                  className={`w-7 h-7 rounded-[4px] transition-all focus:outline-none ${lbColor === color ? 'border-2 border-white ring-2 ring-slate-900 scale-110 shadow-md' : 'border border-black/10 hover:scale-110 shadow-sm'}`}
                   style={{ backgroundColor: color }}
                   aria-label={`Select color ${color}`}
                 />
@@ -280,7 +436,7 @@ export default function RenovationSettingsPage() {
                 placeholder="Ex: Urgent, Plumbing..."
                 value={lbName}
                 onChange={(e) => setLbName(e.target.value)}
-                className="flex-1 min-w-[140px] h-11 px-3.5 rounded-md border border-slate-200 text-[15px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm bg-white"
+                className="flex-1 min-w-[140px] h-11 px-3.5 rounded border border-slate-200 text-[15px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm bg-white"
               />
               <button
                 type="button"
@@ -291,7 +447,7 @@ export default function RenovationSettingsPage() {
                   await load()
                 }}
                 disabled={!lbName.trim()}
-                className="h-11 px-5 rounded-md bg-indigo-600 text-white font-bold text-[14px] hover:bg-indigo-500 active:scale-95 transition-all shadow-sm disabled:opacity-50"
+                className="h-11 px-5 rounded bg-indigo-600 text-white font-bold text-[14px] hover:bg-indigo-500 active:scale-95 transition-all shadow-sm disabled:opacity-50"
               >
                 Add Label
               </button>
@@ -300,7 +456,7 @@ export default function RenovationSettingsPage() {
         </div>
       </section>
 
-      <section className="bg-white rounded-md border border-black/[0.06] overflow-hidden">
+      <section className="bg-white rounded border border-black/[0.06] overflow-hidden">
         <div className="p-4 border-b border-black/[0.06]">
           <h2 className="text-[17px] font-semibold">Photo tags</h2>
         </div>
@@ -319,7 +475,7 @@ export default function RenovationSettingsPage() {
               placeholder="Tag name"
               value={gtName}
               onChange={(e) => setGtName(e.target.value)}
-              className="flex-1 h-10 px-3 rounded-md border border-black/[0.12] text-[15px]"
+              className="flex-1 h-10 px-3 rounded border border-black/[0.12] text-[15px]"
             />
             <button
               type="button"
@@ -329,7 +485,7 @@ export default function RenovationSettingsPage() {
                 setGtName('')
                 await load()
               }}
-              className="h-10 px-4 rounded-md bg-[#007AFF] text-white font-semibold text-[15px]"
+              className="h-10 px-4 rounded bg-[#007AFF] text-white font-semibold text-[15px]"
             >
               Add
             </button>
@@ -337,7 +493,7 @@ export default function RenovationSettingsPage() {
         </div>
       </section>
 
-      <section className="bg-white rounded-md border border-black/[0.06] p-4 space-y-3">
+      <section className="bg-white rounded border border-black/[0.06] p-4 space-y-3">
         <h2 className="text-[17px] font-semibold text-[#FF3B30]">Archive project</h2>
         <p className="text-[14px] text-black/45">
           Archives this project so you can start a new one. Data stays in your archive list.
@@ -350,7 +506,7 @@ export default function RenovationSettingsPage() {
             await refresh()
             router.push('/renovation')
           }}
-          className="w-full h-12 rounded-md bg-[#FF3B30]/10 text-[#FF3B30] font-semibold text-[16px]"
+          className="w-full h-12 rounded bg-[#FF3B30]/10 text-[#FF3B30] font-semibold text-[16px]"
         >
           Archive current project
         </button>
@@ -359,7 +515,7 @@ export default function RenovationSettingsPage() {
       {archived.length > 0 && (
         <section>
           <p className="text-[13px] font-semibold text-black/45 uppercase tracking-wide mb-2">Archived projects</p>
-          <ul className="bg-white rounded-md border border-black/[0.06] divide-y divide-black/[0.06]">
+          <ul className="bg-white rounded border border-black/[0.06] divide-y divide-black/[0.06]">
             {archived.map((p) => (
               <li key={p.id} className="p-4 text-[15px]" dir="auto">
                 {p.name}

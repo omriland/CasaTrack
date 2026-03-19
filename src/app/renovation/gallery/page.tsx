@@ -90,7 +90,7 @@ export default function GalleryPage() {
           <p className="text-[13px] font-semibold text-black/45 uppercase tracking-wide">Progress</p>
           <h1 className="text-[28px] font-semibold tracking-tight">Photos</h1>
         </div>
-        <label className="h-10 px-4 rounded-md bg-[#007AFF] text-white text-[15px] font-semibold flex items-center cursor-pointer active:scale-[0.98]">
+        <label className="h-10 px-4 rounded bg-[#007AFF] text-white text-[15px] font-semibold flex items-center cursor-pointer active:scale-[0.98]">
           {uploading ? 'Uploading…' : 'Add photos'}
           <input
             type="file"
@@ -130,11 +130,11 @@ export default function GalleryPage() {
       {loading ? (
         <div className="grid grid-cols-3 gap-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="aspect-square rounded-md bg-white border border-black/[0.06] animate-pulse" />
+            <div key={i} className="aspect-square rounded bg-white border border-black/[0.06] animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-md border border-black/[0.06] p-12 text-center text-[15px] text-black/45">
+        <div className="bg-white rounded border border-black/[0.06] p-12 text-center text-[15px] text-black/45">
           No photos yet. Add from your phone or desktop.
         </div>
       ) : (
@@ -144,10 +144,22 @@ export default function GalleryPage() {
               key={item.id}
               type="button"
               onClick={() => openLightbox(item)}
-              className="aspect-square rounded-md overflow-hidden bg-black/[0.06] active:scale-[0.97] transition-transform"
+              className="aspect-square rounded overflow-hidden bg-black/[0.06] active:scale-[0.97] transition-transform relative group"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={item.public_url} alt="" className="w-full h-full object-cover" />
+              {item.tag_ids && item.tag_ids.length > 0 && (
+                <div className="absolute bottom-1 left-1 right-1 flex flex-wrap gap-0.5 pointer-events-none">
+                  {item.tag_ids.slice(0, 3).map(tid => {
+                    const t = tags.find(x => x.id === tid)
+                    return t ? (
+                      <span key={tid} className="bg-black/40 backdrop-blur-[2px] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">
+                        {t.name}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              )}
             </button>
           ))}
         </div>

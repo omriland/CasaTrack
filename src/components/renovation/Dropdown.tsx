@@ -54,7 +54,7 @@ export function Dropdown({ value, onChange, options, className = '', placeholder
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-md shadow-xl max-h-60 overflow-y-auto py-1 animate-fade-in-up origin-top text-slate-800">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded shadow-xl max-h-60 overflow-y-auto py-1 animate-fade-in-up origin-top text-slate-800">
           {options.length === 0 ? (
             <div className="px-3.5 py-2.5 text-sm text-slate-400 italic">No options</div>
           ) : (

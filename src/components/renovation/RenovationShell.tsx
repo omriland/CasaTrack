@@ -2,22 +2,99 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import type { ReactNode } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
+import { ExpenseModal } from './ExpenseModal'
+import { TaskModal } from './TaskModal'
+import { QuickUploadModal } from './QuickUploadModal'
+import { listTeamMembers, listRooms, listLabels } from '@/lib/renovation'
+import type { RenovationTeamMember, RenovationRoom, RenovationLabel } from '@/types/renovation'
 
 const nav = [
   { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
-  { href: '/renovation/expenses', label: 'Spend', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
-  { href: '/renovation/budget', label: 'Budget', icon: ChartIcon, match: (p: string) => p.startsWith('/renovation/budget') },
+  { href: '/renovation/expenses', label: 'Expenses', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
   { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
   { href: '/renovation/rooms', label: 'Rooms', icon: RoomIcon, match: (p: string) => p.startsWith('/renovation/rooms') },
-  { href: '/renovation/settings', label: 'More', icon: GearIcon, match: (p: string) => p.startsWith('/renovation/settings') },
+  { href: '/renovation/settings', label: 'Settings', icon: GearIcon, match: (p: string) => p.startsWith('/renovation/settings') },
 ]
 
 export function RenovationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const { loading, project } = useRenovation()
+  const { 
+    loading, 
+    project, 
+    isTaskModalOpen, 
+    setTaskModalOpen, 
+    isExpenseModalOpen, 
+    setExpenseModalOpen,
+    isQuickUploadOpen,
+    quickUploadFile,
+    setQuickUploadFile,
+    refresh
+  } = useRenovation()
+
+  const [members, setMembers] = useState<RenovationTeamMember[]>([])
+  const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  const [labels, setLabels] = useState<RenovationLabel[]>([])
+
+  const loadModalsData = useCallback(async () => {
+    if (!project) return
+    const [m, r, l] = await Promise.all([
+      listTeamMembers(project.id),
+      listRooms(project.id),
+      listLabels(project.id),
+    ])
+    setMembers(m)
+    setRooms(r)
+    setLabels(l)
+  }, [project])
+
+  useEffect(() => {
+    if (isTaskModalOpen || isExpenseModalOpen) { // Load data if either modal is open
+      loadModalsData()
+    }
+  }, [isTaskModalOpen, isExpenseModalOpen, loadModalsData]) // Added isExpenseModalOpen to dependencies
+
+  useEffect(() => {
+    const handleKeys = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return
+      
+      if (e.key === 'n') {
+        e.preventDefault()
+        setExpenseModalOpen(true)
+      }
+      if (e.key === 'c') {
+        e.preventDefault()
+        setTaskModalOpen(true)
+      }
+      if (e.key === 'Escape') {
+        setExpenseModalOpen(false)
+        setTaskModalOpen(false)
+      }
+    }
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items
+      if (!items) return
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile()
+          if (file) {
+            setQuickUploadFile(file)
+            break
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeys)
+    window.addEventListener('paste', handlePaste)
+    return () => {
+      window.removeEventListener('keydown', handleKeys)
+      window.removeEventListener('paste', handlePaste)
+    }
+  }, [setExpenseModalOpen, setTaskModalOpen, setQuickUploadFile])
 
   if (loading) {
     return (
@@ -59,14 +136,14 @@ export function RenovationShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center gap-3.5 px-3.5 py-3 rounded-md text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
+                className={`group flex items-center gap-3.5 px-3.5 py-3 rounded text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
                   active 
                     ? 'text-indigo-700 bg-indigo-50/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_4px_rgba(79,70,229,0.05)] ring-1 ring-indigo-100' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
                 {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-600 rounded-r-full" />}
-                <div className={`p-1.5 rounded-md transition-colors ${active ? 'bg-indigo-600/10 text-indigo-600' : 'bg-slate-100 group-hover:bg-white text-slate-400 group-hover:text-slate-600 shadow-sm'}`}>
+                <div className={`p-1.5 rounded transition-colors ${active ? 'bg-indigo-600/10 text-indigo-600' : 'bg-slate-100 group-hover:bg-white text-slate-400 group-hover:text-slate-600 shadow-sm'}`}>
                   <Icon className="w-5 h-5" active={active} />
                 </div>
                 {item.label}
@@ -80,6 +157,41 @@ export function RenovationShell({ children }: { children: ReactNode }) {
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-8 pt-safe mt-6 md:mt-12 md:pt-6 pb-12 min-h-screen animate-fade-in">
         {children}
       </main>
+
+      {/* Global Modals */}
+      {isExpenseModalOpen && (
+        <ExpenseModal
+          onClose={() => setExpenseModalOpen(false)}
+          onSave={() => {
+            setExpenseModalOpen(false)
+            refresh()
+          }}
+        />
+      )}
+
+      {isTaskModalOpen && (
+        <TaskModal
+          members={members}
+          rooms={rooms}
+          labels={labels}
+          onClose={() => setTaskModalOpen(false)}
+          onSave={() => {
+            setTaskModalOpen(false)
+            refresh()
+          }}
+        />
+      )}
+
+      {isQuickUploadOpen && quickUploadFile && (
+        <QuickUploadModal
+          file={quickUploadFile}
+          onClose={() => setQuickUploadFile(null)}
+          onSave={() => {
+            setQuickUploadFile(null)
+            refresh()
+          }}
+        />
+      )}
 
       {/* Mobile Bottom Tab Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/85 backdrop-blur-xl border-t border-slate-200/50 z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.04)] ring-1 ring-white/50">
@@ -124,14 +236,6 @@ function CardIcon({ className, active }: { className?: string; active?: boolean 
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
        <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-    </svg>
-  )
-}
-function ChartIcon({ className, active }: { className?: string; active?: boolean }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
     </svg>
   )
 }

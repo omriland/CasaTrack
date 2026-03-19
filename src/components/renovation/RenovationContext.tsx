@@ -17,6 +17,13 @@ type Ctx = {
   project: RenovationProject | null
   loading: boolean
   refresh: () => Promise<void>
+  isTaskModalOpen: boolean
+  isExpenseModalOpen: boolean
+  isQuickUploadOpen: boolean
+  quickUploadFile: File | null
+  setTaskModalOpen: (open: boolean) => void
+  setExpenseModalOpen: (open: boolean) => void
+  setQuickUploadFile: (file: File | null) => void
 }
 
 const RenovationContext = createContext<Ctx | null>(null)
@@ -25,6 +32,9 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const [project, setProject] = useState<RenovationProject | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isTaskModalOpen, setTaskModalOpen] = useState(false)
+  const [isExpenseModalOpen, setExpenseModalOpen] = useState(false)
+  const [quickUploadFile, setQuickUploadFile] = useState<File | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -59,7 +69,20 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   }, [router])
 
   return (
-    <RenovationContext.Provider value={{ project, loading, refresh }}>
+    <RenovationContext.Provider
+      value={{
+        project,
+        loading,
+        refresh,
+        isTaskModalOpen,
+        isExpenseModalOpen,
+        isQuickUploadOpen: !!quickUploadFile,
+        quickUploadFile,
+        setTaskModalOpen,
+        setExpenseModalOpen,
+        setQuickUploadFile,
+      }}
+    >
       {children}
     </RenovationContext.Provider>
   )

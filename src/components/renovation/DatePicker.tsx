@@ -33,7 +33,7 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full h-11 pl-10 pr-3 rounded-md border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white text-left flex items-center justify-between"
+        className="w-full h-11 pl-10 pr-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white text-left flex items-center justify-between"
       >
          <span className={`${!value ? 'text-slate-400 font-normal' : ''}`}>{display}</span>
       </button>
@@ -54,7 +54,7 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
                font-family: inherit;
              }
            `}</style>
-          <div className="bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden">
             <DayPicker
               mode="single"
               selected={selectedDate}

@@ -7,21 +7,52 @@ import {
   listRooms,
   listTasks,
   listTeamMembers,
+  updateTask,
 } from '@/lib/renovation'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { formatDateDisplay } from '@/lib/renovation-format'
-import type { RenovationLabel, RenovationRoom, RenovationTask, RenovationTeamMember, TaskStatus } from '@/types/renovation'
+import type { RenovationLabel, RenovationRoom, RenovationTask, RenovationTeamMember, TaskStatus, TaskUrgency } from '@/types/renovation'
 
 const STATUSES: TaskStatus[] = ['open', 'in_progress', 'blocked', 'done']
+const URGENCY_WEIGHT: Record<TaskUrgency, number> = {
+  critical: 4,
+  high: 3,
+  medium: 2,
+  low: 1,
+}
+
+function sortTasks(a: RenovationTask, b: RenovationTask) {
+  // 1. Done state (done at bottom)
+  if (a.status === 'done' && b.status !== 'done') return 1
+  if (a.status !== 'done' && b.status === 'done') return -1
+
+  // 2. Urgency/Severity (high weight first)
+  const aw = URGENCY_WEIGHT[a.urgency] || 0
+  const bw = URGENCY_WEIGHT[b.urgency] || 0
+  if (aw !== bw) return bw - aw
+
+  // 3. Due Date (earliest first)
+  if (a.due_date && b.due_date) {
+    if (a.due_date < b.due_date) return -1
+    if (a.due_date > b.due_date) return 1
+  }
+  if (a.due_date && !b.due_date) return -1
+  if (!a.due_date && b.due_date) return 1
+
+  return 0
+}
 
 export default function TasksPage() {
-  const { project } = useRenovation()
+  const { project, setTaskModalOpen } = useRenovation()
   const [tasks, setTasks] = useState<RenovationTask[]>([])
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'status' | 'assignee' | 'list'>('status')
+  const [filterAssignee, setFilterAssignee] = useState<string>('')
+  const [filterLabel, setFilterLabel] = useState<string>('')
+  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null)
   const [sheet, setSheet] = useState(false)
   const [editing, setEditing] = useState<RenovationTask | null>(null)
 
@@ -48,14 +79,34 @@ export default function TasksPage() {
     load()
   }, [load])
 
-  const openNew = () => {
-    setEditing(null)
-    setSheet(true)
-  }
-
   const openEdit = (t: RenovationTask) => {
     setEditing(t)
     setSheet(true)
+  }
+
+  const onDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const onDrop = async (e: React.DragEvent, newStatus: TaskStatus) => {
+    e.preventDefault()
+    setDragOverStatus(null)
+    const taskId = e.dataTransfer.getData('taskId')
+    if (!taskId) return
+    const task = tasks.find(t => t.id === taskId)
+    if (!task || task.status === newStatus) return
+    
+    // Optimistic update
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
+    
+    try {
+      await updateTask(taskId, { status: newStatus })
+      // No need to reload, optimistic update is enough unless there's an error
+    } catch (err) {
+      console.error(err)
+      await load() // Rollback on error
+    }
   }
 
   const renderCard = (t: RenovationTask) => {
@@ -64,9 +115,11 @@ export default function TasksPage() {
     return (
       <button
         key={t.id}
+        draggable
+        onDragStart={(e) => onDragStart(e, t.id)}
         type="button"
         onClick={() => openEdit(t)}
-        className={`w-full text-left bg-white rounded-xl border border-slate-200/60 p-4 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
+        className={`w-full text-left bg-white rounded-md border border-slate-200/60 p-4 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] cursor-grab active:cursor-grabbing ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
         <div className="flex gap-3.5 items-start">
           <div className={`shrink-0 mt-0.5 ${isDone ? 'opacity-40 grayscale' : 'opacity-90'}`}>{PRIORITY_ICONS[t.urgency]}</div>
@@ -76,13 +129,13 @@ export default function TasksPage() {
             </p>
             <div className="flex flex-wrap gap-1.5 mt-2.5">
               {t.room && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 truncate max-w-[100px]">{t.room.name}</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 truncate max-w-[100px]">{t.room.name}</span>
               )}
               {t.assignee && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700">{t.assignee.name.split(' ')[0]}</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">{t.assignee.name.split(' ')[0]}</span>
               )}
               {t.due_date && (
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md tabular-nums ${overdue ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}>
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded tabular-nums ${overdue ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}>
                   {formatDateDisplay(t.due_date)}
                 </span>
               )}
@@ -91,7 +144,7 @@ export default function TasksPage() {
                 return lb ? (
                   <span
                     key={lid}
-                    className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md text-white whitespace-nowrap"
+                    className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded text-white whitespace-nowrap"
                     style={{ backgroundColor: lb.color }}
                   >
                     {lb.name}
@@ -110,6 +163,12 @@ export default function TasksPage() {
     )
   }
 
+  const filteredTasks = tasks.filter((t) => {
+    if (filterAssignee && t.assignee_id !== filterAssignee) return false
+    if (filterLabel && !t.label_ids?.includes(filterLabel)) return false
+    return true
+  })
+
   if (!project) {
     return (
       <p className="text-center text-black/45 py-16">
@@ -125,9 +184,16 @@ export default function TasksPage() {
       <div className="flex justify-between items-end gap-3 flex-wrap">
         <div>
           <p className="text-[13px] font-semibold text-black/45 uppercase tracking-wide">Work</p>
-          <h1 className="text-[28px] font-semibold tracking-tight">Tasks</h1>
+          <div className="flex items-baseline gap-3">
+            <h1 className="text-[28px] font-semibold tracking-tight">Tasks</h1>
+            {(filterAssignee || filterLabel) && (
+              <span className="text-[14px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full animate-fade-in">
+                Showing {filteredTasks.length} / {tasks.length}
+              </span>
+            )}
+          </div>
         </div>
-        <button type="button" onClick={openNew} className="h-10 px-4 rounded-md bg-[#007AFF] text-white text-[15px] font-semibold">
+        <button type="button" onClick={() => setTaskModalOpen(true)} className="h-10 px-4 rounded bg-[#007AFF] text-white text-[15px] font-semibold">
           Add task
         </button>
       </div>
@@ -145,48 +211,73 @@ export default function TasksPage() {
             By {v}
           </button>
         ))}
+        
+        <div className="ml-auto flex gap-2">
+            <select
+              value={filterAssignee}
+              onChange={(e) => setFilterAssignee(e.target.value)}
+              className="h-8 pl-2 pr-6 rounded border border-slate-200 bg-white text-[12px] font-bold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="">All Assignees</option>
+              {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+            <select
+              value={filterLabel}
+              onChange={(e) => setFilterLabel(e.target.value)}
+              className="h-8 pl-2 pr-6 rounded border border-slate-200 bg-white text-[12px] font-bold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="">All Tags</option>
+              {labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+        </div>
       </div>
 
       {loading ? (
         <div className="space-y-2 animate-pulse mt-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-slate-100 rounded-xl border border-slate-200" />
+            <div key={i} className="h-24 bg-slate-100 rounded-md border border-slate-200" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 border-dashed p-10 text-center text-[15px] text-slate-500 mt-4 font-medium">
+        <div className="bg-white rounded-md border border-slate-200 border-dashed p-10 text-center text-[15px] text-slate-500 mt-4 font-medium">
           No tasks yet. Get started by adding one!
         </div>
       ) : (
         <div className="mt-4">
           {view === 'list' && (
             <div className="space-y-2">
-              {[...tasks].sort((a, b) => {
-                if (a.status === 'done' && b.status !== 'done') return 1
-                if (a.status !== 'done' && b.status === 'done') return -1
-                return 0
-              }).map(renderCard)}
+              {[...filteredTasks].sort(sortTasks).map(renderCard)}
             </div>
           )}
 
           {view === 'status' && (
             <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 items-start snap-x scrollbar-hide">
               {STATUSES.map(s => {
-                const paneTasks = tasks.filter(t => t.status === s).sort((a,b) => {
-                  if (a.status === 'done' && b.status !== 'done') return 1;
-                  if (a.status !== 'done' && b.status === 'done') return -1;
-                  return 0;
-                })
+                const paneTasks = filteredTasks.filter(t => t.status === s).sort(sortTasks)
+                const isDraggingOver = dragOverStatus === s
                 return (
-                  <div key={s} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-3 rounded-2xl flex flex-col gap-3 snap-center border border-slate-200/60">
+                  <div 
+                    key={s} 
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setDragOverStatus(s)
+                    }}
+                    onDragLeave={() => setDragOverStatus(null)}
+                    onDrop={(e) => onDrop(e, s)}
+                    className={`w-[85vw] md:w-[320px] shrink-0 p-3 rounded-lg flex flex-col gap-3 snap-center border-2 transition-all min-h-[400px] ${
+                      isDraggingOver 
+                        ? 'bg-indigo-50/80 border-indigo-400 border-dashed scale-[1.02] shadow-lg' 
+                        : 'bg-slate-100/60 border-transparent shadow-none'
+                    }`}
+                  >
                     <h3 className="font-bold text-slate-700 capitalize px-1 flex justify-between items-center text-[14px]">
                       <span>{s.replace('_', ' ')}</span>
                       <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex-1">
                       {paneTasks.map(renderCard)}
                       {paneTasks.length === 0 && (
-                        <div className="py-4 text-center text-[13px] text-slate-400 font-medium border-2 border-dashed border-slate-200 rounded-xl">Empty</div>
+                        <div className="py-4 text-center text-[13px] text-slate-400 font-medium border-2 border-dashed border-slate-200 rounded-md">Empty</div>
                       )}
                     </div>
                   </div>
@@ -198,14 +289,10 @@ export default function TasksPage() {
           {view === 'assignee' && (
             <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 items-start snap-x scrollbar-hide">
               {[{ id: 'unassigned', name: 'Unassigned' }, ...members].map(m => {
-                const paneTasks = tasks.filter(t => m.id === 'unassigned' ? !t.assignee_id : t.assignee_id === m.id).sort((a,b) => {
-                  if (a.status === 'done' && b.status !== 'done') return 1;
-                  if (a.status !== 'done' && b.status === 'done') return -1;
-                  return 0;
-                })
+                const paneTasks = filteredTasks.filter(t => m.id === 'unassigned' ? !t.assignee_id : t.assignee_id === m.id).sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-3 rounded-2xl flex flex-col gap-3 snap-center border border-slate-200/60">
+                  <div key={m.id} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-3 rounded-lg flex flex-col gap-3 snap-center border border-slate-200/60">
                     <h3 className="font-bold text-slate-700 px-1 flex justify-between items-center text-[14px]">
                       <span>{m.name}</span>
                       <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>
