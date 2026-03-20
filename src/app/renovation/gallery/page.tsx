@@ -33,6 +33,16 @@ export default function GalleryPage() {
   const [bulkTagModal, setBulkTagModal] = useState(false)
   const [bulkRoomModal, setBulkRoomModal] = useState(false)
 
+  useEffect(() => {
+    const savedSort = localStorage.getItem('casatrack_gallery_sort')
+    if (savedSort) setSortBy(savedSort)
+  }, [])
+
+  const handleSortChange = (val: string) => {
+    setSortBy(val)
+    localStorage.setItem('casatrack_gallery_sort', val)
+  }
+
   const load = useCallback(async () => {
     if (!project) return
     setLoading(true)
@@ -288,7 +298,7 @@ export default function GalleryPage() {
           <div className="relative z-[70] flex-1 sm:max-w-[160px]">
             <Dropdown
               value={sortBy}
-              onChange={(val) => setSortBy(val)}
+              onChange={handleSortChange}
               options={[
                 { value: 'date-desc', label: 'Newest First' },
                 { value: 'date-asc', label: 'Oldest First' },

@@ -581,6 +581,14 @@ export async function updateGalleryItem(
   }
 }
 
+export async function updateGalleryItemAnnotations(id: string, annotations: any[]): Promise<void> {
+  const { error } = await supabase
+    .from('renovation_gallery_items')
+    .update({ annotations })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function deleteGalleryItem(item: RenovationGalleryItem): Promise<void> {
   await supabase.storage.from(BUCKET).remove([item.storage_path])
   const { error } = await supabase.from('renovation_gallery_items').delete().eq('id', item.id)

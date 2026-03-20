@@ -101,6 +101,7 @@ export interface RenovationGalleryItem {
   created_at: string
   tag_ids?: string[]
   public_url?: string
+  annotations?: any[]
 }
 
 export interface RenovationFile {

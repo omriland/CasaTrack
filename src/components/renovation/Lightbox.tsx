@@ -4,8 +4,9 @@ import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { formatDateDisplay } from '@/lib/renovation-format'
-import { updateGalleryItem, deleteGalleryItem } from '@/lib/renovation'
+import { updateGalleryItem, deleteGalleryItem, updateGalleryItemAnnotations } from '@/lib/renovation'
 import type { RenovationGalleryItem, RenovationRoom, RenovationGalleryTag } from '@/types/renovation'
+import { ImageAnnotator, AnnotationShape } from '@/components/renovation/ImageAnnotator'
 
 import YarlLightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
@@ -32,7 +33,13 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
   const [saving, setSaving] = useState(false)
   
   const [showDetails, setShowDetails] = useState(false)
+  const [showAnnotator, setShowAnnotator] = useState(false)
+  const [showMarkings, setShowMarkings] = useState(true)
   const [mounted, setMounted] = useState(false)
+
+  // We maintain a local copy of annotations to instantly show updates
+  const [localAnnotations, setLocalAnnotations] = useState<Record<string, AnnotationShape[]>>({})
+  const [imageSizes, setImageSizes] = useState<Record<string, { w: number, h: number }>>({})
 
   useEffect(() => {
     setMounted(true)
@@ -90,6 +97,18 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
     }
   }
 
+  const handleSaveAnnotations = async (shapes: AnnotationShape[]) => {
+    try {
+      await updateGalleryItemAnnotations(current.id, shapes)
+      setLocalAnnotations(prev => ({ ...prev, [current.id]: shapes }))
+      setShowAnnotator(false)
+      onChanged()
+    } catch (e) {
+      console.error(e)
+      alert('Failed to save markings')
+    }
+  }
+
   const slides = images.map(img => ({
     src: img.public_url || '',
     alt: img.caption || 'Gallery photo',
@@ -108,6 +127,32 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
         toolbar={{
           buttons: [
             <button
+              key="toggle-markings"
+              type="button"
+              className={`yarl__button ${!showMarkings ? 'opacity-50' : ''}`}
+              onClick={() => setShowMarkings(!showMarkings)}
+              title={showMarkings ? "Hide Markings" : "Show Markings"}
+            >
+              <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {showMarkings ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                )}
+              </svg>
+            </button>,
+            <button
+              key="annotate"
+              type="button"
+              className="yarl__button"
+              onClick={() => setShowAnnotator(true)}
+              title="Draw / Annotate"
+            >
+              <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>,
+            <button
               key="edit"
               type="button"
               className="yarl__button"
@@ -125,8 +170,8 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
         render={{
           buttonPrev: images.length <= 1 ? () => null : undefined,
           buttonNext: images.length <= 1 ? () => null : undefined,
-          slideHeader: ({ slide }) => {
-            const currentImg = (slide as any).itemData as RenovationGalleryItem | undefined
+          slideHeader: ({ slide }: { slide: any }) => {
+            const currentImg = slide.itemData as RenovationGalleryItem | undefined
             if (!currentImg) return null
             const room = rooms.find(r => r.id === currentImg.room_id)
             const itemTags = currentImg.tag_ids?.map(tid => tags.find(x => x.id === tid)).filter(Boolean) || []
@@ -150,9 +195,104 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                 {currentImg.caption && <p className="text-white text-[14px] font-medium bg-black/60 backdrop-blur-xl px-4 py-2 rounded-xl shadow-lg border border-white/10 pointer-events-auto">{currentImg.caption}</p>}
               </div>
             )
+          },
+          slide: ({ slide }: { slide: any }) => {
+            const currentImg = slide.itemData as RenovationGalleryItem | undefined
+            if (!currentImg || !currentImg.public_url) return undefined // fallback to default
+
+            // Use state-updated annotations if available, otherwise original DB notes
+            const shapes: AnnotationShape[] = localAnnotations[currentImg.id] || currentImg.annotations || []
+
+            return (
+              <div className="relative flex items-center justify-center w-full h-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img 
+                  src={currentImg.public_url} 
+                  className="max-w-full max-h-full object-contain select-none" 
+                  alt="" 
+                  onLoad={(e) => {
+                    const target = e.currentTarget as HTMLImageElement
+                    if (target.naturalWidth && target.naturalHeight) {
+                      setImageSizes(prev => ({
+                        ...prev,
+                        [currentImg.id]: { w: target.naturalWidth, h: target.naturalHeight }
+                      }))
+                    }
+                  }}
+                />
+                
+                {showMarkings && shapes.length > 0 && imageSizes[currentImg.id] && (
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+                    <svg
+                      viewBox={`0 0 ${imageSizes[currentImg.id].w} ${imageSizes[currentImg.id].h}`}
+                      preserveAspectRatio="xMidYMid meet"
+                      className="absolute inset-0 w-full h-full pointer-events-none"
+                      style={{ zIndex: 100 }}
+                    >
+                      {shapes.map(shape => {
+                        if (shape.type === 'line' && shape.points) {
+                          return (
+                            <polyline
+                              key={shape.id}
+                              points={shape.points.join(',')}
+                              stroke={shape.color}
+                              strokeWidth={6}
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          )
+                        }
+                        if (shape.type === 'rect') {
+                          return (
+                            <rect
+                              key={shape.id}
+                              x={shape.x}
+                              y={shape.y}
+                              width={shape.width}
+                              height={shape.height}
+                              stroke={shape.color}
+                              strokeWidth={4}
+                              fill="none"
+                            />
+                          )
+                        }
+                        if (shape.type === 'text') {
+                          return (
+                            <text
+                              key={shape.id}
+                              x={shape.x}
+                              y={(shape.y || 0) + 24} // Basic baseline alignment
+                              fill={shape.color}
+                              fontSize={36}
+                              fontWeight="bold"
+                              fontFamily="system-ui, -apple-system, sans-serif"
+                              style={{ textShadow: '1px 1px 2px black' }}
+                            >
+                              {shape.text}
+                            </text>
+                          )
+                        }
+                        return null
+                      })}
+                    </svg>
+                  </div>
+                )}
+              </div>
+            )
           }
         }}
       />
+
+      {mounted && showAnnotator && current.public_url && createPortal(
+        <ImageAnnotator
+          imageUrl={current.public_url}
+          initialAnnotations={localAnnotations[current.id] || current.annotations || []}
+          onSave={handleSaveAnnotations}
+          onCancel={() => setShowAnnotator(false)}
+        />,
+        document.body
+      )}
 
       {mounted && showDetails && createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto" onClick={() => !saving && setShowDetails(false)}>
