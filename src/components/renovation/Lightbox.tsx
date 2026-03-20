@@ -170,6 +170,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
         render={{
           buttonPrev: images.length <= 1 ? () => null : undefined,
           buttonNext: images.length <= 1 ? () => null : undefined,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           slideHeader: ({ slide }: { slide: any }) => {
             const currentImg = slide.itemData as RenovationGalleryItem | undefined
             if (!currentImg) return null
@@ -196,6 +197,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
               </div>
             )
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           slide: ({ slide }: { slide: any }) => {
             const currentImg = slide.itemData as RenovationGalleryItem | undefined
             if (!currentImg || !currentImg.public_url) return undefined // fallback to default

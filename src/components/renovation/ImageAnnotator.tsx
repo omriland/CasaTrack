@@ -72,6 +72,7 @@ export function ImageAnnotator({ imageUrl, initialAnnotations, onSave, onCancel 
   const offsetX = image ? (stageSize.width - image.width * scale) / 2 : 0
   const offsetY = image ? (stageSize.height - image.height * scale) / 2 : 0
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getRelativePointerPosition = (stage: any) => {
     const pointerPosition = stage.getPointerPosition()
     if (!pointerPosition) return { x: 0, y: 0 }

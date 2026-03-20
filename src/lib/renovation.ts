@@ -581,6 +581,7 @@ export async function updateGalleryItem(
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function updateGalleryItemAnnotations(id: string, annotations: any[]): Promise<void> {
   const { error } = await supabase
     .from('renovation_gallery_items')

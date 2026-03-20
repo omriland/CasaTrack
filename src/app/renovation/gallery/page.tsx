@@ -173,7 +173,7 @@ export default function GalleryPage() {
   })
 
   const sortedFiltered = useMemo(() => {
-    let result = [...filtered]
+    const result = [...filtered]
     if (sortBy === 'date-desc') {
       result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     } else if (sortBy === 'date-asc') {
@@ -326,7 +326,7 @@ export default function GalleryPage() {
                 </svg>
               </div>
               <p className="text-[16px] font-bold text-slate-600 uppercase tracking-tight">No photos yet</p>
-              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">Click "+ Add Photos" or drag & drop images here from your computer to track progress.</p>
+              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">Click &quot;+ Add Photos&quot; or drag &amp; drop images here from your computer to track progress.</p>
            </div>
         </div>
       ) : (
@@ -461,7 +461,7 @@ export default function GalleryPage() {
               ))}
               {tags.length === 0 && (
                 <p className="text-[14px] text-slate-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  No labels exist yet.<br/>Create them first in a single photo's Details panel.
+                  No labels exist yet.<br/>Create them first in a single photo&apos;s Details panel.
                 </p>
               )}
             </div>
