@@ -5,6 +5,7 @@ import { useRenovation } from '@/components/renovation/RenovationContext'
 import { createTask, updateTask, setTaskLabels, deleteTask } from '@/lib/renovation'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { DatePicker } from '@/components/renovation/DatePicker'
+import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 import type {
   RenovationTask,
   RenovationTeamMember,
@@ -43,6 +44,7 @@ interface TaskModalProps {
 
 export function TaskModal({ editing, members, labels, rooms, providers, onClose, onSave }: TaskModalProps) {
   const { project } = useRenovation()
+  const isMobile = useRenovationMobileMedia()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [status, setStatus] = useState<TaskStatus>('open')
@@ -136,21 +138,42 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}>
+    <div
+      className={
+        isMobile
+          ? 'fixed inset-0 z-[280] flex items-end justify-center p-0 bg-slate-900/40 backdrop-blur-sm transition-opacity'
+          : 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity'
+      }
+      onClick={onClose}
+    >
       <div
         onClick={(ev) => ev.stopPropagation()}
-        className="w-full md:max-w-[500px] bg-white rounded-t-[2rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
+        className={
+          isMobile
+            ? 'w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] bg-white rounded-t-[2rem] shadow-2xl overflow-hidden flex flex-col pt-2 animate-fade-in-up'
+            : 'w-full max-w-[500px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-0 animate-zoom-in'
+        }
       >
         {/* Header */}
-        <div className="px-6 py-1.5 md:py-2 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
-          <div className="w-12 h-0.5 bg-slate-200 rounded-full absolute top-1 left-1/2 -translate-x-1/2 md:hidden" />
+        <div
+          className={`px-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative ${isMobile ? 'py-1.5' : 'py-2'}`}
+        >
+          {isMobile ? (
+            <div className="w-12 h-0.5 bg-slate-200 rounded-full absolute top-1 left-1/2 -translate-x-1/2" />
+          ) : null}
           <h2 className="text-[15px] font-bold text-slate-800 tracking-tight">{editing ? 'Edit Task' : 'New Task'}</h2>
-          <button onClick={onClose} className="p-1 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90">
+          <button
+            onClick={onClose}
+            className="p-1 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         
-        <form onSubmit={save} className="p-5 overflow-y-auto max-h-[85vh] space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <form
+          onSubmit={save}
+          className={`p-5 space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))] ${isMobile ? 'flex-1 min-h-0 overflow-y-auto' : 'overflow-y-auto max-h-[85vh]'}`}
+        >
           
           {/* Main Title Input */}
           <div className="relative group">
@@ -175,7 +198,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                   value={status}
                   onChange={(val) => setStatus(val as TaskStatus)}
                   options={STATUSES.map(s => ({ value: s, label: s.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }))}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize outline-none"
+                  className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize outline-none`}
                 />
               </div>
             </div>
@@ -186,7 +209,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                   value={urgency}
                   onChange={(val) => setUrgency(val as TaskUrgency)}
                   options={URGENCY.map(u => ({ value: u, label: u.replace(/\b\w/g, l => l.toUpperCase()), icon: PRIORITY_ICONS[u] }))}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize outline-none"
+                  className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-bold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all !capitalize outline-none`}
                 />
               </div>
             </div>
@@ -196,9 +219,11 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Due Date</label>
               <div className="relative group">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none z-10">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                </div>
+                {!isMobile ? (
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors pointer-events-none z-10">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                  </div>
+                ) : null}
                 <DatePicker value={due} onChange={setDue} />
               </div>
               <div className="flex gap-1.5 pt-1">
@@ -224,7 +249,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                   value={assigneeId}
                   onChange={(val) => setAssigneeId(val)}
                   options={[{ value: '', label: 'Unassigned' }, ...members.map(m => ({ value: m.id, label: m.name }))]}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none"
+                  className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none`}
                 />
               </div>
             </div>
@@ -236,7 +261,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                     value={roomId}
                     onChange={(val) => setRoomId(val)}
                     options={[{ value: '', label: 'No room' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
-                    className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none"
+                    className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none`}
                   />
                 </div>
               </div>
@@ -251,7 +276,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                     { value: '', label: providers.length ? 'No provider' : 'Add providers in Providers tab' },
                     ...providers.map((p) => ({ value: p.id, label: p.name })),
                   ]}
-                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none"
+                  className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none`}
                 />
               </div>
             </div>
@@ -294,7 +319,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                   onChange={(e) => setBody(e.target.value)}
                   placeholder="Add context, measurements, or specs..."
                   rows={2}
-                  className="w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none"
+                  className={`w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none`}
                 />
             </div>
           </div>

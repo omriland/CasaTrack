@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { format, parseISO } from 'date-fns'
+import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 
 interface DatePickerProps {
   value: string // YYYY-MM-DD
@@ -12,6 +13,7 @@ interface DatePickerProps {
 }
 
 export function DatePicker({ value, onChange, placeholder = 'Select date' }: DatePickerProps) {
+  const isMobile = useRenovationMobileMedia()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -27,6 +29,18 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
 
   const selectedDate = value ? parseISO(value) : undefined
   const display = selectedDate ? format(selectedDate, 'MMM d, yyyy') : placeholder
+
+  if (isMobile) {
+    return (
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full min-h-[44px] pl-3 pr-3 rounded border border-slate-200 bg-slate-50 text-[16px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white"
+        aria-label={placeholder}
+      />
+    )
+  }
 
   return (
     <div className="relative" ref={ref}>

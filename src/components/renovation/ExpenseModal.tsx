@@ -11,6 +11,7 @@ import {
   renovationPublicUrl,
 } from '@/lib/renovation'
 import { DatePicker } from '@/components/renovation/DatePicker'
+import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 import type { RenovationExpense, RenovationExpenseAttachment } from '@/types/renovation'
 
 interface ExpenseModalProps {
@@ -22,6 +23,7 @@ interface ExpenseModalProps {
 
 export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }: ExpenseModalProps) {
   const { project } = useRenovation()
+  const isMobile = useRenovationMobileMedia()
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [vendor, setVendor] = useState('')
@@ -174,7 +176,14 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}>
+    <div
+      className={
+        isMobile
+          ? 'fixed inset-0 z-[280] flex items-end justify-center p-0 bg-slate-900/40 backdrop-blur-sm transition-opacity'
+          : 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity'
+      }
+      onClick={onClose}
+    >
       <div
         onClick={(ev) => ev.stopPropagation()}
         onDragOver={(ev) => ev.preventDefault()}
@@ -184,27 +193,49 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
           if (editing?.id) onFilesSelectedForEdit(ev.dataTransfer.files)
           else onFilesSelectedForNew(ev.dataTransfer.files)
         }}
-        className="w-full md:max-w-[480px] bg-white rounded-t-[2rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
+        className={
+          isMobile
+            ? 'w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] bg-white rounded-t-[2rem] shadow-2xl overflow-hidden flex flex-col pt-2 animate-fade-in-up'
+            : 'w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-0 animate-zoom-in'
+        }
       >
-        <div className="px-6 py-4 md:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
-          <div className="w-12 h-1.5 bg-slate-200 rounded-full absolute top-2 left-1/2 -translate-x-1/2 md:hidden" />
-          <h2 className="text-[18px] md:text-[20px] font-bold text-slate-800 tracking-tight mt-2 md:mt-0">{editing ? 'Edit Expense' : 'New Expense'}</h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 mt-2 md:mt-0 active:scale-90">
+        <div
+          className={`px-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative ${isMobile ? 'py-4' : 'py-5'}`}
+        >
+          {isMobile ? (
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full absolute top-2 left-1/2 -translate-x-1/2" />
+          ) : null}
+          <h2
+            className={`font-bold text-slate-800 tracking-tight ${isMobile ? 'text-[18px] mt-2' : 'text-[20px] mt-0'}`}
+          >
+            {editing ? 'Edit Expense' : 'New Expense'}
+          </h2>
+          <button
+            onClick={onClose}
+            className={`p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? 'mt-2' : 'mt-0'}`}
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
-        <form onSubmit={save} className="p-6 overflow-y-auto max-h-[85vh] space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          <div className="flex flex-col items-center justify-center py-2 md:py-4">
+        <form
+          onSubmit={save}
+          className={`p-6 space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${isMobile ? 'flex-1 min-h-0 overflow-y-auto' : 'overflow-y-auto max-h-[85vh]'}`}
+        >
+          <div className={`flex flex-col items-center justify-center ${isMobile ? 'py-2' : 'py-4'}`}>
             <label className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Amount</label>
             <div className="relative group inline-block">
-              <span className="absolute -left-6 top-1/2 -translate-y-1/2 text-[32px] md:text-[40px] font-light text-slate-300">₪</span>
+              <span
+                className={`absolute -left-6 top-1/2 -translate-y-1/2 font-light text-slate-300 ${isMobile ? 'text-[32px]' : 'text-[40px]'}`}
+              >
+                ₪
+              </span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={amount}
                 onChange={(e) => handleAmountChange(e.target.value)}
-                className="w-[200px] md:w-[240px] bg-transparent text-center text-[48px] md:text-[54px] font-bold text-slate-800 outline-none px-4 py-2 placeholder-slate-200 transition-all"
+                className={`bg-transparent text-center font-bold text-slate-800 outline-none px-4 py-2 placeholder-slate-200 transition-all ${isMobile ? 'w-[200px] text-[48px]' : 'w-[240px] text-[54px]'}`}
                 placeholder="0.00"
                 required
                 autoFocus

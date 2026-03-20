@@ -8,6 +8,7 @@ import { updateGalleryItem, deleteGalleryItem, updateGalleryItemAnnotations, cre
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import type { RenovationGalleryItem, RenovationRoom, RenovationGalleryTag } from '@/types/renovation'
 import { ImageAnnotator, AnnotationShape } from '@/components/renovation/ImageAnnotator'
+import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 
 import YarlLightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
@@ -26,6 +27,7 @@ interface LightboxProps {
 
 export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged }: LightboxProps) {
   const { project } = useRenovation()
+  const isMobile = useRenovationMobileMedia()
   const [index, setIndex] = useState(initialIndex)
   const current = images[index]
 
@@ -126,7 +128,23 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
         index={index}
         slides={slides}
         on={{ view: ({ index: currentIndex }) => setIndex(currentIndex) }}
-        plugins={[Zoom, Thumbnails]}
+        plugins={isMobile ? [Zoom] : [Zoom, Thumbnails]}
+        carousel={isMobile ? { padding: '12px', spacing: 0 } : undefined}
+        styles={
+          isMobile
+            ? {
+                root: {
+                  paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+                  paddingTop: 'max(0.35rem, env(safe-area-inset-top, 0px))',
+                },
+                toolbar: {
+                  paddingLeft: 'max(0.5rem, env(safe-area-inset-left, 0px))',
+                  paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
+                },
+                slide: { paddingBottom: '0.25rem' },
+              }
+            : undefined
+        }
         toolbar={{
           buttons: [
             <button
@@ -183,7 +201,13 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
             if (!room && itemTags.length === 0 && !currentImg.caption) return null
 
             return (
-              <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-50 pointer-events-none flex flex-col items-start text-left max-w-sm">
+              <div
+                className={
+                  isMobile
+                    ? 'absolute top-[max(0.75rem,env(safe-area-inset-top,0px))] left-4 z-50 pointer-events-none flex flex-col items-start text-left max-w-sm'
+                    : 'absolute top-4 left-4 sm:top-6 sm:left-6 z-50 pointer-events-none flex flex-col items-start text-left max-w-sm'
+                }
+              >
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   {room && (
                     <span className="bg-indigo-500 text-white px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider shadow-lg border border-indigo-400 pointer-events-auto">
@@ -300,10 +324,22 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
       )}
 
       {mounted && showDetails && createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto" onClick={() => !saving && setShowDetails(false)}>
+        <div
+          className={
+            isMobile
+              ? 'fixed inset-0 z-[10000] flex items-end justify-center p-0 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto'
+              : 'fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fade-in pointer-events-auto'
+          }
+          onClick={() => !saving && setShowDetails(false)}
+        >
           <div 
-            className="w-full max-w-md bg-[#1a1a1c] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-zoom-in text-white/90"
+            className={
+              isMobile
+                ? 'w-full max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-bottom,0px)))] bg-[#1a1a1c] border border-white/10 border-b-0 rounded-t-[1.5rem] shadow-2xl flex flex-col overflow-hidden animate-fade-in-up text-white/90'
+                : 'w-full max-w-md bg-[#1a1a1c] border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-zoom-in text-white/90'
+            }
             onClick={(e) => e.stopPropagation()}
+            style={isMobile ? { paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' } : undefined}
           >
             {/* Header */}
             <div className="flex justify-between items-center p-5 border-b border-white/10 bg-black/20">

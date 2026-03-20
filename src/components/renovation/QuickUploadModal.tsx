@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { uploadGalleryPhoto, createGalleryItem, listRooms, listGalleryTags } from '@/lib/renovation'
 import { Dropdown } from '@/components/renovation/Dropdown'
+import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 import type { RenovationRoom, RenovationGalleryTag } from '@/types/renovation'
 
 interface QuickUploadModalProps {
@@ -14,6 +15,7 @@ interface QuickUploadModalProps {
 
 export function QuickUploadModal({ file, onClose, onSave }: QuickUploadModalProps) {
   const { project } = useRenovation()
+  const isMobile = useRenovationMobileMedia()
   const [preview, setPreview] = useState<string>('')
   const [caption, setCaption] = useState('')
   const [roomId, setRoomId] = useState('')
@@ -59,21 +61,46 @@ export function QuickUploadModal({ file, onClose, onSave }: QuickUploadModalProp
   }
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}>
+    <div
+      className={
+        isMobile
+          ? 'fixed inset-0 z-[280] flex items-end justify-center p-0 bg-slate-900/40 backdrop-blur-sm transition-opacity'
+          : 'fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity'
+      }
+      onClick={onClose}
+    >
       <div
         onClick={(ev) => ev.stopPropagation()}
-        className="w-full md:max-w-[480px] bg-white rounded-t-[2rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
+        className={
+          isMobile
+            ? 'w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] bg-white rounded-t-[2rem] shadow-2xl overflow-hidden flex flex-col pt-2 animate-fade-in-up'
+            : 'w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-0 animate-zoom-in'
+        }
       >
         {/* Header */}
-        <div className="px-6 py-4 md:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
-          <div className="w-12 h-1.5 bg-slate-200 rounded-full absolute top-2 left-1/2 -translate-x-1/2 md:hidden" />
-          <h2 className="text-[18px] md:text-[20px] font-bold text-slate-800 tracking-tight mt-2 md:mt-0">Quick Photo Upload</h2>
-          <button onClick={onClose} className="p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 mt-2 md:mt-0 active:scale-90">
+        <div
+          className={`px-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative ${isMobile ? 'py-4' : 'py-5'}`}
+        >
+          {isMobile ? (
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full absolute top-2 left-1/2 -translate-x-1/2" />
+          ) : null}
+          <h2
+            className={`font-bold text-slate-800 tracking-tight ${isMobile ? 'text-[18px] mt-2' : 'text-[20px] mt-0'}`}
+          >
+            Quick Photo Upload
+          </h2>
+          <button
+            onClick={onClose}
+            className={`p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? 'mt-2' : 'mt-0'}`}
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         
-        <form onSubmit={handleSave} className="p-6 overflow-y-auto max-h-[85vh] space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <form
+          onSubmit={handleSave}
+          className={`p-6 space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${isMobile ? 'flex-1 min-h-0 overflow-y-auto' : 'overflow-y-auto max-h-[85vh]'}`}
+        >
           {/* Image Preview */}
           <div className="relative aspect-video rounded-md overflow-hidden bg-slate-100 border border-slate-200 group">
              {preview && (
@@ -92,7 +119,7 @@ export function QuickUploadModal({ file, onClose, onSave }: QuickUploadModalProp
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="What's this photo about?"
                 rows={2}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[16px] md:text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none"
+                className={`w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none`}
               />
             </div>
 
@@ -103,7 +130,7 @@ export function QuickUploadModal({ file, onClose, onSave }: QuickUploadModalProp
                 value={roomId}
                 onChange={setRoomId}
                 options={[{ value: '', label: 'No Room' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
-                className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 outline-none focus-within:ring-2 focus-within:ring-indigo-500/20"
+                className={`w-full h-11 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-semibold text-slate-800 outline-none focus-within:ring-2 focus-within:ring-indigo-500/20`}
               />
             </div>
 

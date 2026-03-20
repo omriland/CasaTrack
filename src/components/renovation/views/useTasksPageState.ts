@@ -1,0 +1,124 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { useRenovation } from '@/components/renovation/RenovationContext'
+import {
+  listLabels,
+  listProviders,
+  listRooms,
+  listTasks,
+  listTeamMembers,
+  updateTask,
+} from '@/lib/renovation'
+import type {
+  RenovationLabel,
+  RenovationProvider,
+  RenovationRoom,
+  RenovationTask,
+  RenovationTeamMember,
+  TaskStatus,
+} from '@/types/renovation'
+
+export function useTasksPageState() {
+  const { project, setTaskModalOpen } = useRenovation()
+  const [tasks, setTasks] = useState<RenovationTask[]>([])
+  const [members, setMembers] = useState<RenovationTeamMember[]>([])
+  const [labels, setLabels] = useState<RenovationLabel[]>([])
+  const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  const [providers, setProviders] = useState<RenovationProvider[]>([])
+  const [loading, setLoading] = useState(true)
+  const [view, setView] = useState<'status' | 'assignee' | 'list'>('status')
+  const [filterAssignee, setFilterAssignee] = useState<string>('')
+  const [filterLabel, setFilterLabel] = useState<string>('')
+  const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null)
+  const [sheet, setSheet] = useState(false)
+  const [editing, setEditing] = useState<RenovationTask | null>(null)
+
+  const load = useCallback(async () => {
+    if (!project) return
+    setLoading(true)
+    try {
+      const [t, m, l, r, p] = await Promise.all([
+        listTasks(project.id),
+        listTeamMembers(project.id),
+        listLabels(project.id),
+        listRooms(project.id),
+        listProviders(project.id),
+      ])
+      setTasks(t)
+      setMembers(m)
+      setLabels(l)
+      setRooms(r)
+      setProviders(p)
+    } finally {
+      setLoading(false)
+    }
+  }, [project])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  const openEdit = (t: RenovationTask) => {
+    setEditing(t)
+    setSheet(true)
+  }
+
+  const onDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const onDrop = async (e: React.DragEvent, newStatus: TaskStatus) => {
+    e.preventDefault()
+    setDragOverStatus(null)
+    const taskId = e.dataTransfer.getData('taskId')
+    if (!taskId) return
+    const task = tasks.find((t) => t.id === taskId)
+    if (!task || task.status === newStatus) return
+
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)))
+
+    try {
+      await updateTask(taskId, { status: newStatus })
+    } catch (err) {
+      console.error(err)
+      await load()
+    }
+  }
+
+  const filteredTasks = tasks.filter((t) => {
+    if (filterAssignee && t.assignee_id !== filterAssignee) return false
+    if (filterLabel && !t.label_ids?.includes(filterLabel)) return false
+    return true
+  })
+
+  return {
+    project,
+    setTaskModalOpen,
+    tasks,
+    setTasks,
+    members,
+    labels,
+    rooms,
+    providers,
+    loading,
+    load,
+    view,
+    setView,
+    filterAssignee,
+    setFilterAssignee,
+    filterLabel,
+    setFilterLabel,
+    dragOverStatus,
+    setDragOverStatus,
+    sheet,
+    setSheet,
+    editing,
+    setEditing,
+    openEdit,
+    onDragStart,
+    onDrop,
+    filteredTasks,
+  }
+}

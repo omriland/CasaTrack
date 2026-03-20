@@ -20,7 +20,15 @@
 
 ## Key Features Implemented
 
-### Core Features
+### Renovation Management (New Module)
+1. **Interactive Dashboard**: Modular overview of tasks, expenses, and photos.
+2. **Expense & Budget Tracking**: Logs outlays against project budgets with line-item attachments.
+3. **Tasks Kanban**: Robust drag-and-drop task tracking featuring assignments, due dates, labels, and specialized custom providers.
+4. **Gallery Integration**: Advanced photo grouping into albums, inline tag creation, lightbox annotations, and bulk actions.
+5. **Provider & File Management**: Seamlessly manage vendors and documentation with drag-and-drop multi-file upload progress parsing.
+6. **Multi-profile Support**: Easily switch active users (`activeProfile`) within teams for isolated action tracking.
+
+### Property Hunt Features
 1. **Property CRUD operations** (Create, Read, Update, Delete)
 2. **Auto-calculated price per square meter** (counts 50% of balcony area)
 3. **Status tracking** with visual indicators (7 statuses)
@@ -124,6 +132,8 @@
 - Password visibility toggle in login form
 
 ## Recent Additions (Latest Session)
+- **Renovation Module Expansion**: Added Providers management, drag-and-drop multi-file uploads with progress tracking, responsive sidebar nav adjustments, and refined task cards (badges + context tags).
+- **Gallery Enhancements**: Split photos into `gallery/albums` view and `all` view; supported inline tag production across modals and lightboxes space.
 - **WhatsApp Integration**: Phone numbers now have WhatsApp buttons with Israeli number formatting
 - **Click-to-call**: Phone numbers are clickable tel: links
 - **Map Attachment Indicators**: Hover tooltips show attachment indicators

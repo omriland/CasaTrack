@@ -13,6 +13,10 @@ src/
 │   ├── page-content.tsx     # Main application (auth + property management)
 │   ├── layout.tsx           # Root layout with fonts and scripts
 │   ├── globals.css          # Global styles and CSS variables
+│   ├── renovation/          # Complete Renovation Sub-Application
+│   │   ├── layout.tsx       # RenovationShell and RenovationProvider
+│   │   ├── page.tsx         # Renovation Dashboard
+│   │   └── ...              # Tabs: expenses, tasks, gallery, providers, files, needs, rooms, settings
 │   └── api/
 │       ├── extract-property/ # Yad2 URL extraction endpoint
 │       └── fetch-html/       # HTML fetching endpoint
@@ -33,11 +37,13 @@ src/
 │   ├── auth.ts              # Client-side auth helpers
 │   ├── properties.ts        # Supabase CRUD operations
 │   ├── attachments.ts       # Attachment management
+│   ├── renovation.ts        # Fully comprehensive typed API for Renovation data
 │   ├── phone.ts             # Phone number formatting utilities
 │   ├── supabase.ts          # Database client & types
 │   └── utils.ts             # Utility functions (cn helper)
 ├── types/
-│   └── property.ts          # TypeScript interfaces
+│   ├── property.ts          # TypeScript interfaces for Property Hunt
+│   └── renovation.ts        # TypeScript interfaces for Renovation (Tasks, Expenses, Gallery, Providers, etc)
 └── constants/
     └── statuses.ts          # Status definitions and labels
 ```

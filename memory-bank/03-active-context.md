@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation sub-app shipped (needs Supabase SQL run by user)
-**Status**: Code complete — run `supabase/renovation/*.sql` then use `/renovation`
+**Priority**: Renovation module stable; mobile IA uses dedicated shell + per-route mobile views below 768px; desktop trees preserved.
+**Status**: Mobile redesign plan implemented (shell, routes, gallery split, modal/date/lightbox branching, `/renovation/budget` → settings#budget). Manual QA: resize 767↔768, iOS safe areas, RTL on inputs.
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session
@@ -18,7 +18,17 @@
 
 ### Implemented Features Analysis
 
-#### Core Features
+#### Renovation App (New Module)
+1. ✅ **Dashboard & Profiles**: Multi-user profile switching, quick overview of budget, upcoming tasks, and recent photos.
+2. ✅ **Expenses**: Financial tracking, categorization, and receipt attachments.
+3. ✅ **Tasks**: Drag-and-drop Kanban board (view by status or assignee), detailed task cards (room, labels, provider, due date).
+4. ✅ **Gallery**: Grouped by albums/tags with album covers, multi-photo uploads with progress, Lightbox viewing, and inline label creation.
+5. ✅ **Providers**: Centralized contact database for contractors and service providers.
+6. ✅ **Files**: Documentation hub with multi-file upload, drag-and-drop, and progress tracking.
+7. ✅ **Rooms & Needs**: Space management and items purchasing list.
+8. ✅ **Settings**: Project preferences, labels, and team management.
+
+#### Property Hunt (Core Features)
 1. ✅ **Authentication System**: Glassmorphism login with password visibility toggle
 2. ✅ **Property CRUD**: Complete create, read, update, delete operations
 3. ✅ **Database Schema**: Properties + Notes + Attachments tables with proper relationships
