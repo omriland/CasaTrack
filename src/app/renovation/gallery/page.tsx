@@ -24,6 +24,7 @@ export default function GalleryPage() {
   const [tags, setTags] = useState<RenovationGalleryTag[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [lightbox, setLightbox] = useState<RenovationGalleryItem | null>(null)
   const [viewMode, setViewMode] = useState<'gallery' | 'all'>('gallery')
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | 'untagged' | null>(null)
@@ -76,21 +77,51 @@ export default function GalleryPage() {
     load()
   }, [load])
 
+  const isGalleryImageFile = (f: File) => {
+    if (f.type.startsWith('image/')) return true
+    return /\.(jpe?g|png|gif|webp|heic|heif|avif|bmp|tiff?)$/i.test(f.name)
+  }
+
   const onFiles = async (files: FileList | File[] | null) => {
     if (!project || !files?.length) return
+    const raw = Array.from(files)
+    const filesArr = raw.filter(isGalleryImageFile)
+    const skipped = raw.length - filesArr.length
+    if (skipped > 0) {
+      alert(`${skipped} file(s) skipped — only images can be added to Photos.`)
+    }
+    if (filesArr.length === 0) return
+
     setUploading(true)
+    setUploadProgress({ done: 0, total: filesArr.length })
+    const failures: { name: string; error: string }[] = []
     try {
-      for (let i = 0; i < files.length; i++) {
-        const path = await uploadGalleryPhoto(project.id, files[i]!)
-        await createGalleryItem(project.id, { storage_path: path })
+      for (let i = 0; i < filesArr.length; i++) {
+        const file = filesArr[i]!
+        try {
+          const path = await uploadGalleryPhoto(project.id, file)
+          await createGalleryItem(project.id, { storage_path: path })
+        } catch (e) {
+          console.error('Gallery upload error:', e)
+          const msg = e instanceof Error ? e.message : String(e)
+          failures.push({ name: file.name, error: msg })
+        } finally {
+          setUploadProgress({ done: i + 1, total: filesArr.length })
+        }
       }
       await load()
-    } catch (e) {
-      console.error('Gallery upload error:', e)
-      const msg = e instanceof Error ? e.message : String(e)
-      alert(`Upload failed: ${msg}. Ensure you ran 02_storage.sql and that the bucket "renovation-gallery" exists.`)
+      if (failures.length > 0) {
+        const lines = failures.map((f) => `• ${f.name}: ${f.error}`).join('\n')
+        const ok = filesArr.length - failures.length
+        alert(
+          ok > 0
+            ? `Uploaded ${ok} of ${filesArr.length} photo(s).\n\nFailed:\n${lines}\n\nIf all failed, ensure 02_storage.sql ran and bucket "renovation-gallery" exists.`
+            : `Upload failed for all ${filesArr.length} photo(s):\n\n${lines}\n\nEnsure you ran 02_storage.sql and that the bucket "renovation-gallery" exists.`
+        )
+      }
     } finally {
       setUploading(false)
+      setUploadProgress(null)
     }
   }
 
@@ -98,33 +129,44 @@ export default function GalleryPage() {
     setLightbox(item)
   }
 
-  const handleItemClick = (e: React.MouseEvent, item: RenovationGalleryItem) => {
+  /** Must match the visual row order for shift+click range (sortedFiltered or album’s group.items). */
+  const handleItemClick = (
+    e: React.MouseEvent,
+    item: RenovationGalleryItem,
+    visibleOrder?: RenovationGalleryItem[]
+  ) => {
+    const list = visibleOrder ?? sortedFiltered
     if (e.shiftKey && lastSelectedId) {
       e.preventDefault()
-      const lastIdx = filtered.findIndex(i => i.id === lastSelectedId)
-      const currentIdx = filtered.findIndex(i => i.id === item.id)
+      const lastIdx = list.findIndex((i) => i.id === lastSelectedId)
+      const currentIdx = list.findIndex((i) => i.id === item.id)
       if (lastIdx > -1 && currentIdx > -1) {
         const start = Math.min(lastIdx, currentIdx)
         const end = Math.max(lastIdx, currentIdx)
-        const next = new Set(selectedIds)
-        for (let i = start; i <= end; i++) {
-          next.add(filtered[i].id)
-        }
-        setSelectedIds(next)
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          for (let i = start; i <= end; i++) {
+            next.add(list[i]!.id)
+          }
+          return next
+        })
+        setLastSelectedId(item.id)
       }
       return
     }
 
     if (e.metaKey || e.ctrlKey || selectedIds.size > 0) {
       e.preventDefault()
-      const next = new Set(selectedIds)
-      if (next.has(item.id)) {
-        next.delete(item.id)
-      } else {
-        next.add(item.id)
-        setLastSelectedId(item.id)
-      }
-      setSelectedIds(next)
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(item.id)) {
+          next.delete(item.id)
+        } else {
+          next.add(item.id)
+          setLastSelectedId(item.id)
+        }
+        return next
+      })
       return
     }
 
@@ -230,29 +272,50 @@ export default function GalleryPage() {
     return groups
   }, [sortedFiltered, tags, viewMode])
 
-  const renderItem = (item: RenovationGalleryItem, showRoom: boolean = false) => {
+  const renderItem = (item: RenovationGalleryItem, showRoom: boolean = false, selectionOrder?: RenovationGalleryItem[]) => {
     const isSelected = selectedIds.has(item.id)
     return (
       <div
         key={item.id}
-        onClick={(e) => handleItemClick(e, item)}
+        onClick={(e) => handleItemClick(e, item, selectionOrder)}
         className={`aspect-[4/5] sm:aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden bg-slate-100 active:scale-[0.96] hover:shadow-md transition-all relative group cursor-pointer shadow-sm border border-slate-200/50 outline-none ${isSelected ? 'ring-4 ring-indigo-500 scale-[0.96] opacity-90' : ''}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={item.public_url} alt="" className="w-full h-full object-cover" loading="lazy" />
         
-        {/* Checkbox overlay */}
+        {/* Checkbox overlay — same shift+range as card click (stopPropagation would skip parent otherwise) */}
         <div 
           onClick={(e) => {
             e.stopPropagation()
-            const next = new Set(selectedIds)
-            if (next.has(item.id)) {
-              next.delete(item.id)
-            } else {
-              next.add(item.id)
-              setLastSelectedId(item.id)
+            const list = selectionOrder ?? sortedFiltered
+            if (e.shiftKey && lastSelectedId) {
+              e.preventDefault()
+              const lastIdx = list.findIndex((i) => i.id === lastSelectedId)
+              const currentIdx = list.findIndex((i) => i.id === item.id)
+              if (lastIdx > -1 && currentIdx > -1) {
+                const start = Math.min(lastIdx, currentIdx)
+                const end = Math.max(lastIdx, currentIdx)
+                setSelectedIds((prev) => {
+                  const next = new Set(prev)
+                  for (let i = start; i <= end; i++) {
+                    next.add(list[i]!.id)
+                  }
+                  return next
+                })
+                setLastSelectedId(item.id)
+              }
+              return
             }
-            setSelectedIds(next)
+            setSelectedIds((prev) => {
+              const next = new Set(prev)
+              if (next.has(item.id)) {
+                next.delete(item.id)
+              } else {
+                next.add(item.id)
+                setLastSelectedId(item.id)
+              }
+              return next
+            })
           }}
           className={`absolute top-2 right-2 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white shadow-sm scale-110' : 'bg-black/20 border-white/80 text-transparent hover:bg-black/40 hover:border-white scale-100 hover:scale-110'}`}
         >
@@ -346,10 +409,7 @@ export default function GalleryPage() {
             e.stopPropagation()
             setIsDragging(false)
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-              const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
-              if (files.length > 0) {
-                onFiles(files)
-              }
+              onFiles(e.dataTransfer.files)
             }
           }}
         >
@@ -364,13 +424,19 @@ export default function GalleryPage() {
       )}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-1">Visual Progress</p>
+
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Photos</h1>
-          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Snap, tag, and organize renovation progress.</p>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">
+            Snap, tag, and organize progress — add <span className="font-semibold text-slate-500">multiple photos</span> at once.
+          </p>
         </div>
         <div className="hidden md:block">
-          <label className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold flex items-center justify-center cursor-pointer hover:bg-indigo-700 shadow-sm active:scale-95 transition-all">
-            {uploading ? 'Uploading…' : '+ Add Photos'}
+          <label className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold flex items-center justify-center cursor-pointer hover:bg-indigo-700 shadow-sm active:scale-95 transition-all min-w-[10rem]">
+            {uploading
+              ? uploadProgress && uploadProgress.total > 1
+                ? `${uploadProgress.done}/${uploadProgress.total}`
+                : 'Uploading…'
+              : '+ Add Photos'}
             <input
               type="file"
               accept="image/*"
@@ -458,7 +524,9 @@ export default function GalleryPage() {
                 </svg>
               </div>
               <p className="text-[16px] font-bold text-slate-600 uppercase tracking-tight">No photos yet</p>
-              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">Click &quot;+ Add Photos&quot; or drag &amp; drop images here from your computer to track progress.</p>
+              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">
+                Use <span className="font-semibold text-slate-500">+ Add Photos</span> to pick many images at once, or drag &amp; drop here.
+              </p>
            </div>
         </div>
       ) : viewMode === 'gallery' ? (
@@ -520,7 +588,7 @@ export default function GalleryPage() {
                 if (!group) return <p className="text-slate-400 py-10">Album not found or filtered out.</p>
                 return (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
-                    {group.items.map(item => renderItem(item, false))}
+                    {group.items.map((item) => renderItem(item, false, group.items))}
                   </div>
                 )
               })()}
@@ -535,9 +603,16 @@ export default function GalleryPage() {
 
       {/* Mobile Floating Action Button (FAB) */}
       <div className="md:hidden fixed bottom-24 right-4 z-40">
-        <label className={`w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-[0_8px_30px_rgba(79,70,229,0.4)] ${uploading ? 'bg-slate-500 animate-pulse' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer'}`}>
+        <label
+          title={uploading ? 'Uploading photos' : 'Add photos (multiple)'}
+          className={`w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-[0_8px_30px_rgba(79,70,229,0.4)] ${uploading ? 'bg-slate-500' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer'}`}
+        >
           {uploading ? (
-             <span className="text-xs font-bold">...</span>
+             <span className="text-[10px] font-extrabold leading-tight text-center px-1 tabular-nums">
+               {uploadProgress && uploadProgress.total > 1
+                 ? `${uploadProgress.done}/${uploadProgress.total}`
+                 : '…'}
+             </span>
           ) : (
              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />

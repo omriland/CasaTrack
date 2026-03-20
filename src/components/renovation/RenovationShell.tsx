@@ -141,7 +141,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pb-2 scrollbar-hide min-h-0">
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto pb-2 scrollbar-hide min-h-0">
           {nav.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
@@ -149,7 +149,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center gap-3.5 px-3.5 py-3 rounded text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
+                className={`group flex items-center gap-3.5 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
                   active 
                     ? 'text-indigo-700 bg-indigo-50/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_4px_rgba(79,70,229,0.05)] ring-1 ring-indigo-100' 
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'

@@ -94,7 +94,7 @@ export default function RenovationNeedsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <header>
-        <p className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">New apartment</p>
+
         <h1 className="text-[28px] md:text-[32px] font-bold tracking-tight text-slate-900">Needs</h1>
         <p className="text-[15px] text-slate-500 mt-1">
           What you need from the apartment — add items and optionally link them to a room.

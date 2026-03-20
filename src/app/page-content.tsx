@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { isAuthenticated, clearAuth } from '@/lib/auth'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { isAuthenticated, clearAuth, getSafeRenovationRedirectPath } from '@/lib/auth'
 import { getProperties, createProperty, updateProperty, deleteProperty, updatePropertyStatus, updatePropertyRating, togglePropertyFlag } from '@/lib/properties'
 import { Property, PropertyInsert } from '@/types/property'
 import LoginForm from '@/components/LoginForm'
@@ -13,6 +13,7 @@ import PropertyDetailModal from '@/components/PropertyDetailModal'
 import KanbanBoard from '@/components/KanbanBoard'
 import MapView from '@/components/MapView'
 export default function HomeContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [properties, setProperties] = useState<Property[]>([])
@@ -51,6 +52,15 @@ export default function HomeContent() {
       setPendingPropertyId(propertyId)
     }
   }, [searchParams])
+
+  /** Already logged in but landed on /?next=/renovation/... — send them through */
+  useEffect(() => {
+    if (!isLoggedIn || loading) return
+    const next = getSafeRenovationRedirectPath(searchParams.get('next'))
+    if (next) {
+      router.replace(next)
+    }
+  }, [isLoggedIn, loading, searchParams, router])
 
   const loadProperties = useCallback(async () => {
     try {
@@ -96,7 +106,12 @@ export default function HomeContent() {
 
   const handleLogin = () => {
     setIsLoggedIn(true)
-    // If there's a pending property ID, it will be handled in the useEffect above
+    const next = getSafeRenovationRedirectPath(searchParams.get('next'))
+    if (next) {
+      router.replace(next)
+      return
+    }
+    // If there's a pending property ID, it will be handled in the useEffect below
   }
 
   const handleLogout = () => {

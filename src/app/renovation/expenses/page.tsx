@@ -89,7 +89,7 @@ export default function ExpensesPage() {
     <div className="space-y-6 pb-20 md:pb-8 animate-fade-in-up">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-1">Financial Tracking</p>
+
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Expenses</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Track every shekel spent. Drag files onto a row to attach.</p>
         </div>

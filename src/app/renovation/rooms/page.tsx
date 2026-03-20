@@ -94,7 +94,7 @@ export default function RoomsPage() {
     <div className="space-y-6 pb-20 md:pb-8 animate-fade-in-up">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold text-amber-500 uppercase tracking-[0.2em] mb-1">Space Management</p>
+
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Rooms</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Organize tasks and photos by physical space.</p>
         </div>

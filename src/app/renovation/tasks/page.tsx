@@ -131,7 +131,7 @@ export default function TasksPage() {
         onDragStart={(e) => onDragStart(e, t.id)}
         type="button"
         onClick={() => openEdit(t)}
-        className={`w-full text-left bg-white rounded-2xl border border-slate-200/60 p-4 sm:p-5 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] cursor-grab active:cursor-grabbing ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
+        className={`w-full text-left bg-white rounded-xl border border-slate-200/60 p-4 sm:p-5 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] cursor-grab active:cursor-grabbing ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
         <div className="flex gap-3.5 items-start">
           <div className={`shrink-0 mt-0.5 ${isDone ? 'opacity-40 grayscale' : 'opacity-90'}`}>{PRIORITY_ICONS[t.urgency]}</div>
@@ -231,7 +231,7 @@ export default function TasksPage() {
     <div className="space-y-6 pb-20 md:pb-8 animate-fade-in-up">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-1">Work Management</p>
+
           <div className="flex items-baseline gap-3">
             <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Tasks</h1>
             {(filterAssignee || filterLabel) && (
@@ -328,7 +328,7 @@ export default function TasksPage() {
                     }}
                     onDragLeave={() => setDragOverStatus(null)}
                     onDrop={(e) => onDrop(e, s)}
-                    className={`w-[85vw] md:w-[320px] shrink-0 p-4 rounded-[2rem] flex flex-col gap-4 snap-center border-2 transition-all min-h-[50vh] ${
+                    className={`w-[85vw] md:w-[320px] shrink-0 p-4 rounded-2xl flex flex-col gap-4 snap-center border-2 transition-all min-h-[50vh] ${
                       isDraggingOver 
                         ? 'bg-indigo-50/80 border-indigo-400 border-dashed scale-[1.02] shadow-lg' 
                         : 'bg-slate-100/60 border-transparent shadow-sm'
@@ -356,7 +356,7 @@ export default function TasksPage() {
                 const paneTasks = filteredTasks.filter(t => m.id === 'unassigned' ? !t.assignee_id : t.assignee_id === m.id).sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-4 rounded-[2rem] flex flex-col gap-4 snap-center shadow-sm">
+                  <div key={m.id} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-4 rounded-2xl flex flex-col gap-4 snap-center shadow-sm">
                     <h3 className="font-bold text-slate-700 px-1 flex justify-between items-center text-[16px]">
                       <span>{m.name}</span>
                       <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>

@@ -299,7 +299,7 @@ export default function RenovationProvidersPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-24 md:pb-8 animate-fade-in-up">
       <header className="space-y-1">
-        <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-[0.2em]">Contacts</p>
+
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h1 className="text-[30px] md:text-[34px] font-bold tracking-tight text-slate-900">Providers</h1>

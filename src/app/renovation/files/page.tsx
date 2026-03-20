@@ -58,6 +58,7 @@ export default function RenovationFilesPage() {
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [filterRoom, setFilterRoom] = useState<string>('')
   const [defaultRoom, setDefaultRoom] = useState<string>('')
@@ -85,19 +86,37 @@ export default function RenovationFilesPage() {
 
   const handleFiles = async (list: FileList | null) => {
     if (!project || !list?.length) return
+    const filesArr = Array.from(list)
     setUploading(true)
+    setUploadProgress({ done: 0, total: filesArr.length })
+    const room = defaultRoom || null
+    const failures: { name: string; error: string }[] = []
     try {
-      const room = defaultRoom || null
-      for (let i = 0; i < list.length; i++) {
-        await uploadProjectFile(project.id, list[i]!, room)
+      for (let i = 0; i < filesArr.length; i++) {
+        const file = filesArr[i]!
+        try {
+          await uploadProjectFile(project.id, file, room)
+        } catch (e) {
+          console.error(e)
+          const msg = e instanceof Error ? e.message : String(e)
+          failures.push({ name: file.name, error: msg })
+        } finally {
+          setUploadProgress({ done: i + 1, total: filesArr.length })
+        }
       }
       await load()
-    } catch (e) {
-      console.error(e)
-      const msg = e instanceof Error ? e.message : String(e)
-      alert(`Upload failed: ${msg}`)
+      if (failures.length > 0) {
+        const lines = failures.map((f) => `• ${f.name}: ${f.error}`).join('\n')
+        const ok = filesArr.length - failures.length
+        alert(
+          ok > 0
+            ? `Uploaded ${ok} of ${filesArr.length} file(s).\n\nFailed:\n${lines}`
+            : `Upload failed for all ${filesArr.length} file(s):\n\n${lines}`
+        )
+      }
     } finally {
       setUploading(false)
+      setUploadProgress(null)
     }
   }
 
@@ -155,7 +174,7 @@ export default function RenovationFilesPage() {
       {/* Header section with Glass Effect */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-1">Documentation Hub</p>
+
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Project Files</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Keep all your receipts, contracts, and blueprints in one place.</p>
         </div>
@@ -203,15 +222,18 @@ export default function RenovationFilesPage() {
         <p className="text-[16px] font-semibold text-slate-700">
           {dragOver ? 'Drop files to upload' : 'Drag and drop files here'}
         </p>
-        <p className="text-[13px] text-slate-400 mt-1 mb-4">Supports PDF, JPG, PNG, and more</p>
+        <p className="text-[13px] text-slate-400 mt-1">
+          Select or drop <span className="font-semibold text-slate-500">multiple files</span> at once — PDF, images, docs, and more.
+        </p>
         
-        <label className="cursor-pointer">
+        <label className="cursor-pointer mt-4">
           <span className="h-10 px-6 inline-flex items-center rounded-full bg-slate-900 text-white text-[14px] font-semibold hover:bg-slate-800 transition-colors shadow-sm active:scale-95">
-            Choose from device
+            Choose files
           </span>
           <input
             type="file"
             multiple
+            name="files"
             className="hidden"
             disabled={uploading}
             onChange={(e) => {
@@ -222,11 +244,24 @@ export default function RenovationFilesPage() {
         </label>
         
         {uploading && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in">
-             <div className="w-48 h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
-               <div className="h-full bg-indigo-600 rounded-full animate-progress" />
+          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in px-4 text-center">
+             <div className="w-full max-w-[220px] h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
+               <div
+                 className="h-full bg-indigo-600 rounded-full transition-[width] duration-200 ease-out"
+                 style={{
+                   width:
+                     uploadProgress && uploadProgress.total > 0
+                       ? `${(100 * uploadProgress.done) / uploadProgress.total}%`
+                       : '40%',
+                 }}
+               />
              </div>
-             <p className="text-[14px] font-bold text-indigo-600 uppercase tracking-widest">Uploading Files...</p>
+             <p className="text-[14px] font-bold text-indigo-600 uppercase tracking-widest">Uploading…</p>
+             {uploadProgress && uploadProgress.total > 1 && (
+               <p className="text-[13px] font-semibold text-slate-500 mt-2 tabular-nums">
+                 {uploadProgress.done} / {uploadProgress.total} files
+               </p>
+             )}
           </div>
         )}
       </div>

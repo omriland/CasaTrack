@@ -159,7 +159,7 @@ export default function RenovationSettingsPage() {
     <div className="space-y-6 max-w-2xl mx-auto pb-20 md:pb-8 animate-fade-in-up">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-1">Project Preferences</p>
+
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Settings</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Manage your team, labels, budget, and project details.</p>
         </div>

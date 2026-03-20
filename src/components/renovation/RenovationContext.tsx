@@ -98,7 +98,12 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      router.replace('/')
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname + window.location.search
+        router.replace(`/?next=${encodeURIComponent(path)}`)
+      } else {
+        router.replace('/')
+      }
       return
     }
     let cancelled = false
