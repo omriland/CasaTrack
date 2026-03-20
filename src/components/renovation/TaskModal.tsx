@@ -50,6 +50,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
   const [due, setDue] = useState('')
   const [selLabels, setSelLabels] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     if (editing) {
@@ -71,6 +72,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
       setDue('')
       setSelLabels([])
     }
+    setConfirmDelete(false)
   }, [editing])
 
   useEffect(() => {
@@ -282,13 +284,25 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
               <button
                 type="button"
                 onClick={async () => {
-                  if (!confirm('Delete task permanently?')) return
+                  if (!confirmDelete) {
+                    setConfirmDelete(true)
+                    setTimeout(() => setConfirmDelete(false), 3000)
+                    return
+                  }
                   await deleteTask(editing.id)
                   onSave()
                 }}
-                className="h-12 w-12 shrink-0 rounded bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center hover:bg-rose-100 active:scale-[0.98] transition-all shadow-sm"
+                className={`h-12 shrink-0 rounded flex items-center justify-center transition-all shadow-sm ${
+                  confirmDelete 
+                    ? 'w-auto px-4 bg-rose-600 border-rose-600 text-white font-bold' 
+                    : 'w-12 bg-rose-50 border border-rose-100 text-rose-500 hover:bg-rose-100 active:scale-[0.98]'
+                }`}
               >
-                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                {confirmDelete ? (
+                  <span className="text-sm whitespace-nowrap">Sure?</span>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                )}
               </button>
             )}
             <button id="save-task-btn" type="submit" disabled={saving} className="flex-1 h-12 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-md hover:shadow-lg hover:from-indigo-500 hover:to-indigo-400 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2">
