@@ -587,6 +587,36 @@ export async function deleteGalleryItem(item: RenovationGalleryItem): Promise<vo
   if (error) throw error
 }
 
+export async function deleteGalleryItems(items: RenovationGalleryItem[]): Promise<void> {
+  if (items.length === 0) return
+  const paths = items.map(i => i.storage_path)
+  const ids = items.map(i => i.id)
+
+  await supabase.storage.from(BUCKET).remove(paths)
+  const { error } = await supabase.from('renovation_gallery_items').delete().in('id', ids)
+  if (error) throw error
+}
+
+export async function bulkAddTagToGalleryItems(itemIds: string[], tagId: string): Promise<void> {
+  if (itemIds.length === 0) return
+  const inserts = itemIds.map(id => ({ gallery_item_id: id, tag_id: tagId }))
+  // Since we might be adding duplicate tags, we ignore unique constraint errors by upserting or just letting onConflict handle it if supported.
+  // Wait, `renovation_gallery_item_tags` primary key is `(gallery_item_id, tag_id)`.
+  const { error } = await supabase
+    .from('renovation_gallery_item_tags')
+    .upsert(inserts, { onConflict: 'gallery_item_id, tag_id' })
+  if (error) throw error
+}
+
+export async function bulkUpdateGalleryItemsRoom(itemIds: string[], roomId: string | null): Promise<void> {
+  if (itemIds.length === 0) return
+  const { error } = await supabase
+    .from('renovation_gallery_items')
+    .update({ room_id: roomId })
+    .in('id', itemIds)
+  if (error) throw error
+}
+
 export async function uploadGalleryPhoto(projectId: string, file: File): Promise<string> {
   const ext = file.name.split('.').pop() || 'jpg'
   const path = `${projectId}/gallery/${crypto.randomUUID()}.${ext}`

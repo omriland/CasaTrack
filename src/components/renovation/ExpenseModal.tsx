@@ -91,7 +91,7 @@ export function ExpenseModal({ editing, onClose, onSave }: ExpenseModalProps) {
     <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose}>
       <div
         onClick={(ev) => ev.stopPropagation()}
-        className="w-full md:max-w-[480px] bg-white rounded-t-xl md:rounded-lg shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
+        className="w-full md:max-w-[480px] bg-white rounded-t-[2rem] md:rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-2 md:pt-0 animate-fade-in-up md:animate-zoom-in"
       >
         {/* Header */}
         <div className="px-6 py-4 md:py-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative">
@@ -131,7 +131,7 @@ export function ExpenseModal({ editing, onClose, onSave }: ExpenseModalProps) {
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
                 </div>
-                <input dir="auto" value={vendor} onChange={e => setVendor(e.target.value)} placeholder="Store name..." className="w-full h-11 pl-10 pr-3 rounded bg-slate-50 text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white" />
+                <input dir="auto" value={vendor} onChange={e => setVendor(e.target.value)} placeholder="Store name..." className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white" />
               </div>
             </div>
             <div className="space-y-1.5">
@@ -140,7 +140,7 @@ export function ExpenseModal({ editing, onClose, onSave }: ExpenseModalProps) {
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
                 </div>
-                <input dir="auto" value={category} onChange={e => setCategory(e.target.value)} placeholder="Materials..." className="w-full h-11 pl-10 pr-3 rounded bg-slate-50 text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white" />
+                <input dir="auto" value={category} onChange={e => setCategory(e.target.value)} placeholder="Materials..." className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white" />
               </div>
             </div>
           </div>
@@ -162,7 +162,7 @@ export function ExpenseModal({ editing, onClose, onSave }: ExpenseModalProps) {
                 <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                 </div>
-                <input dir="auto" value={payment} onChange={e => setPayment(e.target.value)} placeholder="Credit, Cash..." className="w-full h-11 pl-10 pr-3 rounded bg-slate-50 text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white" />
+                <input dir="auto" value={payment} onChange={e => setPayment(e.target.value)} placeholder="Credit, Cash..." className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white" />
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@ export function ExpenseModal({ editing, onClose, onSave }: ExpenseModalProps) {
                <div className="absolute left-3.5 top-3.5 text-slate-400">
                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" /></svg>
                </div>
-               <textarea dir="auto" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add any extra details..." rows={2} className="w-full pl-10 pr-3 py-3 rounded bg-slate-50 text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none" />
+               <textarea dir="auto" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add any extra details..." rows={2} className="w-full pl-10 pr-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none" />
             </div>
           </div>
 

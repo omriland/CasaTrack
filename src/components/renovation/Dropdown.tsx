@@ -54,9 +54,9 @@ export function Dropdown({ value, onChange, options, className = '', placeholder
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded shadow-xl max-h-60 overflow-y-auto py-1 animate-fade-in-up origin-top text-slate-800">
+        <div className="absolute z-50 mt-2 w-full bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] max-h-64 overflow-y-auto p-1.5 animate-fade-in origin-top text-slate-800 ring-1 ring-black/5">
           {options.length === 0 ? (
-            <div className="px-3.5 py-2.5 text-sm text-slate-400 italic">No options</div>
+            <div className="px-4 py-3 text-[15px] text-slate-400 italic font-medium text-center">No options</div>
           ) : (
             options.map((option) => {
               const isActive = option.value === value
@@ -68,8 +68,8 @@ export function Dropdown({ value, onChange, options, className = '', placeholder
                     onChange(option.value)
                     setOpen(false)
                   }}
-                  className={`w-full text-left px-3.5 py-2.5 text-sm transition-colors flex items-center ${
-                    isActive ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  className={`w-full text-left px-4 py-3 text-[15px] transition-all rounded-xl flex items-center mb-0.5 last:mb-0 ${
+                    isActive ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100 font-medium'
                   }`}
                 >
                   {option.icon && <span className="mr-2 flex-shrink-0">{option.icon}</span>}

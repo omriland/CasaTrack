@@ -76,7 +76,7 @@ export function Modal({
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
@@ -84,7 +84,7 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'bg-white rounded-[32px] border border-[rgba(0,0,0,0.06)] overflow-hidden w-full animate-in zoom-in-95',
+          'bg-white w-full rounded-t-[32px] rounded-b-none sm:rounded-[32px] border border-[rgba(0,0,0,0.06)] overflow-hidden max-h-[90vh] flex flex-col animate-in slide-in-from-bottom-full sm:zoom-in-95',
           sizes[size],
           className
         )}
@@ -119,7 +119,8 @@ export function Modal({
             )}
           </div>
         )}
-        <div className="p-8">{children}</div>
+        <div className="p-4 sm:p-8 overflow-y-auto flex-1">{children}</div>
+
       </div>
     </div>
   )

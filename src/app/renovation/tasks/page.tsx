@@ -119,12 +119,12 @@ export default function TasksPage() {
         onDragStart={(e) => onDragStart(e, t.id)}
         type="button"
         onClick={() => openEdit(t)}
-        className={`w-full text-left bg-white rounded-md border border-slate-200/60 p-4 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] cursor-grab active:cursor-grabbing ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
+        className={`w-full text-left bg-white rounded-2xl border border-slate-200/60 p-4 sm:p-5 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] cursor-grab active:cursor-grabbing ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
         <div className="flex gap-3.5 items-start">
           <div className={`shrink-0 mt-0.5 ${isDone ? 'opacity-40 grayscale' : 'opacity-90'}`}>{PRIORITY_ICONS[t.urgency]}</div>
           <div className="flex-1 min-w-0">
-            <p className={`text-[15px] font-bold leading-snug text-slate-800 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+            <p className={`text-[15px] sm:text-[16px] font-bold leading-snug text-slate-800 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
               {t.title}
             </p>
             <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -180,43 +180,48 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-end gap-3 flex-wrap">
+    <div className="space-y-6 pb-20 md:pb-8 animate-fade-in-up">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[13px] font-semibold text-black/45 uppercase tracking-wide">Work</p>
+          <p className="text-[11px] font-bold text-indigo-500 uppercase tracking-[0.2em] mb-1">Work Management</p>
           <div className="flex items-baseline gap-3">
-            <h1 className="text-[28px] font-semibold tracking-tight">Tasks</h1>
+            <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Tasks</h1>
             {(filterAssignee || filterLabel) && (
-              <span className="text-[14px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full animate-fade-in">
+              <span className="text-[14px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full animate-fade-in">
                 Showing {filteredTasks.length} / {tasks.length}
               </span>
             )}
           </div>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Track what needs to be done and stay organized.</p>
         </div>
-        <button type="button" onClick={() => setTaskModalOpen(true)} className="h-10 px-4 rounded bg-[#007AFF] text-white text-[15px] font-semibold">
-          Add task
-        </button>
-      </div>
-
-      <div className="flex gap-2 pb-1 overflow-x-auto scrollbar-hide">
-        {(['status', 'assignee', 'list'] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => setView(v)}
-            className={`px-3 py-1.5 rounded-full text-[13px] font-bold transition-all capitalize shadow-sm border ${
-              view === v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            By {v}
+        <div className="hidden md:block">
+          <button type="button" onClick={() => setTaskModalOpen(true)} className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold shadow-sm hover:bg-indigo-700 active:scale-95 transition-all">
+            + Add Task
           </button>
-        ))}
+        </div>
+      </header>
+
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center pb-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 sm:pb-0">
+          {(['status', 'assignee', 'list'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={`h-10 px-4 rounded-full text-[14px] font-bold transition-all capitalize whitespace-nowrap ${
+                view === v ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              By {v}
+            </button>
+          ))}
+        </div>
         
-        <div className="ml-auto flex gap-2">
+        <div className="sm:ml-auto flex gap-2 w-full sm:w-auto">
             <select
               value={filterAssignee}
               onChange={(e) => setFilterAssignee(e.target.value)}
-              className="h-8 pl-2 pr-6 rounded border border-slate-200 bg-white text-[12px] font-bold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="flex-1 sm:flex-none h-10 px-3 rounded-xl border border-slate-200 bg-white text-[14px] font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
             >
               <option value="">All Assignees</option>
               {members.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
@@ -224,7 +229,7 @@ export default function TasksPage() {
             <select
               value={filterLabel}
               onChange={(e) => setFilterLabel(e.target.value)}
-              className="h-8 pl-2 pr-6 rounded border border-slate-200 bg-white text-[12px] font-bold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="flex-1 sm:flex-none h-10 px-3 rounded-xl border border-slate-200 bg-white text-[14px] font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
             >
               <option value="">All Tags</option>
               {labels.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
@@ -233,25 +238,36 @@ export default function TasksPage() {
       </div>
 
       {loading ? (
-        <div className="space-y-2 animate-pulse mt-4">
+        <div className="space-y-3 animate-pulse mt-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 bg-slate-100 rounded-md border border-slate-200" />
+            <div key={i} className="h-24 bg-slate-200/50 rounded-2xl" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <div className="bg-white rounded-md border border-slate-200 border-dashed p-10 text-center text-[15px] text-slate-500 mt-4 font-medium">
-          No tasks yet. Get started by adding one!
+        <div className="bg-white/50 rounded-[2.5rem] border border-slate-100 p-16 text-center mt-6">
+           <div className="inline-flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+              <p className="text-[16px] font-bold text-slate-600 uppercase tracking-tight">No tasks yet</p>
+              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">Get started by creating your first task.</p>
+              <button type="button" onClick={() => setTaskModalOpen(true)} className="mt-6 text-indigo-600 font-bold text-[14px] bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors">
+                + Add Task
+              </button>
+           </div>
         </div>
       ) : (
-        <div className="mt-4">
+        <div className="mt-6">
           {view === 'list' && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {[...filteredTasks].sort(sortTasks).map(renderCard)}
             </div>
           )}
 
           {view === 'status' && (
-            <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 items-start snap-x scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 sm:px-0 sm:-mx-0 items-start snap-x scrollbar-hide">
               {STATUSES.map(s => {
                 const paneTasks = filteredTasks.filter(t => t.status === s).sort(sortTasks)
                 const isDraggingOver = dragOverStatus === s
@@ -259,25 +275,25 @@ export default function TasksPage() {
                   <div 
                     key={s} 
                     onDragOver={(e) => {
-                      e.preventDefault()
-                      setDragOverStatus(s)
+                       e.preventDefault()
+                       setDragOverStatus(s)
                     }}
                     onDragLeave={() => setDragOverStatus(null)}
                     onDrop={(e) => onDrop(e, s)}
-                    className={`w-[85vw] md:w-[320px] shrink-0 p-3 rounded-lg flex flex-col gap-3 snap-center border-2 transition-all min-h-[400px] ${
+                    className={`w-[85vw] md:w-[320px] shrink-0 p-4 rounded-[2rem] flex flex-col gap-4 snap-center border-2 transition-all min-h-[50vh] ${
                       isDraggingOver 
                         ? 'bg-indigo-50/80 border-indigo-400 border-dashed scale-[1.02] shadow-lg' 
-                        : 'bg-slate-100/60 border-transparent shadow-none'
+                        : 'bg-slate-100/60 border-transparent shadow-sm'
                     }`}
                   >
-                    <h3 className="font-bold text-slate-700 capitalize px-1 flex justify-between items-center text-[14px]">
+                    <h3 className="font-bold text-slate-700 capitalize px-1 flex justify-between items-center text-[16px]">
                       <span>{s.replace('_', ' ')}</span>
                       <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-2 flex-1">
+                    <div className="space-y-3 flex-1">
                       {paneTasks.map(renderCard)}
                       {paneTasks.length === 0 && (
-                        <div className="py-4 text-center text-[13px] text-slate-400 font-medium border-2 border-dashed border-slate-200 rounded-md">Empty</div>
+                        <div className="py-6 text-center text-[14px] text-slate-400 font-bold border-2 border-dashed border-slate-200 rounded-2xl">Drop tasks here</div>
                       )}
                     </div>
                   </div>
@@ -287,17 +303,17 @@ export default function TasksPage() {
           )}
 
           {view === 'assignee' && (
-            <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 items-start snap-x scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-6 -mx-4 px-4 sm:px-0 sm:-mx-0 items-start snap-x scrollbar-hide">
               {[{ id: 'unassigned', name: 'Unassigned' }, ...members].map(m => {
                 const paneTasks = filteredTasks.filter(t => m.id === 'unassigned' ? !t.assignee_id : t.assignee_id === m.id).sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-3 rounded-lg flex flex-col gap-3 snap-center border border-slate-200/60">
-                    <h3 className="font-bold text-slate-700 px-1 flex justify-between items-center text-[14px]">
+                  <div key={m.id} className="w-[85vw] md:w-[320px] shrink-0 bg-slate-100/60 p-4 rounded-[2rem] flex flex-col gap-4 snap-center shadow-sm">
+                    <h3 className="font-bold text-slate-700 px-1 flex justify-between items-center text-[16px]">
                       <span>{m.name}</span>
                       <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {paneTasks.map(renderCard)}
                     </div>
                   </div>
@@ -307,6 +323,19 @@ export default function TasksPage() {
           )}
         </div>
       )}
+
+      {/* Mobile Floating Action Button (FAB) */}
+      <div className="md:hidden fixed bottom-24 right-4 z-40">
+        <button
+          onClick={() => setTaskModalOpen(true)}
+          className="w-14 h-14 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(79,70,229,0.4)] hover:bg-indigo-700 active:scale-95 transition-all"
+          aria-label="Add Task"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
 
       {sheet && (
         <TaskModal

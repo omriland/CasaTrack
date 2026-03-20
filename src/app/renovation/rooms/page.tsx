@@ -91,11 +91,13 @@ export default function RoomsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header>
-        <p className="text-[13px] font-semibold text-slate-500 uppercase tracking-wide">By space</p>
-        <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">Rooms</h1>
-        <p className="text-[15px] text-slate-500 mt-1">Choose a room to see its tasks, photos, and notes.</p>
+    <div className="space-y-6 pb-20 md:pb-8 animate-fade-in-up">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-bold text-amber-500 uppercase tracking-[0.2em] mb-1">Space Management</p>
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Rooms</h1>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Organize tasks and photos by physical space.</p>
+        </div>
       </header>
 
       {loading ? (
@@ -113,7 +115,7 @@ export default function RoomsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 lg:gap-4">
             {rooms.map((room) => {
               const taskCount = tasks.filter((t) => t.room_id === room.id).length
               const photoCount = gallery.filter((p) => p.room_id === room.id).length
@@ -123,41 +125,49 @@ export default function RoomsPage() {
                   key={room.id}
                   type="button"
                   onClick={() => setSelectedId(room.id)}
-                  className={`text-left rounded-md border p-4 transition-all shadow-sm active:scale-[0.98] ${
+                  className={`text-left rounded-2xl border p-4 sm:p-5 transition-all shadow-sm active:scale-[0.98] ${
                     active
-                      ? 'bg-indigo-50 border-indigo-200 ring-2 ring-indigo-200'
-                      : 'bg-white border-slate-200/60 hover:border-slate-300 hover:bg-slate-50/50'
+                      ? 'bg-amber-50 border-amber-200 ring-2 ring-amber-200 shadow-md shadow-amber-500/10'
+                      : 'bg-white border-slate-200/60 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-md'
                   }`}
                 >
-                  <p className="font-semibold text-slate-900 truncate" dir="auto">
+                  <p className="font-bold text-[16px] xl:text-[18px] text-slate-900 truncate" dir="auto">
                     {room.name}
                   </p>
-                  <p className="text-[12px] text-slate-500 mt-1">
-                    {taskCount} task{taskCount !== 1 ? 's' : ''}, {photoCount} photo{photoCount !== 1 ? 's' : ''}
-                  </p>
+                  <div className="flex flex-col gap-0.5 mt-2">
+                    <p className={`text-[12px] font-medium ${active ? 'text-amber-700/70' : 'text-slate-500'}`}>
+                      {taskCount} task{taskCount !== 1 ? 's' : ''}
+                    </p>
+                    <p className={`text-[12px] font-medium ${active ? 'text-amber-700/70' : 'text-slate-500'}`}>
+                      {photoCount} photo{photoCount !== 1 ? 's' : ''}
+                    </p>
+                  </div>
                 </button>
               )
             })}
           </div>
 
           {selectedRoom && (
-            <div className="bg-white rounded-md border border-slate-200/60 overflow-hidden shadow-sm">
-              <div className="p-5 border-b border-slate-100 bg-slate-50/50">
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    dir="auto"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onBlur={saveRoom}
-                    className="text-[20px] font-bold text-slate-900 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-indigo-500 focus:outline-none px-0 py-1 min-w-[120px]"
-                  />
+            <div className="bg-white rounded-[2rem] border border-slate-200/60 overflow-hidden shadow-sm animate-fade-in-up">
+              <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50 relative">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <input
+                      dir="auto"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onBlur={saveRoom}
+                      placeholder="Room Name"
+                      className="w-full text-[24px] font-bold text-slate-900 bg-transparent border-b-2 border-transparent hover:border-slate-200 focus:border-amber-500 focus:outline-none px-0 py-1 transition-colors"
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={saveRoom}
-                    disabled={saving}
-                    className="ml-auto text-[13px] font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+                    disabled={saving || editName.trim() === selectedRoom.name}
+                    className="sm:ml-auto w-full sm:w-auto h-11 sm:h-9 px-6 sm:px-4 rounded-full bg-slate-900 text-white text-[14px] font-semibold hover:bg-slate-800 disabled:opacity-50 disabled:bg-slate-200 disabled:text-slate-500 transition-colors"
                   >
-                    {saving ? 'Saving…' : 'Save'}
+                    {saving ? 'Saving…' : 'Save Changes'}
                   </button>
                 </div>
               </div>

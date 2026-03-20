@@ -198,13 +198,13 @@ export default function RenovationDashboardPage() {
                <svg className="w-64 h-64 -mt-16 -mr-16 transform rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
             </div>
             
-            <div className="relative p-6 md:p-8">
-              <div className="flex justify-between items-start mb-2">
+            <div className="relative p-5 sm:p-6 md:p-8">
+              <div className="flex justify-between items-start mb-4">
                 <span className="text-[13px] text-slate-300 font-semibold uppercase tracking-widest flex items-center gap-2">
                   Remaining Balance
                 </span>
-                <Link href="/renovation/budget" className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <Link href="/renovation/budget" className="w-10 h-10 md:w-8 md:h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95">
+                  <svg className="w-5 h-5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </Link>
               </div>
               
@@ -243,15 +243,15 @@ export default function RenovationDashboardPage() {
             {/* Tasks Widget */}
             <div className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-indigo-50 rounded text-indigo-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-50 rounded text-indigo-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                   </div>
-                  <h2 className="text-[18px] font-bold text-slate-900">Task Center</h2>
+                  <h2 className="text-[20px] font-bold text-slate-900">Task Center</h2>
                 </div>
-                <Link href="/renovation/tasks" className="text-[13px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors">
+                <Link href="/renovation/tasks" className="text-[14px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-4 py-2 rounded-full transition-colors active:scale-95">
                   View All
                 </Link>
               </div>
@@ -292,15 +292,15 @@ export default function RenovationDashboardPage() {
             {/* Expenses Widget */}
             <div className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
               <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-50 rounded text-emerald-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-50 rounded text-emerald-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                   </div>
-                  <h2 className="text-[18px] font-bold text-slate-900">Recent Spend</h2>
+                  <h2 className="text-[20px] font-bold text-slate-900">Recent Spend</h2>
                 </div>
-                <Link href="/renovation/expenses" className="text-[13px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-full transition-colors">
+                <Link href="/renovation/expenses" className="text-[14px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition-colors active:scale-95">
                   View All
                 </Link>
               </div>
@@ -378,6 +378,19 @@ export default function RenovationDashboardPage() {
           </section>
         </>
       )}
+      
+      {/* Mobile Floating Action Button (FAB) */}
+      <div className="md:hidden fixed bottom-24 right-4 z-40">
+        <button
+          onClick={() => setExpenseModalOpen(true)}
+          className="w-14 h-14 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(79,70,229,0.4)] hover:bg-indigo-700 active:scale-90 transition-all"
+          aria-label="Add Expense"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
     </div>
   )
 }

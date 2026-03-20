@@ -195,8 +195,8 @@ export function RenovationShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Mobile Bottom Tab Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/85 backdrop-blur-xl border-t border-slate-200/50 z-50 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_30px_rgba(0,0,0,0.04)] ring-1 ring-white/50">
-        <div className="flex justify-evenly items-end px-1 h-[4.25rem] max-w-lg mx-auto pb-1">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[100] pb-[env(safe-area-inset-bottom)] px-3 pointer-events-none">
+        <div className="mx-auto max-w-md bg-white/80 backdrop-blur-3xl border border-white shadow-[0_12px_40px_-5px_rgba(0,0,0,0.15)] pointer-events-auto rounded-[2rem] flex justify-between items-center p-1.5 mb-2 relative overflow-hidden ring-1 ring-slate-200/50">
           {nav.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
@@ -204,16 +204,16 @@ export function RenovationShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="group relative flex flex-col items-center justify-center w-full min-w-0 py-1.5"
+                className={`group relative flex flex-col items-center justify-center flex-1 h-[3.5rem] transition-all duration-500 rounded-full ${
+                  active ? 'bg-indigo-600 shadow-lg shadow-indigo-600/30' : 'bg-transparent hover:bg-slate-50'
+                }`}
               >
-                {active && (
-                  <span className="absolute -top-[1.125rem] w-8 h-1 bg-indigo-600 rounded-b-full shadow-[0_2px_8px_rgba(79,70,229,0.6)] animate-fade-in-up" />
-                )}
-                <div className={`relative flex items-center justify-center w-11 h-8 rounded-full mb-1 transition-all duration-300 ${active ? 'bg-indigo-50/80 scale-110' : 'group-hover:bg-slate-100 bg-transparent scale-100'}`}>
-                   <Icon className={`w-6 h-6 transition-colors ${active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`} active={active} />
+                <div className={`transition-all duration-500 ${active ? '-translate-y-1.5 scale-110' : 'translate-y-0 scale-100'}`}>
+                   <Icon className={`w-[1.35rem] h-[1.35rem] transition-colors duration-500 ${active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-400'}`} active={active} />
                 </div>
-                <span className={`text-[11px] font-semibold transition-colors truncate max-w-full px-1 ${
-                  active ? 'text-indigo-600' : 'text-slate-500'
+                
+                <span className={`absolute bottom-1.5 text-[8.5px] sm:text-[9.5px] font-bold tracking-widest uppercase transition-all duration-500 ${
+                  active ? 'text-white/90 opacity-100 translate-y-0' : 'text-slate-400 opacity-0 translate-y-2'
                 }`}>
                   {item.label}
                 </span>

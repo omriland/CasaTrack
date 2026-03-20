@@ -71,65 +71,110 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 pb-20 md:pb-8 animate-fade-in-up">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-[13px] font-semibold text-black/45 uppercase tracking-wide">Expenses</p>
-          <h1 className="text-[28px] font-semibold tracking-tight">Spend</h1>
+          <p className="text-[11px] font-bold text-emerald-500 uppercase tracking-[0.2em] mb-1">Financial Tracking</p>
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Expenses</h1>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Track every shekel spent on your project.</p>
         </div>
-        <button
-          type="button"
-          onClick={openNew}
-          className="h-10 px-4 rounded bg-[#007AFF] text-white text-[15px] font-semibold active:scale-[0.98]"
-        >
-          Add
-        </button>
-      </div>
+        <div className="hidden md:block">
+          <button
+            type="button"
+            onClick={openNew}
+            className="h-11 px-6 rounded-full bg-emerald-600 text-white text-[15px] font-bold shadow-sm hover:bg-emerald-700 active:scale-95 transition-all"
+          >
+            + Add Expense
+          </button>
+        </div>
+      </header>
 
       {loading ? (
-        <div className="space-y-2 animate-pulse">
+        <div className="space-y-2 animate-pulse mt-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-white rounded border border-black/[0.06]" />
+            <div key={i} className="h-20 bg-slate-200/50 rounded-2xl" />
           ))}
         </div>
       ) : list.length === 0 ? (
-        <div className="bg-white rounded border border-black/[0.06] p-10 text-center">
-          <p className="text-[15px] text-black/45">No expenses yet</p>
-          <button type="button" onClick={openNew} className="mt-4 text-[#007AFF] font-semibold text-[17px]">
-            Add expense
-          </button>
+        <div className="bg-white/50 rounded-[2.5rem] border border-slate-100 p-16 text-center mt-6">
+           <div className="inline-flex flex-col items-center justify-center">
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <p className="text-[16px] font-bold text-slate-600 uppercase tracking-tight">No expenses found</p>
+              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">Click below to log your first expense.</p>
+              <button type="button" onClick={openNew} className="mt-6 text-emerald-600 font-bold text-[14px] bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition-colors">
+                + Add expense
+              </button>
+           </div>
         </div>
       ) : (
-        <div className="bg-white rounded border border-black/[0.06] overflow-hidden divide-y divide-black/[0.06]">
+        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-50 mt-6 shadow-sm">
           {list.map((row) => (
-            <div key={row.id} className="flex items-center gap-3 p-4 active:bg-black/[0.02]">
-              <button type="button" onClick={() => openEdit(row)} className="flex-1 text-left min-w-0">
-                <p className="text-[15px] font-medium truncate" dir="auto">
-                  {row.vendor || row.category || 'Expense'}
-                </p>
-                <p className="text-[13px] text-black/45 tabular-nums">{formatDateDisplay(row.expense_date)}</p>
+            <div key={row.id} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 sm:p-5 hover:bg-slate-50/50 transition-colors group">
+              <button type="button" onClick={() => openEdit(row)} className="flex-1 text-left min-w-0 flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg uppercase shrink-0">
+                    {(row.vendor || row.category || 'E')[0]}
+                 </div>
+                 <div className="min-w-0">
+                  <p className="text-[16px] font-bold text-slate-900 truncate" dir="auto">
+                    {row.vendor || row.category || 'General Expense'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-[13px] text-slate-400 font-medium tabular-nums">{formatDateDisplay(row.expense_date)}</p>
+                    {row.category && (
+                      <>
+                        <span className="text-slate-300">•</span>
+                        <p className="text-[13px] text-slate-500">{row.category}</p>
+                      </>
+                    )}
+                  </div>
+                 </div>
               </button>
-              <span className="text-[17px] font-semibold tabular-nums shrink-0">{formatIls(Number(row.amount))}</span>
-              <label className="shrink-0 text-[13px] text-[#007AFF] cursor-pointer">
-                receipt
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={(ev) => {
-                    const f = ev.target.files?.[0]
-                    if (f) attachReceipt(row, f)
-                    ev.target.value = ''
-                  }}
-                />
-              </label>
-              <button type="button" onClick={() => remove(row.id)} className="text-[#FF3B30] text-[13px] px-1">
-                Delete
-              </button>
+              
+              <div className="flex items-center justify-between sm:justify-end gap-4 mt-2 sm:mt-0 pl-16 sm:pl-0">
+                <span className="text-[18px] font-extrabold text-slate-900 tabular-nums shrink-0">
+                  {formatIls(Number(row.amount))}
+                </span>
+                
+                <div className="flex items-center gap-2">
+                  <label className="shrink-0 flex items-center justify-center h-9 px-3 rounded-lg bg-indigo-50 text-indigo-600 text-[13px] font-bold cursor-pointer hover:bg-indigo-100 transition-colors">
+                    {row.receipt_storage_path ? 'Update Receipt' : 'Add Receipt'}
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(ev) => {
+                        const f = ev.target.files?.[0]
+                        if (f) attachReceipt(row, f)
+                        ev.target.value = ''
+                      }}
+                    />
+                  </label>
+                  <button type="button" onClick={() => remove(row.id)} className="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors sm:opacity-0 sm:group-hover:opacity-100" title="Delete Expense">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Mobile Floating Action Button (FAB) */}
+      <div className="md:hidden fixed bottom-24 right-4 z-40">
+        <button
+          onClick={openNew}
+          className="w-14 h-14 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgba(16,185,129,0.4)] hover:bg-emerald-700 active:scale-95 transition-all"
+          aria-label="Add Expense"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      </div>
 
       {sheet && (
         <ExpenseModal
