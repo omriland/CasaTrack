@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { formatDateDisplay } from '@/lib/renovation-format'
-import { updateGalleryItem, deleteGalleryItem, updateGalleryItemAnnotations } from '@/lib/renovation'
+import { updateGalleryItem, deleteGalleryItem, updateGalleryItemAnnotations, createGalleryTag } from '@/lib/renovation'
+import { useRenovation } from '@/components/renovation/RenovationContext'
 import type { RenovationGalleryItem, RenovationRoom, RenovationGalleryTag } from '@/types/renovation'
 import { ImageAnnotator, AnnotationShape } from '@/components/renovation/ImageAnnotator'
 
@@ -24,12 +25,14 @@ interface LightboxProps {
 }
 
 export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged }: LightboxProps) {
+  const { project } = useRenovation()
   const [index, setIndex] = useState(initialIndex)
   const current = images[index]
 
   const [editCaption, setEditCaption] = useState('')
   const [editRoom, setEditRoom] = useState('')
   const [editTags, setEditTags] = useState<string[]>([])
+  const [newTag, setNewTag] = useState('')
   const [saving, setSaving] = useState(false)
   
   const [showDetails, setShowDetails] = useState(false)
@@ -343,9 +346,50 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
               </div>
 
               {/* Tags Selector */}
-              {tags.length > 0 && (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">Tags</label>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-white/40 uppercase tracking-widest pl-1">Tags</label>
+                
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    placeholder="New label..."
+                    value={newTag}
+                    onChange={e => setNewTag(e.target.value)}
+                    onKeyDown={async e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        const saveBtn = document.getElementById('lb-create-tag-btn')
+                        if (saveBtn) saveBtn.click()
+                      }
+                    }}
+                    className="flex-1 bg-black/40 border border-white/10 p-2 rounded-md text-[14px] text-white placeholder:text-white/30 focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-inner"
+                  />
+                  <button
+                    id="lb-create-tag-btn"
+                    type="button"
+                    disabled={!newTag.trim() || saving || !project}
+                    onClick={async () => {
+                      if (!newTag.trim() || !project) return
+                      setSaving(true)
+                      try {
+                        const created = await createGalleryTag(project.id, newTag.trim())
+                        setNewTag('')
+                        setEditTags(prev => [...prev, created.id])
+                        onChanged() // Refreshes tags in bg
+                      } catch (err) {
+                        console.error(err)
+                        alert('Create label failed')
+                      } finally {
+                        setSaving(false)
+                      }
+                    }}
+                    className="px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-bold rounded-md transition-colors disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-1">
                     {tags.map((t) => {
                       const isActive = editTags.includes(t.id)
@@ -365,8 +409,8 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                       )
                     })}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Footer */}

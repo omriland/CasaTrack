@@ -25,6 +25,20 @@ export interface RenovationTeamMember {
   sort_order: number
 }
 
+/** External service providers / contractors (phone book) */
+export interface RenovationProvider {
+  id: string
+  project_id: string
+  name: string
+  description: string | null
+  phone: string | null
+  email: string | null
+  additional_info: string | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface RenovationBudgetLine {
   id: string
   project_id: string
@@ -47,6 +61,19 @@ export interface RenovationExpense {
   updated_at: string
 }
 
+/** Multiple files per expense (bucket: renovation-files) */
+export interface RenovationExpenseAttachment {
+  id: string
+  expense_id: string
+  storage_path: string
+  file_name: string
+  mime_type: string | null
+  file_size: number | null
+  sort_order: number
+  created_at: string
+  public_url?: string
+}
+
 export interface RenovationLabel {
   id: string
   project_id: string
@@ -66,6 +93,7 @@ export interface RenovationTask {
   status: TaskStatus
   assignee_id: string | null
   room_id: string | null
+  provider_id: string | null
   due_date: string | null
   start_date: string | null
   urgency: TaskUrgency
@@ -75,6 +103,7 @@ export interface RenovationTask {
   label_ids?: string[]
   assignee?: RenovationTeamMember | null
   room?: RenovationRoom | null
+  provider?: RenovationProvider | null
 }
 
 export interface RenovationRoom {
@@ -103,6 +132,17 @@ export interface RenovationGalleryItem {
   public_url?: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   annotations?: any[]
+}
+
+/** Apartment needs / requirements */
+export interface RenovationNeed {
+  id: string
+  project_id: string
+  room_id: string | null
+  title: string
+  sort_order: number
+  created_at: string
+  room?: RenovationRoom | null
 }
 
 export interface RenovationFile {

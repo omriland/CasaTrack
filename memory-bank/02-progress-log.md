@@ -3,6 +3,8 @@
 ## Renovation app (March 2025)
 
 ### Completed
+- **Providers tab:** [`supabase/renovation/07_providers.sql`](supabase/renovation/07_providers.sql) `renovation_providers` + `renovation_tasks.provider_id`; phone-book UI + search [`src/app/renovation/providers/page.tsx`](src/app/renovation/providers/page.tsx); task modal provider dropdown + teal badge on task cards; nav in [`RenovationShell.tsx`](src/components/renovation/RenovationShell.tsx); CRUD in [`renovation.ts`](src/lib/renovation.ts).
+- **Task due dates:** Relative labels (Today, Tomorrow, In 2 days, weekday + “Next …” for 7–13d), calendar-day overdue vs soon (0–2d) styling; [`src/lib/renovation-format.ts`](src/lib/renovation-format.ts) `formatTaskDue` / `taskDueCalendarDiffDays`; wired on [`src/app/renovation/tasks/page.tsx`](src/app/renovation/tasks/page.tsx) and dashboard upcoming list [`src/app/renovation/page.tsx`](src/app/renovation/page.tsx).
 - **SQL (manual Supabase):** [`supabase/renovation/01_schema.sql`](supabase/renovation/01_schema.sql) tables + RLS; [`02_storage.sql`](supabase/renovation/02_storage.sql) bucket `renovation-gallery`.
 - **Routes:** `/renovation` (dashboard, create project), `/renovation/expenses`, `/budget`, `/tasks`, `/gallery`, `/settings` — Apple-style UI, system font stack, mobile tab bar + desktop sidebar.
 - **Features:** One active project (new project archives previous); budget + contingency + category lines; expenses + receipt upload; tasks (assignee, labels, urgency, due date, status); gallery (rooms, photo tags, lightbox); settings (team, rooms, task labels, photo tags, archive).

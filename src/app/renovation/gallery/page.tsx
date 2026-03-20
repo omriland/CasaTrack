@@ -10,7 +10,8 @@ import {
   uploadGalleryPhoto,
   deleteGalleryItems,
   bulkAddTagToGalleryItems,
-  bulkUpdateGalleryItemsRoom
+  bulkUpdateGalleryItemsRoom,
+  createGalleryTag
 } from '@/lib/renovation'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { Lightbox } from '@/components/renovation/Lightbox'
@@ -24,6 +25,9 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [lightbox, setLightbox] = useState<RenovationGalleryItem | null>(null)
+  const [viewMode, setViewMode] = useState<'gallery' | 'all'>('gallery')
+  const [selectedAlbumId, setSelectedAlbumId] = useState<string | 'untagged' | null>(null)
+  const [newTag, setNewTag] = useState<string>('')
   const [filterRoom, setFilterRoom] = useState<string>('')
   const [filterTag, setFilterTag] = useState<string>('')
   const [sortBy, setSortBy] = useState<string>('date-desc')
@@ -36,7 +40,15 @@ export default function GalleryPage() {
   useEffect(() => {
     const savedSort = localStorage.getItem('casatrack_gallery_sort')
     if (savedSort) setSortBy(savedSort)
+    const savedView = localStorage.getItem('casatrack_gallery_view') as 'gallery' | 'all' | null
+    if (savedView) setViewMode(savedView)
   }, [])
+
+  const handleViewModeChange = (val: 'gallery' | 'all') => {
+    setViewMode(val)
+    localStorage.setItem('casatrack_gallery_view', val)
+    setSelectedAlbumId(null)
+  }
 
   const handleSortChange = (val: string) => {
     setSortBy(val)
@@ -196,6 +208,103 @@ export default function GalleryPage() {
     return result
   }, [filtered, sortBy, rooms, tags])
 
+  const groupedItems = useMemo(() => {
+    if (viewMode !== 'gallery') return []
+    const groups: { tagId: string | null; name: string; items: RenovationGalleryItem[] }[] = []
+    
+    tags.forEach(t => {
+      const itemsForTag = sortedFiltered.filter(i => i.tag_ids?.includes(t.id))
+      // Sort items by date desc inside groups
+      itemsForTag.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      if (itemsForTag.length > 0) {
+        groups.push({ tagId: t.id, name: t.name, items: itemsForTag })
+      }
+    })
+
+    const untaggedItems = sortedFiltered.filter(i => !i.tag_ids || i.tag_ids.length === 0)
+    if (untaggedItems.length > 0) {
+      untaggedItems.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      groups.push({ tagId: null, name: 'Untagged', items: untaggedItems })
+    }
+
+    return groups
+  }, [sortedFiltered, tags, viewMode])
+
+  const renderItem = (item: RenovationGalleryItem, showRoom: boolean = false) => {
+    const isSelected = selectedIds.has(item.id)
+    return (
+      <div
+        key={item.id}
+        onClick={(e) => handleItemClick(e, item)}
+        className={`aspect-[4/5] sm:aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden bg-slate-100 active:scale-[0.96] hover:shadow-md transition-all relative group cursor-pointer shadow-sm border border-slate-200/50 outline-none ${isSelected ? 'ring-4 ring-indigo-500 scale-[0.96] opacity-90' : ''}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={item.public_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+        
+        {/* Checkbox overlay */}
+        <div 
+          onClick={(e) => {
+            e.stopPropagation()
+            const next = new Set(selectedIds)
+            if (next.has(item.id)) {
+              next.delete(item.id)
+            } else {
+              next.add(item.id)
+              setLastSelectedId(item.id)
+            }
+            setSelectedIds(next)
+          }}
+          className={`absolute top-2 right-2 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white shadow-sm scale-110' : 'bg-black/20 border-white/80 text-transparent hover:bg-black/40 hover:border-white scale-100 hover:scale-110'}`}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+
+        {showRoom && item.room_id && (
+          <div className="absolute top-2 left-2 pointer-events-none">
+            <span className="bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold px-2 py-1.5 rounded-md tracking-wide shadow-sm flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+              {rooms.find(r => r.id === item.room_id)?.name || 'Room'}
+            </span>
+          </div>
+        )}
+
+        {item.tag_ids && item.tag_ids.length > 0 && (
+          <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 pointer-events-none">
+            {item.tag_ids.slice(0, 3).map(tid => {
+              const t = tags.find(x => x.id === tid)
+              return t ? (
+                <span key={tid} className="bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">
+                  {t.name}
+                </span>
+              ) : null
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const handleCreateAndApplyTag = async () => {
+    if (!newTag.trim() || !project) return
+    setUploading(true)
+    try {
+      const created = await createGalleryTag(project.id, newTag.trim())
+      setTags(prev => [...prev, created])
+      setNewTag('')
+      await bulkAddTagToGalleryItems(Array.from(selectedIds), created.id)
+      setSelectedIds(new Set())
+      setBulkTagModal(false)
+      await load()
+    } catch (e) {
+      console.error(e)
+      alert('Creating and applying label failed')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   if (!project) {
     return (
       <p className="text-center text-black/45 py-16">
@@ -277,6 +386,29 @@ export default function GalleryPage() {
         </div>
       </header>
 
+      <div className="flex bg-slate-200/50 p-1.5 rounded-xl w-fit mb-2 mt-4">
+        <button
+          onClick={() => handleViewModeChange('gallery')}
+          className={`px-5 py-2 rounded-lg text-[14px] font-bold transition-all ${
+            viewMode === 'gallery'
+              ? 'bg-white text-indigo-600 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Albums
+        </button>
+        <button
+          onClick={() => handleViewModeChange('all')}
+          className={`px-5 py-2 rounded-lg text-[14px] font-bold transition-all ${
+            viewMode === 'all'
+              ? 'bg-white text-indigo-600 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          All Photos
+        </button>
+      </div>
+
       {(rooms.length > 0 || tags.length > 0 || items.length > 0) && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative z-[90] flex-1">
@@ -329,54 +461,75 @@ export default function GalleryPage() {
               <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">Click &quot;+ Add Photos&quot; or drag &amp; drop images here from your computer to track progress.</p>
            </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
-          {sortedFiltered.map((item) => {
-            const isSelected = selectedIds.has(item.id)
-            return (
-              <div
-                key={item.id}
-                onClick={(e) => handleItemClick(e, item)}
-                className={`aspect-[4/5] sm:aspect-square rounded-2xl md:rounded-[1.5rem] overflow-hidden bg-slate-100 active:scale-[0.96] hover:shadow-md transition-all relative group cursor-pointer shadow-sm border border-slate-200/50 outline-none ${isSelected ? 'ring-4 ring-indigo-500 scale-[0.96] opacity-90' : ''}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.public_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                
-                {/* Checkbox overlay */}
-                <div 
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const next = new Set(selectedIds)
-                    if (next.has(item.id)) {
-                      next.delete(item.id)
-                    } else {
-                      next.add(item.id)
-                      setLastSelectedId(item.id)
-                    }
-                    setSelectedIds(next)
-                  }}
-                  className={`absolute top-2 right-2 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white shadow-sm scale-110' : 'bg-black/20 border-white/80 text-transparent hover:bg-black/40 hover:border-white scale-100 hover:scale-110'}`}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-
-                {item.tag_ids && item.tag_ids.length > 0 && (
-                  <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 pointer-events-none">
-                    {item.tag_ids.slice(0, 3).map(tid => {
-                      const t = tags.find(x => x.id === tid)
-                      return t ? (
-                        <span key={tid} className="bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-[11px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">
-                          {t.name}
-                        </span>
-                      ) : null
-                    })}
+      ) : viewMode === 'gallery' ? (
+        <div className="space-y-8 mt-6">
+          {!selectedAlbumId ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {groupedItems.map(group => {
+                const cover = group.items[0]
+                return (
+                  <div 
+                    key={group.tagId || 'untagged'} 
+                    onClick={() => setSelectedAlbumId(group.tagId || 'untagged')}
+                    className="cursor-pointer group relative aspect-square rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-slate-100 shadow-sm border border-slate-200/50 hover:shadow-md transition-all active:scale-[0.98]"
+                  >
+                    {cover ? (
+                      <img src={cover.public_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                        <svg className="w-8 h-8 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
+                    <div className="absolute bottom-4 left-4 right-4 text-white pointer-events-none">
+                      <h3 className="font-bold text-[16px] truncate">{group.name}</h3>
+                      <p className="text-[12px] font-medium text-white/80">{group.items.length} photo{group.items.length !== 1 ? 's' : ''}</p>
+                    </div>
                   </div>
-                )}
+                )
+              })}
+              {groupedItems.length === 0 && (
+                <p className="text-slate-400 py-4 col-span-full">No albums match your filters.</p>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <button 
+                  onClick={() => setSelectedAlbumId(null)} 
+                  className="text-[14px] font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1 active:scale-95"
+                >
+                  <svg className="w-4 h-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                  Albums
+                </button>
+                {(() => {
+                  const group = groupedItems.find(g => (g.tagId || 'untagged') === selectedAlbumId)
+                  if (!group) return null
+                  return (
+                    <>
+                      <span className="text-slate-300">/</span>
+                      <span className="text-[14px] font-bold text-slate-900">{group.name}</span>
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-200/50 px-2 py-0.5 rounded-full">{group.items.length}</span>
+                    </>
+                  )
+                })()}
               </div>
-            )
-          })}
+              
+              {(() => {
+                const group = groupedItems.find(g => (g.tagId || 'untagged') === selectedAlbumId)
+                if (!group) return <p className="text-slate-400 py-10">Album not found or filtered out.</p>
+                return (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+                    {group.items.map(item => renderItem(item, false))}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mt-6">
+          {sortedFiltered.map(item => renderItem(item, true))}
         </div>
       )}
 
@@ -447,6 +600,29 @@ export default function GalleryPage() {
             <h3 className="text-lg font-bold text-slate-900">Add Label to {selectedIds.size} photo{selectedIds.size > 1 ? 's' : ''}</h3>
             <p className="text-[13px] text-slate-500 mt-1 mb-4">Select a label to apply to all selected photos.</p>
 
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                placeholder="New label name..."
+                value={newTag}
+                onChange={e => setNewTag(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newTag.trim() && !uploading) {
+                    e.preventDefault();
+                    handleCreateAndApplyTag();
+                  }
+                }}
+                className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-[14px] outline-none focus:border-indigo-500 transition-colors"
+              />
+              <button
+                disabled={!newTag.trim() || uploading}
+                onClick={handleCreateAndApplyTag}
+                className="px-4 py-2 bg-indigo-600 text-white text-[13px] font-bold rounded-xl disabled:opacity-50 hover:bg-indigo-700 transition-colors"
+              >
+                Create
+              </button>
+            </div>
+
             <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto w-full">
               {tags.map(t => (
                 <button 
@@ -486,31 +662,45 @@ export default function GalleryPage() {
             <h3 className="text-lg font-bold text-slate-900">Assign Room to {selectedIds.size} photo{selectedIds.size > 1 ? 's' : ''}</h3>
             <p className="text-[13px] text-slate-500 mt-1 mb-4">Select a room to group these photos.</p>
 
-            <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto w-full">
-              <button 
-                onClick={() => handleBulkRoom(null)}
-                disabled={uploading}
-                className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700 font-bold transition-all disabled:opacity-50 active:scale-95"
-              >
-                No Room (Clear)
-              </button>
-              {rooms.map(r => (
-                <button 
-                  key={r.id} 
-                  onClick={() => handleBulkRoom(r.id)}
-                  disabled={uploading}
-                  className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-100 text-slate-700 hover:text-indigo-700 font-bold transition-all disabled:opacity-50 active:scale-95"
-                >
-                  <span className="w-3 h-3 rounded-full bg-slate-300 inline-block mr-2 shadow-sm" />
-                  {r.name}
-                </button>
-              ))}
-              {rooms.length === 0 && (
-                <p className="text-[14px] text-slate-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  No rooms exist yet.<br/>Create them first in settings or the Rooms tab.
-                </p>
-              )}
-            </div>
+            {(() => {
+              const selectedPhotosRooms = new Set(
+                Array.from(selectedIds)
+                  .map(id => items.find(i => i.id === id)?.room_id)
+                  .filter(Boolean)
+              )
+              return (
+                <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto w-full">
+                  <button 
+                    onClick={() => handleBulkRoom(null)}
+                    disabled={uploading}
+                    className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700 font-bold transition-all disabled:opacity-50 active:scale-95"
+                  >
+                    No Room (Clear)
+                  </button>
+                  {rooms.map(r => (
+                    <button 
+                      key={r.id} 
+                      onClick={() => handleBulkRoom(r.id)}
+                      disabled={uploading}
+                      className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-100 text-slate-700 hover:text-indigo-700 font-bold transition-all disabled:opacity-50 active:scale-95 flex items-center justify-between"
+                    >
+                      <div>
+                        <span className="w-3 h-3 rounded-full bg-slate-300 inline-block mr-2 shadow-sm" />
+                        {r.name}
+                      </div>
+                      {selectedPhotosRooms.has(r.id) && (
+                        <svg className="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                      )}
+                    </button>
+                  ))}
+                  {rooms.length === 0 && (
+                    <p className="text-[14px] text-slate-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      No rooms exist yet.<br/>Create them first in settings or the Rooms tab.
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
 
             <div className="mt-6 flex justify-end">
               <button 

@@ -11,7 +11,7 @@ import {
   listTasks,
   expensesThisMonth,
 } from '@/lib/renovation'
-import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
+import { formatIls, formatTaskDue, taskDueCalendarDiffDays } from '@/lib/renovation-format'
 import type { RenovationExpense, RenovationGalleryItem, RenovationTask } from '@/types/renovation'
 
 export default function RenovationDashboardPage() {
@@ -156,7 +156,7 @@ export default function RenovationDashboardPage() {
   const openTasks = tasks.filter((t) => t.status !== 'done').length
   const overdue = tasks.filter((t) => {
     if (!t.due_date || t.status === 'done') return false
-    return new Date(t.due_date + 'T23:59:59') < new Date()
+    return taskDueCalendarDiffDays(t.due_date) < 0
   }).length
   const upcoming = tasks
     .filter((t) => t.due_date && t.status !== 'done')
@@ -271,7 +271,9 @@ export default function RenovationDashboardPage() {
                 <div className="mt-2 text-sm">
                   <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-1">Upcoming Deadlines</p>
                   <ul className="space-y-2">
-                    {upcoming.map((t) => (
+                    {upcoming.map((t) => {
+                      const dueMeta = formatTaskDue(t.due_date!, { isDone: false })
+                      return (
                       <li key={t.id} className="group flex items-center justify-between p-3 rounded hover:bg-slate-50 transition-colors text-[14px]">
                         <div className="flex items-center gap-3 overflow-hidden">
                           <div className={`w-2 h-2 rounded-full flex-shrink-0 ${t.urgency === 'high' || t.urgency === 'critical' ? 'bg-amber-500' : 'bg-slate-300'}`} />
@@ -279,11 +281,20 @@ export default function RenovationDashboardPage() {
                             {t.title}
                           </span>
                         </div>
-                        <span className="text-slate-500 font-medium tabular-nums ml-4 text-[13px] bg-slate-100 px-2 py-0.5 rounded group-hover:bg-white transition-colors border border-slate-200">
-                          {formatDateDisplay(t.due_date!)}
+                        <span
+                          title={dueMeta.title}
+                          className={`font-medium tabular-nums ml-4 text-[13px] px-2 py-0.5 rounded group-hover:bg-white transition-colors border ${
+                            dueMeta.tone === 'overdue'
+                              ? 'text-rose-600 bg-rose-50 border-rose-200/80'
+                              : dueMeta.tone === 'soon'
+                                ? 'text-amber-900 bg-amber-50 border-amber-200/70'
+                                : 'text-slate-500 bg-slate-100 border-slate-200'
+                          }`}
+                        >
+                          {dueMeta.label}
                         </span>
                       </li>
-                    ))}
+                    )})}
                   </ul>
                 </div>
               )}

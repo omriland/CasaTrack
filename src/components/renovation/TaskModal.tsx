@@ -10,6 +10,7 @@ import type {
   RenovationTeamMember,
   RenovationLabel,
   RenovationRoom,
+  RenovationProvider,
   TaskStatus,
   TaskUrgency,
 } from '@/types/renovation'
@@ -35,11 +36,12 @@ interface TaskModalProps {
   members: RenovationTeamMember[]
   labels: RenovationLabel[]
   rooms: RenovationRoom[]
+  providers: RenovationProvider[]
   onClose: () => void
   onSave: () => void
 }
 
-export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: TaskModalProps) {
+export function TaskModal({ editing, members, labels, rooms, providers, onClose, onSave }: TaskModalProps) {
   const { project } = useRenovation()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -47,6 +49,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
   const [urgency, setUrgency] = useState<TaskUrgency>('medium')
   const [assigneeId, setAssigneeId] = useState('')
   const [roomId, setRoomId] = useState('')
+  const [providerId, setProviderId] = useState('')
   const [due, setDue] = useState('')
   const [selLabels, setSelLabels] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
@@ -60,6 +63,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
       setUrgency(editing.urgency)
       setAssigneeId(editing.assignee_id || '')
       setRoomId(editing.room_id || '')
+      setProviderId(editing.provider_id || '')
       setDue(editing.due_date || '')
       setSelLabels(editing.label_ids || [])
     } else {
@@ -69,6 +73,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
       setUrgency('medium')
       setAssigneeId('')
       setRoomId('')
+      setProviderId('')
       setDue('')
       setSelLabels([])
     }
@@ -100,6 +105,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
           urgency,
           assignee_id: assigneeId || null,
           room_id: roomId || null,
+          provider_id: providerId || null,
           due_date: due || null,
         })
         await setTaskLabels(editing.id, selLabels)
@@ -111,6 +117,7 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
           urgency,
           assignee_id: assigneeId || null,
           room_id: roomId || null,
+          provider_id: providerId || null,
           due_date: due || null,
           label_ids: selLabels,
         })
@@ -234,6 +241,20 @@ export function TaskModal({ editing, members, labels, rooms, onClose, onSave }: 
                 </div>
               </div>
             )}
+            <div className="col-span-2 space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Service provider</label>
+              <div className="relative">
+                <Dropdown
+                  value={providerId}
+                  onChange={(val) => setProviderId(val)}
+                  options={[
+                    { value: '', label: providers.length ? 'No provider' : 'Add providers in Providers tab' },
+                    ...providers.map((p) => ({ value: p.id, label: p.name })),
+                  ]}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50 text-[16px] md:text-[14px] font-semibold text-slate-800 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all outline-none"
+                />
+              </div>
+            </div>
           </div>
 
           {labels.length > 0 && (

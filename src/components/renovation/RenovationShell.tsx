@@ -7,15 +7,17 @@ import { useRenovation } from './RenovationContext'
 import { ExpenseModal } from './ExpenseModal'
 import { TaskModal } from './TaskModal'
 import { QuickUploadModal } from './QuickUploadModal'
-import { listTeamMembers, listRooms, listLabels } from '@/lib/renovation'
-import type { RenovationTeamMember, RenovationRoom, RenovationLabel } from '@/types/renovation'
+import { listTeamMembers, listRooms, listLabels, listProviders } from '@/lib/renovation'
+import type { RenovationTeamMember, RenovationRoom, RenovationLabel, RenovationProvider } from '@/types/renovation'
 
 const nav = [
   { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
   { href: '/renovation/expenses', label: 'Expenses', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
+  { href: '/renovation/providers', label: 'Providers', icon: ProvidersIcon, match: (p: string) => p.startsWith('/renovation/providers') },
   { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
   { href: '/renovation/files', label: 'Files', icon: FilesIcon, match: (p: string) => p.startsWith('/renovation/files') },
+  { href: '/renovation/needs', label: 'Needs', icon: NeedsIcon, match: (p: string) => p.startsWith('/renovation/needs') },
   { href: '/renovation/rooms', label: 'Rooms', icon: RoomIcon, match: (p: string) => p.startsWith('/renovation/rooms') },
   { href: '/renovation/settings', label: 'Settings', icon: GearIcon, match: (p: string) => p.startsWith('/renovation/settings') },
 ]
@@ -38,17 +40,20 @@ export function RenovationShell({ children }: { children: ReactNode }) {
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
+  const [providers, setProviders] = useState<RenovationProvider[]>([])
 
   const loadModalsData = useCallback(async () => {
     if (!project) return
-    const [m, r, l] = await Promise.all([
+    const [m, r, l, prov] = await Promise.all([
       listTeamMembers(project.id),
       listRooms(project.id),
       listLabels(project.id),
+      listProviders(project.id).catch(() => []),
     ])
     setMembers(m)
     setRooms(r)
     setLabels(l)
+    setProviders(prov)
   }, [project])
 
   useEffect(() => {
@@ -175,6 +180,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
           members={members}
           rooms={rooms}
           labels={labels}
+          providers={providers}
           onClose={() => setTaskModalOpen(false)}
           onSave={() => {
             setTaskModalOpen(false)
@@ -247,6 +253,17 @@ function CheckIcon({ className, active }: { className?: string; active?: boolean
     </svg>
   )
 }
+function ProvidersIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+      />
+    </svg>
+  )
+}
 function PhotoIcon({ className, active }: { className?: string; active?: boolean }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
@@ -258,6 +275,13 @@ function FilesIcon({ className, active }: { className?: string; active?: boolean
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  )
+}
+function NeedsIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
     </svg>
   )
 }

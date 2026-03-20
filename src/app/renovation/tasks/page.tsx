@@ -4,14 +4,23 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   listLabels,
+  listProviders,
   listRooms,
   listTasks,
   listTeamMembers,
   updateTask,
 } from '@/lib/renovation'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
-import { formatDateDisplay } from '@/lib/renovation-format'
-import type { RenovationLabel, RenovationRoom, RenovationTask, RenovationTeamMember, TaskStatus, TaskUrgency } from '@/types/renovation'
+import { formatTaskDue } from '@/lib/renovation-format'
+import type {
+  RenovationLabel,
+  RenovationProvider,
+  RenovationRoom,
+  RenovationTask,
+  RenovationTeamMember,
+  TaskStatus,
+  TaskUrgency,
+} from '@/types/renovation'
 
 const STATUSES: TaskStatus[] = ['open', 'in_progress', 'blocked', 'done']
 const URGENCY_WEIGHT: Record<TaskUrgency, number> = {
@@ -48,6 +57,7 @@ export default function TasksPage() {
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  const [providers, setProviders] = useState<RenovationProvider[]>([])
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState<'status' | 'assignee' | 'list'>('status')
   const [filterAssignee, setFilterAssignee] = useState<string>('')
@@ -60,16 +70,18 @@ export default function TasksPage() {
     if (!project) return
     setLoading(true)
     try {
-      const [t, m, l, r] = await Promise.all([
+      const [t, m, l, r, p] = await Promise.all([
         listTasks(project.id),
         listTeamMembers(project.id),
         listLabels(project.id),
         listRooms(project.id),
+        listProviders(project.id),
       ])
       setTasks(t)
       setMembers(m)
       setLabels(l)
       setRooms(r)
+      setProviders(p)
     } finally {
       setLoading(false)
     }
@@ -111,7 +123,7 @@ export default function TasksPage() {
 
   const renderCard = (t: RenovationTask) => {
     const isDone = t.status === 'done'
-    const overdue = t.due_date && !isDone && new Date(t.due_date + 'T23:59:59') < new Date()
+    const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
     return (
       <button
         key={t.id}
@@ -124,19 +136,10 @@ export default function TasksPage() {
         <div className="flex gap-3.5 items-start">
           <div className={`shrink-0 mt-0.5 ${isDone ? 'opacity-40 grayscale' : 'opacity-90'}`}>{PRIORITY_ICONS[t.urgency]}</div>
           <div className="flex-1 min-w-0">
-            <p className={`text-[15px] sm:text-[16px] font-bold leading-snug text-slate-800 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
-              {t.title}
-            </p>
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
+            <div className="flex flex-wrap gap-1 mb-1.5">
               {t.room && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600 truncate max-w-[100px]">{t.room.name}</span>
-              )}
-              {t.assignee && (
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">{t.assignee.name.split(' ')[0]}</span>
-              )}
-              {t.due_date && (
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded tabular-nums ${overdue ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-500'}`}>
-                  {formatDateDisplay(t.due_date)}
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-500 truncate max-w-[100px] border border-slate-200/50">
+                  {t.room.name}
                 </span>
               )}
               {(t.label_ids || []).map((lid) => {
@@ -144,7 +147,7 @@ export default function TasksPage() {
                 return lb ? (
                   <span
                     key={lid}
-                    className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded text-white whitespace-nowrap"
+                    className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm text-white whitespace-nowrap shadow-sm"
                     style={{ backgroundColor: lb.color }}
                   >
                     {lb.name}
@@ -152,9 +155,54 @@ export default function TasksPage() {
                 ) : null
               })}
             </div>
+
+            <p className={`text-[15px] sm:text-[16px] font-bold leading-snug text-slate-800 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+              {t.title}
+            </p>
+            
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2.5">
+              {t.assignee && (
+                <div className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50/80 px-2 py-1 rounded-md border border-indigo-100" title="Assignee">
+                  <div className="w-4 h-4 rounded-full bg-indigo-200 flex items-center justify-center text-[9px] font-bold text-indigo-800">
+                    {t.assignee.name.charAt(0)}
+                  </div>
+                  <span className="text-[11px] font-bold tracking-tight">{t.assignee.name.split(' ')[0]}</span>
+                </div>
+              )}
+              
+              {t.provider && (
+                <div className="flex items-center gap-1.5 text-teal-800 bg-teal-50 px-2 py-1 rounded-md border border-teal-200/60" title="Service Provider">
+                  <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-[11px] font-bold truncate max-w-[100px]">
+                    {t.provider.name}
+                  </span>
+                </div>
+              )}
+
+              {dueMeta && (
+                <div
+                  title={dueMeta.title}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] font-bold tabular-nums ${
+                    dueMeta.tone === 'overdue'
+                      ? 'bg-rose-50 text-rose-600 border-rose-200/80'
+                      : dueMeta.tone === 'soon'
+                        ? 'bg-amber-50 text-amber-900 border-amber-200/70'
+                        : 'bg-slate-100 text-slate-500 border-slate-200/60'
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {dueMeta.label}
+                </div>
+              )}
+            </div>
+
             {view !== 'status' && !isDone && (
               <div className="mt-2.5 flex">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{t.status.replace('_', ' ')}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full shadow-sm">{t.status.replace('_', ' ')}</span>
               </div>
             )}
           </div>
@@ -343,6 +391,7 @@ export default function TasksPage() {
           members={members}
           labels={labels}
           rooms={rooms}
+          providers={providers}
           onClose={() => setSheet(false)}
           onSave={() => {
             setSheet(false)
