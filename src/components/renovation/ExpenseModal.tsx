@@ -45,6 +45,9 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
     }
   }, [editing?.id])
 
+  /** Same logical expense = same key (avoids null vs undefined re-running and clearing pending files). */
+  const editingKey = editing?.id ?? 'new'
+
   useEffect(() => {
     if (editing) {
       setAmount(
@@ -67,7 +70,8 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
       setPayment('')
     }
     setPendingFiles([])
-  }, [editing])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form when switching expense only (editingKey); avoid clearing pending on parent re-renders with new object ref
+  }, [editingKey])
 
   useEffect(() => {
     loadAttachments()
@@ -285,16 +289,18 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
               </ul>
             )}
 
-            <label className="inline-flex items-center justify-center w-full h-10 rounded-lg bg-white border border-slate-200 text-[14px] font-semibold text-indigo-600 cursor-pointer hover:bg-slate-50">
-              {uploadingAttach ? 'Uploading…' : '+ Add files'}
+            {/* opacity-0 + absolute — not display:none — so iOS Safari and others actually open the picker */}
+            <label className="relative flex items-center justify-center w-full min-h-10 py-2 rounded-lg bg-white border border-slate-200 text-[14px] font-semibold text-indigo-600 cursor-pointer hover:bg-slate-50 overflow-hidden">
+              <span className="pointer-events-none select-none">{uploadingAttach ? 'Uploading…' : '+ Add files'}</span>
               <input
                 type="file"
                 multiple
-                className="hidden"
+                className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                 disabled={!!uploadingAttach || saving}
                 onChange={(ev) => {
-                  if (editing?.id) void onFilesSelectedForEdit(ev.target.files)
-                  else onFilesSelectedForNew(ev.target.files)
+                  const list = ev.target.files
+                  if (editing?.id) void onFilesSelectedForEdit(list)
+                  else onFilesSelectedForNew(list)
                   ev.target.value = ''
                 }}
               />
