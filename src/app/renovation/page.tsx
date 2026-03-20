@@ -12,10 +12,11 @@ import {
   expensesThisMonth,
 } from '@/lib/renovation'
 import { formatIls, formatTaskDue, taskDueCalendarDiffDays } from '@/lib/renovation-format'
+import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
 import type { RenovationExpense, RenovationGalleryItem, RenovationTask } from '@/types/renovation'
 
 export default function RenovationDashboardPage() {
-  const { project, loading, refresh, setExpenseModalOpen } = useRenovation()
+  const { project, loading, refresh, setExpenseModalOpen, activeProfile } = useRenovation()
   const [name, setName] = useState('')
   const [budget, setBudget] = useState('')
   const [contingency, setContingency] = useState('')
@@ -163,6 +164,9 @@ export default function RenovationDashboardPage() {
     .sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''))
     .slice(0, 4)
 
+  const greet = timeGreetingForProfile(activeProfile?.name)
+  const greetName = activeProfile ? profileFirstName(activeProfile.name) : null
+
   return (
     <div className="space-y-8 pb-8">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -171,6 +175,13 @@ export default function RenovationDashboardPage() {
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
              Active Phase
           </div>
+          {greetName ? (
+            <p className="text-[17px] md:text-[19px] font-semibold text-indigo-600 mb-2" dir="auto">
+              {greet.label}, {greetName}
+            </p>
+          ) : (
+            <p className="text-[17px] md:text-[19px] font-semibold text-slate-500 mb-2">{greet.label}</p>
+          )}
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900" dir="auto">
             {project.name}
           </h1>

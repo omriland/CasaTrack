@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
+import { RenovationProfileGate } from './RenovationProfileGate'
 import { ExpenseModal } from './ExpenseModal'
 import { TaskModal } from './TaskModal'
 import { QuickUploadModal } from './QuickUploadModal'
@@ -27,6 +28,12 @@ export function RenovationShell({ children }: { children: ReactNode }) {
   const { 
     loading, 
     project, 
+    profileBootstrapDone,
+    teamMembers,
+    activeProfile,
+    needsProfilePick,
+    selectProfile,
+    openProfilePicker,
     isTaskModalOpen, 
     setTaskModalOpen, 
     isExpenseModalOpen, 
@@ -102,7 +109,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
     }
   }, [setExpenseModalOpen, setTaskModalOpen, setQuickUploadFile])
 
-  if (loading) {
+  if (loading || (project && !profileBootstrapDone)) {
     return (
       <div className="reno-app min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
         <div className="relative flex justify-center items-center w-12 h-12">
@@ -134,7 +141,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pb-6 scrollbar-hide">
+        <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto pb-2 scrollbar-hide min-h-0">
           {nav.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
@@ -157,12 +164,62 @@ export function RenovationShell({ children }: { children: ReactNode }) {
             )
           })}
         </nav>
+
+        {project && activeProfile && teamMembers.length > 0 && (
+          <div className="shrink-0 px-4 pb-4 pt-3 border-t border-slate-200/80 bg-white/50">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Profile</p>
+            <button
+              type="button"
+              onClick={openProfilePicker}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-left group"
+            >
+              <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-[11px] font-extrabold shrink-0">
+                {activeProfile.name
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2) || '?'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-bold text-slate-800 truncate" dir="auto">
+                  {activeProfile.name}
+                </p>
+                <p className="text-[11px] font-semibold text-indigo-600 group-hover:text-indigo-500">Switch profile</p>
+              </div>
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Pane */}
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-8 pt-safe mt-6 md:mt-12 md:pt-6 pb-12 min-h-screen animate-fade-in">
+        {project && activeProfile && teamMembers.length > 0 && (
+          <div className="md:hidden flex items-center justify-between gap-3 mb-4 -mt-1 p-3 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Signed in as</p>
+              <p className="text-[14px] font-bold text-slate-800 truncate" dir="auto">
+                {activeProfile.name}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openProfilePicker}
+              className="shrink-0 text-[13px] font-bold text-indigo-600 bg-indigo-50 px-3 py-2 rounded-xl active:scale-95 transition-all"
+            >
+              Switch
+            </button>
+          </div>
+        )}
         {children}
       </main>
+
+      {needsProfilePick && teamMembers.length > 0 && (
+        <RenovationProfileGate members={teamMembers} onSelect={selectProfile} />
+      )}
 
       {/* Global Modals */}
       {isExpenseModalOpen && (
