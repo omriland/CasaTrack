@@ -9,6 +9,7 @@ export function RoomsMobile() {
     project,
     rooms,
     tasks,
+    needs,
     gallery,
     tags,
     loading,
@@ -24,6 +25,7 @@ export function RoomsMobile() {
     load,
     selectedRoom,
     roomTasks,
+    roomNeeds,
     roomPhotos,
     saveRoom,
   } = useRoomsPageState()
@@ -44,7 +46,7 @@ export function RoomsMobile() {
     <div className="space-y-5 pb-8 animate-fade-in-up">
       <header>
         <h1 className="text-[24px] font-bold text-slate-900">Rooms</h1>
-        <p className="text-[14px] text-slate-500 mt-1">Tap a room, then scroll to edit details.</p>
+        <p className="text-[14px] text-slate-500 mt-1">Tasks, needs, and photos per room.</p>
       </header>
 
       {loading ? (
@@ -65,6 +67,7 @@ export function RoomsMobile() {
           <div className="grid grid-cols-2 gap-3">
             {rooms.map((room) => {
               const taskCount = tasks.filter((t) => t.room_id === room.id).length
+              const needCount = needs.filter((n) => n.room_id === room.id).length
               const photoCount = gallery.filter((p) => p.room_id === room.id).length
               const active = selectedId === room.id
               return (
@@ -79,8 +82,8 @@ export function RoomsMobile() {
                   <p className="font-bold text-[15px] text-slate-900 line-clamp-2" dir="auto">
                     {room.name}
                   </p>
-                  <p className="text-[11px] font-semibold text-slate-500 mt-2">
-                    {taskCount} tasks · {photoCount} photos
+                  <p className="text-[11px] font-semibold text-slate-500 mt-2 leading-snug">
+                    {taskCount} tasks · {needCount} needs · {photoCount} photos
                   </p>
                 </button>
               )
@@ -134,6 +137,29 @@ export function RoomsMobile() {
                         <li key={t.id}>
                           <Link href="/renovation/tasks" className="block min-h-[44px] px-3 rounded-xl bg-slate-50 border border-slate-100 font-medium text-slate-800 flex items-center" dir="auto">
                             {t.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-[13px] font-bold text-slate-600 mb-2">Needs ({roomNeeds.length})</h3>
+                  {roomNeeds.length === 0 ? (
+                    <p className="text-[14px] text-slate-400">None linked.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {roomNeeds.map((n) => (
+                        <li key={n.id}>
+                          <Link
+                            href="/renovation/needs"
+                            className="flex min-h-[44px] items-center justify-between gap-2 px-3 rounded-xl bg-slate-50 border border-slate-100 font-medium text-slate-800"
+                            dir="auto"
+                          >
+                            <span className={n.completed ? 'line-through text-slate-400' : ''}>{n.title}</span>
+                            {n.completed && (
+                              <span className="shrink-0 text-[10px] font-bold uppercase text-emerald-600">Done</span>
+                            )}
                           </Link>
                         </li>
                       ))}

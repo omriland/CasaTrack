@@ -9,6 +9,7 @@ export function RoomsDesktop() {
     project,
     rooms,
     tasks,
+    needs,
     gallery,
     tags,
     loading,
@@ -24,6 +25,7 @@ export function RoomsDesktop() {
     load,
     selectedRoom,
     roomTasks,
+    roomNeeds,
     roomPhotos,
     saveRoom,
   } = useRoomsPageState()
@@ -45,7 +47,7 @@ export function RoomsDesktop() {
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Rooms</h1>
-          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Organize tasks and photos by physical space.</p>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">See tasks, shopping needs, and photos for each space.</p>
         </div>
       </header>
 
@@ -67,6 +69,7 @@ export function RoomsDesktop() {
           <div className="grid grid-cols-4 gap-4">
             {rooms.map((room) => {
               const taskCount = tasks.filter((t) => t.room_id === room.id).length
+              const needCount = needs.filter((n) => n.room_id === room.id).length
               const photoCount = gallery.filter((p) => p.room_id === room.id).length
               const active = selectedId === room.id
               return (
@@ -86,6 +89,9 @@ export function RoomsDesktop() {
                   <div className="flex flex-col gap-0.5 mt-2">
                     <p className={`text-[12px] font-medium ${active ? 'text-amber-700/70' : 'text-slate-500'}`}>
                       {taskCount} task{taskCount !== 1 ? 's' : ''}
+                    </p>
+                    <p className={`text-[12px] font-medium ${active ? 'text-amber-700/70' : 'text-slate-500'}`}>
+                      {needCount} need{needCount !== 1 ? 's' : ''}
                     </p>
                     <p className={`text-[12px] font-medium ${active ? 'text-amber-700/70' : 'text-slate-500'}`}>
                       {photoCount} photo{photoCount !== 1 ? 's' : ''}
@@ -150,6 +156,32 @@ export function RoomsDesktop() {
                           >
                             {t.title}
                             {t.status !== 'done' && <span className="ml-2 text-[12px] text-slate-400">— {t.status.replace('_', ' ')}</span>}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-[13px] font-bold text-slate-500 uppercase tracking-wide mb-2">Needs for this room ({roomNeeds.length})</h3>
+                  {roomNeeds.length === 0 ? (
+                    <p className="text-[14px] text-slate-400 py-2">No needs linked to this room.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {roomNeeds.map((n) => (
+                        <li key={n.id}>
+                          <Link
+                            href="/renovation/needs"
+                            className="flex items-center justify-between gap-2 px-3 py-2 rounded bg-slate-50 border border-slate-100 hover:bg-emerald-50/50 hover:border-emerald-100 text-[15px] font-medium text-slate-800"
+                            dir="auto"
+                          >
+                            <span className={n.completed ? 'line-through text-slate-400 decoration-slate-300' : ''}>{n.title}</span>
+                            {n.completed && (
+                              <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                Done
+                              </span>
+                            )}
                           </Link>
                         </li>
                       ))}

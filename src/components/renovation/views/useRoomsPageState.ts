@@ -2,13 +2,20 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
-import { listGalleryItems, listRooms, listTasks, listGalleryTags, updateRoom } from '@/lib/renovation'
-import type { RenovationGalleryItem, RenovationRoom, RenovationTask, RenovationGalleryTag } from '@/types/renovation'
+import { listGalleryItems, listNeeds, listRooms, listTasks, listGalleryTags, updateRoom } from '@/lib/renovation'
+import type {
+  RenovationGalleryItem,
+  RenovationGalleryTag,
+  RenovationNeed,
+  RenovationRoom,
+  RenovationTask,
+} from '@/types/renovation'
 
 export function useRoomsPageState() {
   const { project } = useRenovation()
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
+  const [needs, setNeeds] = useState<RenovationNeed[]>([])
   const [gallery, setGallery] = useState<RenovationGalleryItem[]>([])
   const [tags, setTags] = useState<RenovationGalleryTag[]>([])
   const [loading, setLoading] = useState(true)
@@ -22,14 +29,16 @@ export function useRoomsPageState() {
     if (!project) return
     setLoading(true)
     try {
-      const [r, t, g, tagsData] = await Promise.all([
+      const [r, t, n, g, tagsData] = await Promise.all([
         listRooms(project.id),
         listTasks(project.id),
+        listNeeds(project.id),
         listGalleryItems(project.id),
         listGalleryTags(project.id),
       ])
       setRooms(r)
       setTasks(t)
+      setNeeds(n)
       setGallery(g)
       setTags(tagsData)
     } finally {
@@ -56,6 +65,7 @@ export function useRoomsPageState() {
 
   const selectedRoom = selectedId ? rooms.find((r) => r.id === selectedId) : null
   const roomTasks = selectedId ? tasks.filter((t) => t.room_id === selectedId) : []
+  const roomNeeds = selectedId ? needs.filter((n) => n.room_id === selectedId) : []
   const roomPhotos = selectedId ? gallery.filter((p) => p.room_id === selectedId) : []
 
   const saveRoom = async () => {
@@ -76,6 +86,7 @@ export function useRoomsPageState() {
     project,
     rooms,
     tasks,
+    needs,
     gallery,
     tags,
     loading,
@@ -91,6 +102,7 @@ export function useRoomsPageState() {
     load,
     selectedRoom,
     roomTasks,
+    roomNeeds,
     roomPhotos,
     saveRoom,
   }
