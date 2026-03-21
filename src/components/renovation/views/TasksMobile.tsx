@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
+import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
 import { formatTaskDue } from '@/lib/renovation-format'
@@ -16,6 +17,7 @@ export function TasksMobile() {
     project,
     setTaskModalOpen,
     tasks,
+    setTasks,
     members,
     labels,
     rooms,
@@ -30,7 +32,11 @@ export function TasksMobile() {
     setSheet,
     editing,
     openEdit,
+    viewing,
+    setViewing,
+    openView,
     filteredTasks,
+    toggleTaskDone,
   } = useTasksPageState()
 
   const [statusTab, setStatusTab] = useState<StatusTab>('all')
@@ -41,64 +47,112 @@ export function TasksMobile() {
   const renderCard = (t: RenovationTask) => {
     const isDone = t.status === 'done'
     const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
+    const createdByTitle = t.created_by ? `Created by ${t.created_by.name}` : undefined
+
     return (
-      <button
+      <div
         key={t.id}
-        type="button"
-        onClick={() => openEdit(t)}
-        className={`w-full text-left bg-white rounded-2xl border border-slate-200/80 p-4 transition-all shadow-sm active:scale-[0.99] ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
+        className={`w-full text-left bg-white rounded-[6px] border border-[#dfe1e6] p-3 transition-colors active:bg-slate-50 relative ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
-        <div className="flex gap-3 items-start">
-          <div className={`shrink-0 mt-0.5 ${isDone ? 'opacity-40 grayscale' : ''}`}>{PRIORITY_ICONS[t.urgency]}</div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap gap-1 mb-1">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 uppercase">
-                {t.status.replace('_', ' ')}
+        <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
+          <p className={`text-[15px] font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+            {t.title}
+          </p>
+
+          <div className="flex flex-wrap gap-1 mt-0.5">
+            <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-slate-100 text-[#5e6c84] uppercase">
+              {t.status.replace('_', ' ')}
+            </span>
+            {t.room && (
+              <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-[#dfe1e6] text-[#42526e] truncate max-w-[120px]">
+                {t.room.name}
               </span>
-              {t.room && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 truncate max-w-[120px]">
-                  {t.room.name}
-                </span>
-              )}
-            </div>
-            <p className={`text-[16px] font-bold leading-snug text-slate-900 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
-              {t.title}
-            </p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {(t.label_ids || []).map((lid) => {
-                const lb = labels.find((l: RenovationLabel) => l.id === lid)
-                return lb ? (
-                  <span
-                    key={lid}
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-md text-white"
-                    style={{ backgroundColor: lb.color }}
-                  >
-                    {lb.name}
-                  </span>
-                ) : null
-              })}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              {t.assignee && (
-                <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-lg">{t.assignee.name.split(' ')[0]}</span>
-              )}
-              {dueMeta && (
+            )}
+            {(t.label_ids || []).map((lid) => {
+              const lb = labels.find((l: RenovationLabel) => l.id === lid)
+              return lb ? (
                 <span
-                  className={`text-[11px] font-bold tabular-nums px-2 py-1 rounded-lg ${
+                  key={lid}
+                  className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
+                  style={{ backgroundColor: lb.color }}
+                >
+                  {lb.name}
+                </span>
+              ) : null
+            })}
+          </div>
+
+          <div className="flex items-center justify-between mt-1 h-6">
+            <div className="flex items-center gap-2">
+              <div className="relative shrink-0 w-6 h-6">
+                <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isDone ? 'opacity-0' : 'opacity-100'}`}>
+                   <div className="scale-90">{PRIORITY_ICONS[t.urgency]}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleTaskDone(t.id, isDone)
+                  }}
+                  className={`absolute inset-0 w-full h-full rounded-[4px] border flex items-center justify-center transition-all ${
+                    isDone 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' 
+                      : 'bg-white/40 border-slate-300/60 shadow-sm opacity-0 active:opacity-100'
+                  }`}
+                  aria-label={isDone ? 'Mark as open' : 'Mark as done'}
+                >
+                  {isDone && (
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+
+              {!!t.body?.trim() && (
+                <div className="text-[#5e6c84] flex items-center justify-center">
+                  <svg className="w-[15px] h-[15px] opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h8" />
+                  </svg>
+                </div>
+              )}
+
+              {dueMeta && (
+                <div
+                  className={`flex items-center gap-1 text-[12px] font-semibold ${
                     dueMeta.tone === 'overdue'
-                      ? 'bg-rose-50 text-rose-700'
+                      ? 'text-[#de350b]'
                       : dueMeta.tone === 'soon'
-                        ? 'bg-amber-50 text-amber-900'
-                        : 'bg-slate-100 text-slate-600'
+                        ? 'text-[#ff991f]'
+                        : 'text-[#5e6c84]'
                   }`}
                 >
                   {dueMeta.label}
+                </div>
+              )}
+              {t.provider && (
+                <span className="text-[12px] text-[#5e6c84] font-medium truncate max-w-[100px]" title="Provider">
+                   • {t.provider.name}
                 </span>
+              )}
+            </div>
+
+            <div className="flex items-center shrink-0">
+              {t.assignee ? (
+                <div className="w-6 h-6 rounded-full bg-[#0052cc] flex items-center justify-center text-[10px] font-bold text-white shadow-sm" title={t.assignee.name}>
+                  {t.assignee.name.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <div className="w-6 h-6 rounded-full border border-dashed border-[#dfe1e6] flex items-center justify-center bg-[#f4f5f7]">
+                  <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
               )}
             </div>
           </div>
         </div>
-      </button>
+      </div>
     )
   }
 
@@ -175,7 +229,7 @@ export function TasksMobile() {
           <p className="text-[13px] text-slate-500 mt-1">Try another status or clear filters.</p>
         </div>
       ) : (
-        <div className="space-y-3">{[...listTasksFiltered].sort(sortTasks).map(renderCard)}</div>
+        <div className="space-y-2">{[...listTasksFiltered].sort(sortTasks).map(renderCard)}</div>
       )}
 
       <button
@@ -266,6 +320,24 @@ export function TasksMobile() {
           onSave={() => {
             setSheet(false)
             load()
+          }}
+        />
+      )}
+
+      {viewing && (
+        <TaskDetailDrawer
+          task={viewing}
+          labels={labels}
+          rooms={rooms}
+          providers={providers}
+          onClose={() => setViewing(null)}
+          onEdit={() => {
+            setViewing(null)
+            openEdit(viewing)
+          }}
+          onTaskChange={(updatedTask) => {
+            setViewing(updatedTask)
+            setTasks((prev) => prev.map((pt) => pt.id === updatedTask.id ? updatedTask : pt))
           }}
         />
       )}

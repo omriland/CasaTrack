@@ -22,8 +22,8 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
   const { project, activeProfile, teamMembers, openProfilePicker } = useRenovation()
 
   return (
-    <div className="reno-app min-h-screen bg-slate-50/50 text-slate-900 pb-0 pl-64 flex selection:bg-indigo-100 selection:text-indigo-900">
-      <aside className="flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white/70 backdrop-blur-3xl border-r border-slate-200/60 pt-safe z-40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
+    <div className="reno-app min-h-screen bg-slate-50/50 text-slate-900 pb-0 pl-60 flex selection:bg-indigo-100 selection:text-indigo-900">
+      <aside className="flex flex-col fixed left-0 top-0 bottom-0 w-60 bg-white/70 backdrop-blur-3xl border-r border-slate-200/60 pt-safe z-40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
         <div className="px-6 pt-8 pb-6 bg-gradient-to-b from-white to-transparent">
           <Link href="/" className="group inline-flex items-center text-[13px] font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
             <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>

@@ -102,12 +102,21 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     setUploading(true)
     setUploadProgress({ done: 0, total: filesArr.length })
     const failures: { name: string; error: string }[] = []
+    
+    // Auto-tag if we are inside a specific album
+    const autoTagId = viewMode === 'gallery' && selectedAlbumId && selectedAlbumId !== 'untagged' 
+      ? selectedAlbumId 
+      : undefined
+
     try {
       for (let i = 0; i < filesArr.length; i++) {
         const file = filesArr[i]!
         try {
           const path = await uploadGalleryPhoto(project.id, file)
-          await createGalleryItem(project.id, { storage_path: path })
+          await createGalleryItem(project.id, { 
+            storage_path: path,
+            tag_ids: autoTagId ? [autoTagId] : undefined
+          })
         } catch (e) {
           console.error('Gallery upload error:', e)
           const msg = e instanceof Error ? e.message : String(e)
@@ -272,17 +281,34 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     return result
   }, [filtered, sortBy, rooms, tags])
 
+  /** Full list fallback so `findIndex` is never -1 when opening from a filtered grid. */
+  const lightboxSlides = useMemo(() => {
+    if (!lightbox) return null
+    const inFiltered = sortedFiltered.some((i) => i.id === lightbox.id)
+    const list = inFiltered ? sortedFiltered : items
+    const ix = list.findIndex((i) => i.id === lightbox.id)
+    if (ix < 0 || list.length === 0) return null
+    return { list, initialIndex: ix }
+  }, [lightbox, sortedFiltered, items])
+
+  useEffect(() => {
+    if (lightbox && !items.some((i) => i.id === lightbox.id)) setLightbox(null)
+  }, [lightbox, items])
+
+  useEffect(() => {
+    if (lightbox && lightboxSlides === null) setLightbox(null)
+  }, [lightbox, lightboxSlides])
+
   const groupedItems = useMemo(() => {
     if (viewMode !== 'gallery') return []
     const groups: { tagId: string | null; name: string; items: RenovationGalleryItem[] }[] = []
     
     tags.forEach(t => {
+      if (filterTag && filterTag !== t.id) return
       const itemsForTag = sortedFiltered.filter(i => i.tag_ids?.includes(t.id))
       // Sort items by date desc inside groups
       itemsForTag.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      if (itemsForTag.length > 0) {
-        groups.push({ tagId: t.id, name: t.name, items: itemsForTag })
-      }
+      groups.push({ tagId: t.id, name: t.name, items: itemsForTag })
     })
 
     const untaggedItems = sortedFiltered.filter(i => !i.tag_ids || i.tag_ids.length === 0)
@@ -292,7 +318,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     }
 
     return groups
-  }, [sortedFiltered, tags, viewMode])
+  }, [sortedFiltered, tags, viewMode, filterTag])
 
   const renderItem = (item: RenovationGalleryItem, showRoom: boolean = false, selectionOrder?: RenovationGalleryItem[]) => {
     const isSelected = selectedIds.has(item.id)
@@ -626,8 +652,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <div key={i} className="aspect-square rounded-2xl bg-white border border-slate-100 shadow-sm animate-pulse" />
           ))}
         </div>
-      ) : sortedFiltered.length === 0 ? (
-        <div className="bg-white/50 rounded-[2.5rem] border border-slate-100 p-16 text-center mt-6">
+      ) : sortedFiltered.length === 0 && (viewMode !== 'gallery' || groupedItems.length === 0) ? (
+        <div className="bg-white/50 rounded-2xl border border-slate-100 p-16 text-center mt-6">
            <div className="inline-flex flex-col items-center justify-center">
               <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
@@ -697,6 +723,14 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               {(() => {
                 const group = groupedItems.find(g => (g.tagId || 'untagged') === selectedAlbumId)
                 if (!group) return <p className="text-slate-400 py-10">Album not found or filtered out.</p>
+                if (group.items.length === 0) {
+                  return (
+                    <div className="bg-white/50 rounded-2xl border border-slate-100 p-12 text-center mt-4">
+                      <p className="text-[15px] font-bold text-slate-500">No photos in this label</p>
+                      <p className="text-[13px] text-slate-400 mt-1">Add photos and assign this label to them.</p>
+                    </div>
+                  )
+                }
                 return (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
                     {group.items.map((item) => renderItem(item, false, group.items))}
@@ -748,10 +782,11 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
       </div>
       ) : null}
 
-      {lightbox && (
+      {lightbox && lightboxSlides && (
         <Lightbox
-          images={sortedFiltered}
-          initialIndex={sortedFiltered.findIndex(i => i.id === lightbox.id)}
+          key={lightbox.id}
+          images={lightboxSlides.list}
+          initialIndex={lightboxSlides.initialIndex}
           rooms={rooms}
           tags={tags}
           onClose={() => setLightbox(null)}

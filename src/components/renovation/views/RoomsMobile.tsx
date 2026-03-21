@@ -38,6 +38,8 @@ export function RoomsMobile() {
     )
   }
 
+  const roomLightboxIndex = lightbox ? roomPhotos.findIndex((i) => i.id === lightbox.id) : -1
+
   return (
     <div className="space-y-5 pb-8 animate-fade-in-up">
       <header>
@@ -159,10 +161,11 @@ export function RoomsMobile() {
         </>
       )}
 
-      {lightbox && (
+      {lightbox && roomPhotos.length > 0 && roomLightboxIndex >= 0 && (
         <Lightbox
+          key={lightbox.id}
           images={roomPhotos}
-          initialIndex={roomPhotos.findIndex((i) => i.id === lightbox.id)}
+          initialIndex={roomLightboxIndex}
           rooms={rooms}
           tags={tags}
           onClose={() => setLightbox(null)}

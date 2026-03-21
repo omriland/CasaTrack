@@ -99,6 +99,7 @@ CREATE TABLE public.renovation_tasks (
   body TEXT,
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'in_progress', 'blocked', 'done')),
   assignee_id UUID REFERENCES public.renovation_team_members (id) ON DELETE SET NULL,
+  created_by_member_id UUID REFERENCES public.renovation_team_members (id) ON DELETE SET NULL,
   due_date DATE,
   start_date DATE,
   urgency TEXT NOT NULL DEFAULT 'medium' CHECK (urgency IN ('low', 'medium', 'high', 'critical')),

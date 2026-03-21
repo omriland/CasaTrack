@@ -17,6 +17,19 @@ import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
 import 'yet-another-react-lightbox/plugins/thumbnails.css'
 
+/** Match YARL's internal index wrapping; JS `arr[-1]` is undefined, which crashed the lightbox UI. */
+function clampSlideIndex(i: number, len: number): number {
+  if (len <= 0) return 0
+  if (i >= 0 && i < len) return i
+  return ((i % len) + len) % len
+}
+
+function normalizeAnnotationShapes(raw: unknown): AnnotationShape[] {
+  if (raw == null) return []
+  if (!Array.isArray(raw)) return []
+  return raw as AnnotationShape[]
+}
+
 interface LightboxProps {
   images: RenovationGalleryItem[]
   initialIndex: number
@@ -30,8 +43,9 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
   const { project } = useRenovation()
   const isMobile = useRenovationMobileMedia()
   const confirmAction = useConfirm()
-  const [index, setIndex] = useState(initialIndex)
-  const current = images[index]
+  const [index, setIndex] = useState(() => clampSlideIndex(initialIndex, images.length))
+  const slideIndex = images.length > 0 ? clampSlideIndex(index, images.length) : 0
+  const current = images.length > 0 ? images[slideIndex] : undefined
 
   const [editCaption, setEditCaption] = useState('')
   const [editRoom, setEditRoom] = useState('')
@@ -56,11 +70,11 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
     if (current) {
       setEditCaption(current.caption || '')
       setEditRoom(current.room_id || '')
-      setEditTags(current.tag_ids || [])
+      setEditTags(Array.isArray(current.tag_ids) ? current.tag_ids : [])
     }
   }, [current, index])
 
-  if (!current) return null
+  if (!images.length || !current) return null
 
   const handleSave = async () => {
     setSaving(true)
@@ -104,7 +118,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
     }
   }
 
-  const handleSaveAnnotations = async (shapes: AnnotationShape[]) => {
+  const handleSaveAnnotations = async (shapes: AnnotationShape[], _isUploading?: boolean) => {
     try {
       await updateGalleryItemAnnotations(current.id, shapes)
       setLocalAnnotations(prev => ({ ...prev, [current.id]: shapes }))
@@ -127,7 +141,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
       <YarlLightbox
         open={true}
         close={onClose}
-        index={index}
+        index={slideIndex}
         slides={slides}
         on={{ view: ({ index: currentIndex }) => setIndex(currentIndex) }}
         plugins={isMobile ? [Zoom] : [Zoom, Thumbnails]}
@@ -145,7 +159,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                 },
                 slide: { paddingBottom: '0.25rem' },
               }
-            : undefined
+            : {}
         }
         toolbar={{
           buttons: [
@@ -198,7 +212,8 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
             const currentImg = slide.itemData as RenovationGalleryItem | undefined
             if (!currentImg) return null
             const room = rooms.find(r => r.id === currentImg.room_id)
-            const itemTags = currentImg.tag_ids?.map(tid => tags.find(x => x.id === tid)).filter(Boolean) || []
+            const tagIds = Array.isArray(currentImg.tag_ids) ? currentImg.tag_ids : []
+            const itemTags = tagIds.map((tid) => tags.find((x) => x.id === tid)).filter(Boolean) as RenovationGalleryTag[]
             
             if (!room && itemTags.length === 0 && !currentImg.caption) return null
 
@@ -229,10 +244,12 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           slide: ({ slide }: { slide: any }) => {
             const currentImg = slide.itemData as RenovationGalleryItem | undefined
-            if (!currentImg || !currentImg.public_url) return undefined // fallback to default
+            if (!currentImg || !currentImg.public_url) return null
 
             // Use state-updated annotations if available, otherwise original DB notes
-            const shapes: AnnotationShape[] = localAnnotations[currentImg.id] || currentImg.annotations || []
+            const shapes: AnnotationShape[] = normalizeAnnotationShapes(
+              localAnnotations[currentImg.id] ?? currentImg.annotations
+            )
 
             return (
               <div className="relative flex items-center justify-center w-full h-full">
@@ -260,8 +277,8 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                       className="absolute inset-0 w-full h-full pointer-events-none"
                       style={{ zIndex: 100 }}
                     >
-                      {shapes.map(shape => {
-                        if (shape.type === 'line' && shape.points) {
+                      {shapes.map((shape) => {
+                        if (shape.type === 'line' && Array.isArray(shape.points) && shape.points.length > 0) {
                           return (
                             <polyline
                               key={shape.id}

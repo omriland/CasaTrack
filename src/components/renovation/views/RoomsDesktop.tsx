@@ -38,6 +38,8 @@ export function RoomsDesktop() {
     )
   }
 
+  const roomLightboxIndex = lightbox ? roomPhotos.findIndex((i) => i.id === lightbox.id) : -1
+
   return (
     <div className="space-y-6 pb-8 animate-fade-in-up">
       <header className="flex flex-row items-end justify-between gap-4">
@@ -176,10 +178,11 @@ export function RoomsDesktop() {
         </>
       )}
 
-      {lightbox && (
+      {lightbox && roomPhotos.length > 0 && roomLightboxIndex >= 0 && (
         <Lightbox
+          key={lightbox.id}
           images={roomPhotos}
-          initialIndex={roomPhotos.findIndex((i) => i.id === lightbox.id)}
+          initialIndex={roomLightboxIndex}
           rooms={rooms}
           tags={tags}
           onClose={() => setLightbox(null)}

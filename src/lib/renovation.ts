@@ -441,8 +441,10 @@ export async function listTasks(projectId: string): Promise<RenovationTask[]> {
 
   return tasks.map((t) => ({
     ...t,
+    created_by_member_id: t.created_by_member_id ?? null,
     provider_id: t.provider_id ?? null,
     assignee: t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null,
+    created_by: t.created_by_member_id ? memberMap.get(t.created_by_member_id) ?? null : null,
     room: t.room_id ? roomMap.get(t.room_id) ?? null : null,
     provider: t.provider_id ? providerMap.get(t.provider_id) ?? null : null,
     label_ids: labelMap.get(t.id) || [],
@@ -456,6 +458,7 @@ export async function createTask(
     body?: string | null
     status?: TaskStatus
     assignee_id?: string | null
+    created_by_member_id?: string | null
     room_id?: string | null
     provider_id?: string | null
     due_date?: string | null
@@ -472,6 +475,7 @@ export async function createTask(
       body: row.body ?? null,
       status: row.status ?? 'open',
       assignee_id: row.assignee_id ?? null,
+      created_by_member_id: row.created_by_member_id ?? null,
       room_id: row.room_id ?? null,
       provider_id: row.provider_id ?? null,
       due_date: row.due_date ?? null,

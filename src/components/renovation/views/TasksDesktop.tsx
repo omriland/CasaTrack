@@ -1,6 +1,7 @@
 'use client'
 
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
+import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { formatTaskDue } from '@/lib/renovation-format'
 import type { RenovationLabel, RenovationTask } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
@@ -11,6 +12,7 @@ export function TasksDesktop() {
     project,
     setTaskModalOpen,
     tasks,
+    setTasks,
     members,
     labels,
     rooms,
@@ -29,29 +31,36 @@ export function TasksDesktop() {
     setSheet,
     editing,
     openEdit,
+    viewing,
+    setViewing,
+    openView,
     onDragStart,
     onDrop,
     filteredTasks,
+    toggleTaskDone,
   } = useTasksPageState()
 
   const renderCard = (t: RenovationTask) => {
     const isDone = t.status === 'done'
     const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
+    const createdByTitle = t.created_by ? `Created by ${t.created_by.name}` : undefined
+
     return (
-      <button
+      <div
         key={t.id}
         draggable
         onDragStart={(e) => onDragStart(e, t.id)}
-        type="button"
-        onClick={() => openEdit(t)}
-        className={`w-full text-left bg-white rounded-xl border border-slate-200/60 p-5 transition-all shadow-sm hover:shadow-md hover:border-indigo-200 active:scale-[0.98] cursor-grab active:cursor-grabbing ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
+        className={`w-full text-left bg-white rounded-[5px] border border-[#dfe1e6] p-3 transition-colors hover:bg-slate-50 cursor-grab active:cursor-grabbing group relative ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
-        <div className="flex gap-3.5 items-start">
-          <div className={`shrink-0 mt-0.5 ${isDone ? 'opacity-40 grayscale' : 'opacity-90'}`}>{PRIORITY_ICONS[t.urgency]}</div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap gap-1 mb-1.5">
+        <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
+          <p className={`text-[14px] font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+            {t.title}
+          </p>
+
+          {(t.room || (t.label_ids && t.label_ids.length > 0)) && (
+            <div className="flex flex-wrap gap-1 mt-0.5">
               {t.room && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-500 truncate max-w-[100px] border border-slate-200/50">
+                <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-[#dfe1e6] text-[#42526e] truncate max-w-[120px]">
                   {t.room.name}
                 </span>
               )}
@@ -60,7 +69,7 @@ export function TasksDesktop() {
                 return lb ? (
                   <span
                     key={lid}
-                    className="text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-sm text-white whitespace-nowrap shadow-sm"
+                    className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
                     style={{ backgroundColor: lb.color }}
                   >
                     {lb.name}
@@ -68,59 +77,81 @@ export function TasksDesktop() {
                 ) : null
               })}
             </div>
+          )}
 
-            <p className={`text-[16px] font-bold leading-snug text-slate-800 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
-              {t.title}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-2.5">
-              {t.assignee && (
-                <div className="flex items-center gap-1.5 text-indigo-700 bg-indigo-50/80 px-2 py-1 rounded-md border border-indigo-100" title="Assignee">
-                  <div className="w-4 h-4 rounded-full bg-indigo-200 flex items-center justify-center text-[9px] font-bold text-indigo-800">
-                    {t.assignee.name.charAt(0)}
-                  </div>
-                  <span className="text-[11px] font-bold tracking-tight">{t.assignee.name.split(' ')[0]}</span>
+          <div className="flex items-center justify-between mt-1 h-6">
+            <div className="flex items-center gap-2">
+              <div className="relative shrink-0 w-[18px] h-[18px]">
+                <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isDone ? 'opacity-0' : 'opacity-100 group-hover:opacity-0'}`}>
+                  <div className="scale-75">{PRIORITY_ICONS[t.urgency]}</div>
                 </div>
-              )}
-
-              {t.provider && (
-                <div className="flex items-center gap-1.5 text-teal-800 bg-teal-50 px-2 py-1 rounded-md border border-teal-200/60" title="Service Provider">
-                  <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleTaskDone(t.id, isDone)
+                  }}
+                  className={`absolute inset-0 w-full h-full rounded-[3px] border flex items-center justify-center transition-all group/cb ${
+                    isDone 
+                      ? 'bg-indigo-600 border-indigo-600 text-white opacity-100' 
+                      : 'bg-white border-[#dfe1e6] hover:border-[#4c9aff] hover:bg-[#ebf3ff] opacity-0 group-hover:opacity-100 focus-within:opacity-100'
+                  }`}
+                  aria-label={isDone ? 'Mark as open' : 'Mark as done'}
+                >
+                  <svg 
+                    className={`w-3 h-3 transition-all ${isDone ? 'text-white' : 'text-[#0052cc] opacity-0 group-hover/cb:opacity-100 scale-75 group-hover/cb:scale-100'}`} 
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  <span className="text-[11px] font-bold truncate max-w-[100px]">{t.provider.name}</span>
+                </button>
+              </div>
+
+              {!!t.body?.trim() && (
+                <div title="Has description" className="text-[#5e6c84] flex items-center justify-center">
+                  <svg className="w-[15px] h-[15px] opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h8" />
+                  </svg>
                 </div>
               )}
 
               {dueMeta && (
                 <div
                   title={dueMeta.title}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-[11px] font-bold tabular-nums ${
+                  className={`flex items-center gap-1 text-[12px] font-semibold ${
                     dueMeta.tone === 'overdue'
-                      ? 'bg-rose-50 text-rose-600 border-rose-200/80'
+                      ? 'text-[#de350b]'
                       : dueMeta.tone === 'soon'
-                        ? 'bg-amber-50 text-amber-900 border-amber-200/70'
-                        : 'bg-slate-100 text-slate-500 border-slate-200/60'
+                        ? 'text-[#ff991f]'
+                        : 'text-[#5e6c84]'
                   }`}
                 >
-                  <svg className="w-3.5 h-3.5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
                   {dueMeta.label}
                 </div>
               )}
+              {t.provider && (
+                <span className="text-[12px] text-[#5e6c84] font-medium truncate max-w-[80px]" title="Provider">
+                   • {t.provider.name}
+                </span>
+              )}
             </div>
 
-            {view !== 'status' && !isDone && (
-              <div className="mt-2.5 flex">
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full shadow-sm">
-                  {t.status.replace('_', ' ')}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center shrink-0">
+              {t.assignee ? (
+                <div className="w-6 h-6 rounded-full bg-[#0052cc] flex items-center justify-center text-[10px] font-bold text-white shadow-sm" title={t.assignee.name}>
+                  {t.assignee.name.charAt(0).toUpperCase()}
+                </div>
+              ) : (
+                <div className="w-6 h-6 rounded-full border border-dashed border-[#dfe1e6] flex items-center justify-center bg-[#f4f5f7]" title="Unassigned">
+                  <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </button>
+      </div>
     )
   }
 
@@ -230,7 +261,7 @@ export function TasksDesktop() {
         </div>
       ) : (
         <div className="mt-6">
-          {view === 'list' && <div className="space-y-3">{[...filteredTasks].sort(sortTasks).map(renderCard)}</div>}
+          {view === 'list' && <div className="space-y-2">{[...filteredTasks].sort(sortTasks).map(renderCard)}</div>}
 
           {view === 'status' && (
             <div className="flex gap-4 overflow-x-auto pb-6 items-start scrollbar-hide">
@@ -246,20 +277,20 @@ export function TasksDesktop() {
                     }}
                     onDragLeave={() => setDragOverStatus(null)}
                     onDrop={(e) => onDrop(e, s)}
-                    className={`w-[320px] shrink-0 p-4 rounded-2xl flex flex-col gap-4 border-2 transition-all min-h-[50vh] ${
+                    className={`w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors min-h-[50vh] ${
                       isDraggingOver
-                        ? 'bg-indigo-50/80 border-indigo-400 border-dashed scale-[1.02] shadow-lg'
-                        : 'bg-slate-100/60 border-transparent shadow-sm'
+                        ? 'bg-[#ebf3ff]'
+                        : 'bg-[#f4f5f7]'
                     }`}
                   >
-                    <h3 className="font-bold text-slate-700 capitalize px-1 flex justify-between items-center text-[16px]">
+                    <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center gap-2 text-[12px]">
                       <span>{s.replace('_', ' ')}</span>
-                      <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>
+                      <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-3 flex-1">
+                    <div className="space-y-2 flex-1">
                       {paneTasks.map(renderCard)}
                       {paneTasks.length === 0 && (
-                        <div className="py-6 text-center text-[14px] text-slate-400 font-bold border-2 border-dashed border-slate-200 rounded-2xl">
+                        <div className="py-6 text-center text-[14px] text-slate-400 font-bold">
                           Drop tasks here
                         </div>
                       )}
@@ -278,12 +309,12 @@ export function TasksDesktop() {
                   .sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="w-[320px] shrink-0 bg-slate-100/60 p-4 rounded-2xl flex flex-col gap-4 shadow-sm">
-                    <h3 className="font-bold text-slate-700 px-1 flex justify-between items-center text-[16px]">
+                  <div key={m.id} className="w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 bg-[#f4f5f7] min-h-[50vh]">
+                    <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center gap-2 text-[12px]">
                       <span>{m.name}</span>
-                      <span className="text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-full text-[12px]">{paneTasks.length}</span>
+                      <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-3">{paneTasks.map(renderCard)}</div>
+                    <div className="space-y-2">{paneTasks.map(renderCard)}</div>
                   </div>
                 )
               })}
@@ -303,6 +334,24 @@ export function TasksDesktop() {
           onSave={() => {
             setSheet(false)
             load()
+          }}
+        />
+      )}
+
+      {viewing && (
+        <TaskDetailDrawer
+          task={viewing}
+          labels={labels}
+          rooms={rooms}
+          providers={providers}
+          onClose={() => setViewing(null)}
+          onEdit={() => {
+            setViewing(null)
+            openEdit(viewing)
+          }}
+          onTaskChange={(updatedTask) => {
+            setViewing(updatedTask)
+            setTasks((prev) => prev.map((pt) => pt.id === updatedTask.id ? updatedTask : pt))
           }}
         />
       )}

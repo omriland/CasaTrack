@@ -92,6 +92,8 @@ export interface RenovationTask {
   body: string | null
   status: TaskStatus
   assignee_id: string | null
+  /** Team member who created the task (current profile at save time). */
+  created_by_member_id: string | null
   room_id: string | null
   provider_id: string | null
   due_date: string | null
@@ -102,6 +104,7 @@ export interface RenovationTask {
   updated_at: string
   label_ids?: string[]
   assignee?: RenovationTeamMember | null
+  created_by?: RenovationTeamMember | null
   room?: RenovationRoom | null
   provider?: RenovationProvider | null
 }

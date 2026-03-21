@@ -34,6 +34,8 @@ export function useTasksPageState() {
   const [sheet, setSheet] = useState(false)
   const [editing, setEditing] = useState<RenovationTask | null>(null)
 
+  const [viewing, setViewing] = useState<RenovationTask | null>(null)
+
   const load = useCallback(async () => {
     if (!project) return
     setLoading(true)
@@ -64,6 +66,10 @@ export function useTasksPageState() {
     setSheet(true)
   }
 
+  const openView = (t: RenovationTask) => {
+    setViewing(t)
+  }
+
   const onDragStart = (e: React.DragEvent, taskId: string) => {
     e.dataTransfer.setData('taskId', taskId)
     e.dataTransfer.effectAllowed = 'move'
@@ -79,6 +85,17 @@ export function useTasksPageState() {
 
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)))
 
+    try {
+      await updateTask(taskId, { status: newStatus })
+    } catch (err) {
+      console.error(err)
+      await load()
+    }
+  }
+
+  const toggleTaskDone = async (taskId: string, isDone: boolean) => {
+    const newStatus = isDone ? 'open' : 'done'
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)))
     try {
       await updateTask(taskId, { status: newStatus })
     } catch (err) {
@@ -116,9 +133,13 @@ export function useTasksPageState() {
     setSheet,
     editing,
     setEditing,
+    viewing,
+    setViewing,
     openEdit,
+    openView,
     onDragStart,
     onDrop,
     filteredTasks,
+    toggleTaskDone,
   }
 }

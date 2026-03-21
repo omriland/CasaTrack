@@ -43,7 +43,7 @@ interface TaskModalProps {
 }
 
 export function TaskModal({ editing, members, labels, rooms, providers, onClose, onSave }: TaskModalProps) {
-  const { project } = useRenovation()
+  const { project, activeProfile } = useRenovation()
   const isMobile = useRenovationMobileMedia()
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -118,6 +118,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
           status,
           urgency,
           assignee_id: assigneeId || null,
+          created_by_member_id: activeProfile?.id ?? null,
           room_id: roomId || null,
           provider_id: providerId || null,
           due_date: due || null,
@@ -318,8 +319,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   placeholder="Add context, measurements, or specs..."
-                  rows={2}
-                  className={`w-full pl-10 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none`}
+                  className={`w-full min-h-[25vh] pl-10 pr-3 py-2 rounded-xl border border-slate-200 bg-slate-50 ${isMobile ? 'text-[16px]' : 'text-[14px]'} font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white resize-none`}
                 />
             </div>
           </div>
