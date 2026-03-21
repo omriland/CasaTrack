@@ -55,7 +55,7 @@ export function TasksMobile() {
         className={`w-full text-left bg-white rounded-[6px] border border-[#dfe1e6] p-3 transition-colors active:bg-slate-50 relative ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
         <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
-          <p className={`text-[15px] font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+          <p className={`text-[15px] text-right font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="rtl">
             {t.title}
           </p>
 

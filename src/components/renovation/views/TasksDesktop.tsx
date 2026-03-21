@@ -53,7 +53,7 @@ export function TasksDesktop() {
         className={`w-full text-left bg-white rounded-[5px] border border-[#dfe1e6] p-3 transition-colors hover:bg-slate-50 cursor-grab active:cursor-grabbing group relative ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
       >
         <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
-          <p className={`text-[14px] font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+          <p className={`text-[14px] text-right font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="rtl">
             {t.title}
           </p>
 
