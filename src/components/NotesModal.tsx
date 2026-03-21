@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Property, Note } from '@/types/property'
 import { getPropertyNotes, createNote, deleteNote } from '@/lib/properties'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 interface NotesModalProps {
   property: Property
@@ -14,6 +15,7 @@ export default function NotesModal({ property, onClose }: NotesModalProps) {
   const [loading, setLoading] = useState(true)
   const [newNote, setNewNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const confirmAction = useConfirm()
 
   useEffect(() => {
     loadNotes()
@@ -49,7 +51,7 @@ export default function NotesModal({ property, onClose }: NotesModalProps) {
   }
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) return
+    if (!(await confirmAction('Are you sure you want to delete this note?'))) return
 
     try {
       await deleteNote(noteId)

@@ -141,6 +141,7 @@ export interface RenovationNeed {
   room_id: string | null
   title: string
   sort_order: number
+  completed: boolean
   created_at: string
   room?: RenovationRoom | null
 }

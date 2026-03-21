@@ -18,6 +18,7 @@ import { Lightbox } from '@/components/renovation/Lightbox'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
 import type { RenovationGalleryItem, RenovationGalleryTag, RenovationRoom } from '@/types/renovation'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 export function GalleryBody({ mobile }: { mobile: boolean }) {
   const { project } = useRenovation()
@@ -42,6 +43,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   /** Touch-friendly multi-select (no Cmd/Ctrl on phones). */
   const [mobileSelectMode, setMobileSelectMode] = useState(false)
+  const confirmAction = useConfirm()
 
   useEffect(() => {
     const savedSort = localStorage.getItem('casatrack_gallery_sort')
@@ -195,7 +197,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
   }
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selectedIds.size} photos permanently?`)) return
+    if (!(await confirmAction(`Delete ${selectedIds.size} photos permanently?`))) return
     setUploading(true)
     try {
       const itemsToDelete = items.filter(i => selectedIds.has(i.id))
@@ -543,7 +545,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               <Dropdown
                 value={filterTag}
                 onChange={(val) => setFilterTag(val)}
-                options={[{ value: '', label: 'All Tags' }, ...tags.map(t => ({ value: t.id, label: t.name }))]}
+                options={[{ value: '', label: 'All Labels' }, ...tags.map(t => ({ value: t.id, label: t.name }))]}
                 className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
               />
             </div>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import type { RenovationNeed } from '@/types/renovation'
+import { NeedDoneToggle } from './needs-shared'
 import { useNeedsPageState } from './useNeedsPageState'
 
 export function NeedsDesktop() {
@@ -19,6 +20,7 @@ export function NeedsDesktop() {
     saveTitle,
     saveRoom,
     remove,
+    toggleCompleted,
   } = useNeedsPageState()
 
   if (!project) {
@@ -38,7 +40,7 @@ export function NeedsDesktop() {
         <p className="text-[15px] text-slate-500 mt-1">What you need from the apartment — add items and optionally link them to a room.</p>
       </header>
 
-      <form onSubmit={addItem} className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
+      <form onSubmit={addItem} className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm space-y-3">
         <div className="flex flex-row gap-2 items-stretch">
           <input
             dir="auto"
@@ -79,21 +81,24 @@ export function NeedsDesktop() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">No items yet. Add one above.</div>
+        <div className="bg-white rounded-xl border border-dashed border-slate-200 p-10 text-center text-slate-500">No items yet. Add one above.</div>
       ) : (
-        <ul className="bg-white rounded-2xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+        <ul className="bg-white rounded-xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
           {items.map((need: RenovationNeed) => (
-            <li key={need.id} className="p-4 flex flex-row items-center gap-3">
+            <li key={need.id} className="flex flex-row items-center gap-1.5 py-2.5 pl-2 pr-3 sm:pl-3 sm:pr-4">
+              <NeedDoneToggle completed={need.completed} onToggle={() => toggleCompleted(need)} />
               <div className="flex-1 min-w-0">
                 <input
                   dir="auto"
                   defaultValue={need.title}
-                  key={`${need.id}-${need.title}`}
+                  key={`${need.id}-${need.title}-${need.completed}`}
                   onBlur={(e) => saveTitle(need, e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
                   }}
-                  className="w-full text-[16px] font-medium text-slate-900 border border-transparent hover:border-slate-200 focus:border-indigo-400 rounded-lg px-2 py-1.5 outline-none"
+                  className={`w-full bg-transparent text-[16px] font-medium border-0 rounded-md px-1.5 py-1.5 -mx-1.5 outline-none ring-0 transition-shadow focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0 ${
+                    need.completed ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+                  }`}
                 />
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -101,7 +106,7 @@ export function NeedsDesktop() {
                   <select
                     value={need.room_id || ''}
                     onChange={(e) => saveRoom(need, e.target.value)}
-                    className="h-10 px-2 rounded-lg border border-slate-200 text-[14px] bg-slate-50/50 max-w-[10rem]"
+                    className="h-9 px-2 rounded-lg border border-slate-200/70 text-[14px] bg-slate-50/40 max-w-[10rem] text-slate-700"
                     aria-label="Room"
                   >
                     <option value="">— Room</option>
@@ -112,7 +117,11 @@ export function NeedsDesktop() {
                     ))}
                   </select>
                 )}
-                <button type="button" onClick={() => remove(need.id)} className="h-10 px-3 text-[14px] font-semibold text-rose-600 hover:bg-rose-50 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => remove(need.id)}
+                  className="h-9 px-2.5 text-[13px] font-medium text-rose-600/90 hover:text-rose-700 hover:bg-rose-50/80 rounded-lg"
+                >
                   Remove
                 </button>
               </div>

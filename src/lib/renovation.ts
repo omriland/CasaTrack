@@ -572,6 +572,7 @@ export async function listNeeds(projectId: string): Promise<RenovationNeed[]> {
   const roomMap = new Map(rooms.map((r) => [r.id, r]))
   return rows.map((n) => ({
     ...n,
+    completed: n.completed ?? false,
     room: n.room_id ? roomMap.get(n.room_id) ?? null : null,
   }))
 }
@@ -593,7 +594,7 @@ export async function createNeed(projectId: string, title: string, roomId?: stri
 
 export async function updateNeed(
   id: string,
-  updates: Partial<Pick<RenovationNeed, 'title' | 'room_id' | 'sort_order'>>
+  updates: Partial<Pick<RenovationNeed, 'title' | 'room_id' | 'sort_order' | 'completed'>>
 ): Promise<void> {
   const { error } = await supabase.from('renovation_needs').update(updates).eq('id', id)
   if (error) throw error

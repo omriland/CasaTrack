@@ -9,11 +9,13 @@ import {
   uploadExpenseAttachment,
 } from '@/lib/renovation'
 import type { RenovationExpense, RenovationExpenseAttachment } from '@/types/renovation'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 export function useExpensesPageState() {
   const { project } = useRenovation()
   const [list, setList] = useState<RenovationExpense[]>([])
   const [allAttachments, setAllAttachments] = useState<RenovationExpenseAttachment[]>([])
+  const confirmAction = useConfirm()
   const [loading, setLoading] = useState(true)
   const [sheet, setSheet] = useState(false)
   const [editing, setEditing] = useState<RenovationExpense | null>(null)
@@ -68,7 +70,7 @@ export function useExpensesPageState() {
   }
 
   const remove = async (id: string) => {
-    if (!confirm('Delete this expense?')) return
+    if (!(await confirmAction('Delete this expense?'))) return
     await deleteExpense(id)
     await load()
   }

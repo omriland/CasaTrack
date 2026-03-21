@@ -9,6 +9,7 @@ import { PROPERTY_STATUS_OPTIONS, getStatusLabel, getStatusColor } from '@/const
 import { getPropertyNotes, createNote, updateNote, deleteNote, updatePropertyStatus, updateProperty, togglePropertyFlag } from '@/lib/properties'
 import { getPropertyAttachments, getAttachmentUrl, uploadAttachment } from '@/lib/attachments'
 import { formatPhoneForWhatsApp } from '@/lib/phone'
+import { useConfirm } from '@/providers/ConfirmProvider'
 import StarRating from './StarRating'
 
 interface PropertyDetailModalProps {
@@ -43,6 +44,7 @@ export default function PropertyDetailModal({
   const [newNote, setNewNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const confirmAction = useConfirm()
   const [showStatusDropdown, setShowStatusDropdown] = useState(false)
   const [editingDescription, setEditingDescription] = useState(false)
   const [tempDescription, setTempDescription] = useState(property.description || '')
@@ -419,7 +421,7 @@ export default function PropertyDetailModal({
   }
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) return
+    if (!(await confirmAction('Are you sure you want to delete this note?'))) return
 
     try {
       await deleteNote(noteId)

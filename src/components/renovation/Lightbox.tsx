@@ -9,6 +9,7 @@ import { useRenovation } from '@/components/renovation/RenovationContext'
 import type { RenovationGalleryItem, RenovationRoom, RenovationGalleryTag } from '@/types/renovation'
 import { ImageAnnotator, AnnotationShape } from '@/components/renovation/ImageAnnotator'
 import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 import YarlLightbox from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
@@ -28,6 +29,7 @@ interface LightboxProps {
 export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged }: LightboxProps) {
   const { project } = useRenovation()
   const isMobile = useRenovationMobileMedia()
+  const confirmAction = useConfirm()
   const [index, setIndex] = useState(initialIndex)
   const current = images[index]
 
@@ -83,7 +85,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
   }
 
   const handleDelete = async () => {
-    if (!confirm('Permanently delete this photo?')) return
+    if (!(await confirmAction('Permanently delete this photo?'))) return
     setSaving(true)
     try {
       await deleteGalleryItem(current)

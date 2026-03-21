@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { MobileStickyFooter } from '@/components/renovation/mobile/MobileStickyFooter'
 import type { RenovationNeed } from '@/types/renovation'
+import { NeedDoneToggle } from './needs-shared'
 import { useNeedsPageState } from './useNeedsPageState'
 
 export function NeedsMobile() {
@@ -20,6 +21,7 @@ export function NeedsMobile() {
     saveTitle,
     saveRoom,
     remove,
+    toggleCompleted,
   } = useNeedsPageState()
 
   if (!project) {
@@ -46,27 +48,32 @@ export function NeedsMobile() {
           ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 text-[15px]">Nothing here yet. Use the bar below to add.</div>
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 text-[15px]">Nothing here yet. Use the bar below to add.</div>
       ) : (
-        <ul className="rounded-2xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 overflow-hidden">
+        <ul className="rounded-xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 overflow-hidden">
           {items.map((need: RenovationNeed) => (
-            <li key={need.id} className="p-4 space-y-3">
-              <input
-                dir="auto"
-                defaultValue={need.title}
-                key={`${need.id}-${need.title}`}
-                onBlur={(e) => saveTitle(need, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                }}
-                className="w-full min-h-[48px] text-[16px] font-semibold text-slate-900 border border-slate-200 rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/25"
-              />
-              <div className="flex flex-wrap items-center gap-2">
+            <li key={need.id} className="p-3 space-y-2.5">
+              <div className="flex flex-row items-center gap-1 min-h-[48px]">
+                <NeedDoneToggle mobile completed={need.completed} onToggle={() => toggleCompleted(need)} />
+                <input
+                  dir="auto"
+                  defaultValue={need.title}
+                  key={`${need.id}-${need.title}-${need.completed}`}
+                  onBlur={(e) => saveTitle(need, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                  }}
+                  className={`flex-1 min-w-0 min-h-[44px] bg-transparent text-[16px] font-semibold border-0 rounded-lg px-2 py-2 outline-none ring-0 focus:ring-2 focus:ring-indigo-500/20 focus:ring-offset-0 ${
+                    need.completed ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900'
+                  }`}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 pl-[3px]">
                 {rooms.length > 0 && (
                   <select
                     value={need.room_id || ''}
                     onChange={(e) => saveRoom(need, e.target.value)}
-                    className="min-h-[44px] flex-1 min-w-[140px] px-3 rounded-xl border border-slate-200 text-[14px] bg-slate-50"
+                    className="min-h-[44px] flex-1 min-w-[140px] px-3 rounded-xl border border-slate-200/70 text-[14px] bg-slate-50/60 text-slate-700"
                     aria-label="Room"
                   >
                     <option value="">No room</option>
@@ -87,7 +94,7 @@ export function NeedsMobile() {
       )}
 
       <MobileStickyFooter>
-        <form onSubmit={addItem} className="rounded-2xl bg-white border border-slate-200 shadow-lg p-3 space-y-2">
+        <form onSubmit={addItem} className="rounded-xl bg-white border border-slate-200 shadow-lg p-3 space-y-2">
           <input
             dir="auto"
             value={newTitle}

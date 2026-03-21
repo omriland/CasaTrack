@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 import { deleteProjectFile } from '@/lib/renovation'
 import type { RenovationFile } from '@/types/renovation'
 import {
@@ -13,6 +14,7 @@ import {
   IconUpload,
 } from './files-shared'
 import { useRenovationFilesPageState } from './useRenovationFilesPageState'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 export function FilesDesktop() {
   const {
@@ -42,6 +44,47 @@ export function FilesDesktop() {
     setEditingFileId,
     rooms,
   } = useRenovationFilesPageState()
+  const confirmAction = useConfirm()
+
+  const handleFilesRef = useRef(handleFiles)
+  useEffect(() => {
+    handleFilesRef.current = handleFiles
+  }, [handleFiles])
+
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOver(true)
+    }
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!e.relatedTarget || (e.relatedTarget as HTMLElement).nodeName === 'HTML') {
+        setDragOver(false)
+      }
+    }
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setDragOver(false)
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        handleFilesRef.current(e.dataTransfer.files)
+      }
+    }
+
+    window.addEventListener('dragover', handleDragOver)
+    window.addEventListener('dragleave', handleDragLeave)
+    window.addEventListener('drop', handleDrop)
+
+    return () => {
+      window.removeEventListener('dragover', handleDragOver)
+      window.removeEventListener('dragleave', handleDragLeave)
+      window.removeEventListener('drop', handleDrop)
+    }
+  }, [setDragOver])
 
   if (!project) {
     return (
@@ -58,93 +101,83 @@ export function FilesDesktop() {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
+      {dragOver && (
+        <div className="fixed inset-0 z-[100] bg-indigo-50/95 backdrop-blur-sm border-[12px] border-indigo-400/50 flex flex-col items-center justify-center animate-in fade-in duration-200 pointer-events-none">
+          <div className="p-6 bg-indigo-600 text-white rounded-3xl mb-6 shadow-2xl shadow-indigo-500/30 animate-bounce">
+            <IconUpload />
+          </div>
+          <h2 className="text-[32px] font-bold text-indigo-900 tracking-tight">Drop files to upload</h2>
+          <p className="text-[18px] text-indigo-600/80 mt-2 font-medium">
+            Release anywhere to add them to your project
+          </p>
+        </div>
+      )}
+
+      {uploading && (
+        <div className="fixed inset-0 z-[100] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-200">
+          <div className="w-full max-w-sm h-2 bg-slate-100 rounded-full overflow-hidden mb-4 shadow-inner">
+            <div
+              className="h-full bg-indigo-600 rounded-full transition-[width] duration-300 ease-out relative overflow-hidden"
+              style={{
+                width: uploadProgress && uploadProgress.total > 0 ? `${(100 * uploadProgress.done) / uploadProgress.total}%` : '40%',
+              }}
+            >
+              <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" />
+            </div>
+          </div>
+          <p className="text-[16px] font-bold text-indigo-600 uppercase tracking-widest mb-2">Uploading files…</p>
+          {uploadProgress && uploadProgress.total > 1 && (
+            <p className="text-[14px] font-medium text-slate-500 tabular-nums bg-white px-4 py-1.5 rounded-full shadow-sm border border-slate-100">
+              {uploadProgress.done} of {uploadProgress.total} completed
+            </p>
+          )}
+        </div>
+      )}
+
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Project Files</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Keep all your receipts, contracts, and blueprints in one place.</p>
         </div>
 
-        {rooms.length > 0 && (
-          <div className="glass-subtle px-4 py-3 rounded-2xl flex items-center gap-3 border-white/50 shadow-sm animate-scale-in">
-            <span className="text-[13px] font-semibold text-slate-500">Auto-assign Room:</span>
-            <select
-              value={defaultRoom}
-              onChange={(e) => setDefaultRoom(e.target.value)}
-              className="h-8 px-2 rounded-lg border border-slate-200 bg-white/50 text-slate-700 text-[13px] focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all cursor-pointer"
-            >
-              <option value="">None</option>
-              {rooms.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </header>
-
-      <div
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDragOver(true)
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setDragOver(false)
-          handleFiles(e.dataTransfer.files)
-        }}
-        className={`relative group rounded-[2rem] border-2 border-dashed transition-all duration-300 overflow-hidden flex flex-col items-center justify-center py-10 px-6 ${
-          dragOver
-            ? 'border-indigo-400 bg-indigo-50/80 scale-[1.01] shadow-xl shadow-indigo-500/10'
-            : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-slate-50/50'
-        }`}
-      >
-        <div className={`p-4 rounded-2xl ${dragOver ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:text-indigo-500 group-hover:bg-indigo-50'} transition-all mb-2`}>
-          <IconUpload />
-        </div>
-        <p className="text-[16px] font-semibold text-slate-700">{dragOver ? 'Drop files to upload' : 'Drag and drop files here'}</p>
-        <p className="text-[13px] text-slate-400 mt-1">
-          Select or drop <span className="font-semibold text-slate-500">multiple files</span> at once — PDF, images, docs, and more.
-        </p>
-
-        <label className="cursor-pointer mt-4">
-          <span className="h-10 px-6 inline-flex items-center rounded-full bg-slate-900 text-white text-[14px] font-semibold hover:bg-slate-800 transition-colors shadow-sm active:scale-95">
-            Choose files
-          </span>
-          <input
-            type="file"
-            multiple
-            name="files"
-            className="hidden"
-            disabled={uploading}
-            onChange={(e) => {
-              handleFiles(e.target.files)
-              e.target.value = ''
-            }}
-          />
-        </label>
-
-        {uploading && (
-          <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in px-4 text-center">
-            <div className="w-full max-w-[220px] h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
-              <div
-                className="h-full bg-indigo-600 rounded-full transition-[width] duration-200 ease-out"
-                style={{
-                  width:
-                    uploadProgress && uploadProgress.total > 0 ? `${(100 * uploadProgress.done) / uploadProgress.total}%` : '40%',
-                }}
-              />
+        <div className="flex items-center gap-4">
+          {rooms.length > 0 && (
+            <div className="glass-subtle px-4 py-3 rounded-2xl flex items-center gap-3 border-white/50 shadow-sm animate-scale-in">
+              <span className="text-[13px] font-semibold text-slate-500">Auto-assign Room:</span>
+              <select
+                value={defaultRoom}
+                onChange={(e) => setDefaultRoom(e.target.value)}
+                className="h-8 px-2 rounded-lg border border-slate-200 bg-white/50 text-slate-700 text-[13px] focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all cursor-pointer"
+              >
+                <option value="">None</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <p className="text-[14px] font-bold text-indigo-600 uppercase tracking-widest">Uploading…</p>
-            {uploadProgress && uploadProgress.total > 1 && (
-              <p className="text-[13px] font-semibold text-slate-500 mt-2 tabular-nums">
-                {uploadProgress.done} / {uploadProgress.total} files
-              </p>
-            )}
-          </div>
-        )}
-      </div>
+          )}
+
+          <label className="cursor-pointer">
+            <span className="h-11 px-5 inline-flex items-center justify-center rounded-2xl bg-indigo-600 text-white text-[14px] font-semibold hover:bg-indigo-700 transition-colors shadow-sm active:scale-95 gap-2">
+              <IconUpload />
+              Add files
+            </span>
+            <input
+              type="file"
+              multiple
+              name="files"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                handleFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
+          </label>
+        </div>
+      </header>
 
       <div className="flex flex-row items-center justify-between gap-4 glass p-2 rounded-2xl border-white/60">
         <div className="flex flex-1 items-center gap-2 min-w-0">
@@ -192,7 +225,7 @@ export function FilesDesktop() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white/50 rounded-[2.5rem] border border-slate-100 p-16 text-center animate-fade-in">
+        <div className="bg-white/50 rounded-2xl border border-slate-100 p-16 text-center animate-fade-in">
           <div className="inline-flex items-center justify-center p-4 bg-slate-50 rounded-full text-slate-300 mb-4 scale-110">
             {getFileIcon(null)}
           </div>
@@ -204,7 +237,7 @@ export function FilesDesktop() {
           {filtered.map((f, idx) => (
             <div
               key={f.id}
-              className="group glass p-4 rounded-3xl border border-slate-200/50 transition-all hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/[0.04] animate-spring-in flex flex-col items-center text-center gap-3 relative"
+              className="group glass p-4 rounded-2xl border border-slate-200/50 transition-all hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-500/[0.04] animate-spring-in flex flex-col items-center text-center gap-3 relative"
               style={{ animationDelay: `${idx * 0.05}s` }}
             >
               <div className="p-5 bg-slate-50 rounded-2xl group-hover:bg-indigo-50 transition-colors w-full flex items-center justify-center aspect-square">
@@ -257,7 +290,7 @@ export function FilesDesktop() {
                       <IconExternal />
                     </a>
                   )}
-                  <button type="button" onClick={() => confirm('Delete this file?') && deleteProjectFile(f).then(load)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all" title="Delete file">
+                  <button type="button" onClick={async () => (await confirmAction('Delete this file?')) && deleteProjectFile(f).then(load)} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all" title="Delete file">
                     <IconTrash />
                   </button>
                 </div>
@@ -266,7 +299,7 @@ export function FilesDesktop() {
           ))}
         </div>
       ) : (
-        <div className="bg-white/50 rounded-[2.5rem] border border-slate-100 overflow-hidden animate-fade-in-up">
+        <div className="bg-white/50 rounded-2xl border border-slate-100 overflow-hidden animate-fade-in-up">
           <div className="divide-y divide-slate-50">
             {filtered.map((f: RenovationFile, idx) => (
               <div key={f.id} className="group p-4 flex items-center gap-4 hover:bg-slate-50/50 transition-all animate-spring-in" style={{ animationDelay: `${idx * 0.03}s` }}>
@@ -321,7 +354,7 @@ export function FilesDesktop() {
                         <IconExternal />
                       </a>
                     )}
-                    <button type="button" onClick={() => confirm('Delete this file?') && deleteProjectFile(f).then(load)} className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100" title="Delete file">
+                    <button type="button" onClick={async () => (await confirmAction('Delete this file?')) && deleteProjectFile(f).then(load)} className="h-9 w-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100" title="Delete file">
                       <IconTrash />
                     </button>
                   </div>

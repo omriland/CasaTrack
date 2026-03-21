@@ -9,6 +9,7 @@ CREATE TABLE public.renovation_needs (
   room_id UUID REFERENCES public.renovation_rooms (id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   sort_order INT NOT NULL DEFAULT 0,
+  completed BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

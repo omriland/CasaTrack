@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Stage, Layer, Image as KonvaImage, Line, Rect, Text } from 'react-konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 export interface AnnotationShape {
   id: string
@@ -33,6 +34,7 @@ export function ImageAnnotator({ imageUrl, initialAnnotations, onSave, onCancel 
   const [activeColor, setActiveColor] = useState('#ef4444') // red default
   const [isDrawing, setIsDrawing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const confirmAction = useConfirm()
   
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -146,8 +148,8 @@ export function ImageAnnotator({ imageUrl, initialAnnotations, onSave, onCancel 
     setShapes(shapes.slice(0, -1))
   }
 
-  const handleClear = () => {
-    if (confirm('Clear all annotations?')) {
+  const handleClear = async () => {
+    if (await confirmAction('Clear all annotations?')) {
       setShapes([])
     }
   }

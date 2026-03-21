@@ -13,6 +13,7 @@ import {
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 import type { RenovationExpense, RenovationExpenseAttachment } from '@/types/renovation'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 interface ExpenseModalProps {
   editing?: RenovationExpense | null
@@ -34,6 +35,7 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
   const [attachments, setAttachments] = useState<RenovationExpenseAttachment[]>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [uploadingAttach, setUploadingAttach] = useState(false)
+  const confirmAction = useConfirm()
 
   const loadAttachments = useCallback(async () => {
     if (!editing?.id) {
@@ -125,7 +127,7 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
   }
 
   const removeAttachment = async (att: RenovationExpenseAttachment) => {
-    if (!confirm('Remove this file from the expense?')) return
+    if (!(await confirmAction('Remove this file from the expense?'))) return
     try {
       await deleteExpenseAttachment(att)
       await loadAttachments()

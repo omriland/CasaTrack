@@ -6,6 +6,7 @@ import { uploadAttachment, deleteAttachment, getAttachmentUrl } from '@/lib/atta
 import imageCompression from 'browser-image-compression'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 interface AttachmentUploadProps {
   propertyId: string
@@ -19,6 +20,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [deleting, setDeleting] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const confirmAction = useConfirm()
 
   const compressImage = async (file: File): Promise<File> => {
     const options = {
@@ -202,7 +204,7 @@ export default function AttachmentUpload({ propertyId, attachments, onAttachment
   }
 
   const handleDelete = async (attachmentId: string) => {
-    if (!confirm('Are you sure you want to delete this attachment?')) return
+    if (!(await confirmAction('Are you sure you want to delete this attachment?'))) return
 
     setDeleting(attachmentId)
     try {

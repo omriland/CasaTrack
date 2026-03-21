@@ -3,6 +3,7 @@ import { Varela_Round, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { ConfirmProvider } from "@/providers/ConfirmProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -59,7 +60,9 @@ export default function RootLayout({
         )}
         <ErrorBoundary>
           <QueryProvider>
-            {children}
+            <ConfirmProvider>
+              {children}
+            </ConfirmProvider>
             <ToastContainer />
           </QueryProvider>
         </ErrorBoundary>

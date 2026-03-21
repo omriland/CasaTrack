@@ -24,10 +24,12 @@ import type {
   RenovationRoom,
   RenovationTeamMember,
 } from '@/types/renovation'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 export function useRenovationSettingsPageState() {
   const router = useRouter()
   const { project, refresh } = useRenovation()
+  const confirmAction = useConfirm()
   const [archived, setArchived] = useState<RenovationProject[]>([])
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
@@ -122,7 +124,7 @@ export function useRenovationSettingsPageState() {
 
   const archiveCurrent = async () => {
     if (!project) return
-    if (!confirm('Archive this project and start fresh later?')) return
+    if (!(await confirmAction('Archive this project and start fresh later?'))) return
     await archiveProject(project.id)
     await refresh()
     router.push('/renovation')

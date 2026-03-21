@@ -5,6 +5,7 @@ import { deleteProjectFile } from '@/lib/renovation'
 import type { RenovationFile } from '@/types/renovation'
 import { formatBytes, getFileIcon, IconExternal, IconTrash, IconUpload } from './files-shared'
 import { useRenovationFilesPageState } from './useRenovationFilesPageState'
+import { useConfirm } from '@/providers/ConfirmProvider'
 
 export function FilesMobile() {
   const {
@@ -32,6 +33,7 @@ export function FilesMobile() {
     setEditingFileId,
     rooms,
   } = useRenovationFilesPageState()
+  const confirmAction = useConfirm()
 
   if (!project) {
     return (
@@ -129,11 +131,11 @@ export function FilesMobile() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-slate-100 bg-white p-10 text-center text-slate-500 text-[15px]">No files match.</div>
+        <div className="rounded-xl border border-slate-100 bg-white p-10 text-center text-slate-500 text-[15px]">No files match.</div>
       ) : (
         <ul className="space-y-3">
           {filtered.map((f: RenovationFile) => (
-            <li key={f.id} className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
+            <li key={f.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
               <div className="flex gap-3 items-start">
                 <div className="p-2.5 bg-slate-50 rounded-xl shrink-0">{getFileIcon(f.mime_type)}</div>
                 <div className="flex-1 min-w-0">
@@ -182,7 +184,7 @@ export function FilesMobile() {
                     )}
                     <button
                       type="button"
-                      onClick={() => confirm('Delete this file?') && deleteProjectFile(f).then(load)}
+                      onClick={async () => (await confirmAction('Delete this file?')) && deleteProjectFile(f).then(load)}
                       className="flex-1 min-h-[44px] rounded-xl bg-rose-50 text-rose-600 font-bold text-[14px] flex items-center justify-center gap-2"
                     >
                       <IconTrash />
