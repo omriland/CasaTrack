@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { formatDateDisplay } from '@/lib/renovation-format'
@@ -130,11 +130,21 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
     }
   }
 
-  const slides = images.map(img => ({
-    src: img.public_url || '',
-    alt: img.caption || 'Gallery photo',
-    itemData: img
-  }))
+  // YARL Zoom needs width/height on each slide (or its ImageSlide onLoad). Custom render.slide
+  // skips ImageSlide, so without these, maxZoom stays 1 and wheel / trackpad pinch do nothing.
+  const slides = useMemo(
+    () =>
+      images.map((img) => {
+        const dims = imageSizes[img.id]
+        return {
+          src: img.public_url || '',
+          alt: img.caption || 'Gallery photo',
+          itemData: img,
+          ...(dims ? { width: dims.w, height: dims.h } : {}),
+        }
+      }),
+    [images, imageSizes]
+  )
 
   return (
     <>
@@ -146,37 +156,53 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
         on={{ view: ({ index: currentIndex }) => setIndex(currentIndex) }}
         plugins={isMobile ? [Zoom] : [Zoom, Thumbnails]}
         carousel={isMobile ? { padding: '12px', spacing: 0 } : undefined}
-        styles={
-          isMobile
-            ? {
-                root: {
-                  paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
-                  paddingTop: 'max(0.35rem, env(safe-area-inset-top, 0px))',
-                },
-                toolbar: {
-                  paddingLeft: 'max(0.5rem, env(safe-area-inset-left, 0px))',
-                  paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
-                },
-                slide: { paddingBottom: '0.25rem' },
-              }
-            : {}
-        }
+        zoom={{
+          scrollToZoom: true,
+          maxZoomPixelRatio: 5,
+          wheelZoomDistanceFactor: 100,
+          pinchZoomDistanceFactor: 100,
+          zoomInMultiplier: 2,
+          doubleClickMaxStops: 2,
+        }}
+        thumbnails={{
+          border: 0,
+          padding: 0,
+          gap: 12,
+          width: 56,
+          height: 56,
+          vignette: false,
+        }}
+        styles={{
+          root: {
+            backgroundColor: '#000',
+          },
+          // Solid paint + stacking context reduces iOS WebKit “noise strips” beside pinch-zoom layers
+          container: {
+            backgroundColor: '#000',
+            isolation: 'isolate',
+          },
+          slide: {
+            backgroundColor: '#000',
+          },
+        }}
         toolbar={{
           buttons: [
             <button
               key="toggle-markings"
               type="button"
-              className={`yarl__button ${!showMarkings ? 'opacity-50' : ''}`}
+              className={`yarl__button ${!showMarkings ? 'opacity-40' : ''}`}
               onClick={() => setShowMarkings(!showMarkings)}
               title={showMarkings ? "Hide Markings" : "Show Markings"}
             >
-              <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {showMarkings ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                )}
-              </svg>
+              {showMarkings ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46A11.804 11.804 0 001 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>
+                </svg>
+              )}
             </button>,
             <button
               key="annotate"
@@ -185,8 +211,8 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
               onClick={() => setShowAnnotator(true)}
               title="Draw / Annotate"
             >
-              <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
               </svg>
             </button>,
             <button
@@ -196,8 +222,8 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
               onClick={() => setShowDetails(true)}
               title="Edit Details"
             >
-              <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
               </svg>
             </button>,
             "zoom",
@@ -207,123 +233,133 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
         render={{
           buttonPrev: images.length <= 1 ? () => null : undefined,
           buttonNext: images.length <= 1 ? () => null : undefined,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          slideHeader: ({ slide }: { slide: any }) => {
-            const currentImg = slide.itemData as RenovationGalleryItem | undefined
-            if (!currentImg) return null
-            const room = rooms.find(r => r.id === currentImg.room_id)
-            const tagIds = Array.isArray(currentImg.tag_ids) ? currentImg.tag_ids : []
-            const itemTags = tagIds.map((tid) => tags.find((x) => x.id === tid)).filter(Boolean) as RenovationGalleryTag[]
-            
-            if (!room && itemTags.length === 0 && !currentImg.caption) return null
-
-            return (
-              <div
-                className={
-                  isMobile
-                    ? 'absolute top-[max(0.75rem,env(safe-area-inset-top,0px))] left-4 z-50 pointer-events-none flex flex-col items-start text-left max-w-sm'
-                    : 'absolute top-4 left-4 sm:top-6 sm:left-6 z-50 pointer-events-none flex flex-col items-start text-left max-w-sm'
-                }
-              >
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                  {room && (
-                    <span className="bg-indigo-500 text-white px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider shadow-lg border border-indigo-400 pointer-events-auto">
-                      {room.name}
-                    </span>
-                  )}
-                  {itemTags.map(t => (
-                    <span key={t!.id} className="bg-black/60 backdrop-blur-xl text-white px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider shadow-lg border border-white/10 pointer-events-auto">
-                      {t!.name}
-                    </span>
-                  ))}
-                </div>
-                {currentImg.caption && <p className="text-white text-[14px] font-medium bg-black/60 backdrop-blur-xl px-4 py-2 rounded-xl shadow-lg border border-white/10 pointer-events-auto">{currentImg.caption}</p>}
-              </div>
-            )
-          },
+          slideHeader: () => null,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           slide: ({ slide }: { slide: any }) => {
             const currentImg = slide.itemData as RenovationGalleryItem | undefined
             if (!currentImg || !currentImg.public_url) return null
 
-            // Use state-updated annotations if available, otherwise original DB notes
             const shapes: AnnotationShape[] = normalizeAnnotationShapes(
               localAnnotations[currentImg.id] ?? currentImg.annotations
             )
 
+            const room = rooms.find(r => r.id === currentImg.room_id)
+            const tagIds = Array.isArray(currentImg.tag_ids) ? currentImg.tag_ids : []
+            const itemTags = tagIds.map((tid) => tags.find((x) => x.id === tid)).filter(Boolean) as RenovationGalleryTag[]
+            const hasMetadata = !!(currentImg.caption || room || itemTags.length > 0 || currentImg.taken_at)
+
             return (
-              <div className="relative flex items-center justify-center w-full h-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src={currentImg.public_url} 
-                  className="max-w-full max-h-full object-contain select-none" 
-                  alt="" 
-                  onLoad={(e) => {
-                    const target = e.currentTarget as HTMLImageElement
-                    if (target.naturalWidth && target.naturalHeight) {
-                      setImageSizes(prev => ({
-                        ...prev,
-                        [currentImg.id]: { w: target.naturalWidth, h: target.naturalHeight }
-                      }))
-                    }
-                  }}
-                />
-                
-                {showMarkings && shapes.length > 0 && imageSizes[currentImg.id] && (
-                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
-                    <svg
-                      viewBox={`0 0 ${imageSizes[currentImg.id].w} ${imageSizes[currentImg.id].h}`}
-                      preserveAspectRatio="xMidYMid meet"
-                      className="absolute inset-0 w-full h-full pointer-events-none"
-                      style={{ zIndex: 100 }}
-                    >
-                      {shapes.map((shape) => {
-                        if (shape.type === 'line' && Array.isArray(shape.points) && shape.points.length > 0) {
-                          return (
-                            <polyline
-                              key={shape.id}
-                              points={shape.points.join(',')}
-                              stroke={shape.color}
-                              strokeWidth={6}
-                              fill="none"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          )
-                        }
-                        if (shape.type === 'rect') {
-                          return (
-                            <rect
-                              key={shape.id}
-                              x={shape.x}
-                              y={shape.y}
-                              width={shape.width}
-                              height={shape.height}
-                              stroke={shape.color}
-                              strokeWidth={4}
-                              fill="none"
-                            />
-                          )
-                        }
-                        if (shape.type === 'text') {
-                          return (
-                            <text
-                              key={shape.id}
-                              x={shape.x}
-                              y={(shape.y || 0) + 24} // Basic baseline alignment
-                              fill={shape.color}
-                              fontSize={36}
-                              fontWeight="bold"
-                              fontFamily="system-ui, -apple-system, sans-serif"
-                              style={{ textShadow: '1px 1px 2px black' }}
-                            >
-                              {shape.text}
-                            </text>
-                          )
-                        }
-                        return null
-                      })}
-                    </svg>
+              <div className="flex flex-col w-full h-full min-h-0 overflow-hidden bg-black">
+                {/* Image takes all available space — bg-black fills letterboxing (avoids iOS compositor gaps) */}
+                <div className="flex-1 relative flex items-center justify-center min-h-0 w-full bg-black px-3 sm:px-6 pt-2 pb-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img 
+                    src={currentImg.public_url} 
+                    className="reno-lb-img max-w-full max-h-full object-contain select-none rounded-lg" 
+                    alt="" 
+                    onLoad={(e) => {
+                      const target = e.currentTarget as HTMLImageElement
+                      if (target.naturalWidth && target.naturalHeight) {
+                        setImageSizes(prev => ({
+                          ...prev,
+                          [currentImg.id]: { w: target.naturalWidth, h: target.naturalHeight }
+                        }))
+                      }
+                    }}
+                  />
+                  
+                  {showMarkings && shapes.length > 0 && imageSizes[currentImg.id] && (
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
+                      <svg
+                        viewBox={`0 0 ${imageSizes[currentImg.id].w} ${imageSizes[currentImg.id].h}`}
+                        preserveAspectRatio="xMidYMid meet"
+                        className="absolute inset-0 w-full h-full pointer-events-none"
+                        style={{ zIndex: 100 }}
+                      >
+                        {shapes.map((shape) => {
+                          if (shape.type === 'line' && Array.isArray(shape.points) && shape.points.length > 0) {
+                            return (
+                              <polyline
+                                key={shape.id}
+                                points={shape.points.join(',')}
+                                stroke={shape.color}
+                                strokeWidth={6}
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            )
+                          }
+                          if (shape.type === 'rect') {
+                            return (
+                              <rect
+                                key={shape.id}
+                                x={shape.x}
+                                y={shape.y}
+                                width={shape.width}
+                                height={shape.height}
+                                stroke={shape.color}
+                                strokeWidth={4}
+                                fill="none"
+                              />
+                            )
+                          }
+                          if (shape.type === 'text') {
+                            return (
+                              <text
+                                key={shape.id}
+                                x={shape.x}
+                                y={(shape.y || 0) + 24}
+                                fill={shape.color}
+                                fontSize={36}
+                                fontWeight="bold"
+                                fontFamily="system-ui, -apple-system, sans-serif"
+                                style={{ textShadow: '1px 1px 2px black' }}
+                              >
+                                {shape.text}
+                              </text>
+                            )
+                          }
+                          return null
+                        })}
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Clean metadata strip - Apple Photos style */}
+                {hasMetadata && (
+                  <div className="shrink-0 w-full" dir="rtl">
+                    <div className="max-w-3xl mx-auto px-5 sm:px-8 py-3 sm:py-4 flex flex-col gap-1.5">
+                      {currentImg.caption && (
+                        <p className="text-white/90 text-[15px] sm:text-base font-medium leading-snug text-right">
+                          {currentImg.caption}
+                        </p>
+                      )}
+                      
+                      <div className="flex flex-wrap items-center gap-2">
+                        {room && (
+                          <span className="text-white/50 text-[12px] sm:text-[13px] font-medium">
+                            {room.name}
+                          </span>
+                        )}
+                        {room && itemTags.length > 0 && (
+                          <span className="text-white/20 text-[12px]">·</span>
+                        )}
+                        {itemTags.map((t, i) => (
+                          <span key={t.id} className="flex items-center gap-1">
+                            <span className="text-white/40 text-[12px] sm:text-[13px] font-medium">{t.name}</span>
+                            {i < itemTags.length - 1 && <span className="text-white/15 text-[12px] mr-1">,</span>}
+                          </span>
+                        ))}
+                        
+                        {currentImg.taken_at && (
+                          <span className="text-white/30 text-[12px] font-normal mr-auto">
+                            {formatDateDisplay(currentImg.taken_at)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -331,6 +367,103 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
           }
         }}
       />
+      <style>{`
+        /* styles.root is applied to .yarl__portal (not .yarl__root) */
+        .yarl__portal {
+          --yarl__color_backdrop: #000;
+          --yarl__container_background_color: #000;
+          background-color: #000 !important;
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+        }
+        /* iOS / Safari: pinch-zoom uses transform: scale(); unpainted edges can show GPU garbage — paint black + contain layers */
+        .yarl__container {
+          background-color: #000 !important;
+          -webkit-transform: translateZ(0);
+          transform: translateZ(0);
+        }
+        .yarl__carousel {
+          background-color: #000 !important;
+        }
+        .yarl__slide {
+          background-color: #000 !important;
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+        }
+        .yarl__slide_wrapper,
+        .yarl__slide_wrapper_interactive {
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+        }
+        .reno-lb-img {
+          -webkit-backface-visibility: hidden;
+          backface-visibility: hidden;
+        }
+        .yarl__toolbar {
+          background: transparent !important;
+          border-bottom: none !important;
+          padding: 12px 16px !important;
+          box-shadow: none !important;
+          gap: 2px !important;
+        }
+        .yarl__button {
+          background: transparent !important;
+          border: none !important;
+          border-radius: 50% !important;
+          width: 40px !important;
+          height: 40px !important;
+          margin: 0 1px !important;
+          color: rgba(255, 255, 255, 0.75) !important;
+          padding: 0 !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          transition: color 0.15s ease, background-color 0.15s ease !important;
+        }
+        .yarl__button:hover {
+          background: rgba(255, 255, 255, 0.1) !important;
+          color: white !important;
+          transform: none !important;
+        }
+        .yarl__button:active {
+          background: rgba(255, 255, 255, 0.15) !important;
+          transform: scale(0.92) !important;
+        }
+        .yarl__navigation_prev,
+        .yarl__navigation_next {
+          background: transparent !important;
+          border: none !important;
+          border-radius: 50% !important;
+          width: 44px !important;
+          height: 44px !important;
+          color: rgba(255, 255, 255, 0.6) !important;
+          padding: 0 !important;
+        }
+        .yarl__navigation_prev:hover,
+        .yarl__navigation_next:hover {
+          background: rgba(255, 255, 255, 0.08) !important;
+          color: white !important;
+        }
+        .yarl__thumbnails_container {
+          background: transparent !important;
+          border-top: none !important;
+          padding-top: 8px !important;
+          padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
+        }
+        .yarl__thumbnail {
+          border-radius: 6px !important;
+          border: 2px solid transparent !important;
+          opacity: 0.5 !important;
+          transition: opacity 0.2s ease, border-color 0.2s ease !important;
+        }
+        .yarl__thumbnail:hover {
+          opacity: 0.8 !important;
+        }
+        .yarl__thumbnail_active {
+          border-color: white !important;
+          opacity: 1 !important;
+        }
+      `}</style>
 
       {mounted && showAnnotator && current.public_url && createPortal(
         <ImageAnnotator

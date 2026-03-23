@@ -41,7 +41,7 @@ export function NeedsDesktop() {
       </header>
 
       <form onSubmit={addItem} className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm space-y-3">
-        <div className="flex flex-row gap-2 items-stretch">
+        <div className="flex flex-row gap-2 items-stretch" dir="rtl">
           <input
             dir="auto"
             value={newTitle}
@@ -53,7 +53,11 @@ export function NeedsDesktop() {
             <select
               value={newRoomId}
               onChange={(e) => setNewRoomId(e.target.value)}
-              className="h-11 px-3 rounded-xl border border-slate-200 bg-white text-[15px] min-w-[10rem]"
+              dir={newRoomId ? 'auto' : 'ltr'}
+              className={`h-11 pl-4 pr-10 appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25rem_1.25rem] rounded-full border border-slate-200 bg-white text-[15px] min-w-[10rem] hover:border-slate-300 hover:bg-slate-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 shadow-sm cursor-pointer ${
+                newRoomId ? 'font-medium text-slate-700' : 'font-normal text-slate-400 text-left'
+              }`}
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")` }}
               aria-label="Room"
             >
               <option value="">No room</option>
@@ -83,9 +87,9 @@ export function NeedsDesktop() {
       ) : items.length === 0 ? (
         <div className="bg-white rounded-xl border border-dashed border-slate-200 p-10 text-center text-slate-500">No items yet. Add one above.</div>
       ) : (
-        <ul className="bg-white rounded-xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
+        <ul dir="rtl" className="bg-white rounded-xl border border-slate-200/80 shadow-sm divide-y divide-slate-100 overflow-hidden">
           {items.map((need: RenovationNeed) => (
-            <li key={need.id} className="flex flex-row items-center gap-1.5 py-2.5 pl-2 pr-3 sm:pl-3 sm:pr-4">
+            <li key={need.id} className="group flex flex-row items-center gap-1.5 py-2.5 pl-2 pr-3 sm:pl-3 sm:pr-4">
               <NeedDoneToggle completed={need.completed} onToggle={() => toggleCompleted(need)} />
               <div className="flex-1 min-w-0">
                 <input
@@ -101,12 +105,16 @@ export function NeedsDesktop() {
                   }`}
                 />
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 shrink-0">
                 {rooms.length > 0 && (
                   <select
                     value={need.room_id || ''}
                     onChange={(e) => saveRoom(need, e.target.value)}
-                    className="h-9 px-2 rounded-lg border border-slate-200/70 text-[14px] bg-slate-50/40 max-w-[10rem] text-slate-700"
+                    dir={need.room_id ? 'auto' : 'ltr'}
+                    className={`h-8 pl-2.5 pr-8 appearance-none bg-no-repeat bg-[right_0.75rem_center] bg-[length:1.15rem_1.15rem] rounded-full border border-slate-200/80 text-[13px] bg-slate-50/70 hover:bg-slate-100 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none max-w-[10rem] cursor-pointer ${
+                      need.room_id ? 'font-medium text-slate-700' : 'font-normal text-slate-400 text-left'
+                    }`}
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")` }}
                     aria-label="Room"
                   >
                     <option value="">— Room</option>
@@ -120,7 +128,7 @@ export function NeedsDesktop() {
                 <button
                   type="button"
                   onClick={() => remove(need.id)}
-                  className="h-9 px-2.5 text-[13px] font-medium text-rose-600/90 hover:text-rose-700 hover:bg-rose-50/80 rounded-lg"
+                  className="max-w-0 px-0 opacity-0 overflow-hidden whitespace-nowrap group-hover:max-w-[6rem] group-hover:px-2.5 group-hover:opacity-100 focus:max-w-[6rem] focus:px-2.5 focus:opacity-100 transition-all duration-300 ease-in-out h-8 text-[13px] font-medium text-rose-600/90 hover:text-rose-700 hover:bg-rose-50/80 rounded-md"
                 >
                   Remove
                 </button>

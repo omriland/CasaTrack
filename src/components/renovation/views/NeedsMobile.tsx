@@ -50,7 +50,7 @@ export function NeedsMobile() {
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 text-[15px]">Nothing here yet. Use the bar below to add.</div>
       ) : (
-        <ul className="rounded-xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 overflow-hidden">
+        <ul dir="rtl" className="rounded-xl border border-slate-200/80 bg-white shadow-sm divide-y divide-slate-100 overflow-hidden">
           {items.map((need: RenovationNeed) => (
             <li key={need.id} className="p-3 space-y-2.5">
               <div className="flex flex-row items-center gap-1 min-h-[48px]">
@@ -68,12 +68,16 @@ export function NeedsMobile() {
                   }`}
                 />
               </div>
-              <div className="flex flex-wrap items-center gap-2 pl-[3px]">
+              <div className="flex flex-wrap items-center gap-2 pr-[3px]">
                 {rooms.length > 0 && (
                   <select
                     value={need.room_id || ''}
                     onChange={(e) => saveRoom(need, e.target.value)}
-                    className="min-h-[44px] flex-1 min-w-[140px] px-3 rounded-xl border border-slate-200/70 text-[14px] bg-slate-50/60 text-slate-700"
+                    dir={need.room_id ? 'auto' : 'ltr'}
+                    className={`min-h-[44px] flex-1 min-w-[140px] pl-4 pr-10 appearance-none bg-no-repeat bg-[right_1rem_center] bg-[length:1.25rem_1.25rem] rounded-full border border-slate-200/80 text-[14px] bg-slate-50/70 hover:bg-slate-100 transition-colors shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer ${
+                      need.room_id ? 'font-medium text-slate-700' : 'font-normal text-slate-400 text-left'
+                    }`}
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")` }}
                     aria-label="Room"
                   >
                     <option value="">No room</option>
@@ -84,7 +88,7 @@ export function NeedsMobile() {
                     ))}
                   </select>
                 )}
-                <button type="button" onClick={() => remove(need.id)} className="min-h-[44px] px-4 rounded-xl text-[14px] font-bold text-rose-600 bg-rose-50">
+                <button type="button" onClick={() => remove(need.id)} className="min-h-[44px] px-4 rounded-full text-[14px] font-bold text-rose-600 bg-rose-50/80 hover:bg-rose-100/80 transition-colors">
                   Remove
                 </button>
               </div>
@@ -94,7 +98,7 @@ export function NeedsMobile() {
       )}
 
       <MobileStickyFooter>
-        <form onSubmit={addItem} className="rounded-xl bg-white border border-slate-200 shadow-lg p-3 space-y-2">
+        <form onSubmit={addItem} className="rounded-xl bg-white border border-slate-200 shadow-lg p-3 space-y-2" dir="rtl">
           <input
             dir="auto"
             value={newTitle}
@@ -106,7 +110,11 @@ export function NeedsMobile() {
             <select
               value={newRoomId}
               onChange={(e) => setNewRoomId(e.target.value)}
-              className="w-full min-h-[48px] px-3 rounded-xl border border-slate-200 bg-slate-50 text-[15px]"
+              dir={newRoomId ? 'auto' : 'ltr'}
+              className={`w-full min-h-[48px] pl-4 pr-10 appearance-none bg-no-repeat bg-[right_1.25rem_center] bg-[length:1.25rem_1.25rem] rounded-full border border-slate-200 bg-white text-[15px] shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer ${
+                newRoomId ? 'font-medium text-slate-700' : 'font-normal text-slate-400 text-left'
+              }`}
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")` }}
               aria-label="Room"
             >
               <option value="">No room</option>
