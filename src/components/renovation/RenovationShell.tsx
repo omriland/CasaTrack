@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
 import { RenovationProfileGate } from './RenovationProfileGate'
 import { ExpenseModal } from './ExpenseModal'
+import { ExpenseModalMobile } from './ExpenseModalMobile'
 import { TaskModal } from './TaskModal'
+import { TaskModalMobile } from './TaskModalMobile'
 import { QuickUploadModal } from './QuickUploadModal'
 import { listTeamMembers, listRooms, listLabels, listProviders } from '@/lib/renovation'
 import type { RenovationTeamMember, RenovationRoom, RenovationLabel, RenovationProvider } from '@/types/renovation'
@@ -141,29 +143,51 @@ export function RenovationShell({ children }: { children: ReactNode }) {
         <RenovationProfileGate members={teamMembers} onSelect={selectProfile} />
       )}
 
-      {isExpenseModalOpen && (
-        <ExpenseModal
-          onClose={() => setExpenseModalOpen(false)}
-          onSave={() => {
-            setExpenseModalOpen(false)
-            refresh()
-          }}
-        />
-      )}
+      {isExpenseModalOpen &&
+        (isMobile ? (
+          <ExpenseModalMobile
+            onClose={() => setExpenseModalOpen(false)}
+            onSave={() => {
+              setExpenseModalOpen(false)
+              refresh()
+            }}
+          />
+        ) : (
+          <ExpenseModal
+            onClose={() => setExpenseModalOpen(false)}
+            onSave={() => {
+              setExpenseModalOpen(false)
+              refresh()
+            }}
+          />
+        ))}
 
-      {isTaskModalOpen && (
-        <TaskModal
-          members={members}
-          rooms={rooms}
-          labels={labels}
-          providers={providers}
-          onClose={() => setTaskModalOpen(false)}
-          onSave={() => {
-            setTaskModalOpen(false)
-            refresh()
-          }}
-        />
-      )}
+      {isTaskModalOpen &&
+        (isMobile ? (
+          <TaskModalMobile
+            members={members}
+            rooms={rooms}
+            labels={labels}
+            providers={providers}
+            onClose={() => setTaskModalOpen(false)}
+            onSave={() => {
+              setTaskModalOpen(false)
+              refresh()
+            }}
+          />
+        ) : (
+          <TaskModal
+            members={members}
+            rooms={rooms}
+            labels={labels}
+            providers={providers}
+            onClose={() => setTaskModalOpen(false)}
+            onSave={() => {
+              setTaskModalOpen(false)
+              refresh()
+            }}
+          />
+        ))}
 
       {isQuickUploadOpen && quickUploadFile && (
         <QuickUploadModal

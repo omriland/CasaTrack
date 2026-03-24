@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useId, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 type MobileBottomSheetProps = {
   open: boolean
@@ -39,7 +40,7 @@ export function MobileBottomSheet({ open, onClose, title, children }: MobileBott
 
   if (!open) return null
 
-  return (
+  const sheet = (
     <div className="fixed inset-0 z-[200] md:hidden" role="presentation">
       <button
         type="button"
@@ -53,8 +54,8 @@ export function MobileBottomSheet({ open, onClose, title, children }: MobileBott
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="absolute left-0 right-0 bottom-0 max-h-[min(85vh,calc(100dvh-env(safe-area-inset-top)))] flex flex-col rounded-t-[1.5rem] bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.12)] outline-none overflow-hidden overscroll-contain animate-fade-in-up"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed bottom-0 left-0 right-0 z-[201] flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px)))] flex-col overflow-hidden overscroll-contain rounded-t-[1.5rem] bg-white shadow-[0_-8px_40px_rgba(0,0,0,0.12)] outline-none animate-sheet-slide-up"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="shrink-0 flex flex-col items-center pt-2 pb-1">
           <span className="w-10 h-1 rounded-full bg-slate-200" aria-hidden />
@@ -75,4 +76,7 @@ export function MobileBottomSheet({ open, onClose, title, children }: MobileBott
       </div>
     </div>
   )
+
+  if (typeof document === 'undefined') return null
+  return createPortal(sheet, document.body)
 }

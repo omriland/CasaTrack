@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
+import { PRIORITY_ICONS } from '@/components/renovation/TaskModal'
+import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
@@ -310,7 +311,7 @@ export function TasksMobile() {
       </MobileBottomSheet>
 
       {sheet && (
-        <TaskModal
+        <TaskModalMobile
           editing={editing}
           members={members}
           labels={labels}

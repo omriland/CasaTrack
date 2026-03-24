@@ -32,13 +32,67 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
 
   if (isMobile) {
     return (
-      <input
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full min-h-[44px] pl-3 pr-3 rounded border border-slate-200 bg-slate-50 text-[16px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white"
-        aria-label={placeholder}
-      />
+      <>
+        <style suppressHydrationWarning>{`
+          .reno-native-date {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+          }
+          .reno-native-date input[type='date'] {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            max-inline-size: 100%;
+          }
+          .reno-native-date input[type='date']::-webkit-datetime-edit {
+            display: inline-flex;
+            width: 100%;
+            min-width: 0;
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+            flex-wrap: nowrap;
+          }
+          .reno-native-date input[type='date']::-webkit-datetime-edit-fields-wrapper {
+            display: flex;
+            min-width: 0;
+            max-width: 100%;
+            flex: 1 1 0%;
+            padding: 0;
+            overflow: hidden;
+          }
+          .reno-native-date input[type='date']::-webkit-datetime-edit-month-field,
+          .reno-native-date input[type='date']::-webkit-datetime-edit-day-field,
+          .reno-native-date input[type='date']::-webkit-datetime-edit-year-field {
+            min-width: 0;
+            padding-block: 0;
+            padding-inline: 1px;
+          }
+          .reno-native-date input[type='date']::-webkit-datetime-edit-text {
+            padding: 0 1px;
+          }
+          .reno-native-date input[type='date']::-webkit-calendar-picker-indicator {
+            margin-inline-start: auto;
+            margin-inline-end: 0;
+          }
+        `}</style>
+        <div className="reno-native-date w-full min-w-0 max-w-full overflow-x-clip">
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="box-border min-h-[44px] w-full min-w-0 max-w-full rounded border border-slate-200 bg-slate-50 py-2 pl-2 pr-2 text-[16px] font-semibold text-slate-800 shadow-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/20"
+            aria-label={placeholder}
+          />
+        </div>
+      </>
     )
   }
 

@@ -1,19 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
-import { useRenovation } from '@/components/renovation/RenovationContext'
-import {
-  createExpense,
-  updateExpense,
-  listExpenseAttachmentsForExpense,
-  uploadExpenseAttachment,
-  deleteExpenseAttachment,
-  renovationPublicUrl,
-} from '@/lib/renovation'
+import React from 'react'
+import { renovationPublicUrl } from '@/lib/renovation'
 import { DatePicker } from '@/components/renovation/DatePicker'
-import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
-import type { RenovationExpense, RenovationExpenseAttachment } from '@/types/renovation'
-import { useConfirm } from '@/providers/ConfirmProvider'
+import type { RenovationExpense } from '@/types/renovation'
+import { useExpenseForm } from '@/components/renovation/useExpenseForm'
 
 interface ExpenseModalProps {
   editing?: RenovationExpense | null
@@ -22,168 +13,37 @@ interface ExpenseModalProps {
   onAttachmentsChanged?: () => void
 }
 
+/** Desktop-only expense form (centered modal). Mobile uses `ExpenseModalMobile`. */
 export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }: ExpenseModalProps) {
-  const { project } = useRenovation()
-  const isMobile = useRenovationMobileMedia()
-  const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [vendor, setVendor] = useState('')
-  const [category, setCategory] = useState('')
-  const [notes, setNotes] = useState('')
-  const [payment, setPayment] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [attachments, setAttachments] = useState<RenovationExpenseAttachment[]>([])
-  const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [uploadingAttach, setUploadingAttach] = useState(false)
-  const confirmAction = useConfirm()
-
-  const loadAttachments = useCallback(async () => {
-    if (!editing?.id) {
-      setAttachments([])
-      return
-    }
-    try {
-      setAttachments(await listExpenseAttachmentsForExpense(editing.id))
-    } catch (e) {
-      console.error(e)
-    }
-  }, [editing?.id])
-
-  /** Same logical expense = same key (avoids null vs undefined re-running and clearing pending files). */
-  const editingKey = editing?.id ?? 'new'
-
-  useEffect(() => {
-    if (editing) {
-      setAmount(
-        String(editing.amount)
-          .split('.')
-          .map((part, i) => (i === 0 ? part.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : part))
-          .join('.')
-      )
-      setDate(editing.expense_date)
-      setVendor(editing.vendor || '')
-      setCategory(editing.category || '')
-      setNotes(editing.notes || '')
-      setPayment(editing.payment_method || '')
-    } else {
-      setAmount('')
-      setDate(new Date().toISOString().slice(0, 10))
-      setVendor('')
-      setCategory('')
-      setNotes('')
-      setPayment('')
-    }
-    setPendingFiles([])
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form when switching expense only (editingKey); avoid clearing pending on parent re-renders with new object ref
-  }, [editingKey])
-
-  useEffect(() => {
-    loadAttachments()
-  }, [loadAttachments])
-
-  const handleAmountChange = (val: string) => {
-    const raw = val.replace(/[^0-9.]/g, '')
-    const parts = raw.split('.')
-    if (parts.length > 2) return
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    if (parts[1]?.length > 2) {
-      parts[1] = parts[1].slice(0, 2)
-    }
-    setAmount(parts.join('.'))
-  }
-
-  const attachPendingToExpenseId = async (expenseId: string) => {
-    if (!project || pendingFiles.length === 0) return
-    for (const f of pendingFiles) {
-      await uploadExpenseAttachment(project.id, expenseId, f)
-    }
-    setPendingFiles([])
-  }
-
-  const onFilesSelectedForNew = (files: FileList | null) => {
-    if (!files?.length) return
-    setPendingFiles((prev) => [...prev, ...Array.from(files)])
-  }
-
-  const onFilesSelectedForEdit = async (files: FileList | null) => {
-    if (!project || !editing?.id || !files?.length) return
-    setUploadingAttach(true)
-    try {
-      for (let i = 0; i < files.length; i++) {
-        await uploadExpenseAttachment(project.id, editing.id, files[i]!)
-      }
-      await loadAttachments()
-      onAttachmentsChanged?.()
-    } catch (e) {
-      console.error(e)
-      alert('Could not upload file(s). Run 05_expense_attachments.sql and ensure renovation-files bucket exists.')
-    } finally {
-      setUploadingAttach(false)
-    }
-  }
-
-  const removePendingAt = (index: number) => {
-    setPendingFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const removeAttachment = async (att: RenovationExpenseAttachment) => {
-    if (!(await confirmAction('Remove this file from the expense?'))) return
-    try {
-      await deleteExpenseAttachment(att)
-      await loadAttachments()
-      onAttachmentsChanged?.()
-    } catch (e) {
-      console.error(e)
-      alert('Could not remove file')
-    }
-  }
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!project) return
-    const n = Number(amount.replace(/,/g, ''))
-    if (Number.isNaN(n)) return
-    setSaving(true)
-    try {
-      if (editing) {
-        await updateExpense(editing.id, {
-          amount: n,
-          expense_date: date,
-          vendor: vendor || null,
-          category: category || null,
-          notes: notes || null,
-          payment_method: payment || null,
-        })
-        await attachPendingToExpenseId(editing.id)
-        await loadAttachments()
-      } else {
-        const created = await createExpense(project.id, {
-          amount: n,
-          expense_date: date,
-          vendor: vendor || null,
-          category: category || null,
-          notes: notes || null,
-          payment_method: payment || null,
-        })
-        await attachPendingToExpenseId(created.id)
-      }
-      onAttachmentsChanged?.()
-      onSave()
-    } catch (err) {
-      console.error(err)
-      alert('Save failed')
-    } finally {
-      setSaving(false)
-    }
-  }
+  const {
+    amount,
+    handleAmountChange,
+    date,
+    setDate,
+    vendor,
+    setVendor,
+    category,
+    setCategory,
+    notes,
+    setNotes,
+    payment,
+    setPayment,
+    saving,
+    uploadingAttach,
+    attachments,
+    pendingFiles,
+    editing: editingRow,
+    onFilesSelectedForNew,
+    onFilesSelectedForEdit,
+    handleDroppedFiles,
+    removePendingAt,
+    removeAttachment,
+    save,
+  } = useExpenseForm({ editing, onSave, onAttachmentsChanged })
 
   return (
     <div
-      className={
-        isMobile
-          ? 'fixed inset-0 z-[280] flex items-end justify-center p-0 bg-slate-900/40 backdrop-blur-sm transition-opacity'
-          : 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity'
-      }
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity"
       onClick={onClose}
     >
       <div
@@ -192,52 +52,35 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
         onDrop={(ev) => {
           ev.preventDefault()
           ev.stopPropagation()
-          if (editing?.id) onFilesSelectedForEdit(ev.dataTransfer.files)
-          else onFilesSelectedForNew(ev.dataTransfer.files)
+          handleDroppedFiles(ev.dataTransfer.files)
         }}
-        className={
-          isMobile
-            ? 'w-full max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)))] bg-white rounded-t-[2rem] shadow-2xl overflow-hidden flex flex-col pt-2 animate-fade-in-up'
-            : 'w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-0 animate-zoom-in'
-        }
+        className="w-full max-w-[480px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col pt-0 animate-zoom-in"
       >
-        <div
-          className={`px-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative ${isMobile ? 'py-4' : 'py-5'}`}
-        >
-          {isMobile ? (
-            <div className="w-12 h-1.5 bg-slate-200 rounded-full absolute top-2 left-1/2 -translate-x-1/2" />
-          ) : null}
-          <h2
-            className={`font-bold text-slate-800 tracking-tight ${isMobile ? 'text-[18px] mt-2' : 'text-[20px] mt-0'}`}
-          >
-            {editing ? 'Edit Expense' : 'New Expense'}
+        <div className="px-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center relative py-3">
+          <h2 className="font-bold text-slate-800 tracking-tight text-[18px] mt-0">
+            {editingRow ? 'Edit Expense' : 'New Expense'}
           </h2>
           <button
             onClick={onClose}
-            className={`p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center ${isMobile ? 'mt-2' : 'mt-0'}`}
+            className="p-2 -mr-2 text-slate-400 hover:text-slate-600 transition-colors rounded-full hover:bg-slate-200 active:scale-90 min-w-[44px] min-h-[44px] flex items-center justify-center mt-0"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <form
-          onSubmit={save}
-          className={`p-6 space-y-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${isMobile ? 'flex-1 min-h-0 overflow-y-auto' : 'overflow-y-auto max-h-[85vh]'}`}
-        >
-          <div className={`flex flex-col items-center justify-center ${isMobile ? 'py-2' : 'py-4'}`}>
-            <label className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total Amount</label>
+        <form onSubmit={save} className="p-6 space-y-6 overflow-y-auto max-h-[85vh]">
+          <div className="flex flex-col items-center justify-center py-2">
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total Amount</label>
             <div className="relative group inline-block">
-              <span
-                className={`absolute -left-6 top-1/2 -translate-y-1/2 font-light text-slate-300 ${isMobile ? 'text-[32px]' : 'text-[40px]'}`}
-              >
-                ₪
-              </span>
+              <span className="absolute -left-5 top-1/2 -translate-y-1/2 font-light text-slate-300 text-[32px]">₪</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={amount}
                 onChange={(e) => handleAmountChange(e.target.value)}
-                className={`bg-transparent text-center font-bold text-slate-800 outline-none px-4 py-2 placeholder-slate-200 transition-all ${isMobile ? 'w-[200px] text-[48px]' : 'w-[240px] text-[54px]'}`}
+                className="bg-transparent text-center font-bold text-slate-800 outline-none px-3 py-1 placeholder-slate-200 transition-all leading-none w-[220px] text-[44px]"
                 placeholder="0.00"
                 required
                 autoFocus
@@ -249,11 +92,23 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Vendor</label>
-              <input dir="auto" value={vendor} onChange={(e) => setVendor(e.target.value)} placeholder="Store name..." className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+              <input
+                dir="auto"
+                value={vendor}
+                onChange={(e) => setVendor(e.target.value)}
+                placeholder="Store name..."
+                className="w-full h-11 px-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm focus:bg-white transition-all"
+              />
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Category</label>
-              <input dir="auto" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Materials..." className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+              <input
+                dir="auto"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Materials..."
+                className="w-full h-11 px-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm focus:bg-white transition-all"
+              />
             </div>
           </div>
 
@@ -264,26 +119,38 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Payment</label>
-              <input dir="auto" value={payment} onChange={(e) => setPayment(e.target.value)} placeholder="Credit, Cash..." className="w-full h-11 px-3 rounded-xl border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" />
+              <input
+                dir="auto"
+                value={payment}
+                onChange={(e) => setPayment(e.target.value)}
+                placeholder="Credit, Cash..."
+                className="w-full h-11 px-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm focus:bg-white transition-all"
+              />
             </div>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-1">Notes</label>
-            <textarea dir="auto" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add any extra details..." rows={2} className="w-full px-3 py-3 rounded-xl border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none" />
+            <textarea
+              dir="auto"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add any extra details..."
+              rows={2}
+              className="w-full px-3 py-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm focus:bg-white transition-all resize-none"
+            />
           </div>
 
-          {/* Attachments */}
-          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 p-4 space-y-3">
+          <div className="rounded border border-dashed border-slate-200 bg-slate-50/80 p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Files & receipts</label>
               <span className="text-[11px] text-slate-400">Drop files here or choose</span>
             </div>
 
-            {editing?.receipt_storage_path && (
+            {editingRow?.receipt_storage_path && (
               <div className="flex items-center gap-2 text-[13px]">
                 <a
-                  href={renovationPublicUrl(editing.receipt_storage_path)}
+                  href={renovationPublicUrl(editingRow.receipt_storage_path)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-indigo-600 font-semibold hover:underline"
@@ -293,11 +160,17 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
               </div>
             )}
 
-            {editing?.id && attachments.length > 0 && (
+            {editingRow?.id && attachments.length > 0 && (
               <ul className="space-y-1.5 max-h-32 overflow-y-auto">
                 {attachments.map((att) => (
-                  <li key={att.id} className="flex items-center gap-2 text-[13px] bg-white rounded-lg px-2 py-1.5 border border-slate-100">
-                    <a href={att.public_url} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-indigo-600 font-medium hover:underline" dir="auto">
+                  <li key={att.id} className="flex items-center gap-2 text-[13px] bg-white rounded px-2 py-1.5 border border-slate-100">
+                    <a
+                      href={att.public_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 truncate text-indigo-600 font-medium hover:underline"
+                      dir="auto"
+                    >
                       {att.file_name}
                     </a>
                     <button type="button" onClick={() => removeAttachment(att)} className="text-rose-500 text-[12px] font-bold shrink-0">
@@ -312,8 +185,10 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
               <ul className="space-y-1.5">
                 <p className="text-[11px] text-slate-500 font-semibold">Will upload on save</p>
                 {pendingFiles.map((f, i) => (
-                  <li key={`${f.name}-${i}`} className="flex items-center justify-between text-[13px] bg-white rounded-lg px-2 py-1 border border-slate-100">
-                    <span className="truncate" dir="auto">{f.name}</span>
+                  <li key={`${f.name}-${i}`} className="flex items-center justify-between text-[13px] bg-white rounded px-2 py-1 border border-slate-100">
+                    <span className="truncate" dir="auto">
+                      {f.name}
+                    </span>
                     <button type="button" onClick={() => removePendingAt(i)} className="text-slate-400 hover:text-rose-500 text-[12px]">
                       Remove
                     </button>
@@ -322,8 +197,7 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
               </ul>
             )}
 
-            {/* opacity-0 + absolute — not display:none — so iOS Safari and others actually open the picker */}
-            <label className="relative flex items-center justify-center w-full min-h-10 py-2 rounded-lg bg-white border border-slate-200 text-[14px] font-semibold text-indigo-600 cursor-pointer hover:bg-slate-50 overflow-hidden">
+            <label className="relative flex items-center justify-center w-full min-h-10 py-2 rounded bg-white border border-slate-200 text-[14px] font-semibold text-indigo-600 cursor-pointer hover:bg-slate-50 overflow-hidden shadow-sm">
               <span className="pointer-events-none select-none">{uploadingAttach ? 'Uploading…' : '+ Add files'}</span>
               <input
                 type="file"
@@ -332,7 +206,7 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
                 disabled={!!uploadingAttach || saving}
                 onChange={(ev) => {
                   const list = ev.target.files
-                  if (editing?.id) void onFilesSelectedForEdit(list)
+                  if (editingRow?.id) void onFilesSelectedForEdit(list)
                   else onFilesSelectedForNew(list)
                   ev.target.value = ''
                 }}
@@ -341,10 +215,18 @@ export function ExpenseModal({ editing, onClose, onSave, onAttachmentsChanged }:
           </div>
 
           <div className="pt-4 flex gap-3">
-            <button type="button" onClick={onClose} className="flex-1 h-12 rounded bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 active:scale-[0.98] transition-all">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 h-12 rounded bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 active:scale-[0.98] transition-all"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={saving || uploadingAttach} className="flex-1 h-12 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-md disabled:opacity-50 flex items-center justify-center gap-2">
+            <button
+              type="submit"
+              disabled={saving || uploadingAttach}
+              className="flex-1 h-12 rounded bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
+            >
               {saving ? <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Save Expense'}
             </button>
           </div>

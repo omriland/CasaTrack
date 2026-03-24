@@ -1,14 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useRenovation } from '@/components/renovation/RenovationContext'
 import { formatIls, formatTaskDue } from '@/lib/renovation-format'
 import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
-import { MobileStickyFooter } from '@/components/renovation/mobile/MobileStickyFooter'
 import { useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardMobile() {
-  const { setExpenseModalOpen } = useRenovation()
   const {
     project,
     loading,
@@ -114,8 +111,8 @@ export function RenovationDashboardMobile() {
   return (
     <div className="space-y-4 pb-2">
       {/* Shell already shows project name — keep one compact greeting row */}
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-slate-200/80 bg-white/90 px-3 py-2.5 shadow-sm">
-        <div className="min-w-0 flex-1">
+      <div className="rounded-xl border border-slate-200/80 bg-white/90 px-3 py-2 shadow-sm">
+        <div className="min-w-0">
           {greetName ? (
             <p className="text-[14px] font-semibold text-slate-800" dir="auto">
               <span className="text-slate-500">{greet.label}, </span>
@@ -125,52 +122,48 @@ export function RenovationDashboardMobile() {
             <p className="text-[14px] font-semibold text-slate-600">{greet.label}</p>
           )}
         </div>
-        <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-700">
-          <span className="h-1 w-1 rounded-full bg-emerald-500" />
-          Live
-        </span>
       </div>
 
       {dashLoading ? (
         <div className="space-y-3 animate-pulse">
-          <div className="h-40 bg-slate-200/60 rounded-2xl" />
+          <div className="h-28 bg-slate-200/60 rounded-2xl" />
           <div className="h-32 bg-slate-200/60 rounded-2xl" />
         </div>
       ) : (
         <>
           <section className="sticky top-0 z-20 -mx-1">
-            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-xl border border-slate-800/50">
-              <div className="p-4">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Remaining</span>
+            <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg border border-slate-800/50">
+              <div className="p-3">
+                <div className="flex justify-between items-center gap-2 mb-0.5">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Remaining</span>
                   <Link
                     href="/renovation/budget"
-                    className="min-w-[44px] min-h-[44px] -mr-2 flex items-center justify-center rounded-xl bg-white/10 active:bg-white/20"
+                    className="min-w-[40px] min-h-[40px] -mr-1 flex shrink-0 items-center justify-center rounded-lg bg-white/10 active:bg-white/20"
                     aria-label="Budget details"
                   >
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
                   </Link>
                 </div>
-                <p className={`text-[34px] font-bold tabular-nums leading-tight ${over ? 'text-rose-400' : 'text-white'}`}>
+                <p className={`text-[26px] font-bold tabular-nums leading-none ${over ? 'text-rose-400' : 'text-white'}`}>
                   {formatIls(cap - spent)}
                 </p>
                 {over && (
-                  <p className="text-[12px] font-bold text-rose-300 mt-1">Over by {formatIls(spent - cap)}</p>
+                  <p className="text-[11px] font-bold text-rose-300 mt-0.5">Over by {formatIls(spent - cap)}</p>
                 )}
-                <div className="mt-4 h-2 bg-slate-900/60 rounded-full overflow-hidden">
+                <div className="mt-2 h-1.5 bg-slate-900/60 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full ${over ? 'bg-rose-500' : pct >= 85 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[12px] font-semibold text-slate-400 mt-2 tabular-nums">
+                <div className="flex justify-between text-[11px] font-semibold text-slate-400 mt-1.5 tabular-nums">
                   <span>{formatIls(spent)} spent</span>
                   <span>{formatIls(cap)} cap</span>
                 </div>
               </div>
-              <div className="px-4 py-3 bg-white/5 border-t border-white/10 flex justify-between items-center text-[13px]">
+              <div className="px-3 py-2 bg-white/5 border-t border-white/10 flex justify-between items-center text-[12px]">
                 <span className="text-slate-400 font-medium">This month</span>
                 <span className="font-bold tabular-nums">{formatIls(monthSpend)}</span>
               </div>
@@ -267,19 +260,6 @@ export function RenovationDashboardMobile() {
           </section>
         </>
       )}
-
-      <MobileStickyFooter>
-        <button
-          type="button"
-          onClick={() => setExpenseModalOpen(true)}
-          className="w-full min-h-[52px] rounded-2xl bg-indigo-600 text-white text-[16px] font-bold shadow-lg shadow-indigo-600/30 active:scale-[0.99] transition-transform flex items-center justify-center gap-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-          </svg>
-          Add expense
-        </button>
-      </MobileStickyFooter>
     </div>
   )
 }

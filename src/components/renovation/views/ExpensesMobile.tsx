@@ -1,6 +1,6 @@
 'use client'
 
-import { ExpenseModal } from '@/components/renovation/ExpenseModal'
+import { ExpenseModalMobile } from '@/components/renovation/ExpenseModalMobile'
 import { MobileStickyFooter } from '@/components/renovation/mobile/MobileStickyFooter'
 import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
 import type { RenovationExpense } from '@/types/renovation'
@@ -141,7 +141,7 @@ export function ExpensesMobile() {
       </MobileStickyFooter>
 
       {sheet && (
-        <ExpenseModal
+        <ExpenseModalMobile
           editing={editing}
           onClose={() => setSheet(false)}
           onSave={() => {

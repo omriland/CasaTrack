@@ -1,21 +1,32 @@
 'use client'
 
-import { useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 
 export { useRenovationMobile } from './RenovationViewportContext'
 
 const MOBILE_MQ = '(max-width: 767px)'
 
-/** Matches Tailwind `md` breakpoint (viewport &lt; 768px). Safe for modals and client-only UI. */
+/**
+ * Matches Tailwind `md` breakpoint (viewport &lt; 768px).
+ * Returns false until after mount so SSR + first client paint match (avoids hydration mismatches
+ * in components that branch UI on this value, e.g. `DatePicker`).
+ */
 export function useRenovationMobileMedia(): boolean {
-  return useSyncExternalStore(
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const mqMatches = useSyncExternalStore(
     (onStoreChange) => {
       if (typeof window === 'undefined') return () => {}
       const mq = window.matchMedia(MOBILE_MQ)
       mq.addEventListener('change', onStoreChange)
       return () => mq.removeEventListener('change', onStoreChange)
     },
-    () => (typeof window !== 'undefined' ? window.matchMedia(MOBILE_MQ).matches : false),
+    () => window.matchMedia(MOBILE_MQ).matches,
     () => false
   )
+
+  return mounted && mqMatches
 }

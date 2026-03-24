@@ -505,59 +505,90 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
         </div>
       </header>
 
-      <div className={`flex bg-slate-200/50 p-1.5 rounded-xl w-fit mb-2 ${mobile ? 'mt-2' : 'mt-4'}`}>
-        <button
-          onClick={() => handleViewModeChange('gallery')}
-          className={`rounded-lg font-bold transition-all ${mobile ? 'px-4 py-2 text-[13px]' : 'px-5 py-2 text-[14px]'} ${
-            viewMode === 'gallery'
-              ? 'bg-white text-indigo-600 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Albums
-        </button>
-        <button
-          onClick={() => handleViewModeChange('all')}
-          className={`rounded-lg font-bold transition-all ${mobile ? 'px-4 py-2 text-[13px]' : 'px-5 py-2 text-[14px]'} ${
-            viewMode === 'all'
-              ? 'bg-white text-indigo-600 shadow-sm'
-              : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          All Photos
-        </button>
-      </div>
-
-      {(rooms.length > 0 || tags.length > 0 || items.length > 0) && (
-        mobile ? (
-          <div className="flex items-center justify-between gap-2">
-            <MobileFilterButton
-              activeCount={
-                (filterRoom ? 1 : 0) + (filterTag ? 1 : 0) + (sortBy !== 'date-desc' ? 1 : 0)
-              }
-              onClick={() => setFilterSheetOpen(true)}
-            />
+      {mobile ? (
+        <div className="mt-2 flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+          <div className="flex shrink-0 rounded-xl bg-slate-200/50 p-1">
             <button
               type="button"
-              onClick={() => {
-                if (mobileSelectMode) {
-                  setMobileSelectMode(false)
-                  setSelectedIds(new Set())
-                  setLastSelectedId(null)
-                } else {
-                  setMobileSelectMode(true)
-                }
-              }}
-              className={`min-h-[44px] shrink-0 rounded-2xl px-4 text-[13px] font-bold transition-colors ${
-                mobileSelectMode
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'border border-slate-200 bg-white text-slate-700 shadow-sm'
+              onClick={() => handleViewModeChange('gallery')}
+              className={`rounded-lg px-3 py-2 text-[12px] font-bold transition-all ${
+                viewMode === 'gallery'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
             >
-              {mobileSelectMode ? 'Cancel' : 'Select'}
+              Albums
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('all')}
+              className={`rounded-lg px-3 py-2 text-[12px] font-bold transition-all ${
+                viewMode === 'all'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              All Photos
             </button>
           </div>
-        ) : (
+          {(rooms.length > 0 || tags.length > 0 || items.length > 0) && (
+            <>
+              <MobileFilterButton
+                activeCount={
+                  (filterRoom ? 1 : 0) + (filterTag ? 1 : 0) + (sortBy !== 'date-desc' ? 1 : 0)
+                }
+                onClick={() => setFilterSheetOpen(true)}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (mobileSelectMode) {
+                    setMobileSelectMode(false)
+                    setSelectedIds(new Set())
+                    setLastSelectedId(null)
+                  } else {
+                    setMobileSelectMode(true)
+                  }
+                }}
+                className={`min-h-[44px] shrink-0 rounded-2xl px-4 text-[13px] font-bold transition-colors ${
+                  mobileSelectMode
+                    ? 'bg-slate-900 text-white shadow-md'
+                    : 'border border-slate-200 bg-white text-slate-700 shadow-sm'
+                }`}
+              >
+                {mobileSelectMode ? 'Cancel' : 'Select'}
+              </button>
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="mt-4 flex w-fit rounded-xl bg-slate-200/50 p-1.5">
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('gallery')}
+              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${
+                viewMode === 'gallery'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Albums
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('all')}
+              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${
+                viewMode === 'all'
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              All Photos
+            </button>
+          </div>
+
+          {(rooms.length > 0 || tags.length > 0 || items.length > 0) && (
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative z-[90] flex-1">
               <Dropdown
@@ -589,7 +620,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               />
             </div>
           </div>
-        )
+          )}
+        </>
       )}
 
       {mobile && (
@@ -598,50 +630,96 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
           onClose={() => setFilterSheetOpen(false)}
           title="Filters & sort"
         >
-          <div className="space-y-4 px-2 pb-2">
-            <label className="block">
-              <span className="text-[13px] font-bold text-slate-500">Room</span>
-              <select
-                value={filterRoom}
-                onChange={(e) => setFilterRoom(e.target.value)}
-                className="mt-1.5 w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3 text-[15px] font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/30"
-              >
-                <option value="">All rooms</option>
+          <div className="space-y-6 px-2 pb-4">
+            <div>
+              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Room</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilterRoom('')}
+                  className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
+                    !filterRoom ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                  }`}
+                >
+                  All rooms
+                </button>
                 {rooms.map((r) => (
-                  <option key={r.id} value={r.id}>
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setFilterRoom(r.id)}
+                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
+                      filterRoom === r.id ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
+                    dir="auto"
+                  >
                     {r.name}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-[13px] font-bold text-slate-500">Label</span>
-              <select
-                value={filterTag}
-                onChange={(e) => setFilterTag(e.target.value)}
-                className="mt-1.5 w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3 text-[15px] font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/30"
-              >
-                <option value="">All labels</option>
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Label</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFilterTag('')}
+                  className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
+                    !filterTag ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                  }`}
+                >
+                  All labels
+                </button>
                 {tags.map((t) => (
-                  <option key={t.id} value={t.id}>
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setFilterTag(t.id)}
+                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
+                      filterTag === t.id ? 'border-transparent text-white' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
+                    style={filterTag === t.id ? { backgroundColor: t.color } : undefined}
+                  >
                     {t.name}
-                  </option>
+                  </button>
                 ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-[13px] font-bold text-slate-500">Sort</span>
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="mt-1.5 w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3 text-[15px] font-medium text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500/30"
-              >
-                <option value="date-desc">Newest first</option>
-                <option value="date-asc">Oldest first</option>
-                <option value="room">By room</option>
-                <option value="label">By label</option>
-              </select>
-            </label>
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Sort</p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { value: 'date-desc' as const, label: 'Newest first' },
+                    { value: 'date-asc' as const, label: 'Oldest first' },
+                    { value: 'room' as const, label: 'By room' },
+                    { value: 'label' as const, label: 'By label' },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleSortChange(opt.value)}
+                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
+                      sortBy === opt.value ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterRoom('')
+                setFilterTag('')
+                handleSortChange('date-desc')
+              }}
+              className="w-full min-h-[48px] rounded-xl border border-slate-200 text-[15px] font-bold text-slate-600"
+            >
+              Clear filters
+            </button>
           </div>
         </MobileBottomSheet>
       )}
