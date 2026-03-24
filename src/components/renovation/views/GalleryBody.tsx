@@ -676,9 +676,10 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     type="button"
                     onClick={() => setFilterTag(t.id)}
                     className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
-                      filterTag === t.id ? 'border-transparent text-white' : 'border-slate-200 bg-white text-slate-700'
+                      filterTag === t.id
+                        ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
+                        : 'border-slate-200 bg-white text-slate-700'
                     }`}
-                    style={filterTag === t.id ? { backgroundColor: t.color } : undefined}
                   >
                     {t.name}
                   </button>
