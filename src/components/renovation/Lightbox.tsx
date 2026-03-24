@@ -11,7 +11,7 @@ import { ImageAnnotator, AnnotationShape } from '@/components/renovation/ImageAn
 import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
 import { useConfirm } from '@/providers/ConfirmProvider'
 
-import YarlLightbox from 'yet-another-react-lightbox'
+import YarlLightbox, { CloseIcon, stopNavigationEventsPropagation } from 'yet-another-react-lightbox'
 import 'yet-another-react-lightbox/styles.css'
 import Zoom from 'yet-another-react-lightbox/plugins/zoom'
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails'
@@ -74,6 +74,21 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
     }
   }, [current, index])
 
+  // YARL Zoom needs width/height on each slide (custom render.slide skips ImageSlide).
+  const slides = useMemo(
+    () =>
+      images.map((img) => {
+        const dims = imageSizes[img.id]
+        return {
+          src: img.public_url || '',
+          alt: img.caption || 'Gallery photo',
+          itemData: img,
+          ...(dims ? { width: dims.w, height: dims.h } : {}),
+        }
+      }),
+    [images, imageSizes]
+  )
+
   if (!images.length || !current) return null
 
   const handleSave = async () => {
@@ -130,21 +145,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
     }
   }
 
-  // YARL Zoom needs width/height on each slide (or its ImageSlide onLoad). Custom render.slide
-  // skips ImageSlide, so without these, maxZoom stays 1 and wheel / trackpad pinch do nothing.
-  const slides = useMemo(
-    () =>
-      images.map((img) => {
-        const dims = imageSizes[img.id]
-        return {
-          src: img.public_url || '',
-          alt: img.caption || 'Gallery photo',
-          itemData: img,
-          ...(dims ? { width: dims.w, height: dims.h } : {}),
-        }
-      }),
-    [images, imageSizes]
-  )
+  const mobileToolbarNavStop = isMobile ? stopNavigationEventsPropagation() : null
 
   return (
     <>
@@ -191,6 +192,7 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
               key="toggle-markings"
               type="button"
               className={`yarl__button ${!showMarkings ? 'opacity-40' : ''}`}
+              {...(mobileToolbarNavStop ?? {})}
               onClick={() => setShowMarkings(!showMarkings)}
               title={showMarkings ? "Hide Markings" : "Show Markings"}
             >
@@ -204,21 +206,26 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                 </svg>
               )}
             </button>,
-            <button
-              key="annotate"
-              type="button"
-              className="yarl__button"
-              onClick={() => setShowAnnotator(true)}
-              title="Draw / Annotate"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
-              </svg>
-            </button>,
+            ...(isMobile
+              ? []
+              : [
+                  <button
+                    key="annotate"
+                    type="button"
+                    className="yarl__button"
+                    onClick={() => setShowAnnotator(true)}
+                    title="Draw / Annotate"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
+                    </svg>
+                  </button>,
+                ]),
             <button
               key="edit"
               type="button"
               className="yarl__button"
+              {...(mobileToolbarNavStop ?? {})}
               onClick={() => setShowDetails(true)}
               title="Edit Details"
             >
@@ -226,11 +233,29 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
               </svg>
             </button>,
-            "zoom",
-            "close"
-          ]
+            ...(isMobile ? [] : ['zoom']),
+            'close',
+          ],
         }}
         render={{
+          ...(isMobile
+            ? {
+                buttonClose: () => (
+                  <button
+                    type="button"
+                    aria-label="Close"
+                    className="yarl__button yarl__button_close"
+                    {...stopNavigationEventsPropagation()}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onClose()
+                    }}
+                  >
+                    <CloseIcon />
+                  </button>
+                ),
+              }
+            : {}),
           buttonPrev: images.length <= 1 ? () => null : undefined,
           buttonNext: images.length <= 1 ? () => null : undefined,
           slideHeader: () => null,
