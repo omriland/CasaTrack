@@ -39,6 +39,30 @@ export interface RenovationProvider {
   updated_at: string
 }
 
+export type CalendarEventType = 'general' | 'provider_meeting'
+
+export interface RenovationCalendarEvent {
+  id: string
+  project_id: string
+  event_type: CalendarEventType
+  title: string
+  body: string | null
+  /** Free-text location / address */
+  address: string | null
+  provider_id: string | null
+  /** Team member who created the event (active profile at save time). */
+  created_by_member_id: string | null
+  is_all_day: boolean
+  start_date: string | null
+  end_date: string | null
+  starts_at: string | null
+  ends_at: string | null
+  created_at: string
+  updated_at: string
+  provider?: RenovationProvider | null
+  created_by?: RenovationTeamMember | null
+}
+
 export interface RenovationBudgetLine {
   id: string
   project_id: string

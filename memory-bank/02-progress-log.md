@@ -2,6 +2,15 @@
 
 ## Renovation app (March 2025)
 
+### Completed (calendar address + creator, March 2026)
+- **Calendar events:** `address` (free text) + `created_by_member_id` (active profile on create); SQL [`11_calendar_address_created_by.sql`](supabase/renovation/11_calendar_address_created_by.sql); week grid + month chips + day lists show **title (bold) + address** with **right alignment** (`dir="auto"`); modal field + “Created by …” when resolved.
+
+### Completed (calendar phase 2, March 2026)
+- **Calendar week view + tasks toggle:** **Month | Week** views; week grid **06:00–22:00** with hour labels, all-day row, **drag on empty grid** to create timed events (opens modal prefilled), **drag timed blocks vertically** to reschedule (`updateCalendarEvent`). **Show tasks** master toggle (skip `listTasks` when off); **Show completed** disabled when tasks hidden. Files: [`CalendarWeekGrid.tsx`](src/components/renovation/CalendarWeekGrid.tsx), [`calendar-shared.ts`](src/components/renovation/calendar-shared.ts) slot helpers, [`useCalendarPageState.ts`](src/components/renovation/views/useCalendarPageState.ts), [`CalendarEventModal.tsx`](src/components/renovation/CalendarEventModal.tsx) `initialTimedRange`.
+
+### Completed (calendar, March 2026)
+- **Renovation calendar** ([`/renovation/calendar`](src/app/renovation/calendar/page.tsx)): month grid (week starts **Sunday**; **Fri–Sat** weekend styling); **general** and **provider meeting** events (`renovation_calendar_events`, [`10_calendar_events.sql`](supabase/renovation/10_calendar_events.sql)); timed + all-day; tasks with `due_date` shown as chips (optional **Show completed**); day detail + [`CalendarEventModal`](src/components/renovation/CalendarEventModal.tsx) (desktop modal / mobile full screen); task chip opens local [`TaskModal`](src/components/renovation/TaskModal.tsx) / [`TaskModalMobile`](src/components/renovation/TaskModalMobile.tsx). API: [`listCalendarEvents`](src/lib/renovation.ts), `createCalendarEvent`, `updateCalendarEvent`, `deleteCalendarEvent`; validation [`CalendarEventPayloadSchema`](src/lib/validation.ts). Nav: desktop sidebar + mobile **More**.
+
 ### Completed (mobile-only redesign, March 2026)
 - **Viewport split at Tailwind `md` (768px):** [`RenovationViewportContext`](src/components/renovation/RenovationViewportContext.tsx) + [`useRenovationMobile`](src/components/renovation/use-renovation-mobile.ts); shell branches [`RenovationDesktopShell`](src/components/renovation/RenovationDesktopShell.tsx) / [`RenovationMobileShell`](src/components/renovation/RenovationMobileShell.tsx). [`useRenovationMobileMedia`](src/components/renovation/use-renovation-mobile.ts) for client-only breakpoint (modals, `DatePicker`).
 - **Mobile kit:** [`src/components/renovation/mobile/`](src/components/renovation/mobile/) — bottom sheet, select sheet, filter button, sticky footer.

@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation module stable; mobile IA uses dedicated shell + per-route mobile views below 768px; desktop trees preserved.
-**Status**: Mobile redesign plan implemented (shell, routes, gallery split, modal/date/lightbox branching, `/renovation/budget` → settings#budget). Manual QA: resize 767↔768, iOS safe areas, RTL on inputs.
+**Priority**: Renovation module stable; **calendar** at `/renovation/calendar` (events + provider meetings + task dues, Sun-first grid, Fri–Sat weekend).
+**Status**: Calendar shipped with SQL `10_calendar_events.sql`, desktop sidebar + mobile More nav. Manual QA: create timed/all-day events, provider meetings, task due visibility + edit from calendar.
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session
@@ -24,9 +24,10 @@
 3. ✅ **Tasks**: Drag-and-drop Kanban board (view by status or assignee), detailed task cards (room, labels, provider, due date).
 4. ✅ **Gallery**: Grouped by albums/tags with album covers, multi-photo uploads with progress, Lightbox viewing, and inline label creation.
 5. ✅ **Providers**: Centralized contact database for contractors and service providers.
-6. ✅ **Files**: Documentation hub with multi-file upload, drag-and-drop, and progress tracking.
-7. ✅ **Rooms & Needs**: Space management and items purchasing list.
-8. ✅ **Settings**: Project preferences, labels, and team management.
+6. ✅ **Calendar**: Month view with general events, provider meetings, and task due dates (Sun–Thu work week emphasis, Fri–Sat weekend styling).
+7. ✅ **Files**: Documentation hub with multi-file upload, drag-and-drop, and progress tracking.
+8. ✅ **Rooms & Needs**: Space management and items purchasing list.
+9. ✅ **Settings**: Project preferences, labels, and team management.
 
 #### Property Hunt (Core Features)
 1. ✅ **Authentication System**: Glassmorphism login with password visibility toggle

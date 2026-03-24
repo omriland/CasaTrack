@@ -15,6 +15,7 @@ const primaryNav = [
 
 const moreNav = [
   { href: '/renovation/providers', label: 'Providers', icon: ProvidersIcon },
+  { href: '/renovation/calendar', label: 'Calendar', icon: CalendarIcon },
   { href: '/renovation/files', label: 'Files', icon: FilesIcon },
   { href: '/renovation/needs', label: 'Needs', icon: NeedsIcon },
   { href: '/renovation/rooms', label: 'Rooms', icon: RoomIcon },
@@ -163,6 +164,17 @@ function CheckIcon({ className, active }: { className?: string; active?: boolean
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    </svg>
+  )
+}
+function CalendarIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
   )
 }

@@ -15,6 +15,8 @@ import type {
   RenovationFile,
   RenovationNeed,
   RenovationProvider,
+  RenovationCalendarEvent,
+  CalendarEventType,
 } from '@/types/renovation'
 
 const BUCKET = 'renovation-gallery'
@@ -662,6 +664,163 @@ export async function updateProvider(
 
 export async function deleteProvider(id: string): Promise<void> {
   const { error } = await supabase.from('renovation_providers').delete().eq('id', id)
+  if (error) throw error
+}
+
+// --- Calendar events ---
+
+export async function listCalendarEvents(projectId: string): Promise<RenovationCalendarEvent[]> {
+  const { data, error } = await supabase
+    .from('renovation_calendar_events')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  const rows = (data || []) as RenovationCalendarEvent[]
+  let providers: RenovationProvider[] = []
+  let members: RenovationTeamMember[] = []
+  try {
+    providers = await listProviders(projectId)
+  } catch {
+    providers = []
+  }
+  try {
+    members = await listTeamMembers(projectId)
+  } catch {
+    members = []
+  }
+  const providerMap = new Map(providers.map((p) => [p.id, p]))
+  const memberMap = new Map(members.map((m) => [m.id, m]))
+  return rows.map((e) => ({
+    ...e,
+    address: e.address ?? null,
+    created_by_member_id: e.created_by_member_id ?? null,
+    provider: e.provider_id ? providerMap.get(e.provider_id) ?? null : null,
+    created_by: e.created_by_member_id ? memberMap.get(e.created_by_member_id) ?? null : null,
+  }))
+}
+
+function defaultTimedEnd(startsAtIso: string): string {
+  const d = new Date(startsAtIso)
+  if (Number.isNaN(d.getTime())) return startsAtIso
+  return new Date(d.getTime() + 60 * 60 * 1000).toISOString()
+}
+
+export async function createCalendarEvent(
+  projectId: string,
+  row: {
+    event_type: CalendarEventType
+    title: string
+    body?: string | null
+    address?: string | null
+    provider_id?: string | null
+    created_by_member_id?: string | null
+    is_all_day: boolean
+    start_date?: string | null
+    end_date?: string | null
+    starts_at?: string | null
+    ends_at?: string | null
+  }
+): Promise<RenovationCalendarEvent> {
+  const title = row.title.trim()
+  const body = row.body?.trim() || null
+  const address = row.address?.trim() || null
+  const isAllDay = row.is_all_day
+  const eventType = row.event_type
+  const providerId = eventType === 'provider_meeting' ? row.provider_id ?? null : null
+
+  const insert = isAllDay
+    ? {
+        project_id: projectId,
+        event_type: eventType,
+        title,
+        body,
+        address,
+        created_by_member_id: row.created_by_member_id ?? null,
+        provider_id: providerId,
+        is_all_day: true,
+        start_date: row.start_date!,
+        end_date: row.end_date && row.end_date >= row.start_date! ? row.end_date : row.start_date!,
+        starts_at: null,
+        ends_at: null,
+      }
+    : {
+        project_id: projectId,
+        event_type: eventType,
+        title,
+        body,
+        address,
+        created_by_member_id: row.created_by_member_id ?? null,
+        provider_id: providerId,
+        is_all_day: false,
+        start_date: null,
+        end_date: null,
+        starts_at: row.starts_at!,
+        ends_at: row.ends_at?.trim() ? row.ends_at : defaultTimedEnd(row.starts_at!),
+      }
+
+  const { data, error } = await supabase.from('renovation_calendar_events').insert(insert).select().single()
+
+  if (error) throw error
+  return data as RenovationCalendarEvent
+}
+
+export async function updateCalendarEvent(
+  id: string,
+  row: {
+    event_type: CalendarEventType
+    title: string
+    body?: string | null
+    address?: string | null
+    provider_id?: string | null
+    is_all_day: boolean
+    start_date?: string | null
+    end_date?: string | null
+    starts_at?: string | null
+    ends_at?: string | null
+  }
+): Promise<void> {
+  const title = row.title.trim()
+  const body = row.body?.trim() || null
+  const address = row.address !== undefined ? (row.address?.trim() || null) : undefined
+  const isAllDay = row.is_all_day
+  const eventType = row.event_type
+  const providerId = eventType === 'provider_meeting' ? row.provider_id ?? null : null
+
+  const baseAllDay = {
+    event_type: eventType,
+    title,
+    body,
+    provider_id: providerId,
+    is_all_day: true,
+    start_date: row.start_date!,
+    end_date: row.end_date && row.end_date >= row.start_date! ? row.end_date : row.start_date!,
+    starts_at: null,
+    ends_at: null,
+  }
+  const baseTimed = {
+    event_type: eventType,
+    title,
+    body,
+    provider_id: providerId,
+    is_all_day: false,
+    start_date: null,
+    end_date: null,
+    starts_at: row.starts_at!,
+    ends_at: row.ends_at?.trim() ? row.ends_at : defaultTimedEnd(row.starts_at!),
+  }
+  const updates = {
+    ...(isAllDay ? baseAllDay : baseTimed),
+    ...(address !== undefined ? { address } : {}),
+  }
+
+  const { error } = await supabase.from('renovation_calendar_events').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteCalendarEvent(id: string): Promise<void> {
+  const { error } = await supabase.from('renovation_calendar_events').delete().eq('id', id)
   if (error) throw error
 }
 

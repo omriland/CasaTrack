@@ -91,6 +91,43 @@ export const FileUploadSchema = z.object({
   propertyId: z.string().uuid(),
 })
 
+const isoDateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+/** Payload for creating/updating renovation calendar events (client → API). */
+export const CalendarEventPayloadSchema = z
+  .object({
+    event_type: z.enum(['general', 'provider_meeting']),
+    title: z.string().min(1, 'Title is required'),
+    body: z.string().nullable().optional(),
+    address: z.string().max(4000).nullable().optional(),
+    provider_id: z.string().uuid().nullable().optional(),
+    is_all_day: z.boolean(),
+    start_date: isoDateStr.nullable().optional(),
+    end_date: isoDateStr.nullable().optional(),
+    starts_at: z.string().nullable().optional(),
+    ends_at: z.string().nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.event_type === 'provider_meeting' && !data.provider_id) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Choose a provider', path: ['provider_id'] })
+    }
+    if (data.event_type === 'general' && data.provider_id) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'General events cannot have a provider', path: ['provider_id'] })
+    }
+    if (data.is_all_day) {
+      if (!data.start_date) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Start date required', path: ['start_date'] })
+      }
+      if (data.start_date && data.end_date && data.end_date < data.start_date) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'End must be on or after start', path: ['end_date'] })
+      }
+    } else if (!data.starts_at) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Start time required', path: ['starts_at'] })
+    }
+  })
+
+export type CalendarEventPayload = z.infer<typeof CalendarEventPayloadSchema>
+
 // Export inferred types
 export type PropertyInsertInput = z.infer<typeof PropertyInsertSchema>
 export type PropertyUpdateInput = z.infer<typeof PropertyUpdateSchema>
