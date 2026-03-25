@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { formatIls, formatTaskDue } from '@/lib/renovation-format'
 import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
-import { useRenovationDashboardPage } from './useRenovationDashboardPage'
+import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardMobile() {
   const {
@@ -29,6 +29,7 @@ export function RenovationDashboardMobile() {
     openTasks,
     overdue,
     upcoming,
+    upcomingEvents,
   } = useRenovationDashboardPage()
 
   if (loading) return null
@@ -232,6 +233,47 @@ export function RenovationDashboardMobile() {
               </ul>
             </section>
           )}
+
+          <section className="rounded-2xl bg-white border border-slate-200/80 p-4 shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-[15px] font-bold text-slate-900">Upcoming events</h2>
+              <Link href="/renovation/calendar" className="text-[13px] font-bold text-sky-600">
+                Calendar
+              </Link>
+            </div>
+            {upcomingEvents.length === 0 ? (
+              <p className="py-4 text-center text-[14px] font-medium text-slate-500">Nothing scheduled ahead</p>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingEvents.map((ev) => (
+                  <li key={ev.id}>
+                    <Link
+                      href="/renovation/calendar"
+                      className="flex items-start justify-between gap-2 border-b border-slate-100 py-2.5 last:border-0 active:bg-slate-50"
+                      dir="auto"
+                    >
+                      <div className="flex min-w-0 flex-1 items-start gap-2">
+                        <div
+                          className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${
+                            ev.event_type === 'provider_meeting' ? 'bg-[#9333ea]' : 'bg-[#1a73e8]'
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-[14px] font-semibold text-slate-800">{ev.title}</p>
+                          {ev.address?.trim() ? (
+                            <p className="mt-0.5 truncate text-[12px] text-slate-500">{ev.address}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-600">
+                        {formatUpcomingEventWhen(ev)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
           <section className="rounded-2xl bg-white border border-slate-200/80 p-4 shadow-sm">
             <div className="flex justify-between items-center mb-3">

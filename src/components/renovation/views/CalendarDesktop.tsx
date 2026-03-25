@@ -115,16 +115,24 @@ export function CalendarDesktop() {
             <button
               type="button"
               onClick={() => openNewEvent(null)}
-              className="mr-3 flex h-10 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 shadow-sm transition-all hover:bg-[#f8f9fa] hover:shadow-md"
+              className="mr-3 inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 shadow-sm transition-all hover:bg-[#f8f9fa] hover:shadow-md"
               style={{
                 boxShadow: '0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15)'
               }}
             >
-              <svg className="flex-shrink-0" width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#34A853" d="M14 10h-4V6c0-1.1-.9-2-2-2s-2 .9-2 2v4H2c-1.1 0-2 .9-2 2s.9 2 2 2h4v4c0 1.1.9 2 2 2s2-.9 2-2v-4h4c1.1 0 2-.9 2-2s-.9-2-2-2z" transform="translate(4,4)"/>
-                <rect width="24" height="24" fill="none"/>
+              <svg
+                className="h-5 w-5 shrink-0 block"
+                viewBox="0 0 24 24"
+                aria-hidden
+              >
+                <path
+                  fill="#34A853"
+                  d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
+                />
               </svg>
-              <span className="text-[14px] font-medium text-[#3c4043] tracking-wide">Create</span>
+              <span className="text-[14px] font-medium leading-none text-[#3c4043] tracking-wide">
+                Create
+              </span>
             </button>
             <button
               type="button"

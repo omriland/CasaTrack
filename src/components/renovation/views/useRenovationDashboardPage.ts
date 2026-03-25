@@ -1,17 +1,65 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { format, isToday, isTomorrow, parseISO } from 'date-fns'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   createProject,
   effectiveBudget,
+  listCalendarEvents,
   listExpenses,
   listGalleryItems,
   listTasks,
   expensesThisMonth,
 } from '@/lib/renovation'
 import { taskDueCalendarDiffDays } from '@/lib/renovation-format'
-import type { RenovationExpense, RenovationGalleryItem, RenovationTask } from '@/types/renovation'
+import type {
+  RenovationCalendarEvent,
+  RenovationExpense,
+  RenovationGalleryItem,
+  RenovationTask,
+} from '@/types/renovation'
+
+function eventStartMs(ev: RenovationCalendarEvent): number | null {
+  if (!ev.is_all_day && ev.starts_at) {
+    const t = new Date(ev.starts_at).getTime()
+    return Number.isNaN(t) ? null : t
+  }
+  if (ev.is_all_day && ev.start_date) {
+    const t = parseISO(`${ev.start_date}T12:00:00`).getTime()
+    return Number.isNaN(t) ? null : t
+  }
+  return null
+}
+
+function isEventUpcoming(ev: RenovationCalendarEvent, now: Date): boolean {
+  const todayStr = format(now, 'yyyy-MM-dd')
+  if (!ev.is_all_day && ev.starts_at) {
+    return new Date(ev.starts_at).getTime() >= now.getTime()
+  }
+  if (ev.is_all_day && ev.start_date) {
+    return ev.start_date >= todayStr
+  }
+  return false
+}
+
+/** Label for dashboard list (24h time). */
+export function formatUpcomingEventWhen(ev: RenovationCalendarEvent): string {
+  if (ev.is_all_day && ev.start_date) {
+    const d = parseISO(`${ev.start_date}T12:00:00`)
+    if (isToday(d)) return 'Today · All day'
+    if (isTomorrow(d)) return 'Tomorrow · All day'
+    return `${format(d, 'EEE, MMM d')} · All day`
+  }
+  if (ev.starts_at) {
+    const d = new Date(ev.starts_at)
+    if (Number.isNaN(d.getTime())) return ''
+    if (isToday(d)) return `Today · ${format(d, 'HH:mm')}`
+    if (isTomorrow(d)) return `Tomorrow · ${format(d, 'HH:mm')}`
+    return format(d, 'EEE, MMM d · HH:mm')
+  }
+  return ''
+}
 
 export function useRenovationDashboardPage() {
   const { project, loading, refresh, activeProfile } = useRenovation()
@@ -23,6 +71,7 @@ export function useRenovationDashboardPage() {
   const [monthSpend, setMonthSpend] = useState(0)
   const [recentExpenses, setRecentExpenses] = useState<RenovationExpense[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
+  const [calendarEvents, setCalendarEvents] = useState<RenovationCalendarEvent[]>([])
   const [gallery, setGallery] = useState<RenovationGalleryItem[]>([])
   const [dashLoading, setDashLoading] = useState(false)
 
@@ -30,15 +79,17 @@ export function useRenovationDashboardPage() {
     if (!project) return
     setDashLoading(true)
     try {
-      const [ex, t, g] = await Promise.all([
+      const [ex, t, cal, g] = await Promise.all([
         listExpenses(project.id),
         listTasks(project.id),
+        listCalendarEvents(project.id).catch(() => [] as RenovationCalendarEvent[]),
         listGalleryItems(project.id),
       ])
       setSpent(ex.reduce((s, e) => s + Number(e.amount), 0))
       setMonthSpend(expensesThisMonth(ex))
       setRecentExpenses(ex.slice(0, 5))
       setTasks(t)
+      setCalendarEvents(cal)
       setGallery(g.slice(0, 6))
     } catch (e) {
       console.error(e)
@@ -86,6 +137,14 @@ export function useRenovationDashboardPage() {
     .sort((a, b) => (a.due_date || '').localeCompare(b.due_date || ''))
     .slice(0, 4)
 
+  const upcomingEvents = useMemo(() => {
+    const now = new Date()
+    return calendarEvents
+      .filter((e) => isEventUpcoming(e, now))
+      .sort((a, b) => (eventStartMs(a) ?? 0) - (eventStartMs(b) ?? 0))
+      .slice(0, 5)
+  }, [calendarEvents])
+
   return {
     project,
     loading,
@@ -112,5 +171,6 @@ export function useRenovationDashboardPage() {
     openTasks,
     overdue,
     upcoming,
+    upcomingEvents,
   }
 }

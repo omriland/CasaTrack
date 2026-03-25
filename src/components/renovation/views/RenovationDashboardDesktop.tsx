@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { formatIls, formatTaskDue } from '@/lib/renovation-format'
 import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
-import { useRenovationDashboardPage } from './useRenovationDashboardPage'
+import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardDesktop() {
   const { setExpenseModalOpen } = useRenovation()
@@ -31,6 +31,7 @@ export function RenovationDashboardDesktop() {
     openTasks,
     overdue,
     upcoming,
+    upcomingEvents,
   } = useRenovationDashboardPage()
 
   if (loading) return null
@@ -316,6 +317,72 @@ export function RenovationDashboardDesktop() {
                 </ul>
               )}
             </div>
+          </section>
+
+          <section className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-sky-50 rounded text-sky-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-[20px] font-bold text-slate-900">Upcoming events</h2>
+              </div>
+              <Link
+                href="/renovation/calendar"
+                className="text-[14px] font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 px-4 py-2 rounded-full transition-colors active:scale-95"
+              >
+                Calendar
+              </Link>
+            </div>
+
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <p className="text-[15px] font-medium text-slate-500">Nothing on the calendar ahead</p>
+                <Link
+                  href="/renovation/calendar"
+                  className="mt-3 text-[14px] font-bold text-indigo-600 hover:underline"
+                >
+                  Open calendar
+                </Link>
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingEvents.map((ev) => (
+                  <li key={ev.id}>
+                    <Link
+                      href="/renovation/calendar"
+                      className="group flex items-center justify-between gap-4 rounded-lg border border-transparent p-3 text-left transition-colors hover:border-slate-200 hover:bg-slate-50"
+                      dir="auto"
+                    >
+                      <div className="flex min-w-0 flex-1 items-start gap-3">
+                        <div
+                          className={`mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full ${
+                            ev.event_type === 'provider_meeting' ? 'bg-[#9333ea]' : 'bg-[#1a73e8]'
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-[14px] font-semibold text-slate-800 group-hover:text-indigo-700">
+                            {ev.title}
+                          </p>
+                          {ev.address?.trim() ? (
+                            <p className="mt-0.5 truncate text-[12px] font-medium text-slate-500">{ev.address}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-md border border-slate-200/80 bg-white px-2.5 py-1 text-[12px] font-semibold tabular-nums text-slate-600 group-hover:border-slate-300">
+                        {formatUpcomingEventWhen(ev)}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">

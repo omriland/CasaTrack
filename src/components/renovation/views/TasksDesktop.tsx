@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, type CSSProperties } from 'react'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { formatTaskDue } from '@/lib/renovation-format'
@@ -7,6 +8,17 @@ import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 import type { RenovationLabel, RenovationTask } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
 import { STATUSES, sortTasks } from './tasks-page-shared'
+
+/** Native <select> arrows ignore padding; custom chevron inset from the right. */
+const FILTER_SELECT_STYLE: CSSProperties = {
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+  backgroundSize: '1.125rem 1.125rem',
+  backgroundPosition: 'right 0.75rem center',
+  backgroundRepeat: 'no-repeat',
+}
+
+const FILTER_SELECT_CLASS =
+  'h-10 rounded-xl border border-slate-200 bg-white pl-3 pr-10 text-[14px] font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none appearance-none'
 
 export function TasksDesktop() {
   const {
@@ -40,6 +52,8 @@ export function TasksDesktop() {
     filteredTasks,
     toggleTaskDone,
   } = useTasksPageState()
+
+  const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
 
   const renderCard = (t: RenovationTask) => {
     const isDone = t.status === 'done'
@@ -215,7 +229,8 @@ export function TasksDesktop() {
           <select
             value={filterAssignee}
             onChange={(e) => setFilterAssignee(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-[14px] font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+            className={FILTER_SELECT_CLASS}
+            style={FILTER_SELECT_STYLE}
           >
             <option value="">All Assignees</option>
             {members.map((m) => (
@@ -227,7 +242,8 @@ export function TasksDesktop() {
           <select
             value={filterLabel}
             onChange={(e) => setFilterLabel(e.target.value)}
-            className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-[14px] font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
+            className={FILTER_SELECT_CLASS}
+            style={FILTER_SELECT_STYLE}
           >
             <option value="">All Tags</option>
             {labels.map((l) => (
@@ -273,6 +289,50 @@ export function TasksDesktop() {
               {STATUSES.map((s) => {
                 const paneTasks = filteredTasks.filter((t) => t.status === s).sort(sortTasks)
                 const isDraggingOver = dragOverStatus === s
+                const isDoneLane = s === 'done'
+                const collapsed = isDoneLane && doneLaneCollapsed
+
+                if (collapsed) {
+                  return (
+                    <div
+                      key={s}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDragOverStatus(s)
+                      }}
+                      onDragLeave={() => setDragOverStatus(null)}
+                      onDrop={(e) => onDrop(e, s)}
+                      className={`flex w-[52px] shrink-0 flex-col rounded-sm p-1.5 transition-colors min-h-[50vh] ${
+                        isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setDoneLaneCollapsed(false)}
+                        className="flex min-h-0 flex-1 flex-col items-center gap-2 rounded-md py-3 text-[#5e6c84] transition-colors hover:bg-white/90 hover:text-[#172b4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                        title="Expand Done column"
+                        aria-expanded="false"
+                        aria-label="Expand Done column"
+                      >
+                        <svg
+                          className="h-4 w-4 shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          aria-hidden
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 [writing-mode:vertical-rl] rotate-180">
+                          Done
+                        </span>
+                        <span className="text-[16px] font-bold tabular-nums text-[#172b4d]">{paneTasks.length}</span>
+                      </button>
+                    </div>
+                  )
+                }
+
                 return (
                   <div
                     key={s}
@@ -283,14 +343,35 @@ export function TasksDesktop() {
                     onDragLeave={() => setDragOverStatus(null)}
                     onDrop={(e) => onDrop(e, s)}
                     className={`w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors min-h-[50vh] ${
-                      isDraggingOver
-                        ? 'bg-[#ebf3ff]'
-                        : 'bg-[#f4f5f7]'
+                      isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
                     }`}
                   >
-                    <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center gap-2 text-[12px]">
-                      <span>{s.replace('_', ' ')}</span>
-                      <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
+                    <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center justify-between gap-2 text-[12px]">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span>{s.replace('_', ' ')}</span>
+                        <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
+                      </span>
+                      {isDoneLane && (
+                        <button
+                          type="button"
+                          onClick={() => setDoneLaneCollapsed(true)}
+                          className="shrink-0 rounded p-1 text-[#5e6c84] hover:bg-white/80 hover:text-[#172b4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                          title="Collapse Done column"
+                          aria-expanded="true"
+                          aria-label="Collapse Done column"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            aria-hidden
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      )}
                     </h3>
                     <div className="flex min-h-0 flex-1 flex-col gap-2">
                       {paneTasks.map(renderCard)}
