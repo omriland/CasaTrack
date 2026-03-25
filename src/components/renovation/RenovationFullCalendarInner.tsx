@@ -10,7 +10,7 @@ import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import { format } from 'date-fns'
-import { useEffect, useMemo, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import FullCalendarReactSafe from '@/components/renovation/fullcalendar/FullCalendarReactSafe'
 import { isWeekendFriSat } from '@/components/renovation/calendar-shared'
 import {
@@ -72,7 +72,8 @@ export function RenovationFullCalendarInner({
   const holidayEvents = useMemo(() => buildIsraelHolidayEventInputs(cursor), [cursor])
   const mergedEvents = useMemo(() => [...holidayEvents, ...fcEvents], [holidayEvents, fcEvents])
 
-  useEffect(() => {
+  // Sync date + view after FullCalendar mounts/updates. useLayoutEffect runs before paint so the grid matches the toolbar.
+  useLayoutEffect(() => {
     const api = ref.current?.getApi()
     if (!api) return
     const want = view === 'week' ? 'timeGridWeek' : 'dayGridMonth'
@@ -137,6 +138,7 @@ export function RenovationFullCalendarInner({
       className={`reno-cal reno-cal-gcal overflow-hidden ${compact ? 'reno-cal--compact text-[12px]' : ''}`}
     >
       <FullCalendarReactSafe
+        key={view}
         ref={ref}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView={view === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
@@ -215,22 +217,7 @@ export function RenovationFullCalendarInner({
           if (!ep || typeof ep !== 'object' || (ep.kind !== 'task' && ep.kind !== 'calendar'))
             return true
 
-          if (ep.kind === 'task') {
-            return (
-              <div
-                dir="auto"
-                className={`max-w-full px-1.5 py-0.5 text-right leading-snug text-[#14532d] ${titleSize}`}
-              >
-                <div className="truncate">{arg.event.title}</div>
-              </div>
-            )
-          }
-
-          const ev = ep.event as RenovationCalendarEvent | undefined
-          if (!ev) return true
-          const addr = ev.address?.trim()
           const timePrefix = !arg.event.allDay && arg.timeText ? `${arg.timeText} ` : ''
-          const dot = ev.event_type === 'provider_meeting' ? '· ' : ''
           const isWeekTimed =
             arg.view.type === 'timeGridWeek' &&
             !arg.event.allDay &&
@@ -239,14 +226,28 @@ export function RenovationFullCalendarInner({
             ? `line-clamp-2 max-h-[2.6em] whitespace-normal break-words ${titleSize} leading-snug`
             : `truncate ${titleSize} leading-snug`
 
+          if (ep.kind === 'task') {
+            return (
+              <div
+                dir="auto"
+                className={`flex w-full flex-col items-end justify-start px-1.5 py-0.5 text-right text-white leading-snug ${titleSize}`}
+              >
+                <div className="truncate w-full text-right block text-white">{arg.event.title}</div>
+              </div>
+            )
+          }
+
+          const ev = ep.event as RenovationCalendarEvent | undefined
+          if (!ev) return true
+          const addr = ev.address?.trim()
+
           return (
-            <div dir="auto" className="max-w-full px-1.5 py-0.5 text-right">
-              <div className={titleClass}>
+            <div dir="auto" className="flex w-full flex-col items-end justify-start px-1.5 py-0.5 text-right text-white">
+              <div className={`w-full text-right text-white ${titleClass}`}>
                 {timePrefix}
-                {dot}
                 {ev.title || arg.event.title}
               </div>
-              {addr ? <div className={`mt-0.5 truncate ${addressSize}`}>{addr}</div> : null}
+              {addr ? <div className={`mt-0.5 w-full text-right text-white opacity-95 truncate ${addressSize}`}>{addr}</div> : null}
             </div>
           )
         }}
