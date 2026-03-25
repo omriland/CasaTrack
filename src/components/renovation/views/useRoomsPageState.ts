@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { listGalleryItems, listNeeds, listRooms, listTasks, listGalleryTags, updateRoom } from '@/lib/renovation'
+import { DEFAULT_ROOM_ICON, normalizeRoomIconKey, type RoomIconKey } from '@/components/renovation/room-icons'
 import type {
   RenovationGalleryItem,
   RenovationGalleryTag,
@@ -23,6 +24,7 @@ export function useRoomsPageState() {
   const [lightbox, setLightbox] = useState<RenovationGalleryItem | null>(null)
   const [editName, setEditName] = useState('')
   const [editNotes, setEditNotes] = useState('')
+  const [editIconKey, setEditIconKey] = useState<RoomIconKey>(DEFAULT_ROOM_ICON)
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -54,12 +56,14 @@ export function useRoomsPageState() {
     if (!selectedId) {
       setEditName('')
       setEditNotes('')
+      setEditIconKey(DEFAULT_ROOM_ICON)
       return
     }
     const room = rooms.find((x) => x.id === selectedId)
     if (room) {
       setEditName(room.name)
       setEditNotes(room.notes || '')
+      setEditIconKey(normalizeRoomIconKey(room.room_icon_key))
     }
   }, [selectedId, rooms])
 
@@ -72,7 +76,11 @@ export function useRoomsPageState() {
     if (!selectedId || !selectedRoom) return
     setSaving(true)
     try {
-      await updateRoom(selectedId, { name: editName.trim() || selectedRoom.name, notes: editNotes || null })
+      await updateRoom(selectedId, {
+        name: editName.trim() || selectedRoom.name,
+        notes: editNotes || null,
+        room_icon_key: editIconKey,
+      })
       await load()
     } catch (e) {
       console.error(e)
@@ -98,6 +106,8 @@ export function useRoomsPageState() {
     setEditName,
     editNotes,
     setEditNotes,
+    editIconKey,
+    setEditIconKey,
     saving,
     load,
     selectedRoom,

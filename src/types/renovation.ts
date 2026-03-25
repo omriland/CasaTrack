@@ -139,6 +139,8 @@ export interface RenovationRoom {
   name: string
   notes: string | null
   sort_order: number
+  /** App-defined key from Room icon picker (`home_all`, `kitchen`, …). */
+  room_icon_key?: string | null
 }
 
 export interface RenovationGalleryTag {

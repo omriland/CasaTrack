@@ -2,6 +2,9 @@
 
 ## Renovation app (March 2025)
 
+### Completed (Rooms desktop rail, March 2026)
+- **Spaces rail** ([`RoomsDesktop.tsx`](src/components/renovation/views/RoomsDesktop.tsx)): wider aside (`min-w-[220px]`, `max-w-[320px]`, `basis-[22%]`); per-room **Tasks / Needs / Photos** labeled counts (not opaque `n·n·n`); selection styling switched from amber to **indigo** (border, bg, ring, focus); title input focus border indigo; loading skeleton widths/heights aligned.
+
 ### Completed (FullCalendar migration, March 2026)
 - **Renovation calendar** month + week views now use **FullCalendar** (`@fullcalendar/react` + daygrid, timegrid, interaction): Sunday-first week, **06:00–22:00** time grid, Fri–Sat weekend cell styling, drag-select to create timed events, drag/resize to update (`updateCalendarEvent`), read-only task dues, custom `eventContent` (title + address, `dir="auto"`). Wrapper: [`RenovationFullCalendar.tsx`](src/components/renovation/RenovationFullCalendar.tsx) (dynamic `ssr: false`), inner [`RenovationFullCalendarInner.tsx`](src/components/renovation/RenovationFullCalendarInner.tsx), DB mapping [`renovation-fullcalendar-map.ts`](src/components/renovation/renovation-fullcalendar-map.ts). Replaced custom week grid component. [`calendar-shared.ts`](src/components/renovation/calendar-shared.ts) keeps day overlap helpers only.
 

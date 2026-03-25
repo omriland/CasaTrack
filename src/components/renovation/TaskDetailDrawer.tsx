@@ -10,11 +10,12 @@ import type {
   RenovationTeamMember,
   TaskUrgency,
 } from '@/types/renovation'
+import { normalizeRoomIconKey, RoomIconGlyph, ROOM_ICON_TILE } from '@/components/renovation/room-icons'
 import { PRIORITY_ICONS, URGENCY, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 
-type DetailPickerOpen = 'assignee' | 'priority' | 'provider' | null
+type DetailPickerOpen = 'assignee' | 'room' | 'priority' | 'provider' | null
 
 interface TaskDetailDrawerProps {
   task: RenovationTask
@@ -43,6 +44,7 @@ export function TaskDetailDrawer({
   const [bodyDraft, setBodyDraft] = useState(task.body || '')
   const [detailPickerOpen, setDetailPickerOpen] = useState<DetailPickerOpen>(null)
   const assigneePickerRef = useRef<HTMLDivElement>(null)
+  const roomPickerRef = useRef<HTMLDivElement>(null)
   const priorityPickerRef = useRef<HTMLDivElement>(null)
   const providerPickerRef = useRef<HTMLDivElement>(null)
 
@@ -54,6 +56,11 @@ export function TaskDetailDrawer({
   const sortedProviders = useMemo(
     () => [...providers].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
     [providers],
+  )
+
+  const sortedRooms = useMemo(
+    () => [...rooms].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [rooms],
   )
 
   useEffect(() => {
@@ -75,6 +82,7 @@ export function TaskDetailDrawer({
     const onMouseDown = (e: MouseEvent) => {
       const n = e.target as Node
       if (detailPickerOpen === 'assignee' && assigneePickerRef.current?.contains(n)) return
+      if (detailPickerOpen === 'room' && roomPickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'priority' && priorityPickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'provider' && providerPickerRef.current?.contains(n)) return
       setDetailPickerOpen(null)
@@ -116,6 +124,15 @@ export function TaskDetailDrawer({
     updateTask(task.id, { assignee_id: assigneeId }).catch(() => onTaskChange?.(task))
   }
 
+  const commitRoom = (roomId: string | null) => {
+    setDetailPickerOpen(null)
+    if (roomId === task.room_id) return
+    const r = roomId ? sortedRooms.find((x) => x.id === roomId) ?? null : null
+    const updated = { ...task, room_id: roomId, room: r }
+    onTaskChange?.(updated)
+    updateTask(task.id, { room_id: roomId }).catch(() => onTaskChange?.(task))
+  }
+
   const commitPriority = (urgency: TaskUrgency) => {
     setDetailPickerOpen(null)
     if (urgency === task.urgency) return
@@ -135,7 +152,8 @@ export function TaskDetailDrawer({
 
   const isDone = task.status === 'done'
   const dueMeta = task.due_date ? formatTaskDue(task.due_date, { isDone }) : null
-  const room = task.room_id ? rooms.find((r) => r.id === task.room_id) : null
+  const room =
+    task.room ?? (task.room_id ? rooms.find((r) => r.id === task.room_id) ?? null : null)
   const provider = task.provider_id ? providers.find((p) => p.id === task.provider_id) : null
   
   return (
@@ -388,6 +406,123 @@ export function TaskDetailDrawer({
                             <span className="truncate">{m.name}</span>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[13px] font-semibold text-[#5e6c84]">Room</span>
+                  <div className="relative" ref={roomPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() => setDetailPickerOpen((o) => (o === 'room' ? null : 'room'))}
+                      className="group flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left -mx-2 transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                    >
+                      {room ? (
+                        <>
+                          <div
+                            className={`grid h-6 w-6 shrink-0 place-items-center rounded-md ${ROOM_ICON_TILE[normalizeRoomIconKey(room.room_icon_key)]}`}
+                          >
+                            <RoomIconGlyph
+                              roomKey={normalizeRoomIconKey(room.room_icon_key)}
+                              className="h-3.5 w-3.5"
+                            />
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]" dir="auto">
+                            {room.name}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-[14px] font-medium italic text-slate-500">
+                            {sortedRooms.length ? 'No room' : 'Add rooms in Settings'}
+                          </span>
+                        </>
+                      )}
+                      <svg
+                        className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {detailPickerOpen === 'room' && (
+                      <div
+                        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        role="listbox"
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={!task.room_id}
+                          onClick={() => commitRoom(null)}
+                          className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors last:mb-0 ${
+                            !task.room_id
+                              ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </div>
+                          {sortedRooms.length ? 'No room' : 'Add rooms in Settings'}
+                        </button>
+                        {sortedRooms.map((rm) => {
+                          const rk = normalizeRoomIconKey(rm.room_icon_key)
+                          return (
+                            <button
+                              key={rm.id}
+                              type="button"
+                              role="option"
+                              aria-selected={task.room_id === rm.id}
+                              onClick={() => commitRoom(rm.id)}
+                              className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                                task.room_id === rm.id
+                                  ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                  : 'font-medium text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              <div
+                                className={`grid h-6 w-6 shrink-0 place-items-center rounded-md ${ROOM_ICON_TILE[rk]}`}
+                              >
+                                <RoomIconGlyph roomKey={rk} className="h-3.5 w-3.5" />
+                              </div>
+                              <span className="truncate" dir="auto">
+                                {rm.name}
+                              </span>
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
                   </div>

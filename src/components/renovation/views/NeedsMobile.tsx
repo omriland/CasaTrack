@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileStickyFooter } from '@/components/renovation/mobile/MobileStickyFooter'
 import type { RenovationNeed, RenovationRoom } from '@/types/renovation'
 import { NeedDoneToggle } from './needs-shared'
+import { groupNeedsByRoom } from './needs-page-shared'
 import { useNeedsPageState } from './useNeedsPageState'
 
 type RoomPickTarget = { kind: 'new' } | { kind: 'edit'; need: RenovationNeed }
@@ -27,6 +28,8 @@ export function NeedsMobile() {
     remove,
     toggleCompleted,
   } = useNeedsPageState()
+
+  const groups = useMemo(() => groupNeedsByRoom(items, rooms), [items, rooms])
 
   const [roomPick, setRoomPick] = useState<RoomPickTarget | null>(null)
 
@@ -79,56 +82,73 @@ export function NeedsMobile() {
           <p className="mt-1 text-[14px] text-slate-500">הוסיפו מהרשימה למטה.</p>
         </div>
       ) : (
-        <ul className="min-w-0 space-y-2">
-          {items.map((need: RenovationNeed) => (
-            <li
-              key={need.id}
-              className={`rounded-[6px] border border-[#dfe1e6] bg-white p-3 shadow-sm transition-colors ${
-                need.completed ? 'bg-slate-50/80 opacity-80' : ''
-              }`}
+        <div className="min-w-0 space-y-5">
+          {groups.map((group) => (
+            <section
+              key={group.kind === 'room' ? group.roomId : 'unassigned'}
+              className="min-w-0 space-y-2"
             >
-              <div className="flex flex-row items-start gap-2" dir="rtl">
-                <NeedDoneToggle mobile completed={need.completed} onToggle={() => toggleCompleted(need)} />
-                <input
+              {rooms.length > 0 && (
+                <h2
+                  className="px-0.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-400"
                   dir="auto"
-                  defaultValue={need.title}
-                  key={`${need.id}-${need.title}-${need.completed}`}
-                  onBlur={(e) => saveTitle(need, e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                  }}
-                  className={`min-h-[44px] min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-right text-[16px] font-semibold leading-snug text-[#172b4d] outline-none ring-0 focus:ring-2 focus:ring-indigo-500/25 ${
-                    need.completed ? 'text-slate-400 line-through decoration-slate-300' : ''
-                  }`}
-                />
-              </div>
-              <div className="mt-2 flex flex-wrap items-center justify-end gap-2" dir="rtl">
-                {rooms.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setRoomPick({ kind: 'edit', need })}
-                    className={`min-h-[40px] max-w-full shrink rounded-full border px-3.5 text-[13px] font-bold transition-colors ${
-                      need.room_id
-                        ? 'border-[#dfe1e6] bg-[#f4f5f7] text-[#42526e]'
-                        : 'border-dashed border-slate-300 bg-white text-slate-500'
+                >
+                  {group.kind === 'room' ? group.name : 'ללא חדר'}
+                </h2>
+              )}
+              <ul className="min-w-0 space-y-2">
+                {group.needs.map((need: RenovationNeed) => (
+                  <li
+                    key={need.id}
+                    className={`rounded-[6px] border border-[#dfe1e6] bg-white p-3 shadow-sm transition-colors ${
+                      need.completed ? 'bg-slate-50/80 opacity-80' : ''
                     }`}
                   >
-                    <span className="truncate" dir="auto">
-                      {roomLabel(need.room, 'ללא חדר')}
-                    </span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => remove(need.id)}
-                  className="min-h-[40px] shrink-0 rounded-full bg-rose-50 px-3.5 text-[13px] font-bold text-rose-600 active:bg-rose-100"
-                >
-                  הסר
-                </button>
-              </div>
-            </li>
+                    <div className="flex flex-row items-start gap-2" dir="rtl">
+                      <NeedDoneToggle mobile completed={need.completed} onToggle={() => toggleCompleted(need)} />
+                      <input
+                        dir="auto"
+                        defaultValue={need.title}
+                        key={`${need.id}-${need.title}-${need.completed}`}
+                        onBlur={(e) => saveTitle(need, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                        }}
+                        className={`min-h-[44px] min-w-0 flex-1 rounded-lg border-0 bg-transparent px-2 py-1.5 text-right text-[16px] font-semibold leading-snug text-[#172b4d] outline-none ring-0 focus:ring-2 focus:ring-indigo-500/25 ${
+                          need.completed ? 'text-slate-400 line-through decoration-slate-300' : ''
+                        }`}
+                      />
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center justify-end gap-2" dir="rtl">
+                      {rooms.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setRoomPick({ kind: 'edit', need })}
+                          className={`min-h-[40px] max-w-full shrink rounded-full border px-3.5 text-[13px] font-bold transition-colors ${
+                            need.room_id
+                              ? 'border-[#dfe1e6] bg-[#f4f5f7] text-[#42526e]'
+                              : 'border-dashed border-slate-300 bg-white text-slate-500'
+                          }`}
+                        >
+                          <span className="truncate" dir="auto">
+                            {roomLabel(need.room, 'ללא חדר')}
+                          </span>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => remove(need.id)}
+                        className="min-h-[40px] shrink-0 rounded-full bg-rose-50 px-3.5 text-[13px] font-bold text-rose-600 active:bg-rose-100"
+                      >
+                        הסר
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
 
       <MobileStickyFooter>

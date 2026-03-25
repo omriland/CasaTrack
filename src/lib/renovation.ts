@@ -538,10 +538,20 @@ export async function listRooms(projectId: string): Promise<RenovationRoom[]> {
   return (data || []) as RenovationRoom[]
 }
 
-export async function createRoom(projectId: string, name: string, notes?: string | null): Promise<RenovationRoom> {
+export async function createRoom(
+  projectId: string,
+  name: string,
+  notes?: string | null,
+  roomIconKey?: string | null
+): Promise<RenovationRoom> {
   const { data, error } = await supabase
     .from('renovation_rooms')
-    .insert({ project_id: projectId, name, notes: notes ?? null })
+    .insert({
+      project_id: projectId,
+      name,
+      notes: notes ?? null,
+      ...(roomIconKey != null && roomIconKey !== '' ? { room_icon_key: roomIconKey } : {}),
+    })
     .select()
     .single()
 
@@ -551,7 +561,7 @@ export async function createRoom(projectId: string, name: string, notes?: string
 
 export async function updateRoom(
   id: string,
-  updates: Partial<Pick<RenovationRoom, 'name' | 'notes'>>
+  updates: Partial<Pick<RenovationRoom, 'name' | 'notes' | 'room_icon_key'>>
 ): Promise<void> {
   const { error } = await supabase.from('renovation_rooms').update(updates).eq('id', id)
   if (error) throw error
