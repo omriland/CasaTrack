@@ -269,7 +269,7 @@ export function TasksDesktop() {
           {view === 'list' && <div className="space-y-2">{[...filteredTasks].sort(sortTasks).map(renderCard)}</div>}
 
           {view === 'status' && (
-            <div className="flex gap-4 overflow-x-auto pb-6 items-start scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-6 items-stretch scrollbar-hide">
               {STATUSES.map((s) => {
                 const paneTasks = filteredTasks.filter((t) => t.status === s).sort(sortTasks)
                 const isDraggingOver = dragOverStatus === s
@@ -292,7 +292,7 @@ export function TasksDesktop() {
                       <span>{s.replace('_', ' ')}</span>
                       <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-2 flex-1">
+                    <div className="flex min-h-0 flex-1 flex-col gap-2">
                       {paneTasks.map(renderCard)}
                       {paneTasks.length === 0 && (
                         <div className="py-6 text-center text-[14px] text-slate-400 font-bold">
@@ -307,19 +307,19 @@ export function TasksDesktop() {
           )}
 
           {view === 'assignee' && (
-            <div className="flex gap-4 overflow-x-auto pb-6 items-start scrollbar-hide">
+            <div className="flex gap-4 overflow-x-auto pb-6 items-stretch scrollbar-hide">
               {[{ id: 'unassigned', name: 'Unassigned' }, ...members].map((m) => {
                 const paneTasks = filteredTasks
                   .filter((t) => (m.id === 'unassigned' ? !t.assignee_id : t.assignee_id === m.id))
                   .sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 bg-[#f4f5f7] min-h-[50vh]">
-                    <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center gap-2 text-[12px]">
+                  <div key={m.id} className="flex w-[282px] shrink-0 flex-col gap-2 rounded-sm bg-[#f4f5f7] p-2 min-h-[50vh]">
+                    <h3 className="flex items-center gap-2 px-2 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-wider text-[#5e6c84]">
                       <span>{m.name}</span>
-                      <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
+                      <span className="font-semibold text-[#172b4d]">{paneTasks.length}</span>
                     </h3>
-                    <div className="space-y-2">{paneTasks.map(renderCard)}</div>
+                    <div className="flex min-h-0 flex-1 flex-col gap-2">{paneTasks.map(renderCard)}</div>
                   </div>
                 )
               })}
