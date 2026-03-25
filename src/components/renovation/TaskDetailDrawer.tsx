@@ -8,14 +8,16 @@ import type {
   RenovationRoom,
   RenovationProvider,
   RenovationTeamMember,
+  TaskStatus,
   TaskUrgency,
 } from '@/types/renovation'
 import { normalizeRoomIconKey, RoomIconGlyph, ROOM_ICON_TILE } from '@/components/renovation/room-icons'
-import { PRIORITY_ICONS, URGENCY, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
+import { PRIORITY_ICONS, STATUSES, URGENCY, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
+import { format, parseISO } from 'date-fns'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 
-type DetailPickerOpen = 'assignee' | 'room' | 'priority' | 'provider' | null
+type DetailPickerOpen = 'status' | 'assignee' | 'room' | 'priority' | 'provider' | null
 
 interface TaskDetailDrawerProps {
   task: RenovationTask
@@ -43,6 +45,7 @@ export function TaskDetailDrawer({
   const [titleDraft, setTitleDraft] = useState(task.title)
   const [bodyDraft, setBodyDraft] = useState(task.body || '')
   const [detailPickerOpen, setDetailPickerOpen] = useState<DetailPickerOpen>(null)
+  const statusPickerRef = useRef<HTMLDivElement>(null)
   const assigneePickerRef = useRef<HTMLDivElement>(null)
   const roomPickerRef = useRef<HTMLDivElement>(null)
   const priorityPickerRef = useRef<HTMLDivElement>(null)
@@ -81,6 +84,7 @@ export function TaskDetailDrawer({
     if (!detailPickerOpen) return
     const onMouseDown = (e: MouseEvent) => {
       const n = e.target as Node
+      if (detailPickerOpen === 'status' && statusPickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'assignee' && assigneePickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'room' && roomPickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'priority' && priorityPickerRef.current?.contains(n)) return
@@ -98,7 +102,7 @@ export function TaskDetailDrawer({
       setTitleDraft(task.title)
       return
     }
-    const updated = { ...task, title: t }
+    const updated = { ...task, title: t, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { title: t }).catch(() => onTaskChange?.(task))
   }
@@ -110,16 +114,24 @@ export function TaskDetailDrawer({
       setBodyDraft(task.body || '')
       return
     }
-    const updated = { ...task, body: b }
+    const updated = { ...task, body: b, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { body: b }).catch(() => onTaskChange?.(task))
+  }
+
+  const commitStatus = (status: TaskStatus) => {
+    setDetailPickerOpen(null)
+    if (status === task.status) return
+    const updated = { ...task, status, updated_at: new Date().toISOString() }
+    onTaskChange?.(updated)
+    updateTask(task.id, { status }).catch(() => onTaskChange?.(task))
   }
 
   const commitAssignee = (assigneeId: string | null) => {
     setDetailPickerOpen(null)
     if (assigneeId === task.assignee_id) return
     const member = assigneeId ? sortedMembers.find((m) => m.id === assigneeId) ?? null : null
-    const updated = { ...task, assignee_id: assigneeId, assignee: member }
+    const updated = { ...task, assignee_id: assigneeId, assignee: member, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { assignee_id: assigneeId }).catch(() => onTaskChange?.(task))
   }
@@ -128,7 +140,7 @@ export function TaskDetailDrawer({
     setDetailPickerOpen(null)
     if (roomId === task.room_id) return
     const r = roomId ? sortedRooms.find((x) => x.id === roomId) ?? null : null
-    const updated = { ...task, room_id: roomId, room: r }
+    const updated = { ...task, room_id: roomId, room: r, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { room_id: roomId }).catch(() => onTaskChange?.(task))
   }
@@ -136,7 +148,7 @@ export function TaskDetailDrawer({
   const commitPriority = (urgency: TaskUrgency) => {
     setDetailPickerOpen(null)
     if (urgency === task.urgency) return
-    const updated = { ...task, urgency }
+    const updated = { ...task, urgency, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { urgency }).catch(() => onTaskChange?.(task))
   }
@@ -145,7 +157,7 @@ export function TaskDetailDrawer({
     setDetailPickerOpen(null)
     if (providerId === task.provider_id) return
     const p = providerId ? sortedProviders.find((x) => x.id === providerId) ?? null : null
-    const updated = { ...task, provider_id: providerId, provider: p }
+    const updated = { ...task, provider_id: providerId, provider: p, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { provider_id: providerId }).catch(() => onTaskChange?.(task))
   }
@@ -155,7 +167,14 @@ export function TaskDetailDrawer({
   const room =
     task.room ?? (task.room_id ? rooms.find((r) => r.id === task.room_id) ?? null : null)
   const provider = task.provider_id ? providers.find((p) => p.id === task.provider_id) : null
-  
+
+  let lastEditedLabel = task.updated_at
+  try {
+    lastEditedLabel = format(parseISO(task.updated_at), "MMM d, yyyy '·' HH:mm")
+  } catch {
+    /* keep raw */
+  }
+
   return (
     <>
       <div 
@@ -165,9 +184,55 @@ export function TaskDetailDrawer({
       <div 
         className="fixed inset-y-0 right-0 z-[210] w-[100vw] md:w-[576px] lg:w-[720px] bg-white shadow-[-8px_0_24px_-12px_rgba(9,30,66,0.15)] flex flex-col transition-transform animate-slide-in-right"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
-          <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-500 uppercase tracking-widest">
-            {task.id.slice(0, 8)}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-6 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative shrink-0" ref={statusPickerRef}>
+              <button
+                type="button"
+                onClick={() => setDetailPickerOpen((o) => (o === 'status' ? null : 'status'))}
+                className="group flex cursor-pointer items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                aria-haspopup="listbox"
+                aria-expanded={detailPickerOpen === 'status'}
+              >
+                <span className="rounded px-2 py-1 text-[12px] font-bold uppercase text-[#42526e] bg-[#dfe1e6]">
+                  {task.status.replace('_', ' ')}
+                </span>
+                <svg
+                  className="h-4 w-4 shrink-0 text-[#5e6c84] opacity-70 transition-opacity group-hover:opacity-100"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {detailPickerOpen === 'status' && (
+                <div
+                  className="absolute left-0 top-full z-40 mt-1 w-[200px] overflow-hidden rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                  role="listbox"
+                >
+                  {STATUSES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      role="option"
+                      aria-selected={task.status === s}
+                      onClick={() => commitStatus(s)}
+                      className={`mb-0.5 flex w-full items-center rounded-md px-3 py-2.5 text-left text-[14px] font-medium uppercase tracking-wide transition-colors last:mb-0 ${
+                        task.status === s
+                          ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      {s.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <span className="truncate font-mono text-[13px] font-semibold uppercase tracking-widest text-slate-500">
+              {task.id.slice(0, 8)}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -214,9 +279,6 @@ export function TaskDetailDrawer({
                 </h1>
               )}
               <div className="flex flex-wrap gap-2 px-2">
-                 <span className="text-[12px] font-bold px-2 py-1 rounded bg-[#dfe1e6] text-[#42526e] uppercase">
-                   {task.status.replace('_', ' ')}
-                 </span>
                  {room && (
                    <span className="text-[12px] font-bold px-2 py-1 rounded bg-slate-100 text-slate-600">
                      {room.name}
@@ -697,20 +759,31 @@ export function TaskDetailDrawer({
                   </div>
                 </div>
                 
-                {task.created_by && (
-                  <div className="flex flex-col gap-1.5 pt-4 border-t border-slate-200 mt-2">
-                    <span className="text-[13px] font-semibold text-[#5e6c84]">Reporter</span>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
-                        style={memberAvatarChipStyle(task.created_by.name)}
-                      >
-                        <span className="leading-none">{memberAvatarLetter(task.created_by.name)}</span>
+                <div className="mt-2 space-y-4 border-t border-slate-200 pt-4">
+                  {task.created_by && (
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-[13px] font-semibold text-[#5e6c84]">Reporter</span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                          style={memberAvatarChipStyle(task.created_by.name)}
+                        >
+                          <span className="leading-none">{memberAvatarLetter(task.created_by.name)}</span>
+                        </div>
+                        <span className="text-[14px] font-medium text-[#172b4d]">{task.created_by.name}</span>
                       </div>
-                      <span className="text-[14px] font-medium text-[#172b4d]">{task.created_by.name}</span>
                     </div>
+                  )}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[13px] font-semibold text-[#5e6c84]">Last edited</span>
+                    <time
+                      dateTime={task.updated_at}
+                      className="text-[14px] font-medium text-[#172b4d] tabular-nums"
+                    >
+                      {lastEditedLabel}
+                    </time>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
