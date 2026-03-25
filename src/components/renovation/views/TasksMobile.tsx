@@ -7,6 +7,7 @@ import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
 import { formatTaskDue } from '@/lib/renovation-format'
+import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 import type { RenovationLabel, RenovationTask, TaskStatus } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
 import { STATUSES, sortTasks } from './tasks-page-shared'
@@ -140,8 +141,12 @@ export function TasksMobile() {
 
             <div className="flex items-center shrink-0">
               {t.assignee ? (
-                <div className="w-6 h-6 rounded-full bg-[#0052cc] flex items-center justify-center text-[10px] font-bold text-white shadow-sm" title={t.assignee.name}>
-                  {t.assignee.name.charAt(0).toUpperCase()}
+                <div
+                  className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                  style={memberAvatarChipStyle(t.assignee.name)}
+                  title={t.assignee.name}
+                >
+                  <span className="leading-none">{memberAvatarLetter(t.assignee.name)}</span>
                 </div>
               ) : (
                 <div className="w-6 h-6 rounded-full border border-dashed border-[#dfe1e6] flex items-center justify-center bg-[#f4f5f7]">
@@ -328,6 +333,7 @@ export function TasksMobile() {
       {viewing && (
         <TaskDetailDrawer
           task={viewing}
+          members={members}
           labels={labels}
           rooms={rooms}
           providers={providers}

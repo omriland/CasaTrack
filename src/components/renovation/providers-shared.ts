@@ -1,4 +1,5 @@
 import type { RenovationProvider } from '@/types/renovation'
+import { stringAvatarHue } from '@/lib/avatar-hue'
 
 export function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -33,13 +34,11 @@ export function matchesQuery(p: RenovationProvider, q: string): boolean {
 }
 
 export function avatarTint(name: string): string {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i) * (i + 1)) % 360
+  const h = stringAvatarHue(name)
   return `hsl(${h} 55% 92%)`
 }
 
 export function avatarTextColor(name: string): string {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i) * (i + 1)) % 360
+  const h = stringAvatarHue(name)
   return `hsl(${h} 45% 32%)`
 }

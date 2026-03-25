@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Varela+Round&subset=latin,hebrew&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -466,4 +467,191 @@ input[type=number] {
   .reno-app .pt-safe {
     padding-top: 0;
   }
+}
+
+/* Renovation calendar — Google Calendar–inspired shell */
+.reno-cal-gcal {
+  font-family: Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --gcal-border: #dadce0;
+  --gcal-text: #3c4043;
+  --gcal-text-sec: #70757a;
+  --gcal-blue: #1a73e8;
+  --gcal-blue-hover: #1557b0;
+  --gcal-surface: #ffffff;
+  --gcal-surface-muted: #f8f9fa;
+  --gcal-now: #ea4335;
+}
+
+.reno-cal-gcal.reno-cal {
+  border-radius: 12px;
+  border: 1px solid var(--gcal-border);
+  background: var(--gcal-surface);
+  box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
+    0 2px 6px 2px rgba(60, 64, 67, 0.15);
+}
+
+.reno-cal-gcal .fc {
+  --fc-border-color: var(--gcal-border);
+  --fc-page-bg-color: var(--gcal-surface);
+  --fc-neutral-bg-color: var(--gcal-surface-muted);
+  --fc-today-bg-color: rgba(26, 115, 232, 0.09);
+  --fc-now-indicator-color: var(--gcal-now);
+  --fc-highlight-color: rgba(26, 115, 232, 0.14);
+  font-size: 0.8125rem;
+}
+
+.reno-cal-gcal .fc-scrollgrid,
+.reno-cal-gcal .fc-scrollgrid-section > td,
+.reno-cal-gcal .fc-scrollgrid-section > th {
+  border-color: var(--gcal-border);
+}
+
+.reno-cal-gcal .fc-col-header-cell {
+  padding: 0;
+  vertical-align: middle;
+  background: var(--gcal-surface);
+  border-bottom: 1px solid var(--gcal-border);
+}
+
+.reno-cal-gcal .reno-cal-gcal-day-header .fc-scrollgrid-sync-inner {
+  min-height: 4.5rem;
+}
+
+.reno-cal--compact .reno-cal-gcal-day-header .fc-scrollgrid-sync-inner {
+  min-height: 3.25rem;
+}
+
+.reno-cal-gcal .fc-timegrid-axis {
+  background: var(--gcal-surface);
+}
+
+.reno-cal-gcal .fc-timegrid-slot-label {
+  font-size: 0.6875rem;
+  font-weight: 400;
+  color: var(--gcal-text-sec);
+  vertical-align: top;
+  padding-top: 0.125rem;
+}
+
+.reno-cal-gcal .fc-timegrid-slot {
+  border-color: #e8eaed;
+}
+
+.reno-cal-gcal .fc-timegrid-slot-minor {
+  border-color: transparent;
+}
+
+.reno-cal-gcal .fc-timegrid-divider {
+  padding: 0;
+  border-color: var(--gcal-border);
+}
+
+.reno-cal-gcal .fc-timegrid-body {
+  background: var(--gcal-surface);
+}
+
+/* All-day row strip (Google-style muted band) */
+.reno-cal-gcal .fc-timegrid .fc-daygrid-body {
+  background: var(--gcal-surface-muted);
+}
+
+.reno-cal-gcal .fc-timegrid .fc-scrollgrid-sync-table .fc-daygrid-day {
+  background: var(--gcal-surface-muted);
+}
+
+.reno-cal-weekend:not(.fc-day-today) {
+  background-color: rgba(248, 249, 250, 0.95) !important;
+}
+
+.reno-cal-gcal .fc-daygrid-day-top {
+  flex-direction: row;
+  justify-content: center;
+  padding-top: 0.35rem;
+}
+
+.reno-cal-gcal .fc-daygrid-day-number {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  color: var(--gcal-text);
+  padding: 0.25rem 0.45rem;
+  border-radius: 9999px;
+}
+
+.reno-cal-gcal .fc-day-today .fc-daygrid-day-number {
+  background: var(--gcal-blue);
+  color: #fff;
+  font-weight: 500;
+}
+
+.reno-cal-gcal .fc-day-other .fc-daygrid-day-number {
+  color: #9aa0a6;
+}
+
+.reno-cal-gcal .fc-more-link {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--gcal-blue);
+  padding: 0.125rem 0.25rem;
+  border-radius: 4px;
+}
+
+.reno-cal-gcal .fc-more-link:hover {
+  background: rgba(26, 115, 232, 0.08);
+}
+
+.reno-cal-gcal .fc-event {
+  border-radius: 4px;
+  border-width: 0;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.25);
+}
+
+.reno-cal-event-root {
+  overflow: hidden;
+}
+
+/* Event types — left accent bar (Google Calendar style) */
+.reno-cal-gcal .fc-event.reno-cal-event--general {
+  background-color: #e8f0fe !important;
+  border: none !important;
+  border-left: 3px solid var(--gcal-blue) !important;
+  color: #001d35 !important;
+}
+
+.reno-cal-gcal .fc-event.reno-cal-event--provider {
+  background-color: #f3e8ff !important;
+  border: none !important;
+  border-left: 3px solid #9333ea !important;
+  color: #4c1d95 !important;
+}
+
+.reno-cal-gcal .fc-event.reno-cal-event--task {
+  --fc-event-text-color: #14532d;
+  background-color: #e6f4ea !important;
+  border: none !important;
+  border-left: 3px solid #137333 !important;
+  color: #14532d !important;
+}
+
+.reno-cal-gcal .fc-event.reno-cal-event--task .fc-event-main,
+.reno-cal-gcal .fc-event.reno-cal-event--task .fc-event-title {
+  color: #14532d !important;
+}
+
+/* Israeli holidays — all-day row */
+.reno-cal-gcal .fc-event.reno-cal-il-holiday {
+  background-color: #fce8ee !important;
+  border: none !important;
+  border-left: 3px solid #e91e63 !important;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.2);
+}
+
+.reno-cal-gcal .fc-event.reno-cal-il-holiday .fc-event-title {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #9c1a4a;
+}
+
+.reno-cal-gcal.reno-cal--compact .fc-event {
+  box-shadow: 0 1px 1px rgba(60, 64, 67, 0.2);
 }

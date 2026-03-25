@@ -1,22 +1,7 @@
 'use client'
 
 import type { RenovationTeamMember } from '@/types/renovation'
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0]![0] + parts[1]![0]).toUpperCase()
-  const p = parts[0] || '?'
-  return p.slice(0, 2).toUpperCase()
-}
-
-function tint(name: string): { bg: string; fg: string } {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i) * (i + 1)) % 360
-  return {
-    bg: `hsl(${h} 52% 93%)`,
-    fg: `hsl(${h} 48% 30%)`,
-  }
-}
+import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
 
 export function RenovationProfileGate({
   members,
@@ -46,43 +31,40 @@ export function RenovationProfileGate({
           </p>
         </div>
         <ul className="px-4 pb-8 max-h-[min(52vh,420px)] overflow-y-auto space-y-2">
-          {members.map((m) => {
-            const { bg, fg } = tint(m.name)
-            return (
-              <li key={m.id}>
-                <button
-                  type="button"
-                  onClick={() => onSelect(m)}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-200/90 bg-slate-50/50 hover:bg-indigo-50/80 hover:border-indigo-200 active:scale-[0.99] transition-all text-left group"
+          {members.map((m) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                onClick={() => onSelect(m)}
+                className="w-full flex items-center gap-4 p-4 rounded-2xl border border-slate-200/90 bg-slate-50/50 hover:bg-indigo-50/80 hover:border-indigo-200 active:scale-[0.99] transition-all text-left group"
+              >
+                <div
+                  className="grid h-12 w-12 place-items-center rounded-xl text-[14px] font-extrabold shrink-0 shadow-inner"
+                  style={memberAvatarTileStyle(m.name)}
                 >
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-[14px] font-extrabold shrink-0 shadow-inner"
-                    style={{ backgroundColor: bg, color: fg }}
-                  >
-                    {initials(m.name)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[16px] font-bold text-slate-900 truncate" dir="auto">
-                      {m.name}
+                  <span className="leading-none">{memberInitials(m.name)}</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[16px] font-bold text-slate-900 truncate" dir="auto">
+                    {m.name}
+                  </p>
+                  {(m.phone || m.email) && (
+                    <p className="text-[12px] text-slate-400 truncate mt-0.5">
+                      {[m.phone, m.email].filter(Boolean).join(' · ')}
                     </p>
-                    {(m.phone || m.email) && (
-                      <p className="text-[12px] text-slate-400 truncate mt-0.5">
-                        {[m.phone, m.email].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
-                  </div>
-                  <svg
-                    className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 shrink-0 transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </li>
-            )
-          })}
+                  )}
+                </div>
+                <svg
+                  className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 shrink-0 transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </li>
+          ))}
         </ul>
         <p className="px-8 pb-6 text-center text-[12px] text-slate-400 leading-relaxed">
           Manage this list under <span className="font-semibold text-slate-500">Settings → Team</span>.

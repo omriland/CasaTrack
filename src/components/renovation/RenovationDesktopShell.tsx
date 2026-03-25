@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
+import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
 
 const nav = [
   { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
@@ -73,16 +74,11 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
               onClick={openProfilePicker}
               className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-left group"
             >
-              <div className="w-9 h-9 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-[11px] font-extrabold shrink-0">
-                {activeProfile.name
-                  .trim()
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((w) => w[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2) || '?'}
+              <div
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[11px] font-extrabold shadow-inner"
+                style={memberAvatarTileStyle(activeProfile.name)}
+              >
+                <span className="leading-none">{memberInitials(activeProfile.name)}</span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-bold text-slate-800 truncate" dir="auto">

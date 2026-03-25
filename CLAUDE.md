@@ -31,6 +31,8 @@ There are no automated tests in this project.
 - **Google Maps API** — map view, Places autocomplete, geocoding; OpenStreetMap Nominatim as fallback
 - **FFmpeg.wasm + browser-image-compression** — client-side media processing before upload
 - **Zod** — runtime validation; **date-fns** — date utilities
+- **FullCalendar** (`@fullcalendar/react` + daygrid, timegrid, interaction) — renovation `/renovation/calendar` (dynamic import, `ssr: false`)
+- **@hebcal/core** — Israeli holiday schedule (`il: true`) as background events on the renovation calendar (GPL-2.0)
 
 ### Two Independent Modules
 
@@ -44,7 +46,7 @@ There are no automated tests in this project.
 - `/api/extract-property` — extracts property fields from Yad2 URLs (OpenAI); `/api/fetch-html` — fetches HTML for extraction
 
 **Renovation Hub** (`/renovation` routes):
-- Sub-pages: dashboard, expenses, tasks, calendar (month + week time grid, drag to create/move timed events), gallery, providers, files, needs, rooms, settings
+- Sub-pages: dashboard, expenses, tasks, calendar (FullCalendar month + week: select to create timed, drag/resize to update), gallery, providers, files, needs, rooms, settings
 - Budget route `/renovation/budget` is a client redirect → `/renovation/settings#budget`
 - Only **one project can be active** at a time (enforced at app level, not DB constraint)
 

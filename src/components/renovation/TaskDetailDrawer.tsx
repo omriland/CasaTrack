@@ -1,18 +1,24 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { updateTask } from '@/lib/renovation'
 import type {
   RenovationTask,
   RenovationLabel,
   RenovationRoom,
   RenovationProvider,
+  RenovationTeamMember,
+  TaskUrgency,
 } from '@/types/renovation'
-import { PRIORITY_ICONS } from '@/components/renovation/TaskModal'
+import { PRIORITY_ICONS, URGENCY, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
 import { formatTaskDue } from '@/lib/renovation-format'
+import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
+
+type DetailPickerOpen = 'assignee' | 'priority' | 'provider' | null
 
 interface TaskDetailDrawerProps {
   task: RenovationTask
+  members: RenovationTeamMember[]
   labels: RenovationLabel[]
   rooms: RenovationRoom[]
   providers: RenovationProvider[]
@@ -23,6 +29,7 @@ interface TaskDetailDrawerProps {
 
 export function TaskDetailDrawer({
   task,
+  members,
   labels,
   rooms,
   providers,
@@ -34,11 +41,47 @@ export function TaskDetailDrawer({
   const [editingBody, setEditingBody] = useState(false)
   const [titleDraft, setTitleDraft] = useState(task.title)
   const [bodyDraft, setBodyDraft] = useState(task.body || '')
+  const [detailPickerOpen, setDetailPickerOpen] = useState<DetailPickerOpen>(null)
+  const assigneePickerRef = useRef<HTMLDivElement>(null)
+  const priorityPickerRef = useRef<HTMLDivElement>(null)
+  const providerPickerRef = useRef<HTMLDivElement>(null)
+
+  const sortedMembers = useMemo(
+    () => [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [members],
+  )
+
+  const sortedProviders = useMemo(
+    () => [...providers].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [providers],
+  )
 
   useEffect(() => {
     setTitleDraft(task.title)
     setBodyDraft(task.body || '')
   }, [task])
+
+  useEffect(() => {
+    if (!detailPickerOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDetailPickerOpen(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [detailPickerOpen])
+
+  useEffect(() => {
+    if (!detailPickerOpen) return
+    const onMouseDown = (e: MouseEvent) => {
+      const n = e.target as Node
+      if (detailPickerOpen === 'assignee' && assigneePickerRef.current?.contains(n)) return
+      if (detailPickerOpen === 'priority' && priorityPickerRef.current?.contains(n)) return
+      if (detailPickerOpen === 'provider' && providerPickerRef.current?.contains(n)) return
+      setDetailPickerOpen(null)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [detailPickerOpen])
 
   const commitTitle = async () => {
     setEditingTitle(false)
@@ -62,6 +105,32 @@ export function TaskDetailDrawer({
     const updated = { ...task, body: b }
     onTaskChange?.(updated)
     updateTask(task.id, { body: b }).catch(() => onTaskChange?.(task))
+  }
+
+  const commitAssignee = (assigneeId: string | null) => {
+    setDetailPickerOpen(null)
+    if (assigneeId === task.assignee_id) return
+    const member = assigneeId ? sortedMembers.find((m) => m.id === assigneeId) ?? null : null
+    const updated = { ...task, assignee_id: assigneeId, assignee: member }
+    onTaskChange?.(updated)
+    updateTask(task.id, { assignee_id: assigneeId }).catch(() => onTaskChange?.(task))
+  }
+
+  const commitPriority = (urgency: TaskUrgency) => {
+    setDetailPickerOpen(null)
+    if (urgency === task.urgency) return
+    const updated = { ...task, urgency }
+    onTaskChange?.(updated)
+    updateTask(task.id, { urgency }).catch(() => onTaskChange?.(task))
+  }
+
+  const commitProvider = (providerId: string | null) => {
+    setDetailPickerOpen(null)
+    if (providerId === task.provider_id) return
+    const p = providerId ? sortedProviders.find((x) => x.id === providerId) ?? null : null
+    const updated = { ...task, provider_id: providerId, provider: p }
+    onTaskChange?.(updated)
+    updateTask(task.id, { provider_id: providerId }).catch(() => onTaskChange?.(task))
   }
 
   const isDone = task.status === 'done'
@@ -213,28 +282,164 @@ export function TaskDetailDrawer({
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[13px] font-semibold text-[#5e6c84]">Assignee</span>
-                  <div className="flex items-center gap-2">
-                    {task.assignee ? (
-                      <>
-                        <div className="w-6 h-6 rounded-full bg-[#0052cc] flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
-                          {task.assignee.name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="text-[14px] font-medium text-[#172b4d]">{task.assignee.name}</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-6 h-6 rounded-full border border-dashed border-[#dfe1e6] flex items-center justify-center bg-white"><svg className="w-4 h-4 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg></div>
-                        <span className="text-[14px] text-slate-500 italic">Unassigned</span>
-                      </>
+                  <div className="relative" ref={assigneePickerRef}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDetailPickerOpen((o) => (o === 'assignee' ? null : 'assignee'))
+                      }
+                      className="group flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left -mx-2 transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                    >
+                      {task.assignee ? (
+                        <>
+                          <div
+                            className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                            style={memberAvatarChipStyle(task.assignee.name)}
+                          >
+                            <span className="leading-none">{memberAvatarLetter(task.assignee.name)}</span>
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]">
+                            {task.assignee.name}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-4 w-4 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-[14px] font-medium italic text-slate-500">
+                            Unassigned
+                          </span>
+                        </>
+                      )}
+                      <svg
+                        className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {detailPickerOpen === 'assignee' && (
+                      <div
+                        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        role="listbox"
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={!task.assignee_id}
+                          onClick={() => commitAssignee(null)}
+                          className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors last:mb-0 ${
+                            !task.assignee_id
+                              ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </div>
+                          Unassigned
+                        </button>
+                        {sortedMembers.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            role="option"
+                            aria-selected={task.assignee_id === m.id}
+                            onClick={() => commitAssignee(m.id)}
+                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                              task.assignee_id === m.id
+                                ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                : 'font-medium text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            <div
+                              className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                              style={memberAvatarChipStyle(m.name)}
+                            >
+                              <span className="leading-none">{memberAvatarLetter(m.name)}</span>
+                            </div>
+                            <span className="truncate">{m.name}</span>
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[13px] font-semibold text-[#5e6c84]">Priority</span>
-                  <div className="flex items-center gap-2 text-[14px] font-medium text-[#172b4d] capitalize">
-                    {PRIORITY_ICONS[task.urgency]}
-                    {task.urgency}
+                  <div className="relative" ref={priorityPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDetailPickerOpen((o) => (o === 'priority' ? null : 'priority'))
+                      }
+                      className="group flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left -mx-2 transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                    >
+                      <span className="flex shrink-0 items-center">{PRIORITY_ICONS[task.urgency]}</span>
+                      <span className="min-w-0 flex-1 text-[14px] font-medium capitalize text-[#172b4d]">
+                        {formatUrgencyLabel(task.urgency)}
+                      </span>
+                      <svg
+                        className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {detailPickerOpen === 'priority' && (
+                      <div
+                        className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        role="listbox"
+                      >
+                        {URGENCY.map((u) => (
+                          <button
+                            key={u}
+                            type="button"
+                            role="option"
+                            aria-selected={task.urgency === u}
+                            onClick={() => commitPriority(u)}
+                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                              task.urgency === u
+                                ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                : 'font-medium text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            {PRIORITY_ICONS[u]}
+                            <span className="capitalize">{formatUrgencyLabel(u)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -250,19 +455,122 @@ export function TaskDetailDrawer({
                   </div>
                 )}
 
-                {provider && (
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[13px] font-semibold text-[#5e6c84]">Provider</span>
-                    <span className="text-[14px] font-medium text-[#172b4d]">{provider.name}</span>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[13px] font-semibold text-[#5e6c84]">Provider</span>
+                  <div className="relative" ref={providerPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDetailPickerOpen((o) => (o === 'provider' ? null : 'provider'))
+                      }
+                      className="group flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left -mx-2 transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                    >
+                      {provider ? (
+                        <>
+                          <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
+                            <span className="leading-none">{provider.name.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]">
+                            {provider.name}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-[14px] font-medium italic text-slate-500">
+                            {sortedProviders.length ? 'No provider' : 'Add providers in Providers tab'}
+                          </span>
+                        </>
+                      )}
+                      <svg
+                        className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {detailPickerOpen === 'provider' && (
+                      <div
+                        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        role="listbox"
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={!task.provider_id}
+                          onClick={() => commitProvider(null)}
+                          className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors last:mb-0 ${
+                            !task.provider_id
+                              ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                              : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </div>
+                          {sortedProviders.length ? 'No provider' : 'Add providers in Providers tab'}
+                        </button>
+                        {sortedProviders.map((pr) => (
+                          <button
+                            key={pr.id}
+                            type="button"
+                            role="option"
+                            aria-selected={task.provider_id === pr.id}
+                            onClick={() => commitProvider(pr.id)}
+                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                              task.provider_id === pr.id
+                                ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                : 'font-medium text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
+                              <span className="leading-none">{pr.name.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <span className="truncate">{pr.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
                 
                 {task.created_by && (
                   <div className="flex flex-col gap-1.5 pt-4 border-t border-slate-200 mt-2">
                     <span className="text-[13px] font-semibold text-[#5e6c84]">Reporter</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                        {task.created_by.name.charAt(0).toUpperCase()}
+                      <div
+                        className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                        style={memberAvatarChipStyle(task.created_by.name)}
+                      >
+                        <span className="leading-none">{memberAvatarLetter(task.created_by.name)}</span>
                       </div>
                       <span className="text-[14px] font-medium text-[#172b4d]">{task.created_by.name}</span>
                     </div>

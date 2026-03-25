@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useCallback, useState, type ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
+import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
 import { MobileBottomSheet } from './mobile/MobileBottomSheet'
 
 const primaryNav = [
@@ -52,19 +53,12 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={openProfilePicker}
-              className="flex min-h-[40px] min-w-[40px] shrink-0 items-center justify-center rounded-xl border border-indigo-100 bg-indigo-50 px-2.5 transition-transform active:scale-95"
+              className="grid min-h-[40px] min-w-[40px] shrink-0 place-items-center rounded-xl border border-slate-200/90 px-2.5 shadow-sm transition-transform active:scale-95"
+              style={memberAvatarTileStyle(activeProfile.name)}
               aria-label="Switch profile"
             >
-              <span className="text-[11px] font-extrabold tabular-nums text-indigo-700">
-                {activeProfile.name
-                  .trim()
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((w) => w[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2) || '?'}
+              <span className="text-[11px] font-extrabold leading-none tabular-nums">
+                {memberInitials(activeProfile.name)}
               </span>
             </button>
           )}

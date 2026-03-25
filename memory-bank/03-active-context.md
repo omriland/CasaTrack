@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation module stable; **calendar** at `/renovation/calendar` (events + provider meetings + task dues, Sun-first grid, Fri–Sat weekend).
-**Status**: Calendar shipped with SQL `10_calendar_events.sql`, desktop sidebar + mobile More nav. Manual QA: create timed/all-day events, provider meetings, task due visibility + edit from calendar.
+**Priority**: Renovation module stable; **calendar** at `/renovation/calendar` (FullCalendar month/week, events + provider meetings + task dues, Sun-first, Fri–Sat weekend).
+**Status**: Calendar uses FullCalendar (dynamic client bundle); SQL `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`. Manual QA: timed/all-day, provider meetings, drag-select create, drag/resize update, tasks toggle, mobile sheet.
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session

@@ -15,6 +15,7 @@ import {
   updateBudgetLine,
 } from '@/lib/renovation'
 import type { RenovationSettingsPageCtx } from './useRenovationSettingsPageState'
+import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
 
 export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; mobile: boolean }) {
   const {
@@ -228,10 +229,18 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
         </div>
         <div className="divide-y divide-slate-100">
           {members.map((m) => (
-            <div key={m.id} className={`flex justify-between items-center ${mobile ? 'p-4' : 'p-4 sm:p-5'} gap-2 hover:bg-slate-50/50 transition-colors`}>
-              <div className="min-w-0" dir="auto">
-                <p className="font-bold text-slate-900 text-[16px]">{m.name}</p>
-                {(m.phone || m.email) && <p className="text-[13px] text-slate-500 truncate mt-0.5">{m.phone || m.email}</p>}
+            <div key={m.id} className={`flex justify-between items-center ${mobile ? 'p-4' : 'p-4 sm:p-5'} gap-3 hover:bg-slate-50/50 transition-colors`}>
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[13px] font-extrabold shadow-inner"
+                  style={memberAvatarTileStyle(m.name)}
+                >
+                  <span className="leading-none">{memberInitials(m.name)}</span>
+                </div>
+                <div className="min-w-0" dir="auto">
+                  <p className="font-bold text-slate-900 text-[16px]">{m.name}</p>
+                  {(m.phone || m.email) && <p className="text-[13px] text-slate-500 truncate mt-0.5">{m.phone || m.email}</p>}
+                </div>
               </div>
               <button type="button" onClick={() => deleteTeamMember(m.id).then(load)} className="text-rose-500 hover:bg-rose-50 px-3 min-h-[44px] rounded-lg text-[13px] font-semibold shrink-0 transition-colors">
                 Remove

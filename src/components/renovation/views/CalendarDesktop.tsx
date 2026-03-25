@@ -1,32 +1,21 @@
 'use client'
 
-import {
-  addDays,
-  addMonths,
-  addWeeks,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isSameMonth,
-  isToday,
-  startOfMonth,
-  startOfWeek,
-  subMonths,
-  subWeeks,
-} from 'date-fns'
+import { addDays, addMonths, addWeeks, format, startOfWeek, subMonths, subWeeks } from 'date-fns'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
-import { CalendarWeekGrid } from '@/components/renovation/CalendarWeekGrid'
+import { RenovationFullCalendar } from '@/components/renovation/RenovationFullCalendar'
+import { calendarEventOnLocalDay, taskDueOnLocalDay } from '@/components/renovation/calendar-shared'
 import { TaskModal } from '@/components/renovation/TaskModal'
-import { calendarEventOnLocalDay, dayKey, isWeekendFriSat, taskDueOnLocalDay } from '@/components/renovation/calendar-shared'
-import { formatTaskDue } from '@/lib/renovation-format'
 import { listLabels, listRooms, listTeamMembers } from '@/lib/renovation'
-import type { RenovationCalendarEvent, RenovationLabel, RenovationRoom, RenovationTask, RenovationTeamMember } from '@/types/renovation'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import type {
+  RenovationCalendarEvent,
+  RenovationLabel,
+  RenovationRoom,
+  RenovationTask,
+  RenovationTeamMember,
+} from '@/types/renovation'
 import { useCalendarPageState } from './useCalendarPageState'
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const
 
 export function CalendarDesktop() {
   const {
@@ -87,16 +76,10 @@ export function CalendarDesktop() {
     if (taskSheetOpen) loadMeta()
   }, [taskSheetOpen, loadMeta])
 
-  const monthStart = startOfMonth(cursor)
-  const monthEnd = endOfMonth(cursor)
-  const gridStart = startOfWeek(monthStart, { weekStartsOn: 0 })
-  const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
-  const days = eachDayOfInterval({ start: gridStart, end: gridEnd })
-
   const itemsForDay = useMemo(() => {
     const fn = (d: Date) => {
-      const evs = events.filter((e) => calendarEventOnLocalDay(e, d))
-      const tks = showTasks ? tasks.filter((t) => taskDueOnLocalDay(t, d)) : []
+      const evs = events.filter(e => calendarEventOnLocalDay(e, d))
+      const tks = showTasks ? tasks.filter(t => taskDueOnLocalDay(t, d)) : []
       return { events: evs, tasks: tks }
     }
     return fn
@@ -107,7 +90,7 @@ export function CalendarDesktop() {
   if (!project) {
     return (
       <p className="py-16 text-center text-black/45">
-        <a href="/renovation" className="text-[#007AFF]">
+        <a href="/renovation" className="font-medium text-[#1a73e8]">
           Create a project first
         </a>
       </p>
@@ -120,21 +103,25 @@ export function CalendarDesktop() {
     : { events: [] as RenovationCalendarEvent[], tasks: [] as RenovationTask[] }
 
   return (
-    <div className="space-y-6 pb-8 animate-fade-in-up">
+    <div className="space-y-5 pb-8 animate-fade-in-up">
       <header className="flex flex-row flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-sans text-[32px] font-bold tracking-tight text-slate-900">Calendar</h1>
-          <p className="mt-1 max-w-md text-[15px] font-medium text-slate-400">
-            Events, provider meetings, and task due dates. Work week Sun–Thu; Fri–Sat are weekend.
+          <h1 className="text-[28px] font-normal tracking-tight text-[#3c4043] md:text-[32px]">
+            Calendar
+          </h1>
+          <p className="mt-1 max-w-md text-[14px] font-normal leading-snug text-[#5f6368]">
+            Events, provider meetings, and task due dates. Sun–Thu work week; Fri–Sat weekend.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-full border border-slate-200 bg-white p-0.5 text-[13px] font-bold shadow-sm">
+          <div className="inline-flex rounded-lg border border-[#dadce0] bg-[#f1f3f4] p-0.5 text-[13px] font-medium">
             <button
               type="button"
               onClick={() => setCalendarView('month')}
-              className={`rounded-full px-3 py-2 transition-colors ${
-                calendarView === 'month' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+              className={`rounded-md px-3 py-2 transition-all ${
+                calendarView === 'month'
+                  ? 'bg-white text-[#3c4043] shadow-sm'
+                  : 'text-[#5f6368] hover:text-[#3c4043]'
               }`}
             >
               Month
@@ -142,66 +129,72 @@ export function CalendarDesktop() {
             <button
               type="button"
               onClick={() => setCalendarView('week')}
-              className={`rounded-full px-3 py-2 transition-colors ${
-                calendarView === 'week' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-50'
+              className={`rounded-md px-3 py-2 transition-all ${
+                calendarView === 'week'
+                  ? 'bg-white text-[#3c4043] shadow-sm'
+                  : 'text-[#5f6368] hover:text-[#3c4043]'
               }`}
             >
               Week
             </button>
           </div>
-          <label className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[13px] font-bold text-slate-600 shadow-sm">
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[#dadce0] bg-white px-3 py-2 text-[13px] font-medium text-[#5f6368] shadow-sm">
             <input
               type="checkbox"
               checked={showTasks}
-              onChange={(e) => setShowTasks(e.target.checked)}
-              className="rounded border-slate-300"
+              onChange={e => setShowTasks(e.target.checked)}
+              className="rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
             />
             Show tasks
           </label>
           <label
-            className={`flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[13px] font-bold shadow-sm ${
-              !showTasks ? 'pointer-events-none opacity-40' : 'text-slate-600'
+            className={`flex cursor-pointer items-center gap-2 rounded-lg border border-[#dadce0] bg-white px-3 py-2 text-[13px] font-medium shadow-sm ${
+              !showTasks ? 'pointer-events-none opacity-40' : 'text-[#5f6368]'
             }`}
           >
             <input
               type="checkbox"
               checked={showCompletedTasks}
               disabled={!showTasks}
-              onChange={(e) => setShowCompletedTasks(e.target.checked)}
-              className="rounded border-slate-300"
+              onChange={e => setShowCompletedTasks(e.target.checked)}
+              className="rounded border-[#dadce0] text-[#1a73e8] focus:ring-[#1a73e8]"
             />
-            Show completed tasks
+            Show completed
           </label>
           <button
             type="button"
             onClick={() => openNewEvent(null)}
-            className="h-11 rounded-full bg-indigo-600 px-6 text-[15px] font-bold text-white shadow-sm hover:bg-indigo-700 active:scale-95"
+            className="h-10 rounded-lg bg-[#1a73e8] px-5 text-[14px] font-medium text-white shadow-sm transition-colors hover:bg-[#1557b0] active:bg-[#1557b0]"
           >
-            + Add event
+            + Create
           </button>
         </div>
       </header>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#dadce0] bg-white px-3 py-2.5 shadow-sm md:px-4 md:py-3">
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => setCursor(calendarView === 'month' ? subMonths(cursor, 1) : subWeeks(cursor, 1))}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-[14px] font-bold text-slate-700 hover:bg-slate-50"
+            onClick={() =>
+              setCursor(calendarView === 'month' ? subMonths(cursor, 1) : subWeeks(cursor, 1))
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4]"
             aria-label={calendarView === 'month' ? 'Previous month' : 'Previous week'}
           >
             ←
           </button>
           <button
             type="button"
-            onClick={() => setCursor(calendarView === 'month' ? addMonths(cursor, 1) : addWeeks(cursor, 1))}
-            className="rounded-xl border border-slate-200 px-3 py-2 text-[14px] font-bold text-slate-700 hover:bg-slate-50"
+            onClick={() =>
+              setCursor(calendarView === 'month' ? addMonths(cursor, 1) : addWeeks(cursor, 1))
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4]"
             aria-label={calendarView === 'month' ? 'Next month' : 'Next week'}
           >
             →
           </button>
         </div>
-        <h2 className="text-center text-[18px] font-bold text-slate-900">
+        <h2 className="text-center text-[16px] font-normal text-[#3c4043] md:text-[18px]">
           {calendarView === 'month'
             ? format(cursor, 'MMMM yyyy')
             : `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`}
@@ -209,171 +202,94 @@ export function CalendarDesktop() {
         <button
           type="button"
           onClick={() => setCursor(new Date())}
-          className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-[13px] font-bold text-indigo-700 hover:bg-indigo-100"
+          className="rounded-md px-3 py-2 text-[13px] font-medium text-[#1a73e8] hover:bg-[#f1f3f4]"
         >
           Today
         </button>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200">
-          {Array.from({ length: calendarView === 'week' ? 7 : 35 }).map((_, i) => (
-            <div key={i} className="min-h-[100px] animate-pulse bg-white" />
-          ))}
-        </div>
-      ) : calendarView === 'week' ? (
-        <CalendarWeekGrid
-          weekStart={weekStart}
+        <div className="reno-cal reno-cal-gcal min-h-[400px] animate-pulse rounded-xl border border-[#dadce0] bg-[#f8f9fa]" />
+      ) : (
+        <RenovationFullCalendar
+          view={calendarView}
+          cursor={cursor}
           events={events}
           tasks={tasks}
           showTasks={showTasks}
+          onDateClick={k => setSelectedKey(k)}
           onEditEvent={openEditEvent}
           onEditTask={openEditTask}
-          onCreateTimedRange={(start, end) => openNewEventTimed(start, end)}
+          onCreateTimedRange={openNewEventTimed}
+          onCreateForDay={dayKey => openNewEvent(dayKey)}
           onEventUpdated={() => load()}
         />
-      ) : (
-        <>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 shadow-sm">
-            <div className="grid grid-cols-7 gap-px bg-slate-200">
-              {WEEKDAYS.map((wd, i) => (
-                <div
-                  key={wd}
-                  className={`bg-slate-50 py-2 text-center text-[11px] font-bold uppercase tracking-wider ${
-                    i >= 5 ? 'text-slate-400' : 'text-slate-500'
-                  }`}
-                >
-                  {wd}
-                </div>
-              ))}
-              {days.map((d) => {
-                const key = dayKey(d)
-                const inMonth = isSameMonth(d, cursor)
-                const wknd = isWeekendFriSat(d)
-                const { events: evs, tasks: tks } = itemsForDay(d)
-                const isSel = selectedKey === key
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setSelectedKey(key)}
-                    className={`min-h-[112px] w-full p-1.5 text-left align-top transition-colors ${
-                      wknd ? 'bg-violet-50/90' : 'bg-white'
-                    } ${!inMonth ? 'opacity-40' : ''} ${isSel ? 'ring-2 ring-inset ring-indigo-400' : ''} hover:bg-indigo-50/50`}
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <span
-                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[13px] font-bold ${
-                          isToday(d) ? 'bg-indigo-600 text-white' : 'text-slate-800'
-                        }`}
-                      >
-                        {format(d, 'd')}
-                      </span>
-                    </div>
-                    <ul className="mt-1 space-y-0.5 overflow-hidden">
-                      {evs.slice(0, 3).map((e) => (
-                        <li
-                          key={e.id}
-                          className="rounded px-1 py-0.5 text-[10px] leading-tight text-indigo-900 bg-indigo-100/90 text-right"
-                          title={[e.title, e.address?.trim()].filter(Boolean).join(' — ')}
-                          dir="auto"
-                        >
-                          <p className="truncate font-bold">
-                            {!e.is_all_day && e.starts_at ? `${format(new Date(e.starts_at), 'HH:mm')} ` : ''}
-                            {e.event_type === 'provider_meeting' ? '· ' : ''}
-                            {e.title}
-                          </p>
-                          {e.address?.trim() ? (
-                            <p className="truncate text-[9px] font-normal text-indigo-800/90">{e.address.trim()}</p>
-                          ) : null}
-                        </li>
-                      ))}
-                      {tks.slice(0, Math.max(0, 3 - evs.length)).map((t) => {
-                        const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone: t.status === 'done' }) : null
-                        return (
-                          <li
-                            key={t.id}
-                            className="truncate rounded px-1 py-0.5 text-right text-[10px] font-bold leading-tight bg-emerald-100/90 text-emerald-900"
-                            title={t.title}
-                            dir="auto"
-                          >
-                            Task · {t.title}
-                            {dueMeta ? ` (${dueMeta.label})` : ''}
-                          </li>
-                        )
-                      })}
-                      {evs.length + tks.length > 3 && (
-                        <li className="text-[10px] font-bold text-slate-500">+{evs.length + tks.length - 3} more</li>
-                      )}
-                    </ul>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+      )}
 
-          {selectedKey && selectedDate && calendarView === 'month' && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-[17px] font-bold text-slate-900">{format(selectedDate, 'EEEE, MMM d, yyyy')}</h3>
-                <button
-                  type="button"
-                  onClick={() => openNewEvent(selectedKey)}
-                  className="rounded-full bg-indigo-600 px-4 py-2 text-[13px] font-bold text-white hover:bg-indigo-700"
-                >
-                  Add event this day
-                </button>
-              </div>
-              {selectedItems.events.length === 0 && selectedItems.tasks.length === 0 ? (
-                <p className="text-[14px] font-medium text-slate-400">
-                  Nothing scheduled. Add an event
-                  {showTasks ? ' or set task due dates.' : ' (turn on “Show tasks” to see dues here).'}
-                </p>
-              ) : (
-                <ul className="space-y-2">
-                  {selectedItems.events.map((e) => (
-                    <li key={e.id}>
-                      <button
-                        type="button"
-                        onClick={() => openEditEvent(e)}
-                        className="w-full rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3 text-right transition-colors hover:border-indigo-200 hover:bg-indigo-50/50"
-                        dir="auto"
-                      >
-                        <CalendarEventTitleAddress
-                          title={e.title}
-                          address={e.address}
-                          titleClassName="text-[14px] font-bold text-slate-900"
-                          addressClassName="text-[12px] font-medium text-slate-600 truncate"
-                        />
-                        <p className="mt-1 text-[12px] font-semibold text-slate-500">
-                          {e.is_all_day
-                            ? 'All day'
-                            : e.starts_at
-                              ? `${format(new Date(e.starts_at), 'p')}${e.ends_at ? ` – ${format(new Date(e.ends_at), 'p')}` : ''}`
-                              : ''}
-                          {e.event_type === 'provider_meeting' && e.provider ? ` · ${e.provider.name}` : ''}
-                        </p>
-                      </button>
-                    </li>
-                  ))}
-                  {selectedItems.tasks.map((t) => (
-                    <li key={t.id}>
-                      <button
-                        type="button"
-                        onClick={() => openEditTask(t)}
-                        className="w-full rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-right transition-colors hover:border-emerald-200"
-                        dir="auto"
-                      >
-                        <p className="text-[14px] font-bold text-emerald-900">Task · {t.title}</p>
-                        <p className="text-[12px] font-semibold text-emerald-700">Due {t.due_date}</p>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+      {selectedKey && selectedDate && calendarView === 'month' && (
+        <div className="rounded-xl border border-[#dadce0] bg-white p-5 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-[16px] font-medium text-[#3c4043]">
+              {format(selectedDate, 'EEEE, MMM d, yyyy')}
+            </h3>
+            <button
+              type="button"
+              onClick={() => openNewEvent(selectedKey)}
+              className="rounded-lg bg-[#1a73e8] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#1557b0]"
+            >
+              Add event
+            </button>
+          </div>
+          {selectedItems.events.length === 0 && selectedItems.tasks.length === 0 ? (
+            <p className="text-[14px] font-normal text-[#5f6368]">
+              Nothing scheduled. Add an event
+              {showTasks ? ' or set task due dates.' : ' (turn on “Show tasks” to see dues here).'}
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {selectedItems.events.map(e => (
+                <li key={e.id}>
+                  <button
+                    type="button"
+                    onClick={() => openEditEvent(e)}
+                    className="w-full rounded-lg border border-[#e8eaed] bg-[#f8f9fa] px-4 py-3 text-right transition-colors hover:border-[#dadce0] hover:bg-white"
+                    dir="auto"
+                  >
+                    <CalendarEventTitleAddress
+                      title={e.title}
+                      address={e.address}
+                      titleClassName="text-[14px] font-medium text-[#3c4043]"
+                      addressClassName="text-[12px] font-normal text-[#5f6368] truncate"
+                    />
+                    <p className="mt-1 text-[12px] font-normal text-[#70757a]">
+                      {e.is_all_day
+                        ? 'All day'
+                        : e.starts_at
+                          ? `${format(new Date(e.starts_at), 'HH:mm')}${e.ends_at ? ` – ${format(new Date(e.ends_at), 'HH:mm')}` : ''}`
+                          : ''}
+                      {e.event_type === 'provider_meeting' && e.provider
+                        ? ` · ${e.provider.name}`
+                        : ''}
+                    </p>
+                  </button>
+                </li>
+              ))}
+              {selectedItems.tasks.map(t => (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => openEditTask(t)}
+                    className="w-full rounded-lg border border-[#ceead6] bg-[#e6f4ea] px-4 py-3 text-right transition-colors hover:border-[#137333]/40"
+                    dir="auto"
+                  >
+                    <p className="text-[14px] font-medium text-[#0d652d]">Task · {t.title}</p>
+                    <p className="text-[12px] font-normal text-[#137333]">Due {t.due_date}</p>
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
-        </>
+        </div>
       )}
 
       {eventModalOpen && (
