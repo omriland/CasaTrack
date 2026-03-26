@@ -4,11 +4,15 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/utils/common'
 import {
-  ROOM_ICON_OPTIONS,
+  ROOM_ICON_KEYS,
   RoomIconGlyph,
   ROOM_ICON_TILE,
   type RoomIconKey,
 } from '@/components/renovation/room-icons'
+
+function iconAriaLabel(key: RoomIconKey): string {
+  return key.replace(/_/g, ' ')
+}
 
 export function RoomIconPickerGrid({
   value,
@@ -29,45 +33,30 @@ export function RoomIconPickerGrid({
 
   return (
     <div
-      className={cn('grid gap-2', dense ? 'grid-cols-3' : 'grid-cols-4')}
+      className="grid grid-cols-5 gap-2.5"
       role="listbox"
       aria-label="Room icons"
     >
-      {ROOM_ICON_OPTIONS.map((opt) => {
-        const selected = opt.key === value
+      {ROOM_ICON_KEYS.map((key) => {
+        const selected = key === value
         return (
           <button
-            key={opt.key}
+            key={key}
             type="button"
             role="option"
             aria-selected={selected}
-            title={`${opt.label} — ${opt.hint}`}
-            onClick={() => handle(opt.key)}
+            aria-label={iconAriaLabel(key)}
+            title={iconAriaLabel(key)}
+            onClick={() => handle(key)}
             className={cn(
-              'group flex flex-col items-center gap-1 rounded-2xl border-2 p-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-amber-400/80',
-              dense ? 'min-h-[88px]' : 'min-h-[96px]',
+              'group flex aspect-square max-h-[5.25rem] w-full items-center justify-center rounded-2xl border-2 p-2 transition-all outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50',
+              ROOM_ICON_TILE[key],
               selected
-                ? 'border-amber-400 bg-gradient-to-b from-amber-50/90 to-white shadow-[0_6px_20px_-8px_rgba(245,158,11,0.35)]'
-                : 'border-slate-100/90 bg-white/80 hover:border-slate-200 hover:bg-slate-50/90',
+                ? 'border-indigo-500 shadow-[0_0_0_3px_rgba(99,102,241,0.22)] ring-1 ring-indigo-300/60'
+                : 'border-white/60 shadow-sm hover:border-slate-200/90 hover:shadow-md active:scale-[0.97]',
             )}
           >
-            <div
-              className={cn(
-                'flex items-center justify-center rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] transition-transform group-active:scale-95',
-                dense ? 'h-11 w-11' : 'h-12 w-12',
-                ROOM_ICON_TILE[opt.key],
-              )}
-            >
-              <RoomIconGlyph roomKey={opt.key} className={dense ? 'h-6 w-6' : 'h-7 w-7'} />
-            </div>
-            <span
-              className={cn(
-                'max-w-[5.5rem] text-center font-bold leading-tight text-slate-600',
-                dense ? 'text-[9px]' : 'text-[10px]',
-              )}
-            >
-              {opt.label}
-            </span>
+            <RoomIconGlyph roomKey={key} className={dense ? 'h-7 w-7' : 'h-8 w-8'} />
           </button>
         )
       })}
@@ -124,16 +113,7 @@ export function RoomIconPickerDialog({
               Choose room icon
             </h2>
             <p className="mt-1 text-[13px] font-medium text-slate-500">
-              Icons from{' '}
-              <a
-                href="https://lucide.dev"
-                target="_blank"
-                rel="noreferrer"
-                className="text-indigo-600 underline decoration-indigo-200 underline-offset-2 hover:text-indigo-500"
-              >
-                Lucide
-              </a>
-              . Tap one to apply; save the room to keep it.
+              Tap an icon to apply. Save the room to keep your choice.
             </p>
           </div>
           <button
