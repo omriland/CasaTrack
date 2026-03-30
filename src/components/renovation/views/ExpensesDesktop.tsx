@@ -1,5 +1,6 @@
 'use client'
 
+import { ExpenseDetailDrawer } from '@/components/renovation/ExpenseDetailDrawer'
 import { ExpenseModal } from '@/components/renovation/ExpenseModal'
 import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
 import type { RenovationExpense } from '@/types/renovation'
@@ -12,13 +13,14 @@ export function ExpensesDesktop() {
     loading,
     sheet,
     setSheet,
-    editing,
     dragOverId,
     setDragOverId,
     load,
     attachmentCount,
     openNew,
-    openEdit,
+    openView,
+    closeView,
+    viewing,
     addFilesToExpense,
     remove,
   } = useExpensesPageState()
@@ -96,7 +98,7 @@ export function ExpensesDesktop() {
                   isDrag ? 'bg-indigo-50 ring-2 ring-indigo-300 ring-inset' : 'hover:bg-slate-50/50'
                 }`}
               >
-                <button type="button" onClick={() => openEdit(row)} className="flex-1 text-left min-w-0 flex items-center gap-4">
+                <button type="button" onClick={() => openView(row)} className="flex-1 text-left min-w-0 flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-lg uppercase shrink-0">
                     {(row.vendor || row.category || 'E')[0]}
                   </div>
@@ -161,13 +163,23 @@ export function ExpensesDesktop() {
 
       {sheet && (
         <ExpenseModal
-          editing={editing}
+          editing={null}
           onClose={() => setSheet(false)}
           onSave={() => {
             setSheet(false)
             load()
           }}
           onAttachmentsChanged={() => load()}
+        />
+      )}
+
+      {viewing && (
+        <ExpenseDetailDrawer
+          expense={viewing}
+          onClose={closeView}
+          onSaved={() => void load()}
+          onAttachmentsChanged={() => void load()}
+          onDeleted={() => void load()}
         />
       )}
     </div>

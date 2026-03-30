@@ -1,5 +1,6 @@
 'use client'
 
+import { ExpenseDetailDrawer } from '@/components/renovation/ExpenseDetailDrawer'
 import { ExpenseModalMobile } from '@/components/renovation/ExpenseModalMobile'
 import { MobileStickyFooter } from '@/components/renovation/mobile/MobileStickyFooter'
 import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
@@ -13,13 +14,14 @@ export function ExpensesMobile() {
     loading,
     sheet,
     setSheet,
-    editing,
     dragOverId,
     setDragOverId,
     load,
     attachmentCount,
     openNew,
-    openEdit,
+    openView,
+    closeView,
+    viewing,
     addFilesToExpense,
     remove,
   } = useExpensesPageState()
@@ -70,7 +72,7 @@ export function ExpensesMobile() {
                 }}
                 className={`p-4 transition-colors ${isDrag ? 'bg-indigo-50 ring-2 ring-indigo-200 ring-inset' : ''}`}
               >
-                <button type="button" onClick={() => openEdit(row)} className="w-full text-left">
+                <button type="button" onClick={() => openView(row)} className="w-full text-left">
                   <div className="flex gap-3 items-start">
                     <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 font-bold uppercase shrink-0">
                       {(row.vendor || row.category || 'E')[0]}
@@ -137,13 +139,23 @@ export function ExpensesMobile() {
 
       {sheet && (
         <ExpenseModalMobile
-          editing={editing}
+          editing={null}
           onClose={() => setSheet(false)}
           onSave={() => {
             setSheet(false)
             load()
           }}
           onAttachmentsChanged={() => load()}
+        />
+      )}
+
+      {viewing && (
+        <ExpenseDetailDrawer
+          expense={viewing}
+          onClose={closeView}
+          onSaved={() => void load()}
+          onAttachmentsChanged={() => void load()}
+          onDeleted={() => void load()}
         />
       )}
     </div>

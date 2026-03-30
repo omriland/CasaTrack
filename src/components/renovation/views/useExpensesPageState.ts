@@ -18,8 +18,9 @@ export function useExpensesPageState() {
   const confirmAction = useConfirm()
   const [loading, setLoading] = useState(true)
   const [sheet, setSheet] = useState(false)
-  const [editing, setEditing] = useState<RenovationExpense | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
+  /** Desktop + mobile: right detail drawer for an existing expense */
+  const [viewing, setViewing] = useState<RenovationExpense | null>(null)
 
   const load = useCallback(async () => {
     if (!project) return
@@ -38,6 +39,14 @@ export function useExpensesPageState() {
     load()
   }, [load])
 
+  const viewingId = viewing?.id
+  useEffect(() => {
+    if (!viewingId) return
+    const u = list.find((e) => e.id === viewingId)
+    if (u) setViewing(u)
+    else setViewing(null)
+  }, [list, viewingId])
+
   const attachmentCount = useCallback(
     (exp: RenovationExpense) => {
       const n = allAttachments.filter((a) => a.expense_id === exp.id).length
@@ -47,14 +56,16 @@ export function useExpensesPageState() {
   )
 
   const openNew = () => {
-    setEditing(null)
+    setViewing(null)
     setSheet(true)
   }
 
-  const openEdit = (e: RenovationExpense) => {
-    setEditing(e)
-    setSheet(true)
+  const openView = (e: RenovationExpense) => {
+    setSheet(false)
+    setViewing(e)
   }
+
+  const closeView = () => setViewing(null)
 
   const addFilesToExpense = async (exp: RenovationExpense, files: FileList | null) => {
     if (!project || !files?.length) return
@@ -72,6 +83,7 @@ export function useExpensesPageState() {
   const remove = async (id: string) => {
     if (!(await confirmAction('Delete this expense?'))) return
     await deleteExpense(id)
+    setViewing((v) => (v?.id === id ? null : v))
     await load()
   }
 
@@ -81,13 +93,14 @@ export function useExpensesPageState() {
     loading,
     sheet,
     setSheet,
-    editing,
+    viewing,
     dragOverId,
     setDragOverId,
     load,
     attachmentCount,
     openNew,
-    openEdit,
+    openView,
+    closeView,
     addFilesToExpense,
     remove,
   }
