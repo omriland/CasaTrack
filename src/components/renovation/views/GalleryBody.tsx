@@ -470,40 +470,36 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
           </div>
         </div>
       )}
-      <header className={`flex justify-between gap-3 ${mobile ? 'flex-row items-center' : 'flex-col md:flex-row md:items-end'}`}>
-        <div className="min-w-0 flex-1">
-          <h1 className={`font-bold tracking-tight text-slate-900 font-sans ${mobile ? 'text-[22px]' : 'text-[32px]'}`}>Photos</h1>
-          {mobile ? (
-            <p className="text-[12px] font-medium text-slate-500 mt-0.5">
-              {mobileSelectMode ? 'Tap photos to select • Cancel when done' : 'Tap a photo to view • Select for bulk actions'}
-            </p>
-          ) : (
+      {!mobile && (
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-bold tracking-tight text-slate-900 font-sans text-[32px]">Photos</h1>
             <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">
               Snap, tag, and organize progress — add <span className="font-semibold text-slate-500">multiple photos</span> at once.
             </p>
-          )}
-        </div>
-        <div className={mobile ? 'hidden' : 'block'}>
-          <label className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold flex items-center justify-center cursor-pointer hover:bg-indigo-700 shadow-sm active:scale-95 transition-all min-w-[10rem]">
-            {uploading
-              ? uploadProgress && uploadProgress.total > 1
-                ? `${uploadProgress.done}/${uploadProgress.total}`
-                : 'Uploading…'
-              : '+ Add Photos'}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              disabled={uploading}
-              onChange={(e) => {
-                onFiles(e.target.files)
-                e.target.value = ''
-              }}
-            />
-          </label>
-        </div>
-      </header>
+          </div>
+          <div className="block">
+            <label className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold flex items-center justify-center cursor-pointer hover:bg-indigo-700 shadow-sm active:scale-95 transition-all min-w-[10rem]">
+              {uploading
+                ? uploadProgress && uploadProgress.total > 1
+                  ? `${uploadProgress.done}/${uploadProgress.total}`
+                  : 'Uploading…'
+                : '+ Add Photos'}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => {
+                  onFiles(e.target.files)
+                  e.target.value = ''
+                }}
+              />
+            </label>
+          </div>
+        </header>
+      )}
 
       {mobile ? (
         <div className="mt-2 flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">

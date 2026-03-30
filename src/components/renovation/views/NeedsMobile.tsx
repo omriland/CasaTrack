@@ -60,13 +60,6 @@ export function NeedsMobile() {
 
   return (
     <div className="min-w-0 max-w-full space-y-4 overflow-x-hidden pb-28 animate-fade-in-up">
-      <header className="min-w-0 px-0.5" dir="rtl">
-        <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Needs</h1>
-        <p className="mt-0.5 text-right text-[14px] font-medium leading-snug text-slate-500">
-          רשימת קניות והערות לדירה — אפשר לשייך פריט לחדר.
-        </p>
-      </header>
-
       {loading ? (
         <div className="space-y-2 animate-pulse">
           {[1, 2, 3, 4].map((i) => (

@@ -92,12 +92,14 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
 
   return (
     <div className={`space-y-6 max-w-2xl mx-auto animate-fade-in-up ${mobile ? 'pb-8' : 'pb-8'}`}>
-      <header className={`flex ${flexRow} ${mobile ? 'items-start' : 'items-end'} justify-between gap-4`}>
-        <div>
-          <h1 className={`${mobile ? 'text-[26px]' : 'text-[32px]'} font-bold tracking-tight text-slate-900 font-sans`}>Settings</h1>
-          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Manage your team, labels, budget, and project details.</p>
-        </div>
-      </header>
+      {!mobile && (
+        <header className="flex flex-row items-end justify-between gap-4">
+          <div>
+            <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Settings</h1>
+            <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Manage your team, labels, budget, and project details.</p>
+          </div>
+        </header>
+      )}
 
       <section id="budget" className={`bg-white rounded-[2rem] border border-slate-200/60 shadow-sm ${sec} space-y-4 scroll-mt-4`}>
         <h2 className="text-[18px] font-bold text-slate-900">Details</h2>

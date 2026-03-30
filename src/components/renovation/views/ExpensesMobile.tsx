@@ -36,11 +36,6 @@ export function ExpensesMobile() {
 
   return (
     <div className="space-y-4 pb-28 animate-fade-in-up">
-      <header className="space-y-0.5">
-        <h1 className="text-[22px] font-bold tracking-tight text-slate-900">Expenses</h1>
-        <p className="text-[13px] text-slate-500">Tap to edit • + Files for receipts</p>
-      </header>
-
       {loading ? (
         <div className="space-y-2 animate-pulse">
           {[1, 2, 3, 4].map((i) => (

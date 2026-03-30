@@ -201,11 +201,7 @@ export function TasksMobile() {
 
   return (
     <div className="space-y-4 pb-28 animate-fade-in-up">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Tasks</h1>
-          <p className="text-[14px] text-slate-500 mt-0.5">Tap a task to edit status, dates, and more.</p>
-        </div>
+      <div className="flex items-start justify-end gap-3">
         <MobileFilterButton onClick={() => setFilterOpen(true)} activeCount={filterActiveCount} />
       </div>
 

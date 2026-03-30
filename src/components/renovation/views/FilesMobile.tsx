@@ -48,10 +48,6 @@ export function FilesMobile() {
 
   return (
     <div className="space-y-5 pb-8 animate-fade-in-up">
-      <header>
-        <h1 className="text-[24px] font-bold text-slate-900">Project files</h1>
-        <p className="text-[14px] text-slate-500 mt-1">Contracts, PDFs, and scans in one place.</p>
-      </header>
 
       {rooms.length > 0 && (
         <div className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-2">

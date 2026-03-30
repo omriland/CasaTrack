@@ -33,48 +33,62 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const closeMore = useCallback(() => setMoreOpen(false), [])
 
+  const currentPrimary = primaryNav.find((item) => item.match(pathname))
+  const currentMore = moreNav.find((item) => pathname.startsWith(item.href))
+  const activeTabName = currentPrimary?.label || currentMore?.label || project?.name || 'Renovation'
+
   return (
     <div className="reno-app flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#f0f2f6] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      <header className="z-30 shrink-0 border-b border-slate-200/70 bg-white/95 backdrop-blur-xl pt-[max(0.5rem,env(safe-area-inset-top))] px-3 pb-2">
-        <div className="mx-auto flex max-w-lg items-center gap-2 min-h-[44px]">
+      <header className="z-30 shrink-0 border-b border-black/[0.08] bg-white/85 backdrop-blur-[32px] saturate-[1.8] pt-[max(0.5rem,env(safe-area-inset-top))] pb-1 px-1 transition-all">
+        <div className="mx-auto flex max-w-lg items-center justify-between min-h-[44px] relative">
+          
+          {/* Left: Back Button */}
           <Link
             href="/"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-indigo-600 transition-transform active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center text-slate-400 active:text-black transition-colors"
             aria-label="Back to Property Hunt"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg className="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[16px] font-bold leading-tight text-slate-900">{project?.name || 'Renovation'}</h1>
+
+          {/* Center: Title (Absolutely centered) */}
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <h1 className="truncate text-[17px] font-semibold tracking-[-0.4px] text-black">
+              {activeTabName}
+            </h1>
           </div>
-          {project && activeProfile && teamMembers.length > 0 && (
-            <button
-              type="button"
-              onClick={openProfilePicker}
-              className="grid min-h-[40px] min-w-[40px] shrink-0 place-items-center rounded-xl border border-slate-200/90 px-2.5 shadow-sm transition-transform active:scale-95"
-              style={memberAvatarTileStyle(activeProfile.name)}
-              aria-label="Switch profile"
-            >
-              <span className="text-[11px] font-extrabold leading-none tabular-nums">
-                {memberInitials(activeProfile.name)}
-              </span>
-            </button>
-          )}
+
+          {/* Right: Profile Avatar or Empty Slot */}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+            {project && activeProfile && teamMembers.length > 0 && (
+              <button
+                type="button"
+                onClick={openProfilePicker}
+                className="grid h-[30px] w-[30px] place-items-center rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-black/5 transition-transform active:scale-90"
+                style={memberAvatarTileStyle(activeProfile.name)}
+                aria-label="Switch profile"
+              >
+                <span className="text-[11px] font-bold leading-none tabular-nums opacity-90">
+                  {memberInitials(activeProfile.name)}
+                </span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="reno-mobile-main min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-3 pt-3 animate-fade-in pb-[calc(5.25rem+env(safe-area-inset-bottom))]">
+      <main className="reno-mobile-main min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-3 pt-3 animate-fade-in pb-[calc(5rem+env(safe-area-inset-bottom))]">
         {children}
       </main>
 
-      {/* Floating tab bar — below modals/sheets (z-40); content scrolls in main above */}
+      {/* Native-style tab bar — full width, heavily blurred, Apple grayscale style */}
       <nav
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(0.35rem,env(safe-area-inset-bottom))] px-3 pt-1"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/50 bg-white/85 backdrop-blur-2xl saturate-150 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] px-2 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]"
         aria-label="Main navigation"
       >
-        <div className="pointer-events-auto mx-auto flex max-w-lg items-stretch justify-between gap-0.5 rounded-2xl border border-slate-200/90 bg-white/95 py-1.5 pl-1 pr-1 shadow-[0_4px_24px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-lg items-stretch justify-between">
           {primaryNav.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
@@ -83,24 +97,28 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setMoreOpen(false)}
-                className={`flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
-                  active ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 active:bg-slate-100'
+                className={`group flex flex-[1_1_20%] flex-col items-center justify-center gap-[4px] transition-colors ${
+                  active ? 'text-black' : 'text-[#999999] active:text-[#666666]'
                 }`}
               >
-                <Icon className="h-5 w-5" active={active} />
-                <span className="text-[9px] font-bold tracking-tight">{item.label}</span>
+                <div className="relative flex items-center justify-center">
+                  <Icon className={`h-[26px] w-[26px] transition-transform duration-200 ${active ? 'scale-105' : 'scale-100 group-active:scale-95'}`} active={active} />
+                </div>
+                <span className={`text-[10px] tracking-tight transition-all duration-200 ${active ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
               </Link>
             )
           })}
           <button
             type="button"
             onClick={() => setMoreOpen(true)}
-            className={`flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 rounded-xl transition-colors ${
-              moreMatches(pathname) ? 'bg-indigo-50 text-indigo-600' : 'text-slate-500 active:bg-slate-100'
+            className={`group flex flex-[1_1_20%] flex-col items-center justify-center gap-[4px] transition-colors ${
+              moreMatches(pathname) ? 'text-black' : 'text-[#999999] active:text-[#666666]'
             }`}
           >
-            <MoreIcon className="h-5 w-5" active={moreMatches(pathname)} />
-            <span className="text-[9px] font-bold tracking-tight">More</span>
+            <div className="relative flex items-center justify-center">
+              <MoreIcon className={`h-[26px] w-[26px] transition-transform duration-200 ${moreMatches(pathname) ? 'scale-105' : 'scale-100 group-active:scale-95'}`} active={moreMatches(pathname)} />
+            </div>
+            <span className={`text-[10px] tracking-tight transition-all duration-200 ${moreMatches(pathname) ? 'font-semibold' : 'font-medium'}`}>More</span>
           </button>
         </div>
       </nav>
@@ -116,13 +134,13 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
                 href={item.href}
                 onClick={closeMore}
                 className={`flex items-center gap-4 min-h-[52px] px-4 rounded-2xl transition-colors ${
-                  active ? 'bg-indigo-50 text-indigo-700' : 'text-slate-800 active:bg-slate-100'
+                  active ? 'bg-slate-100/80 text-black' : 'text-slate-700 active:bg-slate-100/50'
                 }`}
               >
-                <div className={`p-2 rounded-xl ${active ? 'bg-white shadow-sm' : 'bg-slate-100'}`}>
+                <div className={`p-2 rounded-xl ${active ? 'bg-white shadow-sm text-black' : 'bg-slate-100/80 text-slate-500'}`}>
                   <Icon className="w-5 h-5" active={active} />
                 </div>
-                <span className="text-[16px] font-semibold">{item.label}</span>
+                <span className="text-[16px] font-medium">{item.label}</span>
               </Link>
             )
           })}
