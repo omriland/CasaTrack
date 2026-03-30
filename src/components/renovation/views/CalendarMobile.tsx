@@ -37,10 +37,9 @@ export function CalendarMobile() {
     openEditEvent,
     closeEventModal,
     closeEventView,
-    taskSheetOpen,
-    editingTask,
+    viewingTask,
+    closeTaskView,
     openEditTask,
-    closeTaskSheet,
   } = useCalendarPageState()
 
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -71,8 +70,8 @@ export function CalendarMobile() {
   }, [loadMeta])
 
   useEffect(() => {
-    if (taskSheetOpen) loadMeta()
-  }, [taskSheetOpen, loadMeta])
+    if (viewingTask) loadMeta()
+  }, [viewingTask, loadMeta])
 
   const itemsForDay = (d: Date) => ({
     events: events.filter(e => calendarEventOnLocalDay(e, d)),
@@ -367,16 +366,16 @@ export function CalendarMobile() {
         />
       )}
 
-      {taskSheetOpen && editingTask && (
+      {viewingTask && (
         <TaskModalMobile
-          editing={editingTask}
+          editing={viewingTask}
           members={members}
           labels={labels}
           rooms={rooms}
           providers={providers}
-          onClose={closeTaskSheet}
+          onClose={closeTaskView}
           onSave={() => {
-            closeTaskSheet()
+            closeTaskView()
             load()
           }}
         />

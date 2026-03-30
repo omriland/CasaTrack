@@ -7,6 +7,7 @@ import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
 import { RenovationFullCalendar } from '@/components/renovation/RenovationFullCalendar'
 import { calendarEventOnLocalDay, taskDueOnLocalDay } from '@/components/renovation/calendar-shared'
+import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { TaskModal } from '@/components/renovation/TaskModal'
 import { listLabels, listRooms, listTeamMembers } from '@/lib/renovation'
 import type {
@@ -43,10 +44,14 @@ export function CalendarDesktop() {
     openEditEvent,
     closeEventModal,
     closeEventView,
-    taskSheetOpen,
-    editingTask,
+    viewingTask,
+    closeTaskView,
     openEditTask,
-    closeTaskSheet,
+    openTaskFormModal,
+    taskFormModalOpen,
+    editingTask,
+    closeTaskFormModal,
+    setTasks,
   } = useCalendarPageState()
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
@@ -76,8 +81,8 @@ export function CalendarDesktop() {
   }, [loadMeta])
 
   useEffect(() => {
-    if (taskSheetOpen) loadMeta()
-  }, [taskSheetOpen, loadMeta])
+    if (taskFormModalOpen || viewingTask) loadMeta()
+  }, [taskFormModalOpen, viewingTask, loadMeta])
 
   const itemsForDay = useMemo(() => {
     const fn = (d: Date) => {
@@ -93,6 +98,11 @@ export function CalendarDesktop() {
   const viewingEventLive = useMemo(
     () => (viewingEvent ? events.find((e) => e.id === viewingEvent.id) ?? viewingEvent : null),
     [events, viewingEvent],
+  )
+
+  const viewingTaskLive = useMemo(
+    () => (viewingTask ? tasks.find((t) => t.id === viewingTask.id) ?? viewingTask : null),
+    [tasks, viewingTask],
   )
 
   if (!project) {
@@ -390,16 +400,36 @@ export function CalendarDesktop() {
         />
       )}
 
-      {taskSheetOpen && editingTask && (
+      {viewingTaskLive && (
+        <TaskDetailDrawer
+          task={viewingTaskLive}
+          members={members}
+          labels={labels}
+          rooms={rooms}
+          providers={providers}
+          onClose={closeTaskView}
+          onEdit={() => openTaskFormModal(viewingTaskLive)}
+          onTaskChange={(updatedTask) => {
+            setTasks((prev) => prev.map((pt) => (pt.id === updatedTask.id ? updatedTask : pt)))
+          }}
+          onLabelCreated={(lb) =>
+            setLabels((prev) =>
+              [...prev, lb].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+            )
+          }
+        />
+      )}
+
+      {taskFormModalOpen && editingTask && (
         <TaskModal
           editing={editingTask}
           members={members}
           labels={labels}
           rooms={rooms}
           providers={providers}
-          onClose={closeTaskSheet}
+          onClose={closeTaskFormModal}
           onSave={() => {
-            closeTaskSheet()
+            closeTaskFormModal()
             load()
           }}
         />

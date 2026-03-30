@@ -22,7 +22,10 @@ export function useCalendarPageState() {
   const [viewingEvent, setViewingEvent] = useState<RenovationCalendarEvent | null>(null)
   const [initialDayKey, setInitialDayKey] = useState<string | null>(null)
   const [initialTimedRange, setInitialTimedRange] = useState<{ start: string; end: string } | null>(null)
-  const [taskSheetOpen, setTaskSheetOpen] = useState(false)
+  /** Desktop: TaskDetailDrawer. Mobile: TaskModalMobile. */
+  const [viewingTask, setViewingTask] = useState<RenovationTask | null>(null)
+  /** Desktop only: centered TaskModal opened from drawer "Edit". */
+  const [taskFormModalOpen, setTaskFormModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<RenovationTask | null>(null)
 
   const load = useCallback(async () => {
@@ -85,12 +88,20 @@ export function useCalendarPageState() {
   const closeEventView = () => setViewingEvent(null)
 
   const openEditTask = (task: RenovationTask) => {
-    setEditingTask(task)
-    setTaskSheetOpen(true)
+    setViewingTask(task)
   }
 
-  const closeTaskSheet = () => {
-    setTaskSheetOpen(false)
+  const closeTaskView = () => setViewingTask(null)
+
+  /** Open legacy full-screen modal (desktop: from task drawer Edit). */
+  const openTaskFormModal = (task: RenovationTask) => {
+    setViewingTask(null)
+    setEditingTask(task)
+    setTaskFormModalOpen(true)
+  }
+
+  const closeTaskFormModal = () => {
+    setTaskFormModalOpen(false)
     setEditingTask(null)
   }
 
@@ -118,9 +129,13 @@ export function useCalendarPageState() {
     openEditEvent,
     closeEventModal,
     closeEventView,
-    taskSheetOpen,
-    editingTask,
+    viewingTask,
+    closeTaskView,
     openEditTask,
-    closeTaskSheet,
+    openTaskFormModal,
+    taskFormModalOpen,
+    editingTask,
+    closeTaskFormModal,
+    setTasks,
   }
 }

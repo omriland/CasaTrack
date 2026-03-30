@@ -2,6 +2,9 @@
 
 ## Renovation app (March 2025)
 
+### Completed (calendar task drawer desktop, March 2026)
+- **Desktop renovation calendar:** clicking a **task** chip opens [`TaskDetailDrawer`](src/components/renovation/TaskDetailDrawer.tsx) (same right “wing” as Tasks). **Edit** still opens [`TaskModal`](src/components/renovation/TaskModal.tsx). [`useCalendarPageState`](src/components/renovation/views/useCalendarPageState.ts): `viewingTask`, `openTaskFormModal` / `taskFormModalOpen`; mobile unchanged full-screen [`TaskModalMobile`](src/components/renovation/TaskModalMobile.tsx).
+
 ### Completed (calendar event drawer desktop, March 2026)
 - **Desktop calendar:** clicking a calendar event opens [`CalendarEventDetailDrawer`](src/components/renovation/CalendarEventDetailDrawer.tsx) (right panel, Task-style layout: type pill, title/notes, Details with provider, address, all‑day, dates, created by, last edited). Create/new still uses [`CalendarEventModal`](src/components/renovation/CalendarEventModal.tsx). [`useCalendarPageState`](src/components/renovation/views/useCalendarPageState.ts) uses `viewingEvent` + `closeEventView`; mobile keeps full-screen modal for view/edit.
 
