@@ -2,6 +2,15 @@
 
 ## Renovation app (March 2025)
 
+### Completed (calendar event drawer desktop, March 2026)
+- **Desktop calendar:** clicking a calendar event opens [`CalendarEventDetailDrawer`](src/components/renovation/CalendarEventDetailDrawer.tsx) (right panel, Task-style layout: type pill, title/notes, Details with provider, address, all‑day, dates, created by, last edited). Create/new still uses [`CalendarEventModal`](src/components/renovation/CalendarEventModal.tsx). [`useCalendarPageState`](src/components/renovation/views/useCalendarPageState.ts) uses `viewingEvent` + `closeEventView`; mobile keeps full-screen modal for view/edit.
+
+### Completed (Tasks Epic View, March 2026)
+- **Epic View** on renovation Tasks (desktop + mobile): swimlanes by label + **No labels** first; **label rows omitted** when every task in that label is **done**; no full-row BG/border on epic strips (status columns keep their grey). Status columns match main board on desktop (incl. drag).
+
+### Completed (task detail labels, March 2026)
+- **[`TaskDetailDrawer`](src/components/renovation/TaskDetailDrawer.tsx)**: **Labels** row in Details (after Provider), same control style as Assignee/Room/Priority; searchable multi-select; **Create "…"** via [`createLabel`](src/lib/renovation.ts) + [`setTaskLabels`](src/lib/renovation.ts); [`onLabelCreated`](src/components/renovation/views/TasksDesktop.tsx) keeps [`useTasksPageState`](src/components/renovation/views/useTasksPageState.ts) label list in sync. Removed duplicate Tags block from drawer main column.
+
 ### Completed (Rooms desktop rail, March 2026)
 - **Spaces rail** ([`RoomsDesktop.tsx`](src/components/renovation/views/RoomsDesktop.tsx)): wider aside (`min-w-[220px]`, `max-w-[320px]`, `basis-[22%]`); per-room **Tasks / Needs / Photos** labeled counts (not opaque `n·n·n`); selection styling switched from amber to **indigo** (border, bg, ring, focus); title input focus border indigo; loading skeleton widths/heights aligned.
 

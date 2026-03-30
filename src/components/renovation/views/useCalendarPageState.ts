@@ -18,7 +18,8 @@ export function useCalendarPageState() {
   const [showTasks, setShowTasks] = useState(true)
   const [showCompletedTasks, setShowCompletedTasks] = useState(false)
   const [eventModalOpen, setEventModalOpen] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<RenovationCalendarEvent | null>(null)
+  /** Desktop: right drawer when viewing/editing an existing event. Mobile: passed as `editing` into modal. */
+  const [viewingEvent, setViewingEvent] = useState<RenovationCalendarEvent | null>(null)
   const [initialDayKey, setInitialDayKey] = useState<string | null>(null)
   const [initialTimedRange, setInitialTimedRange] = useState<{ start: string; end: string } | null>(null)
   const [taskSheetOpen, setTaskSheetOpen] = useState(false)
@@ -55,32 +56,33 @@ export function useCalendarPageState() {
   )
 
   const openNewEvent = (dayKey?: string | null) => {
-    setEditingEvent(null)
+    setViewingEvent(null)
     setInitialTimedRange(null)
     setInitialDayKey(dayKey ?? null)
     setEventModalOpen(true)
   }
 
   const openNewEventTimed = (startIso: string, endIso: string) => {
-    setEditingEvent(null)
+    setViewingEvent(null)
     setInitialDayKey(null)
     setInitialTimedRange({ start: startIso, end: endIso })
     setEventModalOpen(true)
   }
 
   const openEditEvent = (ev: RenovationCalendarEvent) => {
-    setEditingEvent(ev)
+    setEventModalOpen(false)
     setInitialDayKey(null)
     setInitialTimedRange(null)
-    setEventModalOpen(true)
+    setViewingEvent(ev)
   }
 
   const closeEventModal = () => {
     setEventModalOpen(false)
-    setEditingEvent(null)
     setInitialDayKey(null)
     setInitialTimedRange(null)
   }
+
+  const closeEventView = () => setViewingEvent(null)
 
   const openEditTask = (task: RenovationTask) => {
     setEditingTask(task)
@@ -108,13 +110,14 @@ export function useCalendarPageState() {
     showCompletedTasks,
     setShowCompletedTasks,
     eventModalOpen,
-    editingEvent,
+    viewingEvent,
     initialDayKey,
     initialTimedRange,
     openNewEvent,
     openNewEventTimed,
     openEditEvent,
     closeEventModal,
+    closeEventView,
     taskSheetOpen,
     editingTask,
     openEditTask,

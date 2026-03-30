@@ -7,7 +7,7 @@ import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 import type { RenovationLabel, RenovationTask } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
-import { STATUSES, sortTasks } from './tasks-page-shared'
+import { STATUSES, buildEpicSwimlanes, sortTasks } from './tasks-page-shared'
 
 /** Native <select> arrows ignore padding; custom chevron inset from the right. */
 const FILTER_SELECT_STYLE: CSSProperties = {
@@ -28,6 +28,7 @@ export function TasksDesktop() {
     setTasks,
     members,
     labels,
+    setLabels,
     rooms,
     providers,
     loading,
@@ -51,46 +52,52 @@ export function TasksDesktop() {
     onDrop,
     filteredTasks,
     toggleTaskDone,
-  } = useTasksPageState()
+  } = useTasksPageState({ defaultView: 'epic' })
 
   const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
 
-  const renderCard = (t: RenovationTask) => {
+  const renderCard = (t: RenovationTask, opts?: { draggable?: boolean }) => {
+    const draggable = opts?.draggable !== false
     const isDone = t.status === 'done'
     const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
     const createdByTitle = t.created_by ? `Created by ${t.created_by.name}` : undefined
+    const hasLabels = (t.label_ids?.length ?? 0) > 0
+    const hasDueAndProvider = Boolean(t.due_date) && Boolean(t.provider_id ?? t.provider)
+    const labelsOnOwnRow = hasLabels && hasDueAndProvider
+
+    const labelChipEls = (t.label_ids || []).map((lid) => {
+      const lb = labels.find((l: RenovationLabel) => l.id === lid)
+      return lb ? (
+        <span
+          key={lid}
+          className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
+          style={{ backgroundColor: lb.color }}
+        >
+          {lb.name}
+        </span>
+      ) : null
+    })
 
     return (
       <div
         key={t.id}
-        draggable
-        onDragStart={(e) => onDragStart(e, t.id)}
-        className={`w-full text-left bg-white rounded-[5px] border border-[#dfe1e6] p-3 transition-colors hover:bg-slate-50 cursor-grab active:cursor-grabbing group relative ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
+        draggable={draggable}
+        onDragStart={draggable ? (e) => onDragStart(e, t.id) : undefined}
+        className={`w-full text-left bg-white rounded-[5px] border border-[#dfe1e6] p-3 transition-colors hover:bg-slate-50 group relative ${isDone ? 'opacity-60 bg-slate-50' : ''} ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       >
         <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
           <p className={`text-[14px] text-right font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="rtl">
             {t.title}
           </p>
 
-          {(t.room || (t.label_ids && t.label_ids.length > 0)) && (
+          {(t.room || labelsOnOwnRow) && (
             <div className="flex flex-wrap gap-1 mt-0.5">
               {t.room && (
                 <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-[#dfe1e6] text-[#42526e] truncate max-w-[120px]">
                   {t.room.name}
                 </span>
               )}
-              {(t.label_ids || []).map((lid) => {
-                const lb = labels.find((l: RenovationLabel) => l.id === lid)
-                return lb ? (
-                  <span
-                    key={lid}
-                    className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
-                    style={{ backgroundColor: lb.color }}
-                  >
-                    {lb.name}
-                  </span>
-                ) : null
-              })}
+              {labelsOnOwnRow ? labelChipEls : null}
             </div>
           )}
 
@@ -151,17 +158,34 @@ export function TasksDesktop() {
               )}
             </div>
 
-            <div className="flex items-center shrink-0">
+            <div className="flex min-w-0 max-w-[58%] shrink-0 items-center justify-end gap-1.5">
+              {hasLabels && !labelsOnOwnRow && (
+                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-0.5 overflow-hidden" dir="ltr">
+                  {(t.label_ids || []).map((lid) => {
+                    const lb = labels.find((l: RenovationLabel) => l.id === lid)
+                    return lb ? (
+                      <span
+                        key={lid}
+                        className="max-w-[72px] shrink truncate text-[10px] font-bold px-1 py-[1px] rounded-[3px] text-white"
+                        style={{ backgroundColor: lb.color }}
+                        title={lb.name}
+                      >
+                        {lb.name}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              )}
               {t.assignee ? (
                 <div
-                  className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold shadow-sm"
                   style={memberAvatarChipStyle(t.assignee.name)}
                   title={t.assignee.name}
                 >
                   <span className="leading-none">{memberAvatarLetter(t.assignee.name)}</span>
                 </div>
               ) : (
-                <div className="w-6 h-6 rounded-full border border-dashed border-[#dfe1e6] flex items-center justify-center bg-[#f4f5f7]" title="Unassigned">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-[#f4f5f7]" title="Unassigned">
                   <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -173,6 +197,105 @@ export function TasksDesktop() {
       </div>
     )
   }
+
+  /** Status columns (open → done); `keyPrefix` keeps React keys unique per epic swimlane row. */
+  const renderStatusBoardColumns = (taskPool: RenovationTask[], keyPrefix: string, colMinHeight: string) =>
+    STATUSES.map((s) => {
+      const paneTasks = taskPool.filter((t) => t.status === s).sort(sortTasks)
+      const isDraggingOver = dragOverStatus === s
+      const isDoneLane = s === 'done'
+      const collapsed = isDoneLane && doneLaneCollapsed
+
+      if (collapsed) {
+        return (
+          <div
+            key={`${keyPrefix}-${s}`}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragOverStatus(s)
+            }}
+            onDragLeave={() => setDragOverStatus(null)}
+            onDrop={(e) => onDrop(e, s)}
+            className={`flex w-[52px] shrink-0 flex-col rounded-sm p-1.5 transition-colors ${colMinHeight} ${
+              isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => setDoneLaneCollapsed(false)}
+              className="flex min-h-0 flex-1 flex-col items-center gap-2 rounded-md py-3 text-[#5e6c84] transition-colors hover:bg-white/90 hover:text-[#172b4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+              title="Expand Done column"
+              aria-expanded="false"
+              aria-label="Expand Done column"
+            >
+              <svg
+                className="h-4 w-4 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 [writing-mode:vertical-rl] rotate-180">
+                Done
+              </span>
+              <span className="text-[16px] font-bold tabular-nums text-[#172b4d]">{paneTasks.length}</span>
+            </button>
+          </div>
+        )
+      }
+
+      return (
+        <div
+          key={`${keyPrefix}-${s}`}
+          onDragOver={(e) => {
+            e.preventDefault()
+            setDragOverStatus(s)
+          }}
+          onDragLeave={() => setDragOverStatus(null)}
+          onDrop={(e) => onDrop(e, s)}
+          className={`w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors ${colMinHeight} ${
+            isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
+          }`}
+        >
+          <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center justify-between gap-2 text-[12px]">
+            <span className="flex items-center gap-2 min-w-0">
+              <span>{s.replace('_', ' ')}</span>
+              <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
+            </span>
+            {isDoneLane && (
+              <button
+                type="button"
+                onClick={() => setDoneLaneCollapsed(true)}
+                className="shrink-0 rounded p-1 text-[#5e6c84] hover:bg-white/80 hover:text-[#172b4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
+                title="Collapse Done column"
+                aria-expanded="true"
+                aria-label="Collapse Done column"
+              >
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+          </h3>
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
+            {paneTasks.map((t) => renderCard(t))}
+            {paneTasks.length === 0 && (
+              <div className="py-6 text-center text-[14px] text-slate-400 font-bold">Drop tasks here</div>
+            )}
+          </div>
+        </div>
+      )
+    })
 
   if (!project) {
     return (
@@ -223,6 +346,15 @@ export function TasksDesktop() {
               By {v}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setView('epic')}
+            className={`h-10 px-4 rounded-full text-[14px] font-bold transition-all whitespace-nowrap ${
+              view === 'epic' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            Epic View
+          </button>
         </div>
 
         <div className="ml-auto flex gap-2">
@@ -282,108 +414,13 @@ export function TasksDesktop() {
         </div>
       ) : (
         <div className="mt-6">
-          {view === 'list' && <div className="space-y-2">{[...filteredTasks].sort(sortTasks).map(renderCard)}</div>}
+          {view === 'list' && (
+            <div className="space-y-2">{[...filteredTasks].sort(sortTasks).map((t) => renderCard(t))}</div>
+          )}
 
           {view === 'status' && (
             <div className="flex gap-4 overflow-x-auto pb-6 items-stretch scrollbar-hide">
-              {STATUSES.map((s) => {
-                const paneTasks = filteredTasks.filter((t) => t.status === s).sort(sortTasks)
-                const isDraggingOver = dragOverStatus === s
-                const isDoneLane = s === 'done'
-                const collapsed = isDoneLane && doneLaneCollapsed
-
-                if (collapsed) {
-                  return (
-                    <div
-                      key={s}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        setDragOverStatus(s)
-                      }}
-                      onDragLeave={() => setDragOverStatus(null)}
-                      onDrop={(e) => onDrop(e, s)}
-                      className={`flex w-[52px] shrink-0 flex-col rounded-sm p-1.5 transition-colors min-h-[50vh] ${
-                        isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setDoneLaneCollapsed(false)}
-                        className="flex min-h-0 flex-1 flex-col items-center gap-2 rounded-md py-3 text-[#5e6c84] transition-colors hover:bg-white/90 hover:text-[#172b4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
-                        title="Expand Done column"
-                        aria-expanded="false"
-                        aria-label="Expand Done column"
-                      >
-                        <svg
-                          className="h-4 w-4 shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                          aria-hidden
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                        </svg>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 [writing-mode:vertical-rl] rotate-180">
-                          Done
-                        </span>
-                        <span className="text-[16px] font-bold tabular-nums text-[#172b4d]">{paneTasks.length}</span>
-                      </button>
-                    </div>
-                  )
-                }
-
-                return (
-                  <div
-                    key={s}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      setDragOverStatus(s)
-                    }}
-                    onDragLeave={() => setDragOverStatus(null)}
-                    onDrop={(e) => onDrop(e, s)}
-                    className={`w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors min-h-[50vh] ${
-                      isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
-                    }`}
-                  >
-                    <h3 className="font-semibold text-[#5e6c84] uppercase tracking-wider px-2 pt-2 pb-1 flex items-center justify-between gap-2 text-[12px]">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <span>{s.replace('_', ' ')}</span>
-                        <span className="text-[#172b4d] font-semibold">{paneTasks.length}</span>
-                      </span>
-                      {isDoneLane && (
-                        <button
-                          type="button"
-                          onClick={() => setDoneLaneCollapsed(true)}
-                          className="shrink-0 rounded p-1 text-[#5e6c84] hover:bg-white/80 hover:text-[#172b4d] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/50"
-                          title="Collapse Done column"
-                          aria-expanded="true"
-                          aria-label="Collapse Done column"
-                        >
-                          <svg
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            aria-hidden
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                          </svg>
-                        </button>
-                      )}
-                    </h3>
-                    <div className="flex min-h-0 flex-1 flex-col gap-2">
-                      {paneTasks.map(renderCard)}
-                      {paneTasks.length === 0 && (
-                        <div className="py-6 text-center text-[14px] text-slate-400 font-bold">
-                          Drop tasks here
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+              {renderStatusBoardColumns(filteredTasks, 'board', 'min-h-[50vh]')}
             </div>
           )}
 
@@ -400,10 +437,33 @@ export function TasksDesktop() {
                       <span>{m.name}</span>
                       <span className="font-semibold text-[#172b4d]">{paneTasks.length}</span>
                     </h3>
-                    <div className="flex min-h-0 flex-1 flex-col gap-2">{paneTasks.map(renderCard)}</div>
+                    <div className="flex min-h-0 flex-1 flex-col gap-2">{paneTasks.map((t) => renderCard(t))}</div>
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {view === 'epic' && (
+            <div className="flex flex-col gap-5 pb-6">
+              {buildEpicSwimlanes(filteredTasks, labels).map((lane) => (
+                <div key={lane.id} className="flex flex-col gap-1">
+                  <h3 className="flex items-center gap-2 px-0.5 pb-1 pt-1 text-[12px] font-semibold uppercase tracking-wider text-[#5e6c84]">
+                    {lane.color ? (
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: lane.color }} />
+                    ) : (
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-full border border-dashed border-[#c1c7d0] bg-white" />
+                    )}
+                    <span className="min-w-0 truncate" dir="auto">
+                      {lane.title}
+                    </span>
+                    <span className="font-semibold text-[#172b4d]">{lane.tasks.length}</span>
+                  </h3>
+                  <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide items-stretch">
+                    {renderStatusBoardColumns(lane.tasks, lane.id, 'min-h-[200px]')}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -440,6 +500,11 @@ export function TasksDesktop() {
             setViewing(updatedTask)
             setTasks((prev) => prev.map((pt) => pt.id === updatedTask.id ? updatedTask : pt))
           }}
+          onLabelCreated={(lb) =>
+            setLabels((prev) =>
+              [...prev, lb].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+            )
+          }
         />
       )}
     </div>

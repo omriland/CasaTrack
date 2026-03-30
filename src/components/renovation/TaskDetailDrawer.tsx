@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { updateTask } from '@/lib/renovation'
+import { createLabel, setTaskLabels, updateTask } from '@/lib/renovation'
 import type {
   RenovationTask,
   RenovationLabel,
@@ -17,7 +17,9 @@ import { format, parseISO } from 'date-fns'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 
-type DetailPickerOpen = 'status' | 'assignee' | 'room' | 'priority' | 'provider' | null
+const EMPTY_LABEL_IDS: string[] = []
+
+type DetailPickerOpen = 'status' | 'assignee' | 'room' | 'priority' | 'provider' | 'labels' | null
 
 interface TaskDetailDrawerProps {
   task: RenovationTask
@@ -28,6 +30,8 @@ interface TaskDetailDrawerProps {
   onClose: () => void
   onEdit: () => void
   onTaskChange?: (task: RenovationTask) => void
+  /** Called after a new label is created in this drawer so parent can refresh label list. */
+  onLabelCreated?: (label: RenovationLabel) => void
 }
 
 export function TaskDetailDrawer({
@@ -39,17 +43,21 @@ export function TaskDetailDrawer({
   onClose,
   onEdit,
   onTaskChange,
+  onLabelCreated,
 }: TaskDetailDrawerProps) {
   const [editingTitle, setEditingTitle] = useState(false)
   const [editingBody, setEditingBody] = useState(false)
   const [titleDraft, setTitleDraft] = useState(task.title)
   const [bodyDraft, setBodyDraft] = useState(task.body || '')
   const [detailPickerOpen, setDetailPickerOpen] = useState<DetailPickerOpen>(null)
+  const [labelSearch, setLabelSearch] = useState('')
   const statusPickerRef = useRef<HTMLDivElement>(null)
   const assigneePickerRef = useRef<HTMLDivElement>(null)
   const roomPickerRef = useRef<HTMLDivElement>(null)
   const priorityPickerRef = useRef<HTMLDivElement>(null)
   const providerPickerRef = useRef<HTMLDivElement>(null)
+  const labelPickerRef = useRef<HTMLDivElement>(null)
+  const labelSearchInputRef = useRef<HTMLInputElement>(null)
 
   const sortedMembers = useMemo(
     () => [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
@@ -64,6 +72,28 @@ export function TaskDetailDrawer({
   const sortedRooms = useMemo(
     () => [...rooms].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
     [rooms],
+  )
+
+  const sortedLabels = useMemo(
+    () => [...labels].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [labels],
+  )
+
+  const filteredLabels = useMemo(() => {
+    const q = labelSearch.trim().toLowerCase()
+    if (!q) return sortedLabels
+    return sortedLabels.filter((l) => l.name.toLowerCase().includes(q))
+  }, [sortedLabels, labelSearch])
+
+  const labelCreateNameTrimmed = labelSearch.trim()
+  const canCreateLabel =
+    labelCreateNameTrimmed.length > 0 &&
+    !sortedLabels.some((l) => l.name.toLowerCase() === labelCreateNameTrimmed.toLowerCase())
+
+  const taskLabelIds = task.label_ids ?? EMPTY_LABEL_IDS
+  const taskLabelsResolved = useMemo(
+    () => taskLabelIds.map((id) => sortedLabels.find((l) => l.id === id)).filter(Boolean) as RenovationLabel[],
+    [taskLabelIds, sortedLabels],
   )
 
   useEffect(() => {
@@ -89,11 +119,46 @@ export function TaskDetailDrawer({
       if (detailPickerOpen === 'room' && roomPickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'priority' && priorityPickerRef.current?.contains(n)) return
       if (detailPickerOpen === 'provider' && providerPickerRef.current?.contains(n)) return
+      if (detailPickerOpen === 'labels' && labelPickerRef.current?.contains(n)) return
       setDetailPickerOpen(null)
     }
     document.addEventListener('mousedown', onMouseDown)
     return () => document.removeEventListener('mousedown', onMouseDown)
   }, [detailPickerOpen])
+
+  useEffect(() => {
+    if (detailPickerOpen !== 'labels') return
+    const t = window.setTimeout(() => labelSearchInputRef.current?.focus(), 0)
+    return () => window.clearTimeout(t)
+  }, [detailPickerOpen])
+
+  const commitLabelIds = (nextIds: string[]) => {
+    const prev = task.label_ids ?? []
+    if (prev.length === nextIds.length && prev.every((id) => nextIds.includes(id))) return
+    const updated = { ...task, label_ids: nextIds, updated_at: new Date().toISOString() }
+    onTaskChange?.(updated)
+    setTaskLabels(task.id, nextIds).catch(() => onTaskChange?.(task))
+  }
+
+  const toggleTaskLabel = (labelId: string) => {
+    const set = new Set(taskLabelIds)
+    if (set.has(labelId)) set.delete(labelId)
+    else set.add(labelId)
+    commitLabelIds([...set])
+  }
+
+  const createLabelFromSearch = async () => {
+    const name = labelCreateNameTrimmed
+    if (!name || !canCreateLabel) return
+    try {
+      const newLabel = await createLabel(task.project_id, name)
+      onLabelCreated?.(newLabel)
+      commitLabelIds([...taskLabelIds, newLabel.id])
+      setLabelSearch('')
+    } catch {
+      alert('Could not create label')
+    }
+  }
 
   const commitTitle = async () => {
     setEditingTitle(false)
@@ -333,26 +398,6 @@ export function TaskDetailDrawer({
               )}
             </div>
 
-            {task.label_ids && task.label_ids.length > 0 && (
-              <div>
-                <h2 className="text-[14px] font-bold text-[#172b4d] mb-2">Tags</h2>
-                <div className="flex flex-wrap gap-2">
-                  {(task.label_ids || []).map((lid) => {
-                    const lb = labels.find((l) => l.id === lid)
-                    if (!lb) return null
-                    return (
-                      <span
-                        key={lid}
-                        className="text-[13px] font-bold px-2.5 py-1 rounded-sm text-white shadow-sm"
-                        style={{ backgroundColor: lb.color }}
-                      >
-                        {lb.name}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="w-full md:w-[35%] shrink-0 bg-slate-50 border-l border-slate-200 p-6 flex flex-col gap-6">
@@ -754,6 +799,158 @@ export function TaskDetailDrawer({
                             <span className="truncate">{pr.name}</span>
                           </button>
                         ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[13px] font-semibold text-[#5e6c84]">Labels</span>
+                  <div className="relative" ref={labelPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDetailPickerOpen((o) => {
+                          if (o === 'labels') return null
+                          setLabelSearch('')
+                          return 'labels'
+                        })
+                      }
+                      className="group flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left -mx-2 transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                    >
+                      {taskLabelsResolved.length > 0 ? (
+                        <>
+                          <div className="flex shrink-0 items-center gap-0.5">
+                            {taskLabelsResolved.slice(0, 4).map((lb) => (
+                              <span
+                                key={lb.id}
+                                className="h-5 w-5 shrink-0 rounded border border-white/40 shadow-sm"
+                                style={{ backgroundColor: lb.color }}
+                                title={lb.name}
+                              />
+                            ))}
+                            {taskLabelsResolved.length > 4 && (
+                              <span className="text-[11px] font-bold text-[#5e6c84]">+{taskLabelsResolved.length - 4}</span>
+                            )}
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]" dir="auto">
+                            {taskLabelsResolved.map((l) => l.name).join(', ')}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-[14px] font-medium italic text-slate-500">No labels</span>
+                        </>
+                      )}
+                      <svg
+                        className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {detailPickerOpen === 'labels' && (
+                      <div
+                        className="absolute left-0 right-0 top-full z-30 mt-1 flex max-h-72 flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white/98 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        role="listbox"
+                        aria-multiselectable
+                      >
+                        <div className="border-b border-slate-100 p-2">
+                          <input
+                            ref={labelSearchInputRef}
+                            type="search"
+                            value={labelSearch}
+                            onChange={(e) => setLabelSearch(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && canCreateLabel) {
+                                e.preventDefault()
+                                void createLabelFromSearch()
+                              }
+                            }}
+                            placeholder="Search labels…"
+                            className="w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-[13px] font-medium text-[#172b4d] outline-none placeholder:text-slate-400 focus:border-[#4c9aff] focus:bg-white focus:ring-1 focus:ring-[#4c9aff]"
+                            dir="auto"
+                          />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto p-1.5">
+                          {filteredLabels.length === 0 && !canCreateLabel ? (
+                            <p className="px-3 py-4 text-center text-[13px] text-slate-500">
+                              {sortedLabels.length === 0
+                                ? 'No labels yet. Type a name above to create one.'
+                                : 'No matching labels'}
+                            </p>
+                          ) : (
+                            filteredLabels.map((lb) => {
+                              const selected = taskLabelIds.includes(lb.id)
+                              return (
+                                <button
+                                  key={lb.id}
+                                  type="button"
+                                  role="option"
+                                  aria-selected={selected}
+                                  onClick={() => toggleTaskLabel(lb.id)}
+                                  className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                                    selected
+                                      ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                      : 'font-medium text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <span
+                                    className={`grid h-5 w-5 shrink-0 place-items-center rounded border ${
+                                      selected ? 'border-[#0052cc] bg-white' : 'border-slate-200 bg-white'
+                                    }`}
+                                  >
+                                    {selected && (
+                                      <svg className="h-3 w-3 text-[#0052cc]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </span>
+                                  <span
+                                    className="h-5 w-5 shrink-0 rounded-sm shadow-sm"
+                                    style={{ backgroundColor: lb.color }}
+                                  />
+                                  <span className="min-w-0 flex-1 truncate" dir="auto">
+                                    {lb.name}
+                                  </span>
+                                </button>
+                              )
+                            })
+                          )}
+                        </div>
+                        {canCreateLabel && (
+                          <div className="border-t border-slate-100 p-1.5">
+                            <button
+                              type="button"
+                              onClick={() => void createLabelFromSearch()}
+                              className="flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-semibold text-[#0052cc] transition-colors hover:bg-[#e9f2ff]"
+                            >
+                              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                              <span className="min-w-0 truncate" dir="auto">
+                                Create &quot;{labelCreateNameTrimmed}&quot;
+                              </span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

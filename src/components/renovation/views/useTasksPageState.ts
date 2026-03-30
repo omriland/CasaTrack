@@ -19,7 +19,9 @@ import type {
   TaskStatus,
 } from '@/types/renovation'
 
-export function useTasksPageState() {
+export type TasksBoardView = 'status' | 'assignee' | 'list' | 'epic'
+
+export function useTasksPageState(options?: { defaultView?: TasksBoardView }) {
   const { project, setTaskModalOpen } = useRenovation()
   const [tasks, setTasks] = useState<RenovationTask[]>([])
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
@@ -27,7 +29,7 @@ export function useTasksPageState() {
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [providers, setProviders] = useState<RenovationProvider[]>([])
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState<'status' | 'assignee' | 'list'>('status')
+  const [view, setView] = useState<TasksBoardView>(options?.defaultView ?? 'status')
   const [filterAssignee, setFilterAssignee] = useState<string>('')
   const [filterLabel, setFilterLabel] = useState<string>('')
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null)
@@ -117,6 +119,7 @@ export function useTasksPageState() {
     setTasks,
     members,
     labels,
+    setLabels,
     rooms,
     providers,
     loading,

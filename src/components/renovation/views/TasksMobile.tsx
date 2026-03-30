@@ -10,7 +10,7 @@ import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 import type { RenovationLabel, RenovationTask, TaskStatus } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
-import { STATUSES, sortTasks } from './tasks-page-shared'
+import { STATUSES, buildEpicSwimlanes, sortTasks } from './tasks-page-shared'
 
 type StatusTab = 'all' | TaskStatus
 
@@ -22,6 +22,7 @@ export function TasksMobile() {
     setTasks,
     members,
     labels,
+    setLabels,
     rooms,
     providers,
     loading,
@@ -39,6 +40,8 @@ export function TasksMobile() {
     openView,
     filteredTasks,
     toggleTaskDone,
+    view,
+    setView,
   } = useTasksPageState()
 
   const [statusTab, setStatusTab] = useState<StatusTab>('all')
@@ -50,6 +53,22 @@ export function TasksMobile() {
     const isDone = t.status === 'done'
     const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
     const createdByTitle = t.created_by ? `Created by ${t.created_by.name}` : undefined
+    const hasLabels = (t.label_ids?.length ?? 0) > 0
+    const hasDueAndProvider = Boolean(t.due_date) && Boolean(t.provider_id ?? t.provider)
+    const labelsOnOwnRow = hasLabels && hasDueAndProvider
+
+    const labelChipEls = (t.label_ids || []).map((lid) => {
+      const lb = labels.find((l: RenovationLabel) => l.id === lid)
+      return lb ? (
+        <span
+          key={lid}
+          className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
+          style={{ backgroundColor: lb.color }}
+        >
+          {lb.name}
+        </span>
+      ) : null
+    })
 
     return (
       <div
@@ -70,18 +89,7 @@ export function TasksMobile() {
                 {t.room.name}
               </span>
             )}
-            {(t.label_ids || []).map((lid) => {
-              const lb = labels.find((l: RenovationLabel) => l.id === lid)
-              return lb ? (
-                <span
-                  key={lid}
-                  className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
-                  style={{ backgroundColor: lb.color }}
-                >
-                  {lb.name}
-                </span>
-              ) : null
-            })}
+            {labelsOnOwnRow ? labelChipEls : null}
           </div>
 
           <div className="flex items-center justify-between mt-1 h-6">
@@ -139,17 +147,34 @@ export function TasksMobile() {
               )}
             </div>
 
-            <div className="flex items-center shrink-0">
+            <div className="flex min-w-0 max-w-[58%] shrink-0 items-center justify-end gap-1.5">
+              {hasLabels && !labelsOnOwnRow && (
+                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-0.5 overflow-hidden" dir="ltr">
+                  {(t.label_ids || []).map((lid) => {
+                    const lb = labels.find((l: RenovationLabel) => l.id === lid)
+                    return lb ? (
+                      <span
+                        key={lid}
+                        className="max-w-[72px] shrink truncate text-[10px] font-bold px-1 py-[1px] rounded-[3px] text-white"
+                        style={{ backgroundColor: lb.color }}
+                        title={lb.name}
+                      >
+                        {lb.name}
+                      </span>
+                    ) : null
+                  })}
+                </div>
+              )}
               {t.assignee ? (
                 <div
-                  className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold shadow-sm"
                   style={memberAvatarChipStyle(t.assignee.name)}
                   title={t.assignee.name}
                 >
                   <span className="leading-none">{memberAvatarLetter(t.assignee.name)}</span>
                 </div>
               ) : (
-                <div className="w-6 h-6 rounded-full border border-dashed border-[#dfe1e6] flex items-center justify-center bg-[#f4f5f7]">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-[#f4f5f7]">
                   <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -185,6 +210,15 @@ export function TasksMobile() {
       </div>
 
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+        <button
+          type="button"
+          onClick={() => setView(view === 'epic' ? 'status' : 'epic')}
+          className={`shrink-0 h-10 px-4 rounded-full text-[13px] font-bold transition-colors ${
+            view === 'epic' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'
+          }`}
+        >
+          Epic view
+        </button>
         <button
           type="button"
           onClick={() => setStatusTab('all')}
@@ -233,6 +267,46 @@ export function TasksMobile() {
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-10 text-center">
           <p className="text-[15px] font-semibold text-slate-600">No tasks in this column</p>
           <p className="text-[13px] text-slate-500 mt-1">Try another status or clear filters.</p>
+        </div>
+      ) : view === 'epic' ? (
+        <div className="flex flex-col gap-4">
+          {buildEpicSwimlanes(listTasksFiltered, labels).map((lane) => (
+            <section key={lane.id} className="pb-3" aria-label={lane.title}>
+              <h3 className="flex items-center gap-2 px-0.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#5e6c84]">
+                {lane.color ? (
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: lane.color }} />
+                ) : (
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full border border-dashed border-[#c1c7d0] bg-white" />
+                )}
+                <span className="min-w-0 flex-1 truncate" dir="auto">
+                  {lane.title}
+                </span>
+                <span className="tabular-nums text-[#172b4d]">{lane.tasks.length}</span>
+              </h3>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-0.5 px-0.5">
+                {STATUSES.map((s) => {
+                  const paneTasks = lane.tasks.filter((t) => t.status === s).sort(sortTasks)
+                  return (
+                    <div
+                      key={`${lane.id}-${s}`}
+                      className="w-[min(78vw,260px)] shrink-0 rounded-xl border border-slate-200/80 bg-white/70 p-2 min-h-[100px]"
+                    >
+                      <h4 className="px-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-[#5e6c84]">
+                        <span>{s.replace('_', ' ')}</span>
+                        <span className="tabular-nums text-[#172b4d]"> · {paneTasks.length}</span>
+                      </h4>
+                      <div className="flex flex-col gap-2">
+                        {paneTasks.map((t) => renderCard(t))}
+                        {paneTasks.length === 0 && (
+                          <p className="py-3 text-center text-[11px] font-medium text-slate-400">—</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       ) : (
         <div className="space-y-2">{[...listTasksFiltered].sort(sortTasks).map(renderCard)}</div>
@@ -346,6 +420,11 @@ export function TasksMobile() {
             setViewing(updatedTask)
             setTasks((prev) => prev.map((pt) => pt.id === updatedTask.id ? updatedTask : pt))
           }}
+          onLabelCreated={(lb) =>
+            setLabels((prev) =>
+              [...prev, lb].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+            )
+          }
         />
       )}
     </div>

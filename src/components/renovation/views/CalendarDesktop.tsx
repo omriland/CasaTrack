@@ -2,6 +2,7 @@
 
 import { addDays, addMonths, addWeeks, format, startOfWeek, subMonths, subWeeks } from 'date-fns'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { CalendarEventDetailDrawer } from '@/components/renovation/CalendarEventDetailDrawer'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
 import { RenovationFullCalendar } from '@/components/renovation/RenovationFullCalendar'
@@ -34,13 +35,14 @@ export function CalendarDesktop() {
     showCompletedTasks,
     setShowCompletedTasks,
     eventModalOpen,
-    editingEvent,
+    viewingEvent,
     initialDayKey,
     initialTimedRange,
     openNewEvent,
     openNewEventTimed,
     openEditEvent,
     closeEventModal,
+    closeEventView,
     taskSheetOpen,
     editingTask,
     openEditTask,
@@ -87,6 +89,11 @@ export function CalendarDesktop() {
   }, [events, tasks, showTasks])
 
   const weekStart = startOfWeek(cursor, { weekStartsOn: 0 })
+
+  const viewingEventLive = useMemo(
+    () => (viewingEvent ? events.find((e) => e.id === viewingEvent.id) ?? viewingEvent : null),
+    [events, viewingEvent],
+  )
 
   if (!project) {
     return (
@@ -366,11 +373,20 @@ export function CalendarDesktop() {
           open={eventModalOpen}
           projectId={project.id}
           providers={providers}
-          editing={editingEvent}
+          editing={null}
           initialDayKey={initialDayKey}
           initialTimedRange={initialTimedRange}
           onClose={closeEventModal}
           onSaved={() => load()}
+        />
+      )}
+
+      {viewingEventLive && (
+        <CalendarEventDetailDrawer
+          event={viewingEventLive}
+          providers={providers}
+          onClose={closeEventView}
+          onUpdated={() => load()}
         />
       )}
 

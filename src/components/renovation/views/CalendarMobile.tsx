@@ -29,13 +29,14 @@ export function CalendarMobile() {
     showCompletedTasks,
     setShowCompletedTasks,
     eventModalOpen,
-    editingEvent,
+    viewingEvent,
     initialDayKey,
     initialTimedRange,
     openNewEvent,
     openNewEventTimed,
     openEditEvent,
     closeEventModal,
+    closeEventView,
     taskSheetOpen,
     editingTask,
     openEditTask,
@@ -350,15 +351,18 @@ export function CalendarMobile() {
         </div>
       </MobileBottomSheet>
 
-      {eventModalOpen && (
+      {(eventModalOpen || viewingEvent) && (
         <CalendarEventModal
-          open={eventModalOpen}
+          open={!!(eventModalOpen || viewingEvent)}
           projectId={project.id}
           providers={providers}
-          editing={editingEvent}
-          initialDayKey={initialDayKey}
-          initialTimedRange={initialTimedRange}
-          onClose={closeEventModal}
+          editing={viewingEvent}
+          initialDayKey={viewingEvent ? null : initialDayKey}
+          initialTimedRange={viewingEvent ? null : initialTimedRange}
+          onClose={() => {
+            closeEventModal()
+            closeEventView()
+          }}
           onSaved={() => load()}
         />
       )}
