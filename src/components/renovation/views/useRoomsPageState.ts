@@ -2,7 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
-import { listGalleryItems, listNeeds, listRooms, listTasks, listGalleryTags, updateRoom } from '@/lib/renovation'
+import {
+  listGalleryItems,
+  listNeeds,
+  listRooms,
+  listTasks,
+  listGalleryTags,
+  updateNeed,
+  updateRoom,
+  updateTask,
+} from '@/lib/renovation'
 import { DEFAULT_ROOM_ICON, normalizeRoomIconKey, type RoomIconKey } from '@/components/renovation/room-icons'
 import type {
   RenovationGalleryItem,
@@ -90,6 +99,54 @@ export function useRoomsPageState() {
     }
   }
 
+  const saveTaskTitle = useCallback(
+    async (taskId: string, title: string) => {
+      const trimmed = title.trim()
+      const prev = tasks.find((t) => t.id === taskId)
+      if (!prev || !trimmed || trimmed === prev.title) return
+      setTasks((ts) => ts.map((t) => (t.id === taskId ? { ...t, title: trimmed } : t)))
+      try {
+        await updateTask(taskId, { title: trimmed })
+      } catch (e) {
+        console.error(e)
+        await load()
+        alert('Failed to update task')
+      }
+    },
+    [tasks, load],
+  )
+
+  const saveNeedTitle = useCallback(
+    async (needId: string, title: string) => {
+      const trimmed = title.trim()
+      const prev = needs.find((n) => n.id === needId)
+      if (!prev || !trimmed || trimmed === prev.title) return
+      setNeeds((ns) => ns.map((n) => (n.id === needId ? { ...n, title: trimmed } : n)))
+      try {
+        await updateNeed(needId, { title: trimmed })
+      } catch (e) {
+        console.error(e)
+        await load()
+        alert('Failed to update need')
+      }
+    },
+    [needs, load],
+  )
+
+  const toggleNeedCompleted = useCallback(
+    async (needId: string, completed: boolean) => {
+      setNeeds((ns) => ns.map((n) => (n.id === needId ? { ...n, completed } : n)))
+      try {
+        await updateNeed(needId, { completed })
+      } catch (e) {
+        console.error(e)
+        await load()
+        alert('Failed to update need')
+      }
+    },
+    [load],
+  )
+
   return {
     project,
     rooms,
@@ -115,5 +172,8 @@ export function useRoomsPageState() {
     roomNeeds,
     roomPhotos,
     saveRoom,
+    saveTaskTitle,
+    saveNeedTitle,
+    toggleNeedCompleted,
   }
 }

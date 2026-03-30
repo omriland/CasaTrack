@@ -14,6 +14,12 @@
 ### Completed (task detail labels, March 2026)
 - **[`TaskDetailDrawer`](src/components/renovation/TaskDetailDrawer.tsx)**: **Labels** row in Details (after Provider), same control style as Assignee/Room/Priority; searchable multi-select; **Create "…"** via [`createLabel`](src/lib/renovation.ts) + [`setTaskLabels`](src/lib/renovation.ts); [`onLabelCreated`](src/components/renovation/views/TasksDesktop.tsx) keeps [`useTasksPageState`](src/components/renovation/views/useTasksPageState.ts) label list in sync. Removed duplicate Tags block from drawer main column.
 
+### Completed (Spaces mobile UX pass, March 2026)
+- **Spaces mobile** ([`RoomsMobile.tsx`](src/components/renovation/views/RoomsMobile.tsx)): **merged header** — one row: icon (picker) + editable name + room switcher; **sticky chip bar** (Tasks / Needs / Gallery) scrolls to sections (`scroll-mt`); **accordions** — Tasks & Needs expanded by default, Notes & Gallery collapsed; **FAB Save** when room fields are dirty (above tab bar); **tap-to-edit** task/need titles via [`saveTaskTitle` / `saveNeedTitle`](src/components/renovation/views/useRoomsPageState.ts); **need checkbox** calls [`toggleNeedCompleted`](src/components/renovation/views/useRoomsPageState.ts) with optimistic UI; gallery **3:4 thumbnail strip** under section title + grid when expanded; section **tinted backgrounds** (sky / emerald / violet) and stronger uppercase labels; content wrapper **`dir="auto"`** + **`text-start`** for RTL-friendly alignment. Hook imports [`updateTask` / `updateNeed`](src/lib/renovation.ts).
+
+### Completed (Rooms mobile real estate, March 2026)
+- **Spaces mobile** ([`RoomsMobile.tsx`](src/components/renovation/views/RoomsMobile.tsx)): compact page header; room picker card with **Tasks / Needs / Photos** stat row; removed **sticky Save** bar — **Save** inline next to name/icon row; tighter section padding (`rounded-xl`, `p-3.5`); gallery **3-column grid** (4 cols from `sm`) instead of horizontal-only strip; dropped extra `pb-24` (shell already pads for tab bar).
+
 ### Completed (Rooms desktop rail, March 2026)
 - **Spaces rail** ([`RoomsDesktop.tsx`](src/components/renovation/views/RoomsDesktop.tsx)): wider aside (`min-w-[220px]`, `max-w-[320px]`, `basis-[22%]`); per-room **Tasks / Needs / Photos** labeled counts (not opaque `n·n·n`); selection styling switched from amber to **indigo** (border, bg, ring, focus); title input focus border indigo; loading skeleton widths/heights aligned.
 

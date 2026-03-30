@@ -1,20 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Lightbox } from '@/components/renovation/Lightbox'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { RoomIconGlyph, ROOM_ICON_TILE, normalizeRoomIconKey } from '@/components/renovation/room-icons'
 import { RoomIconPickerGrid } from '@/components/renovation/RoomIconPicker'
+import { cn } from '@/utils/common'
 import { useRoomsPageState } from './useRoomsPageState'
+
+/** Clears sticky header + chip row when scrolling to a section */
+const SECTION_SCROLL_MARGIN = 'scroll-mt-[9.5rem]'
+
+function AccordionChevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={cn('h-[18px] w-[18px] shrink-0 text-[#a5adba] transition-transform duration-200', open && 'rotate-180')}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
 
 export function RoomsMobile() {
   const {
     project,
     rooms,
-    tasks,
-    needs,
-    gallery,
     tags,
     loading,
     selectedId,
@@ -34,20 +50,95 @@ export function RoomsMobile() {
     roomNeeds,
     roomPhotos,
     saveRoom,
+    saveTaskTitle,
+    saveNeedTitle,
+    toggleNeedCompleted,
   } = useRoomsPageState()
 
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
+  const [roomPickerOpen, setRoomPickerOpen] = useState(false)
+  const roomPickerRef = useRef<HTMLDivElement>(null)
+
+  const [openNotes, setOpenNotes] = useState(false)
+  const [openTasks, setOpenTasks] = useState(true)
+  const [openNeeds, setOpenNeeds] = useState(true)
+  const [openGallery, setOpenGallery] = useState(false)
+
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [draftTaskTitle, setDraftTaskTitle] = useState('')
+  const [editingNeedId, setEditingNeedId] = useState<string | null>(null)
+  const [draftNeedTitle, setDraftNeedTitle] = useState('')
+
+  const sortedRooms = useMemo(
+    () => [...rooms].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
+    [rooms],
+  )
+
+  const roomDirty = useMemo(() => {
+    if (!selectedRoom) return false
+    return (
+      editName.trim() !== selectedRoom.name ||
+      (editNotes || '') !== (selectedRoom.notes || '') ||
+      editIconKey !== normalizeRoomIconKey(selectedRoom.room_icon_key)
+    )
+  }, [selectedRoom, editName, editNotes, editIconKey])
+
+  useEffect(() => {
+    if (loading || rooms.length === 0) return
+    if (!selectedId || !rooms.some((r) => r.id === selectedId)) {
+      setSelectedId(rooms[0].id)
+    }
+  }, [loading, rooms, selectedId, setSelectedId])
+
+  useEffect(() => {
+    if (!roomPickerOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setRoomPickerOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [roomPickerOpen])
+
+  useEffect(() => {
+    if (!roomPickerOpen) return
+    const onMouseDown = (e: MouseEvent) => {
+      const n = e.target as Node
+      if (roomPickerRef.current?.contains(n)) return
+      setRoomPickerOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [roomPickerOpen])
+
+  const scrollToSection = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
+
+  const commitTaskEdit = useCallback(() => {
+    if (!editingTaskId) return
+    void saveTaskTitle(editingTaskId, draftTaskTitle)
+    setEditingTaskId(null)
+  }, [editingTaskId, draftTaskTitle, saveTaskTitle])
+
+  const commitNeedEdit = useCallback(() => {
+    if (!editingNeedId) return
+    void saveNeedTitle(editingNeedId, draftNeedTitle)
+    setEditingNeedId(null)
+  }, [editingNeedId, draftNeedTitle, saveNeedTitle])
 
   if (!project) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-[2rem] border border-dashed border-slate-300 bg-slate-50/50 p-10 text-center py-24">
-        <div className="mb-4 rounded-full bg-indigo-100 p-4 text-indigo-500">
-          <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[#dfe1e6] bg-white p-10 text-center py-20">
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-indigo-50 text-indigo-500">
+          <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
         </div>
-        <p className="text-[17px] font-medium text-slate-600">No project found</p>
-        <Link href="/renovation" className="mt-4 rounded-full bg-indigo-600 px-6 py-3 font-bold text-white shadow-sm active:scale-95">
+        <p className="text-[16px] font-medium text-[#5e6c84]">No project found</p>
+        <Link
+          href="/renovation"
+          className="mt-5 flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-6 text-[14px] font-semibold text-white active:opacity-90"
+        >
           Create a project first
         </Link>
       </div>
@@ -56,259 +147,406 @@ export function RoomsMobile() {
 
   const roomLightboxIndex = lightbox ? roomPhotos.findIndex((i) => i.id === lightbox.id) : -1
 
-  return (
-    <div className="space-y-6 pb-24 animate-fade-in-up">
-      <header className="px-1">
-        <h1 className="text-[32px] font-extrabold tracking-tight text-slate-900">Spaces</h1>
-        <p className="text-[15px] font-medium text-slate-500 mt-1 leading-snug">Tasks, needs, and photos per room.</p>
-      </header>
+  const taskCount = selectedRoom ? roomTasks.length : 0
+  const needCount = selectedRoom ? roomNeeds.length : 0
+  const photoCount = selectedRoom ? roomPhotos.length : 0
 
+  return (
+    <div className="animate-fade-in-up pb-1">
       {loading ? (
-        <div className="grid grid-cols-2 gap-4 animate-pulse px-1">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-white rounded-[1.5rem] border border-slate-200/60 shadow-sm" />
-          ))}
+        <div className="space-y-3 animate-pulse">
+          <div className="h-24 rounded-2xl bg-white/80 ring-1 ring-[#dfe1e6]/80" />
+          <div className="h-52 rounded-2xl bg-white/80 ring-1 ring-[#dfe1e6]/80" />
         </div>
       ) : rooms.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-[2rem] border border-slate-200/80 bg-white p-10 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-500 ring-8 ring-indigo-50/50">
-            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-[#dfe1e6] bg-white p-10 text-center">
+          <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-slate-50 text-[#5e6c84] ring-1 ring-[#dfe1e6]">
+            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
-          <p className="text-[16px] font-bold text-slate-800">No rooms yet</p>
-          <Link href="/renovation/settings" className="mt-5 flex h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-[15px] font-bold text-white shadow-sm active:scale-95">
+          <p className="text-[16px] font-semibold text-[#172b4d]">No rooms yet</p>
+          <Link
+            href="/renovation/settings"
+            className="mt-5 flex h-11 w-full max-w-xs items-center justify-center rounded-xl bg-[#172b4d] px-5 text-[14px] font-semibold text-white active:opacity-90"
+          >
             Add in Settings
           </Link>
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-3 px-1">
-            {rooms.map((room) => {
-              const taskCount = tasks.filter((t) => t.room_id === room.id).length
-              const needCount = needs.filter((n) => n.room_id === room.id).length
-              const photoCount = gallery.filter((p) => p.room_id === room.id).length
-              const active = selectedId === room.id
-              const ri = normalizeRoomIconKey(room.room_icon_key)
-              
-              return (
+          {selectedRoom && roomDirty && (
+            <button
+              type="button"
+              onClick={() => void saveRoom()}
+              disabled={saving}
+              className="fixed z-[45] flex h-12 min-w-[5.5rem] items-center justify-center rounded-full bg-indigo-600 px-5 text-[14px] font-semibold text-white active:opacity-90 disabled:opacity-50 right-4 bottom-[calc(5.35rem+env(safe-area-inset-bottom))]"
+              aria-label={saving ? 'Saving' : 'Save space'}
+            >
+              {saving ? '…' : 'Save'}
+            </button>
+          )}
+
+          <div className="sticky top-0 z-20 -mx-3 mb-4 space-y-3 border-b border-transparent bg-[#f0f2f6]/90 px-3 pb-3 pt-0 backdrop-blur-xl">
+            <div className="flex items-baseline justify-between gap-2 px-0.5">
+              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-[#5e6c84]">Spaces</h2>
+            </div>
+
+            <div
+              className="relative flex min-h-[52px] items-center gap-3 rounded-2xl border border-[#dfe1e6] bg-white px-3 py-2.5"
+              ref={roomPickerRef}
+            >
+              <button
+                type="button"
+                onClick={() => selectedRoom && setIconPickerOpen(true)}
+                disabled={!selectedRoom}
+                className={cn(
+                  'grid h-12 w-12 shrink-0 place-items-center rounded-xl transition-transform active:scale-[0.97] disabled:opacity-45',
+                  selectedRoom ? ROOM_ICON_TILE[editIconKey] : 'border border-dashed border-[#dfe1e6] bg-[#fafbfc]',
+                )}
+                aria-label="Change room icon"
+              >
+                {selectedRoom ? (
+                  <RoomIconGlyph roomKey={editIconKey} className="h-6 w-6" />
+                ) : (
+                  <svg className="h-5 w-5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                )}
+              </button>
+
+              <input
+                dir="auto"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                onBlur={() => void saveRoom()}
+                placeholder={sortedRooms.length ? 'Room name' : 'Add rooms in Settings'}
+                disabled={!selectedRoom}
+                className="min-w-0 flex-1 bg-transparent text-[18px] font-semibold leading-snug text-[#172b4d] outline-none placeholder:text-[#a5adba] text-start disabled:opacity-50"
+              />
+
+              <button
+                type="button"
+                onClick={() => setRoomPickerOpen((o) => !o)}
+                disabled={!sortedRooms.length}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#5e6c84] transition-colors active:bg-[#f4f5f7] disabled:opacity-35"
+                aria-haspopup="listbox"
+                aria-expanded={roomPickerOpen}
+                aria-label="Switch room"
+              >
+                <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {roomPickerOpen && sortedRooms.length > 0 && (
                 <div
-                  key={room.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setSelectedId(room.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      setSelectedId(room.id)
-                    }
-                  }}
-                  className={`group relative flex min-h-[120px] cursor-pointer flex-col justify-between overflow-hidden rounded-[1.5rem] border p-4 text-left outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-indigo-500/50 active:scale-[0.97] ${
-                    active 
-                      ? 'bg-white border-transparent shadow-[0_4px_20px_-4px_rgba(79,70,229,0.2)] ring-2 ring-indigo-500/20' 
-                      : 'bg-white border-slate-200/60 shadow-sm'
-                  }`}
+                  className="absolute inset-x-0 top-[calc(100%+6px)] z-30 max-h-[min(50vh,280px)] overflow-y-auto rounded-xl border border-[#dfe1e6] bg-white p-1.5 animate-fade-in"
+                  role="listbox"
                 >
-                  {active && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-purple-50 opacity-50" />
-                  )}
-                  
-                  <div className="relative z-10 flex items-start justify-between">
-                    <button
-                      type="button"
-                      title="Change room icon"
-                      aria-label="Change room icon"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setSelectedId(room.id)
-                        setIconPickerOpen(true)
-                      }}
-                      className={`flex h-[3.25rem] w-[3.25rem] cursor-pointer items-center justify-center rounded-2xl transition-[transform,box-shadow] hover:scale-105 hover:ring-2 hover:ring-indigo-400/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${ROOM_ICON_TILE[ri]} shadow-sm`}
-                    >
-                      <RoomIconGlyph roomKey={ri} className="h-7 w-7 drop-shadow-sm" />
-                    </button>
-                    {active && (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-500 text-white shadow-sm">
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="relative z-10 mt-3 pt-1">
-                    <p className={`line-clamp-2 text-[15px] font-bold leading-tight ${active ? 'text-indigo-950' : 'text-slate-800'}`} dir="auto">
-                      {room.name}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1.5 overflow-hidden text-[10px] font-bold text-slate-500">
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5">{taskCount} tasks</span>
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5">{needCount} needs</span>
-                      <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5">{photoCount} photos</span>
-                    </div>
-                  </div>
+                  {sortedRooms.map((rm) => {
+                    const rk = normalizeRoomIconKey(rm.room_icon_key)
+                    return (
+                      <button
+                        key={rm.id}
+                        type="button"
+                        role="option"
+                        aria-selected={selectedId === rm.id}
+                        onClick={() => {
+                          setSelectedId(rm.id)
+                          setRoomPickerOpen(false)
+                        }}
+                        className={cn(
+                          'mb-0.5 flex min-h-[48px] w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-[15px] transition-colors last:mb-0',
+                          selectedId === rm.id
+                            ? 'bg-indigo-50 font-semibold text-indigo-800'
+                            : 'font-medium text-[#172b4d] active:bg-[#f4f5f7]',
+                        )}
+                      >
+                        <div className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-lg', ROOM_ICON_TILE[rk])}>
+                          <RoomIconGlyph roomKey={rk} className="h-4 w-4" />
+                        </div>
+                        <span className="truncate text-start" dir="auto">
+                          {rm.name}
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              )}
+            </div>
+
+            {selectedRoom && (
+              <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {(
+                  [
+                    { id: 'spaces-section-tasks', label: 'Tasks', count: taskCount },
+                    { id: 'spaces-section-needs', label: 'Needs', count: needCount },
+                    { id: 'spaces-section-gallery', label: 'Gallery', count: photoCount },
+                  ] as const
+                ).map(({ id, label, count }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => scrollToSection(id)}
+                    className="flex shrink-0 items-center gap-2 rounded-full border border-[#dfe1e6] bg-white py-2 pl-3.5 pr-3 text-[13px] font-semibold text-[#172b4d] active:bg-[#f4f5f7]"
+                  >
+                    {label}
+                    <span className="grid min-h-[22px] min-w-[22px] place-items-center rounded-md bg-[#f4f5f7] px-1.5 text-[12px] font-bold tabular-nums text-[#5e6c84]">
+                      {count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {selectedRoom && (
-            <div className="mt-8 rounded-[2rem] border border-slate-200/60 bg-white/70 shadow-[0_8px_30px_rgb(0,0,0,0.06)] backdrop-blur-xl pb-6">
-              <div className="sticky top-0 z-10 border-b border-slate-100/50 bg-white/90 p-4 backdrop-blur-xl rounded-t-[2rem]">
-                <div className="flex items-center justify-between">
-                  <button type="button" onClick={() => setSelectedId(null)} className="flex h-10 items-center justify-center gap-1.5 rounded-full bg-slate-100 pl-3 pr-4 text-[13px] font-bold text-slate-700 active:scale-95">
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveRoom}
-                    disabled={saving}
-                    className="flex h-10 items-center justify-center rounded-full bg-indigo-600 px-5 text-[13px] font-bold text-white shadow-sm active:scale-95 disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-70"
-                  >
-                    {saving ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-6 p-5">
-                {/* Header Edit Area */}
-                <div className="flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setIconPickerOpen(true)}
-                    className={`flex h-[4.5rem] w-[4.5rem] shrink-0 cursor-pointer items-center justify-center rounded-[1.25rem] shadow-sm transition-transform active:scale-95 ${ROOM_ICON_TILE[editIconKey]}`}
-                  >
-                    <RoomIconGlyph roomKey={editIconKey} className="h-10 w-10 drop-shadow-sm" />
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Space Name</label>
-                    <input
+            <div className="overflow-hidden rounded-2xl border border-[#dfe1e6] bg-white" dir="auto">
+              {/* Notes */}
+              <section id="spaces-section-notes" className={SECTION_SCROLL_MARGIN}>
+                <button
+                  type="button"
+                  onClick={() => setOpenNotes((o) => !o)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-start active:bg-[#fafbfc]"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f4f5f7] text-[#5e6c84]">
+                      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-[#172b4d]">Notes</span>
+                      <span className="block text-[12px] font-medium text-[#5e6c84]">Plans and measurements</span>
+                    </span>
+                  </span>
+                  <AccordionChevron open={openNotes} />
+                </button>
+                {openNotes && (
+                  <div className="border-t border-[#dfe1e6] px-4 pb-4 pt-1">
+                    <textarea
                       dir="auto"
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onBlur={saveRoom}
-                      className="mt-0.5 w-full border-b-2 border-transparent bg-transparent py-1 text-[24px] font-extrabold tracking-tight text-slate-900 outline-none transition-colors focus:border-indigo-500"
+                      value={editNotes}
+                      onChange={(e) => setEditNotes(e.target.value)}
+                      onBlur={() => void saveRoom()}
+                      placeholder="Add notes for this space…"
+                      rows={4}
+                      className="w-full resize-y rounded-xl border border-[#dfe1e6] bg-[#fafbfc] px-3.5 py-3 text-[15px] font-normal leading-relaxed text-[#172b4d] outline-none transition-[box-shadow] placeholder:text-[#a5adba] focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-start"
                     />
                   </div>
-                </div>
+                )}
+              </section>
 
-                {/* Notes Block */}
-                <div className="rounded-[1.25rem] border border-slate-200/50 bg-white p-5 shadow-sm">
-                  <div className="mb-3 flex items-center gap-2">
-                    <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    <label className="text-[12px] font-black uppercase tracking-widest text-slate-500">Notes</label>
-                  </div>
-                  <textarea
-                    dir="auto"
-                    value={editNotes}
-                    onChange={(e) => setEditNotes(e.target.value)}
-                    onBlur={saveRoom}
-                    placeholder="Plans, specs, ideas..."
-                    rows={4}
-                    className="w-full resize-y rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 text-[15px] outline-none transition-colors focus:border-indigo-500 focus:bg-white"
-                  />
-                </div>
+              <div className="h-px bg-[#dfe1e6]" aria-hidden />
 
-                {/* Tasks Block */}
-                <div className="rounded-[1.25rem] border border-slate-200/50 bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-slate-500">
-                      <svg className="h-5 w-5 text-sky-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              {/* Tasks */}
+              <section id="spaces-section-tasks" className={SECTION_SCROLL_MARGIN}>
+                <button
+                  type="button"
+                  onClick={() => setOpenTasks((o) => !o)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-start active:bg-[#fafbfc]"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#e9f2ff] text-indigo-600">
+                      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                       </svg>
-                      Tasks
-                    </h3>
-                    <span className="flex h-6 items-center rounded-full bg-sky-50 px-2.5 text-[11px] font-bold text-sky-600 ring-1 ring-sky-100/50">
-                      {roomTasks.length}
                     </span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-[#172b4d]">Tasks</span>
+                      <span className="block text-[12px] font-medium text-[#5e6c84]">Linked to this room</span>
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-semibold tabular-nums text-[#5e6c84]">{roomTasks.length}</span>
+                    <AccordionChevron open={openTasks} />
                   </div>
-                  {roomTasks.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center">
-                      <p className="text-[14px] font-medium text-slate-400">None linked.</p>
-                    </div>
-                  ) : (
-                    <ul className="flex flex-col gap-2">
-                      {roomTasks.map((t) => (
-                        <li key={t.id}>
-                          <Link href="/renovation/tasks" className="flex min-h-[48px] items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50/50 px-4 text-[14px] font-medium text-slate-700 active:scale-95" dir="auto">
-                            <span className="truncate">{t.title}</span>
-                            {t.status !== 'done' && (
-                              <span className="shrink-0 rounded-md bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-400 shadow-sm ring-1 ring-slate-200/50">
-                                {t.status.replace('_', ' ')}
-                              </span>
+                </button>
+                {openTasks && (
+                  <div className="border-t border-[#dfe1e6] bg-[#fafbfc]/80 px-2 pb-3 pt-2">
+                    {roomTasks.length === 0 ? (
+                      <p className="py-6 text-center text-[14px] font-medium text-[#a5adba]">No tasks linked yet.</p>
+                    ) : (
+                      <ul className="flex flex-col gap-2">
+                        {roomTasks.map((t) => (
+                          <li key={t.id}>
+                            {editingTaskId === t.id ? (
+                              <input
+                                autoFocus
+                                dir="auto"
+                                value={draftTaskTitle}
+                                onChange={(e) => setDraftTaskTitle(e.target.value)}
+                                onBlur={() => commitTaskEdit()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    commitTaskEdit()
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setEditingTaskId(null)
+                                    setDraftTaskTitle('')
+                                  }
+                                }}
+                                className="min-h-[48px] w-full rounded-[6px] border border-[#dfe1e6] bg-white px-3 text-[15px] font-medium text-[#172b4d] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-start"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingTaskId(t.id)
+                                  setDraftTaskTitle(t.title)
+                                }}
+                                className="flex min-h-[48px] w-full items-center justify-between gap-2 rounded-[6px] border border-[#dfe1e6] bg-white px-3 py-2.5 text-start active:bg-[#f4f5f7]"
+                                dir="auto"
+                              >
+                                <span className="min-w-0 flex-1 truncate text-[15px] font-medium leading-snug text-[#172b4d]">
+                                  {t.title}
+                                </span>
+                                {t.status !== 'done' && (
+                                  <span className="shrink-0 rounded-[3px] bg-[#f4f5f7] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#5e6c84]">
+                                    {t.status.replace('_', ' ')}
+                                  </span>
+                                )}
+                              </button>
                             )}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                {/* Needs Block */}
-                <div className="rounded-[1.25rem] border border-slate-200/50 bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-slate-500">
-                      <svg className="h-5 w-5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                      </svg>
-                      Shopping Needs
-                    </h3>
-                    <span className="flex h-6 items-center rounded-full bg-emerald-50 px-2.5 text-[11px] font-bold text-emerald-600 ring-1 ring-emerald-100/50">
-                      {roomNeeds.length}
-                    </span>
-                  </div>
-                  {roomNeeds.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center">
-                      <p className="text-[14px] font-medium text-slate-400">None linked.</p>
-                    </div>
-                  ) : (
-                    <ul className="flex flex-col gap-2">
-                      {roomNeeds.map((n) => (
-                        <li key={n.id}>
-                          <Link
-                            href="/renovation/needs"
-                            className={`flex min-h-[48px] items-center gap-3 rounded-xl border px-4 font-medium active:scale-95 transition-colors ${n.completed ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-white border-slate-100 text-slate-700'}`}
-                            dir="auto"
-                          >
-                            <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${n.completed ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-slate-50'}`}>
-                              {n.completed && <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                            </div>
-                            <span className={`truncate ${n.completed ? 'line-through decoration-slate-300' : ''}`}>{n.title}</span>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                {/* Photos Block */}
-                <div className="rounded-[1.25rem] border border-slate-200/50 bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 text-[12px] font-black uppercase tracking-widest text-slate-500">
-                      <svg className="h-5 w-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      Gallery
-                    </h3>
-                    {roomPhotos.length > 0 && (
-                      <span className="flex h-6 items-center rounded-full bg-slate-100 px-2.5 text-[11px] font-bold text-slate-600">
-                        {roomPhotos.length}
-                      </span>
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </div>
-                  {roomPhotos.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center">
-                      <p className="text-[14px] font-medium text-slate-400">No photos in this room.</p>
-                    </div>
-                  ) : (
-                    <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar snap-x">
+                )}
+              </section>
+
+              <div className="h-px bg-[#dfe1e6]" aria-hidden />
+
+              {/* Needs */}
+              <section id="spaces-section-needs" className={SECTION_SCROLL_MARGIN}>
+                <button
+                  type="button"
+                  onClick={() => setOpenNeeds((o) => !o)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-start active:bg-[#fafbfc]"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
+                      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-[#172b4d]">Needs</span>
+                      <span className="block text-[12px] font-medium text-[#5e6c84]">Shopping and requirements</span>
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-semibold tabular-nums text-[#5e6c84]">{roomNeeds.length}</span>
+                    <AccordionChevron open={openNeeds} />
+                  </div>
+                </button>
+                {openNeeds && (
+                  <div className="border-t border-[#dfe1e6] bg-[#fafbfc]/80 px-2 pb-3 pt-2">
+                    {roomNeeds.length === 0 ? (
+                      <p className="py-6 text-center text-[14px] font-medium text-[#a5adba]">No needs linked yet.</p>
+                    ) : (
+                      <ul className="flex flex-col gap-2">
+                        {roomNeeds.map((n) => (
+                          <li
+                            key={n.id}
+                            className="flex min-h-[48px] items-stretch gap-3 rounded-[6px] border border-[#dfe1e6] bg-white px-2 py-1.5"
+                          >
+                            <button
+                              type="button"
+                              aria-pressed={n.completed}
+                              aria-label={n.completed ? 'Mark need incomplete' : 'Mark need complete'}
+                              onClick={() => void toggleNeedCompleted(n.id, !n.completed)}
+                              className={cn(
+                                'mt-1 flex h-[22px] w-[22px] shrink-0 items-center justify-center self-start rounded border-2 transition-colors',
+                                n.completed
+                                  ? 'border-emerald-500 bg-emerald-500 text-white'
+                                  : 'border-[#c1c7d0] bg-white',
+                              )}
+                            >
+                              {n.completed && (
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                            {editingNeedId === n.id ? (
+                              <input
+                                autoFocus
+                                dir="auto"
+                                value={draftNeedTitle}
+                                onChange={(e) => setDraftNeedTitle(e.target.value)}
+                                onBlur={() => commitNeedEdit()}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault()
+                                    commitNeedEdit()
+                                  }
+                                  if (e.key === 'Escape') {
+                                    setEditingNeedId(null)
+                                    setDraftNeedTitle('')
+                                  }
+                                }}
+                                className="min-h-[40px] min-w-0 flex-1 rounded-md border border-[#dfe1e6] bg-white px-2 py-1.5 text-[15px] font-medium text-[#172b4d] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-start"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingNeedId(n.id)
+                                  setDraftNeedTitle(n.title)
+                                }}
+                                className={cn(
+                                  'min-w-0 flex-1 py-2 text-start text-[15px] font-medium leading-snug transition-colors',
+                                  n.completed ? 'text-[#a5adba] line-through decoration-[#c1c7d0]' : 'text-[#172b4d]',
+                                )}
+                                dir="auto"
+                              >
+                                <span className="block truncate">{n.title}</span>
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              <div className="h-px bg-[#dfe1e6]" aria-hidden />
+
+              {/* Gallery */}
+              <section id="spaces-section-gallery" className={SECTION_SCROLL_MARGIN}>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenGallery((o) => !o)}
+                    className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-start active:bg-[#fafbfc]"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600">
+                        <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[15px] font-semibold text-[#172b4d]">Gallery</span>
+                        <span className="block text-[12px] font-medium text-[#5e6c84]">Photos tagged with this room</span>
+                      </span>
+                    </span>
+                    <AccordionChevron open={openGallery} />
+                  </button>
+                  {roomPhotos.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto border-t border-[#dfe1e6] px-4 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                       {roomPhotos.map((item) => (
-                        <button key={item.id} type="button" onClick={() => setLightbox(item)} className="relative h-[120px] w-[120px] shrink-0 snap-center rounded-2xl overflow-hidden bg-slate-100 ring-1 ring-slate-200/80 active:scale-95 transition-transform">
-                          <div className="absolute inset-0 bg-slate-900/0 active:bg-slate-900/10 z-10 transition-colors" />
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setLightbox(item)}
+                          className="relative aspect-[3/4] h-[4.25rem] w-auto shrink-0 overflow-hidden rounded-lg bg-[#ebecf0] ring-1 ring-[#dfe1e6] active:opacity-90"
+                        >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={item.public_url} alt="" className="h-full w-full object-cover" />
                         </button>
@@ -316,17 +554,34 @@ export function RoomsMobile() {
                     </div>
                   )}
                 </div>
-              </div>
+                {openGallery && (
+                  <div className="border-t border-[#dfe1e6] bg-[#fafbfc]/80 px-2 pb-4 pt-3">
+                    {roomPhotos.length === 0 ? (
+                      <p className="py-6 text-center text-[14px] font-medium text-[#a5adba]">No photos in this room.</p>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                        {roomPhotos.map((item) => (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setLightbox(item)}
+                            className="relative aspect-square w-full overflow-hidden rounded-lg bg-[#ebecf0] ring-1 ring-[#dfe1e6] active:opacity-90"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={item.public_url} alt="" className="h-full w-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
             </div>
           )}
         </>
       )}
 
-      <MobileBottomSheet
-        open={iconPickerOpen && !!selectedRoom}
-        onClose={() => setIconPickerOpen(false)}
-        title="Room icon"
-      >
+      <MobileBottomSheet open={iconPickerOpen && !!selectedRoom} onClose={() => setIconPickerOpen(false)} title="Room icon">
         <p className="mb-3 px-1 text-right text-[13px] font-medium text-slate-500" dir="rtl">
           אייקונים מספריית{' '}
           <a
@@ -339,12 +594,7 @@ export function RoomsMobile() {
           </a>
           . בחרו — ואז שמרו את החדר.
         </p>
-        <RoomIconPickerGrid
-          dense
-          value={editIconKey}
-          onChange={setEditIconKey}
-          onPick={() => setIconPickerOpen(false)}
-        />
+        <RoomIconPickerGrid dense value={editIconKey} onChange={setEditIconKey} onPick={() => setIconPickerOpen(false)} />
       </MobileBottomSheet>
 
       {lightbox && roomPhotos.length > 0 && roomLightboxIndex >= 0 && (
