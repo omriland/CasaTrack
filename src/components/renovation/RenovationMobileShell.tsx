@@ -4,7 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { type ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
-import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
+import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
+import { cn } from '@/utils/common'
 
 const primaryNav = [
   { href: '/renovation', label: 'Home', icon: HomeIcon, match: (p: string) => p === '/renovation' },
@@ -32,9 +33,10 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
   const { project, activeProfile, teamMembers, openProfilePicker } = useRenovation()
 
   return (
-    <div className="reno-app flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#f5f6f8] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      <header className="z-30 shrink-0 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl pt-[max(0.5rem,env(safe-area-inset-top))] px-4 pb-2.5">
-        <div className="mx-auto flex max-w-lg items-center gap-3 min-h-[48px]">
+    <div className="reno-app flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#f5f6f8] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+      {/* Fixed shell bar: safe area + row (min 48px) + pb-2.5; main uses matching pt so content clears it on every tab */}
+      <header className="fixed top-0 inset-x-0 z-50 border-b border-slate-200/60 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur-xl pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
+        <div className="mx-auto flex max-w-lg items-center gap-3 px-4 min-h-[48px]">
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[18px] font-bold leading-tight text-slate-900">{project?.name || 'Renovation'}</h1>
           </div>
@@ -42,19 +44,19 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               onClick={openProfilePicker}
-              className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-2xl border border-slate-200/90 shadow-sm transition-transform active:scale-95"
-              style={memberAvatarTileStyle(activeProfile.name)}
+              className="relative flex h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm transition-transform active:scale-95"
               aria-label="Switch profile"
             >
-              <span className="text-[13px] font-extrabold leading-none tabular-nums">
-                {memberInitials(activeProfile.name)}
-              </span>
+              <MemberAvatarTile
+                name={activeProfile.name}
+                className="h-full w-full min-h-0 min-w-0 rounded-2xl text-[13px] font-extrabold"
+              />
             </button>
           )}
         </div>
       </header>
 
-      <main className="reno-mobile-main min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-4 pt-4 animate-fade-in pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
+      <main className="reno-mobile-main relative z-0 min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[calc(max(0.5rem,env(safe-area-inset-top))+3rem+0.625rem+1rem)]">
         {children}
       </main>
 
@@ -86,7 +88,7 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
 
 function MoreIcon({ className, active }: { className?: string; active?: boolean }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+    <svg className={cn(className, 'rotate-90')} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
       <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
       <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
       <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />

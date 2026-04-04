@@ -121,10 +121,6 @@ export function RenovationDashboardDesktop() {
     <div className="space-y-8 pb-8">
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-3">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Active Phase
-          </div>
           {greetName ? (
             <p className="text-[19px] font-semibold text-indigo-600 mb-2" dir="auto">
               {greet.label}, {greetName}
@@ -179,16 +175,22 @@ export function RenovationDashboardDesktop() {
               </div>
 
               <div className="flex flex-row items-end justify-between gap-6">
-                <div>
-                  <p className={`text-5xl font-bold tracking-tight tabular-nums mt-1 ${over ? 'text-rose-400' : 'text-white'}`}>
-                    {formatIls(remainingBalance)}
-                  </p>
-                  {plannedTotal > 0 && (
-                    <p className="mt-2 text-[12px] font-medium text-slate-400 tabular-nums">
-                      Excluding planned:{' '}
-                      <span className="text-slate-300">{formatIls(remainingExcludingPlanned)}</span>
+                <div className="flex min-w-0 flex-col items-stretch">
+                  <div className="flex flex-col items-start" dir="ltr">
+                    <p
+                      className={`w-fit max-w-full text-5xl font-bold tracking-tight tabular-nums mt-1 ${over ? 'text-rose-400' : 'text-white'}`}
+                    >
+                      {formatIls(remainingBalance)}
                     </p>
-                  )}
+                    {plannedTotal > 0 && (
+                      <div className="mt-2 w-fit max-w-full space-y-0.5">
+                        <p className="text-[12px] font-medium text-slate-400">Excluding planned</p>
+                        <p className="w-fit max-w-full text-[12px] font-semibold tabular-nums text-slate-300">
+                          {formatIls(remainingExcludingPlanned)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   {over && (
                     <p className="inline-block mt-2 px-2.5 py-1 bg-rose-500/20 text-rose-300 text-[13px] font-bold rounded backdrop-blur-md">
                       Exceeded by {formatIls(budgetOverAmount)}

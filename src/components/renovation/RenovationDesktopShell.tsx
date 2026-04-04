@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
-import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
+import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
 
 const nav = [
   { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
@@ -74,12 +74,10 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
               onClick={openProfilePicker}
               className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-left group"
             >
-              <div
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[11px] font-extrabold shadow-inner"
-                style={memberAvatarTileStyle(activeProfile.name)}
-              >
-                <span className="leading-none">{memberInitials(activeProfile.name)}</span>
-              </div>
+              <MemberAvatarTile
+                name={activeProfile.name}
+                className="h-9 w-9 shrink-0 rounded-lg text-[11px] font-extrabold shadow-inner"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-bold text-slate-800 truncate" dir="auto">
                   {activeProfile.name}

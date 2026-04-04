@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useId } from 'react'
 import { cn } from '@/utils/common'
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -18,7 +18,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     { className, label, error, helperText, fullWidth = false, id, ...props },
     ref
   ) => {
-    const inputId = id || `input-${Math.random().toString(36).substring(7)}`
+    const autoId = useId()
+    const inputId = id ?? autoId
 
     return (
       <div className={cn('flex flex-col', fullWidth && 'w-full')}>

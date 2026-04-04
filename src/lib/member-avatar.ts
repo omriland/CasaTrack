@@ -1,6 +1,19 @@
 import type { CSSProperties } from 'react'
 import { stringAvatarHue } from '@/lib/avatar-hue'
 
+/** Preset portrait images keyed by first name (lowercase). */
+const MEMBER_AVATAR_IMAGES: Record<string, string> = {
+  omri: '/renovation-member-avatars/omri-tofu.png',
+  tamar: '/renovation-member-avatars/tamar-date.png',
+  carlos: '/renovation-member-avatars/carlos.png',
+}
+
+/** Public URL for a preset member avatar, or null to use generated initials. */
+export function memberAvatarImageSrc(name: string): string | null {
+  const first = (name.trim().split(/\s+/)[0] || '').toLowerCase()
+  return MEMBER_AVATAR_IMAGES[first] ?? null
+}
+
 /** 1–2 letter initials for larger tiles (profile gate, sidebar, settings). */
 export function memberInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean)

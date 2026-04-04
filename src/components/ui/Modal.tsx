@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useClickOutside } from '@/hooks/common/useClickOutside'
 import { cn } from '@/utils/common'
@@ -32,6 +32,11 @@ export function Modal({
   className,
 }: ModalProps) {
   const modalRef = React.useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useClickOutside<HTMLDivElement>(modalRef, () => {
     if (closeOnOverlayClick && isOpen) {
@@ -125,7 +130,7 @@ export function Modal({
     </div>
   )
 
-  if (typeof window === 'undefined') return null
+  if (!mounted || typeof window === 'undefined') return null
 
   return createPortal(modalContent, document.body)
 }

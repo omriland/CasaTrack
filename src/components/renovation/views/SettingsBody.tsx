@@ -15,7 +15,7 @@ import {
   updateBudgetLine,
 } from '@/lib/renovation'
 import type { RenovationSettingsPageCtx } from './useRenovationSettingsPageState'
-import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
+import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
 
 export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; mobile: boolean }) {
   const {
@@ -238,12 +238,10 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
           {members.map((m) => (
             <div key={m.id} className={`flex justify-between items-center ${mobile ? 'p-4' : 'p-4 sm:p-5'} gap-3 hover:bg-slate-50/50 transition-colors`}>
               <div className="flex min-w-0 items-center gap-3">
-                <div
-                  className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-[13px] font-extrabold shadow-inner"
-                  style={memberAvatarTileStyle(m.name)}
-                >
-                  <span className="leading-none">{memberInitials(m.name)}</span>
-                </div>
+                <MemberAvatarTile
+                  name={m.name}
+                  className="h-11 w-11 shrink-0 rounded-xl text-[13px] font-extrabold shadow-inner"
+                />
                 <div className="min-w-0" dir="auto">
                   <p className="font-bold text-slate-900 text-[16px]">{m.name}</p>
                   {(m.phone || m.email) && <p className="text-[13px] text-slate-500 truncate mt-0.5">{m.phone || m.email}</p>}

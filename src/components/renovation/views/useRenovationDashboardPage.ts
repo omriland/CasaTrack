@@ -1,6 +1,6 @@
 'use client'
 
-import { format, isToday, isTomorrow, parseISO } from 'date-fns'
+import { addDays, endOfDay, format, isToday, isTomorrow, parseISO } from 'date-fns'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
@@ -180,6 +180,27 @@ export function useRenovationDashboardPage() {
       .slice(0, 5)
   }, [calendarEvents])
 
+  /** Mobile dashboard: calendar events only, within the next 14 days, max 4. */
+  const upcomingCalendarEventsTwoWeeks = useMemo(() => {
+    const now = new Date()
+    const rangeEnd = endOfDay(addDays(now, 14))
+    const todayStr = format(now, 'yyyy-MM-dd')
+    const lastDayStr = format(rangeEnd, 'yyyy-MM-dd')
+    return calendarEvents
+      .filter((e) => {
+        if (!e.is_all_day && e.starts_at) {
+          const t = new Date(e.starts_at).getTime()
+          return !Number.isNaN(t) && t >= now.getTime() && t <= rangeEnd.getTime()
+        }
+        if (e.is_all_day && e.start_date) {
+          return e.start_date >= todayStr && e.start_date <= lastDayStr
+        }
+        return false
+      })
+      .sort((a, b) => (eventStartMs(a) ?? 0) - (eventStartMs(b) ?? 0))
+      .slice(0, 4)
+  }, [calendarEvents])
+
   return {
     project,
     loading,
@@ -213,5 +234,6 @@ export function useRenovationDashboardPage() {
     overdue,
     upcoming,
     upcomingEvents,
+    upcomingCalendarEventsTwoWeeks,
   }
 }

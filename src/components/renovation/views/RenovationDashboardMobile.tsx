@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRenovation } from '@/components/renovation/RenovationContext'
-import { formatIls, formatTaskDue } from '@/lib/renovation-format'
+import { formatIls } from '@/lib/renovation-format'
 import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
 import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
@@ -28,10 +28,8 @@ export function RenovationDashboardMobile() {
     spentBarPct,
     plannedBarPct,
     remainingBalance,
-    remainingExcludingPlanned,
     budgetOverAmount,
-    upcoming,
-    upcomingEvents,
+    upcomingCalendarEventsTwoWeeks,
   } = useRenovationDashboardPage()
   const { setExpenseModalOpen, setTaskModalOpen } = useRenovation()
 
@@ -143,16 +141,14 @@ export function RenovationDashboardMobile() {
                 </svg>
               </Link>
             </div>
-            <p className={`text-[28px] font-bold tabular-nums leading-tight ${over ? 'text-rose-600' : 'text-slate-900'}`}>
-              {formatIls(remainingBalance)}
-              <span className="text-[16px] font-semibold text-slate-400 ml-2">remaining</span>
-            </p>
-            {plannedTotal > 0 && (
-              <p className="text-[13px] text-slate-500 mt-1.5 tabular-nums">
-                Excluding planned:{' '}
-                <span className="font-semibold text-slate-700">{formatIls(remainingExcludingPlanned)}</span>
+            <div className="flex flex-col items-start" dir="ltr">
+              <p
+                className={`w-fit max-w-full text-[28px] font-bold tabular-nums leading-tight ${over ? 'text-rose-600' : 'text-slate-900'}`}
+              >
+                {formatIls(remainingBalance)}
+                <span className="text-[16px] font-semibold text-slate-400 ml-2">remaining</span>
               </p>
-            )}
+            </div>
             {over && (
               <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(budgetOverAmount)}</p>
             )}
@@ -188,40 +184,11 @@ export function RenovationDashboardMobile() {
           </section>
 
           {/* Upcoming tasks & events */}
-          {(upcoming.length > 0 || upcomingEvents.length > 0) && (
+          {upcomingCalendarEventsTwoWeeks.length > 0 && (
             <section className="rounded-2xl bg-white border border-slate-200/60 p-5 shadow-sm">
               <h2 className="text-[18px] font-bold text-slate-900 mb-3">Coming up</h2>
               <ul className="space-y-1">
-                {upcoming.map((t) => {
-                  const dueMeta = formatTaskDue(t.due_date!, { isDone: false })
-                  return (
-                    <li key={t.id}>
-                      <Link
-                        href="/renovation/tasks"
-                        className="flex items-center justify-between gap-3 min-h-[48px] py-2.5 border-b border-slate-100 last:border-0 active:bg-slate-50 rounded-lg px-1"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />
-                          <span className="text-[16px] font-medium text-slate-800 truncate" dir="auto">
-                            {t.title}
-                          </span>
-                        </div>
-                        <span
-                          className={`shrink-0 text-[13px] font-bold tabular-nums px-2.5 py-1 rounded-lg ${
-                            dueMeta.tone === 'overdue'
-                              ? 'bg-rose-50 text-rose-700'
-                              : dueMeta.tone === 'soon'
-                                ? 'bg-amber-50 text-amber-900'
-                                : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {dueMeta.label}
-                        </span>
-                      </Link>
-                    </li>
-                  )
-                })}
-                {upcomingEvents.map((ev) => (
+                {upcomingCalendarEventsTwoWeeks.map((ev) => (
                   <li key={ev.id}>
                     <Link
                       href="/renovation/calendar"
@@ -274,18 +241,6 @@ export function RenovationDashboardMobile() {
               </div>
               <span className="text-[16px] font-semibold text-slate-900">Add Task</span>
             </button>
-
-            <Link
-              href="/renovation/gallery"
-              className="flex w-full items-center gap-4 min-h-[56px] px-4 py-3 rounded-2xl bg-white border border-slate-200/60 shadow-sm active:bg-slate-50 transition-colors"
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <span className="text-[16px] font-semibold text-slate-900">Add Photos</span>
-            </Link>
           </section>
         </>
       )}

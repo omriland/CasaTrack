@@ -11,7 +11,7 @@ import {
 } from '@/lib/calendar-datetime'
 import { deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
-import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
+import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 import { format, parseISO } from 'date-fns'
 
@@ -633,12 +633,10 @@ export function CalendarEventDetailDrawer({
                   <div className="flex flex-col gap-1.5">
                     <span className="text-[13px] font-semibold text-[#5e6c84]">Created by</span>
                     <div className="flex items-center gap-2">
-                      <div
+                      <MemberAvatarChip
+                        name={event.created_by.name}
                         className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
-                        style={memberAvatarChipStyle(event.created_by.name)}
-                      >
-                        <span className="leading-none">{memberAvatarLetter(event.created_by.name)}</span>
-                      </div>
+                      />
                       <span className="text-[14px] font-medium text-[#172b4d]" dir="auto">
                         {event.created_by.name}
                       </span>

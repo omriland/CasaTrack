@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useId } from 'react'
 import { useClickOutside } from '@/hooks/common/useClickOutside'
 import { cn } from '@/utils/common'
 
@@ -40,6 +40,7 @@ export function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const selectRef = useRef<HTMLDivElement>(null)
+  const selectId = useId()
 
   useClickOutside(selectRef, () => setIsOpen(false))
 
@@ -60,8 +61,6 @@ export function Select({
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen])
-
-  const selectId = `select-${Math.random().toString(36).substring(7)}`
 
   return (
     <div className={cn('flex flex-col', fullWidth && 'w-full', className)}>

@@ -41,9 +41,10 @@ export default function RootLayout({
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 
   return (
-    <html lang="en" className={varelaRound.variable}>
+    <html lang="en" className={varelaRound.variable} suppressHydrationWarning>
       <body
         className={`${varelaRound.variable} ${jetbrainsMono.variable} antialiased`}
+        suppressHydrationWarning
       >
         <Script
           id="google-maps-init"

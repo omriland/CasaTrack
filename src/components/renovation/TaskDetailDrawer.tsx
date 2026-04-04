@@ -15,7 +15,7 @@ import { normalizeRoomIconKey, RoomIconGlyph, ROOM_ICON_TILE } from '@/component
 import { PRIORITY_ICONS, STATUSES, URGENCY, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
 import { format, parseISO } from 'date-fns'
 import { formatTaskDue } from '@/lib/renovation-format'
-import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
+import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 
 const EMPTY_LABEL_IDS: string[] = []
 
@@ -417,12 +417,10 @@ export function TaskDetailDrawer({
                     >
                       {task.assignee ? (
                         <>
-                          <div
+                          <MemberAvatarChip
+                            name={task.assignee.name}
                             className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold shadow-sm"
-                            style={memberAvatarChipStyle(task.assignee.name)}
-                          >
-                            <span className="leading-none">{memberAvatarLetter(task.assignee.name)}</span>
-                          </div>
+                          />
                           <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]">
                             {task.assignee.name}
                           </span>
@@ -504,12 +502,10 @@ export function TaskDetailDrawer({
                                 : 'font-medium text-slate-700 hover:bg-slate-100'
                             }`}
                           >
-                            <div
+                            <MemberAvatarChip
+                              name={m.name}
                               className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold"
-                              style={memberAvatarChipStyle(m.name)}
-                            >
-                              <span className="leading-none">{memberAvatarLetter(m.name)}</span>
-                            </div>
+                            />
                             <span className="truncate">{m.name}</span>
                           </button>
                         ))}
@@ -961,12 +957,10 @@ export function TaskDetailDrawer({
                     <div className="flex flex-col gap-1.5">
                       <span className="text-[13px] font-semibold text-[#5e6c84]">Reporter</span>
                       <div className="flex items-center gap-2">
-                        <div
+                        <MemberAvatarChip
+                          name={task.created_by.name}
                           className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
-                          style={memberAvatarChipStyle(task.created_by.name)}
-                        >
-                          <span className="leading-none">{memberAvatarLetter(task.created_by.name)}</span>
-                        </div>
+                        />
                         <span className="text-[14px] font-medium text-[#172b4d]">{task.created_by.name}</span>
                       </div>
                     </div>

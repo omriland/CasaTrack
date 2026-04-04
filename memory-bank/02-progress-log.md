@@ -2,6 +2,12 @@
 
 ## Renovation app (March 2025)
 
+### Completed (hydration hardening, April 2026)
+- **React hydration:** [`Modal`](src/components/ui/Modal.tsx) portals only after client mount (matches SSR `null` when open). [`Input`](src/components/ui/Input.tsx) / [`Select`](src/components/ui/Select.tsx) use `useId()` instead of `Math.random()` for stable `id`/`htmlFor`. Root [`layout`](src/app/layout.tsx): `suppressHydrationWarning` on `<html>` and `<body>` for extension/mobile attribute drift.
+
+### Completed (member preset avatars, April 2026)
+- **Renovation team avatars:** First-name keys `omri` / `tamar` use static images under [`public/renovation-member-avatars/`](public/renovation-member-avatars/) (tofu / date). [`memberAvatarImageSrc`](src/lib/member-avatar.ts) + [`MemberAvatarTile` / `MemberAvatarChip`](src/components/renovation/MemberAvatar.tsx); wired in profile gate, shells, settings team list, tasks, task/calendar drawers. Others unchanged (initials + hue).
+
 ### Completed (calendar timed inputs, April 2026)
 - **Renovation calendar:** `datetime-local` for Starts/Ends uses **5-minute** steps (`step={300}`) in [`CalendarEventModal`](src/components/renovation/CalendarEventModal.tsx) and [`CalendarEventDetailDrawer`](src/components/renovation/CalendarEventDetailDrawer.tsx). Changing **Starts** only keeps event **duration** (end = new start + previous span; if no stored end, span = 1h via [`endsAtPreservingDuration`](src/lib/calendar-datetime.ts)). Shared helpers in [`calendar-datetime.ts`](src/lib/calendar-datetime.ts); [`defaultTimedEnd`](src/lib/renovation.ts) re-exported from there.
 

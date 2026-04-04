@@ -4,7 +4,7 @@ import { useState, type CSSProperties } from 'react'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { formatTaskDue } from '@/lib/renovation-format'
-import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
+import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import type { RenovationLabel, RenovationTask } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
 import { STATUSES, buildEpicSwimlanes, sortTasks } from './tasks-page-shared'
@@ -177,12 +177,11 @@ export function TasksDesktop() {
                 </div>
               )}
               {t.assignee ? (
-                <div
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold shadow-sm"
-                  style={memberAvatarChipStyle(t.assignee.name)}
-                  title={t.assignee.name}
-                >
-                  <span className="leading-none">{memberAvatarLetter(t.assignee.name)}</span>
+                <div className="shrink-0" title={t.assignee.name}>
+                  <MemberAvatarChip
+                    name={t.assignee.name}
+                    className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
+                  />
                 </div>
               ) : (
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-[#f4f5f7]" title="Unassigned">
