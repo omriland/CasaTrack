@@ -69,7 +69,7 @@ export function ProvidersGroupedList({
                       )}
                     </div>
                     {p.additional_info && (
-                      <p className="text-[11px] text-slate-400 mt-1.5 font-medium line-clamp-1" dir="auto">
+                      <p className="text-[13px] text-slate-400 mt-1.5 font-medium line-clamp-1" dir="auto">
                         {p.additional_info}
                       </p>
                     )}

@@ -102,10 +102,10 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     setUploading(true)
     setUploadProgress({ done: 0, total: filesArr.length })
     const failures: { name: string; error: string }[] = []
-    
+
     // Auto-tag if we are inside a specific album
-    const autoTagId = viewMode === 'gallery' && selectedAlbumId && selectedAlbumId !== 'untagged' 
-      ? selectedAlbumId 
+    const autoTagId = viewMode === 'gallery' && selectedAlbumId && selectedAlbumId !== 'untagged'
+      ? selectedAlbumId
       : undefined
 
     try {
@@ -113,7 +113,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
         const file = filesArr[i]!
         try {
           const path = await uploadGalleryPhoto(project.id, file)
-          await createGalleryItem(project.id, { 
+          await createGalleryItem(project.id, {
             storage_path: path,
             tag_ids: autoTagId ? [autoTagId] : undefined
           })
@@ -302,7 +302,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
   const groupedItems = useMemo(() => {
     if (viewMode !== 'gallery') return []
     const groups: { tagId: string | null; name: string; items: RenovationGalleryItem[] }[] = []
-    
+
     tags.forEach(t => {
       if (filterTag && filterTag !== t.id) return
       const itemsForTag = sortedFiltered.filter(i => i.tag_ids?.includes(t.id))
@@ -330,9 +330,9 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={item.public_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-        
+
         {/* Checkbox overlay — same shift+range as card click (stopPropagation would skip parent otherwise) */}
-        <div 
+        <div
           onClick={(e) => {
             e.stopPropagation()
             const list = selectionOrder ?? sortedFiltered
@@ -365,7 +365,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               return next
             })
           }}
-          className={`absolute top-2 right-2 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white shadow-sm scale-110' : 'bg-black/20 border-white/80 text-transparent hover:bg-black/40 hover:border-white scale-100 hover:scale-110'}`}
+          className={`absolute top-2 right-2 ${mobile ? 'w-9 h-9' : 'w-7 h-7'} rounded-full border-2 flex items-center justify-center transition-all cursor-pointer ${isSelected ? 'bg-indigo-500 border-indigo-500 text-white shadow-sm scale-110' : 'bg-black/20 border-white/80 text-transparent hover:bg-black/40 hover:border-white scale-100 hover:scale-110'}`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -374,7 +374,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
 
         {showRoom && item.room_id && (
           <div className="absolute top-2 left-2 pointer-events-none">
-            <span className={`bg-black/60 backdrop-blur-md text-white ${mobile ? 'text-[10px]' : 'text-[10px] sm:text-[11px]'} font-bold px-2 py-1.5 rounded-md tracking-wide shadow-sm flex items-center gap-1`}>
+            <span className={`bg-black/60 backdrop-blur-md text-white ${mobile ? 'text-[12px]' : 'text-[10px] sm:text-[11px]'} font-bold px-2 py-1.5 rounded-md tracking-wide shadow-sm flex items-center gap-1`}>
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
               {rooms.find(r => r.id === item.room_id)?.name || 'Room'}
             </span>
@@ -386,7 +386,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             {item.tag_ids.slice(0, 3).map(tid => {
               const t = tags.find(x => x.id === tid)
               return t ? (
-                <span key={tid} className={`bg-black/60 backdrop-blur-md text-white ${mobile ? 'text-[10px]' : 'text-[10px] sm:text-[11px]'} font-bold px-2 py-1 rounded-md uppercase tracking-wide`}>
+                <span key={tid} className={`bg-black/60 backdrop-blur-md text-white ${mobile ? 'text-[12px]' : 'text-[10px] sm:text-[11px]'} font-bold px-2 py-1 rounded-md uppercase tracking-wide`}>
                   {t.name}
                 </span>
               ) : null
@@ -427,7 +427,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
   }
 
   return (
-    <div 
+    <div
       className={`space-y-6 animate-fade-in-up relative min-h-[70vh] ${mobile ? 'pb-28' : 'pb-8'}`}
       onDragEnter={(e) => {
         e.preventDefault()
@@ -441,7 +441,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
       }}
     >
       {isDragging && (
-        <div 
+        <div
           className={`absolute z-[100] flex items-center justify-center bg-indigo-50/90 rounded-[2rem] border-2 border-dashed border-indigo-400 backdrop-blur-sm ${mobile ? 'inset-0' : 'inset-x-0 inset-y-[-20px] md:inset-[-20px]'}`}
           onDragLeave={(e) => {
             e.preventDefault()
@@ -470,36 +470,40 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
           </div>
         </div>
       )}
-      {!mobile && (
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h1 className="font-bold tracking-tight text-slate-900 font-sans text-[32px]">Photos</h1>
+      <header className={`flex justify-between gap-3 ${mobile ? 'flex-row items-center' : 'flex-col md:flex-row md:items-end'}`}>
+        <div className="min-w-0 flex-1">
+          <h1 className={`font-bold tracking-tight text-slate-900 font-sans ${mobile ? 'text-[24px]' : 'text-[32px]'}`}>Photos</h1>
+          {mobile ? (
+            <p className="text-[14px] font-medium text-slate-500 mt-0.5">
+              {mobileSelectMode ? 'Tap photos to select' : 'Tap to view, select for bulk actions'}
+            </p>
+          ) : (
             <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">
               Snap, tag, and organize progress — add <span className="font-semibold text-slate-500">multiple photos</span> at once.
             </p>
-          </div>
-          <div className="block">
-            <label className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold flex items-center justify-center cursor-pointer hover:bg-indigo-700 shadow-sm active:scale-95 transition-all min-w-[10rem]">
-              {uploading
-                ? uploadProgress && uploadProgress.total > 1
-                  ? `${uploadProgress.done}/${uploadProgress.total}`
-                  : 'Uploading…'
-                : '+ Add Photos'}
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                disabled={uploading}
-                onChange={(e) => {
-                  onFiles(e.target.files)
-                  e.target.value = ''
-                }}
-              />
-            </label>
-          </div>
-        </header>
-      )}
+          )}
+        </div>
+        <div className={mobile ? 'hidden' : 'block'}>
+          <label className="h-11 px-6 rounded-full bg-indigo-600 text-white text-[15px] font-bold flex items-center justify-center cursor-pointer hover:bg-indigo-700 shadow-sm active:scale-95 transition-all min-w-[10rem]">
+            {uploading
+              ? uploadProgress && uploadProgress.total > 1
+                ? `${uploadProgress.done}/${uploadProgress.total}`
+                : 'Uploading…'
+              : '+ Add Photos'}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                onFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
+          </label>
+        </div>
+      </header>
 
       {mobile ? (
         <div className="mt-2 flex min-w-0 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
@@ -507,22 +511,20 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <button
               type="button"
               onClick={() => handleViewModeChange('gallery')}
-              className={`rounded-lg px-3 py-2 text-[12px] font-bold transition-all ${
-                viewMode === 'gallery'
+              className={`rounded-lg px-4 min-h-[44px] text-[14px] font-bold transition-all ${viewMode === 'gallery'
                   ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+                  : 'text-slate-500'
+                }`}
             >
               Albums
             </button>
             <button
               type="button"
               onClick={() => handleViewModeChange('all')}
-              className={`rounded-lg px-3 py-2 text-[12px] font-bold transition-all ${
-                viewMode === 'all'
+              className={`rounded-lg px-4 min-h-[44px] text-[14px] font-bold transition-all ${viewMode === 'all'
                   ? 'bg-white text-indigo-600 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
+                  : 'text-slate-500'
+                }`}
             >
               All Photos
             </button>
@@ -546,11 +548,10 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     setMobileSelectMode(true)
                   }
                 }}
-                className={`min-h-[44px] shrink-0 rounded-2xl px-4 text-[13px] font-bold transition-colors ${
-                  mobileSelectMode
+                className={`min-h-[44px] shrink-0 rounded-2xl px-4 text-[13px] font-bold transition-colors ${mobileSelectMode
                     ? 'bg-slate-900 text-white shadow-md'
                     : 'border border-slate-200 bg-white text-slate-700 shadow-sm'
-                }`}
+                  }`}
               >
                 {mobileSelectMode ? 'Cancel' : 'Select'}
               </button>
@@ -563,59 +564,57 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <button
               type="button"
               onClick={() => handleViewModeChange('gallery')}
-              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${
-                viewMode === 'gallery'
+              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${viewMode === 'gallery'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
-              }`}
+                }`}
             >
               Albums
             </button>
             <button
               type="button"
               onClick={() => handleViewModeChange('all')}
-              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${
-                viewMode === 'all'
+              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${viewMode === 'all'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
-              }`}
+                }`}
             >
               All Photos
             </button>
           </div>
 
           {(rooms.length > 0 || tags.length > 0 || items.length > 0) && (
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative z-[90] flex-1">
-              <Dropdown
-                value={filterRoom}
-                onChange={(val) => setFilterRoom(val)}
-                options={[{ value: '', label: 'All Rooms' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
-                className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
-              />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative z-[90] flex-1">
+                <Dropdown
+                  value={filterRoom}
+                  onChange={(val) => setFilterRoom(val)}
+                  options={[{ value: '', label: 'All Rooms' }, ...rooms.map(r => ({ value: r.id, label: r.name }))]}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                />
+              </div>
+              <div className="relative z-[80] flex-1">
+                <Dropdown
+                  value={filterTag}
+                  onChange={(val) => setFilterTag(val)}
+                  options={[{ value: '', label: 'All Labels' }, ...tags.map(t => ({ value: t.id, label: t.name }))]}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                />
+              </div>
+              <div className="relative z-[70] flex-1 sm:max-w-[160px]">
+                <Dropdown
+                  value={sortBy}
+                  onChange={handleSortChange}
+                  options={[
+                    { value: 'date-desc', label: 'Newest First' },
+                    { value: 'date-asc', label: 'Oldest First' },
+                    { value: 'room', label: 'Sort by Room' },
+                    { value: 'label', label: 'Sort by Label' }
+                  ]}
+                  className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
+                />
+              </div>
             </div>
-            <div className="relative z-[80] flex-1">
-              <Dropdown
-                value={filterTag}
-                onChange={(val) => setFilterTag(val)}
-                options={[{ value: '', label: 'All Labels' }, ...tags.map(t => ({ value: t.id, label: t.name }))]}
-                className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
-              />
-            </div>
-            <div className="relative z-[70] flex-1 sm:max-w-[160px]">
-              <Dropdown
-                value={sortBy}
-                onChange={handleSortChange}
-                options={[
-                  { value: 'date-desc', label: 'Newest First' },
-                  { value: 'date-asc', label: 'Oldest First' },
-                  { value: 'room', label: 'Sort by Room' },
-                  { value: 'label', label: 'Sort by Label' }
-                ]}
-                className="w-full h-11 rounded-xl border border-slate-200 bg-white text-[15px] font-medium text-slate-700 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all outline-none"
-              />
-            </div>
-          </div>
           )}
         </>
       )}
@@ -628,14 +627,13 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
         >
           <div className="space-y-6 px-2 pb-4">
             <div>
-              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Room</p>
+              <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-widest text-slate-400">Room</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setFilterRoom('')}
-                  className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
-                    !filterRoom ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
-                  }`}
+                  className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${!filterRoom ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
                 >
                   All rooms
                 </button>
@@ -644,9 +642,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     key={r.id}
                     type="button"
                     onClick={() => setFilterRoom(r.id)}
-                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
-                      filterRoom === r.id ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
-                    }`}
+                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${filterRoom === r.id ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                      }`}
                     dir="auto"
                   >
                     {r.name}
@@ -655,14 +652,13 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               </div>
             </div>
             <div>
-              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Label</p>
+              <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-widest text-slate-400">Label</p>
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
                   onClick={() => setFilterTag('')}
-                  className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
-                    !filterTag ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
-                  }`}
+                  className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${!filterTag ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                    }`}
                 >
                   All labels
                 </button>
@@ -671,11 +667,10 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     key={t.id}
                     type="button"
                     onClick={() => setFilterTag(t.id)}
-                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
-                      filterTag === t.id
+                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${filterTag === t.id
                         ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
                         : 'border-slate-200 bg-white text-slate-700'
-                    }`}
+                      }`}
                   >
                     {t.name}
                   </button>
@@ -683,7 +678,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               </div>
             </div>
             <div>
-              <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-widest text-slate-400">Sort</p>
+              <p className="mb-2 px-1 text-[13px] font-bold uppercase tracking-widest text-slate-400">Sort</p>
               <div className="flex flex-wrap gap-2">
                 {(
                   [
@@ -697,9 +692,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     key={opt.value}
                     type="button"
                     onClick={() => handleSortChange(opt.value)}
-                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${
-                      sortBy === opt.value ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
-                    }`}
+                    className={`min-h-[44px] rounded-xl border px-4 text-[14px] font-semibold ${sortBy === opt.value ? 'border-indigo-200 bg-indigo-50 text-indigo-800' : 'border-slate-200 bg-white text-slate-700'
+                      }`}
                   >
                     {opt.label}
                   </button>
@@ -722,24 +716,24 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-3 gap-2">
+        <div className={`grid gap-2 ${mobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="aspect-square rounded-2xl bg-white border border-slate-100 shadow-sm animate-pulse" />
           ))}
         </div>
       ) : sortedFiltered.length === 0 && (viewMode !== 'gallery' || groupedItems.length === 0) ? (
         <div className="bg-white/50 rounded-2xl border border-slate-100 p-16 text-center mt-6">
-           <div className="inline-flex flex-col items-center justify-center">
-              <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <p className="text-[16px] font-bold text-slate-600 uppercase tracking-tight">No photos yet</p>
-              <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">
-                Use <span className="font-semibold text-slate-500">+ Add Photos</span> to pick many images at once, or drag &amp; drop here.
-              </p>
-           </div>
+          <div className="inline-flex flex-col items-center justify-center">
+            <div className="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mb-4">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-[16px] font-bold text-slate-600 uppercase tracking-tight">No photos yet</p>
+            <p className="text-[14px] text-slate-400 mt-1 max-w-xs mx-auto">
+              {mobile ? 'Tap the + button below to add photos.' : <>Use <span className="font-semibold text-slate-500">+ Add Photos</span> to pick many images at once, or drag &amp; drop here.</>}
+            </p>
+          </div>
         </div>
       ) : viewMode === 'gallery' ? (
         <div className="space-y-8 mt-6">
@@ -748,8 +742,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               {groupedItems.map(group => {
                 const cover = group.items[0]
                 return (
-                  <div 
-                    key={group.tagId || 'untagged'} 
+                  <div
+                    key={group.tagId || 'untagged'}
                     onClick={() => setSelectedAlbumId(group.tagId || 'untagged')}
                     className="cursor-pointer group relative aspect-square rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-slate-100 shadow-sm border border-slate-200/50 hover:shadow-md transition-all active:scale-[0.98]"
                   >
@@ -775,8 +769,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
           ) : (
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-2">
-                <button 
-                  onClick={() => setSelectedAlbumId(null)} 
+                <button
+                  onClick={() => setSelectedAlbumId(null)}
                   className="text-[14px] font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1 active:scale-95"
                 >
                   <svg className="w-4 h-4 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
@@ -794,7 +788,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                   )
                 })()}
               </div>
-              
+
               {(() => {
                 const group = groupedItems.find(g => (g.tagId || 'untagged') === selectedAlbumId)
                 if (!group) return <p className="text-slate-400 py-10">Album not found or filtered out.</p>
@@ -807,7 +801,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                   )
                 }
                 return (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
+                  <div className={`grid gap-2 sm:gap-3 ${mobile ? 'grid-cols-2' : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5'}`}>
                     {group.items.map((item) => renderItem(item, false, group.items))}
                   </div>
                 )
@@ -816,45 +810,46 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3 mt-6">
+        <div className={`grid gap-2 sm:gap-3 mt-6 ${mobile ? 'grid-cols-2' : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5'}`}>
           {sortedFiltered.map(item => renderItem(item, true))}
         </div>
       )}
 
       {/* Mobile FAB — only when mobile shell is active */}
       {mobile ? (
-      <div
-        className="fixed right-4 z-[100]"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
-      >
-        <label
-          title={uploading ? 'Uploading photos' : 'Add photos (multiple)'}
-          className={`w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-[0_8px_30px_rgba(79,70,229,0.4)] ${uploading ? 'bg-slate-500' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer'}`}
+        <div
+          className="fixed right-4 z-[100]"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
         >
-          {uploading ? (
-             <span className="text-[10px] font-extrabold leading-tight text-center px-1 tabular-nums">
-               {uploadProgress && uploadProgress.total > 1
-                 ? `${uploadProgress.done}/${uploadProgress.total}`
-                 : '…'}
-             </span>
-          ) : (
-             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <label
+            title={uploading ? 'Uploading photos' : 'Add photos (multiple)'}
+            aria-label="Add photos"
+            className={`w-14 h-14 rounded-full flex items-center justify-center text-white transition-all shadow-[0_8px_30px_rgba(79,70,229,0.4)] ${uploading ? 'bg-slate-500' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 cursor-pointer'}`}
+          >
+            {uploading ? (
+              <span className="text-[10px] font-extrabold leading-tight text-center px-1 tabular-nums">
+                {uploadProgress && uploadProgress.total > 1
+                  ? `${uploadProgress.done}/${uploadProgress.total}`
+                  : '…'}
+              </span>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-             </svg>
-          )}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            disabled={uploading}
-            onChange={(e) => {
-              onFiles(e.target.files)
-              e.target.value = ''
-            }}
-          />
-        </label>
-      </div>
+              </svg>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                onFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
+          </label>
+        </div>
       ) : null}
 
       {lightbox && lightboxSlides && (
@@ -879,17 +874,17 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
           }
           style={mobile ? { bottom: 'calc(7.25rem + env(safe-area-inset-bottom, 0px))' } : undefined}
         >
-          <span className={`shrink-0 font-bold ${mobile ? 'text-[13px]' : 'text-[14px]'}`}>
+          <span className={`shrink-0 font-bold ${mobile ? 'text-[14px]' : 'text-[14px]'}`}>
             <span className="text-indigo-400">{selectedIds.size}</span> Selected
           </span>
           <div className={`shrink-0 bg-white/20 ${mobile ? 'h-6 w-px' : 'h-4 w-px'}`} />
-          <button onClick={() => setBulkTagModal(true)} disabled={uploading} className={mobile ? 'min-h-[44px] shrink-0 rounded-lg bg-white/10 px-2.5 py-2 text-[12px] font-bold uppercase tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50' : 'rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-bold uppercase tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50'}>
+          <button onClick={() => setBulkTagModal(true)} disabled={uploading} className={mobile ? 'min-h-[44px] shrink-0 rounded-lg bg-white/10 px-3 py-2 text-[14px] font-bold tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50' : 'rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-bold uppercase tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50'}>
             {mobile ? 'Label' : 'Apply Label'}
           </button>
-          <button onClick={() => setBulkRoomModal(true)} disabled={uploading} className={mobile ? 'min-h-[44px] shrink-0 rounded-lg bg-white/10 px-2.5 py-2 text-[12px] font-bold uppercase tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50' : 'rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-bold uppercase tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50'}>
+          <button onClick={() => setBulkRoomModal(true)} disabled={uploading} className={mobile ? 'min-h-[44px] shrink-0 rounded-lg bg-white/10 px-3 py-2 text-[14px] font-bold tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50' : 'rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-bold uppercase tracking-wide transition-colors hover:bg-white/20 disabled:opacity-50'}>
             {mobile ? 'Room' : 'Assign Room'}
           </button>
-          <button onClick={handleBulkDelete} disabled={uploading} className={mobile ? 'min-h-[44px] shrink-0 rounded-lg bg-rose-500/20 px-2.5 py-2 text-[12px] font-bold uppercase tracking-wide text-rose-300 transition-colors hover:bg-rose-500/30 disabled:opacity-50' : 'rounded-lg bg-rose-500/20 px-3 py-1.5 text-[13px] font-bold uppercase tracking-wide text-rose-300 transition-colors hover:bg-rose-500/30 disabled:opacity-50'}>
+          <button onClick={handleBulkDelete} disabled={uploading} className={mobile ? 'min-h-[44px] shrink-0 rounded-lg bg-rose-500/20 px-3 py-2 text-[14px] font-bold tracking-wide text-rose-300 transition-colors hover:bg-rose-500/30 disabled:opacity-50' : 'rounded-lg bg-rose-500/20 px-3 py-1.5 text-[13px] font-bold uppercase tracking-wide text-rose-300 transition-colors hover:bg-rose-500/30 disabled:opacity-50'}>
             Delete
           </button>
           <div className={`h-4 w-px shrink-0 bg-white/20 ${mobile ? 'hidden' : 'ml-1'}`} />
@@ -940,8 +935,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
 
             <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto w-full">
               {tags.map(t => (
-                <button 
-                  key={t.id} 
+                <button
+                  key={t.id}
                   onClick={() => handleBulkTag(t.id)}
                   disabled={uploading}
                   className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-100 text-slate-700 hover:text-indigo-700 font-bold transition-all disabled:opacity-50 active:scale-95"
@@ -952,15 +947,15 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               ))}
               {tags.length === 0 && (
                 <p className="text-[14px] text-slate-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  No labels exist yet.<br/>Create them first in a single photo&apos;s Details panel.
+                  No labels exist yet.<br />Create them first in a single photo&apos;s Details panel.
                 </p>
               )}
             </div>
 
             <div className="mt-6 flex justify-end">
-              <button 
+              <button
                 onClick={() => setBulkTagModal(false)}
-                disabled={uploading} 
+                disabled={uploading}
                 className="px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-700 transition-colors disabled:opacity-50"
               >
                 Cancel
@@ -985,7 +980,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               )
               return (
                 <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto w-full">
-                  <button 
+                  <button
                     onClick={() => handleBulkRoom(null)}
                     disabled={uploading}
                     className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700 font-bold transition-all disabled:opacity-50 active:scale-95"
@@ -993,8 +988,8 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     No Room (Clear)
                   </button>
                   {rooms.map(r => (
-                    <button 
-                      key={r.id} 
+                    <button
+                      key={r.id}
                       onClick={() => handleBulkRoom(r.id)}
                       disabled={uploading}
                       className="w-full text-left p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 border border-slate-100 hover:border-indigo-100 text-slate-700 hover:text-indigo-700 font-bold transition-all disabled:opacity-50 active:scale-95 flex items-center justify-between"
@@ -1010,7 +1005,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                   ))}
                   {rooms.length === 0 && (
                     <p className="text-[14px] text-slate-400 py-4 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                      No rooms exist yet.<br/>Create them first in settings or the Rooms tab.
+                      No rooms exist yet.<br />Create them first in settings or the Rooms tab.
                     </p>
                   )}
                 </div>
@@ -1018,9 +1013,9 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             })()}
 
             <div className="mt-6 flex justify-end">
-              <button 
+              <button
                 onClick={() => setBulkRoomModal(false)}
-                disabled={uploading} 
+                disabled={uploading}
                 className="px-4 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-700 transition-colors disabled:opacity-50"
               >
                 Cancel

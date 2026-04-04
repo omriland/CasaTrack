@@ -72,7 +72,7 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
       >
         <div className="box-border w-full min-w-0 max-w-full space-y-5 px-4 pt-4 pb-4">
           <div className="box-border w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-            <label htmlFor="expense-amount-mobile" className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <label htmlFor="expense-amount-mobile" className="text-[13px] font-bold text-slate-500 uppercase tracking-wider">
               Amount
             </label>
             <div className="relative mt-1 flex w-full min-w-0 max-w-full items-baseline justify-center gap-1">
@@ -94,7 +94,7 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
 
           <div className="min-w-0 max-w-full space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Vendor</label>
+              <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Vendor</label>
               <input
                 dir="auto"
                 value={vendor}
@@ -104,7 +104,7 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Category</label>
+              <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Category</label>
               <input
                 dir="auto"
                 value={category}
@@ -114,13 +114,13 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
               />
             </div>
             <div className="min-w-0 max-w-full space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Date</label>
+              <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Date</label>
               <div className="min-w-0 max-w-full">
                 <DatePicker value={date} onChange={setDate} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Payment</label>
+              <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Payment</label>
               <input
                 dir="auto"
                 value={payment}
@@ -130,7 +130,7 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Notes</label>
+              <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Notes</label>
               <textarea
                 dir="auto"
                 value={notes}
@@ -144,8 +144,8 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
 
           <div className="box-border w-full min-w-0 max-w-full space-y-3 rounded-2xl border border-dashed border-slate-200 bg-slate-50/90 p-3">
             <div className="flex min-w-0 max-w-full items-center justify-between gap-2 px-0.5">
-              <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Receipts</span>
-              <span className="text-[11px] text-slate-400">Tap to add</span>
+              <span className="text-[13px] font-bold text-slate-600 uppercase tracking-wider">Receipts</span>
+              <span className="text-[13px] text-slate-400">Tap to add</span>
             </div>
 
             {editingRow?.receipt_storage_path && (
@@ -182,7 +182,7 @@ export function ExpenseModalMobile({ editing, onClose, onSave, onAttachmentsChan
 
             {pendingFiles.length > 0 && (
               <ul className="space-y-2">
-                <p className="text-[11px] text-slate-500 font-semibold px-0.5">Uploads after save</p>
+                <p className="text-[13px] text-slate-500 font-semibold px-0.5">Uploads after save</p>
                 {pendingFiles.map((f, i) => (
                   <li key={`${f.name}-${i}`} className="flex min-w-0 max-w-full items-center justify-between gap-2 min-h-[44px] rounded-xl border border-slate-100 bg-white px-2">
                     <span className="truncate text-[14px] font-medium text-slate-800" dir="auto">

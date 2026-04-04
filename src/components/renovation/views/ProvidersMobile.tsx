@@ -24,6 +24,11 @@ export function ProvidersMobile() {
 
   return (
     <div className="space-y-4 pb-28 animate-fade-in-up">
+      <header>
+        <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Providers</h1>
+        <p className="text-[14px] text-slate-500 mt-1">Contractors and vendors — attach from any task.</p>
+      </header>
+
       <div className="relative">
         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

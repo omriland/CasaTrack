@@ -2,93 +2,67 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCallback, useState, type ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { useRenovation } from './RenovationContext'
 import { memberAvatarTileStyle, memberInitials } from '@/lib/member-avatar'
-import { MobileBottomSheet } from './mobile/MobileBottomSheet'
 
 const primaryNav = [
   { href: '/renovation', label: 'Home', icon: HomeIcon, match: (p: string) => p === '/renovation' },
-  { href: '/renovation/expenses', label: 'Spend', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
+  { href: '/renovation/expenses', label: 'Expenses', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
   { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
+  { href: '/renovation/more', label: 'More', icon: MoreIcon, match: (p: string) => p === '/renovation/more' || moreMatches(p) },
 ] as const
 
-const moreNav = [
-  { href: '/renovation/providers', label: 'Providers', icon: ProvidersIcon },
-  { href: '/renovation/calendar', label: 'Calendar', icon: CalendarIcon },
-  { href: '/renovation/files', label: 'Files', icon: FilesIcon },
-  { href: '/renovation/needs', label: 'Needs', icon: NeedsIcon },
-  { href: '/renovation/rooms', label: 'Rooms', icon: RoomIcon },
-  { href: '/renovation/settings', label: 'Settings', icon: GearIcon },
-] as const
+const moreRoutes = [
+  '/renovation/providers',
+  '/renovation/calendar',
+  '/renovation/files',
+  '/renovation/needs',
+  '/renovation/rooms',
+  '/renovation/settings',
+]
 
 function moreMatches(pathname: string) {
-  return moreNav.some((item) => pathname.startsWith(item.href))
+  return moreRoutes.some((r) => pathname.startsWith(r))
 }
 
 export function RenovationMobileShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { project, activeProfile, teamMembers, openProfilePicker } = useRenovation()
-  const [moreOpen, setMoreOpen] = useState(false)
-  const closeMore = useCallback(() => setMoreOpen(false), [])
-
-  const currentPrimary = primaryNav.find((item) => item.match(pathname))
-  const currentMore = moreNav.find((item) => pathname.startsWith(item.href))
-  const activeTabName = currentPrimary?.label || currentMore?.label || project?.name || 'Renovation'
 
   return (
-    <div className="reno-app flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#f0f2f6] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      <header className="z-30 shrink-0 border-b border-black/[0.08] bg-white/85 backdrop-blur-[32px] saturate-[1.8] pt-[max(0.5rem,env(safe-area-inset-top))] pb-1 px-1 transition-all">
-        <div className="mx-auto flex max-w-lg items-center justify-between min-h-[44px] relative">
-          
-          {/* Left: Back Button */}
-          <Link
-            href="/"
-            className="flex h-11 w-11 shrink-0 items-center justify-center text-slate-400 active:text-black transition-colors"
-            aria-label="Back to Property Hunt"
-          >
-            <svg className="h-[22px] w-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </Link>
-
-          {/* Center: Title (Absolutely centered) */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-            <h1 className="truncate text-[17px] font-semibold tracking-[-0.4px] text-black">
-              {activeTabName}
-            </h1>
+    <div className="reno-app flex h-dvh max-h-dvh flex-col overflow-hidden bg-[#f5f6f8] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+      <header className="z-30 shrink-0 border-b border-slate-200/60 bg-white/95 backdrop-blur-xl pt-[max(0.5rem,env(safe-area-inset-top))] px-4 pb-2.5">
+        <div className="mx-auto flex max-w-lg items-center gap-3 min-h-[48px]">
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-[18px] font-bold leading-tight text-slate-900">{project?.name || 'Renovation'}</h1>
           </div>
-
-          {/* Right: Profile Avatar or Empty Slot */}
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center">
-            {project && activeProfile && teamMembers.length > 0 && (
-              <button
-                type="button"
-                onClick={openProfilePicker}
-                className="grid h-[30px] w-[30px] place-items-center rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-black/5 transition-transform active:scale-90"
-                style={memberAvatarTileStyle(activeProfile.name)}
-                aria-label="Switch profile"
-              >
-                <span className="text-[11px] font-bold leading-none tabular-nums opacity-90">
-                  {memberInitials(activeProfile.name)}
-                </span>
-              </button>
-            )}
-          </div>
+          {project && activeProfile && teamMembers.length > 0 && (
+            <button
+              type="button"
+              onClick={openProfilePicker}
+              className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-2xl border border-slate-200/90 shadow-sm transition-transform active:scale-95"
+              style={memberAvatarTileStyle(activeProfile.name)}
+              aria-label="Switch profile"
+            >
+              <span className="text-[13px] font-extrabold leading-none tabular-nums">
+                {memberInitials(activeProfile.name)}
+              </span>
+            </button>
+          )}
         </div>
       </header>
 
-      <main className="reno-mobile-main min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-3 pt-3 animate-fade-in pb-[calc(5rem+env(safe-area-inset-bottom))]">
+      <main className="reno-mobile-main min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-4 pt-4 animate-fade-in pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
         {children}
       </main>
 
-      {/* Native-style tab bar — full width, heavily blurred, Apple grayscale style */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/50 bg-white/85 backdrop-blur-2xl saturate-150 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] px-2 shadow-[0_-4px_24px_rgba(0,0,0,0.02)]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(0.35rem,env(safe-area-inset-bottom))] px-3 pt-1"
         aria-label="Main navigation"
       >
-        <div className="mx-auto flex max-w-lg items-stretch justify-between">
+        <div className="pointer-events-auto mx-auto flex max-w-lg items-stretch justify-between rounded-2xl border border-slate-200/90 bg-white/95 py-1 px-1 shadow-[0_4px_24px_rgba(15,23,42,0.10)] backdrop-blur-xl">
           {primaryNav.map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
@@ -96,56 +70,16 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => setMoreOpen(false)}
-                className={`group flex flex-[1_1_20%] flex-col items-center justify-center gap-[4px] transition-colors ${
-                  active ? 'text-black' : 'text-[#999999] active:text-[#666666]'
-                }`}
+                className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 rounded-xl transition-colors ${active ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 active:bg-slate-50'
+                  }`}
               >
-                <div className="relative flex items-center justify-center">
-                  <Icon className={`h-[26px] w-[26px] transition-transform duration-200 ${active ? 'scale-105' : 'scale-100 group-active:scale-95'}`} active={active} />
-                </div>
-                <span className={`text-[10px] tracking-tight transition-all duration-200 ${active ? 'font-semibold' : 'font-medium'}`}>{item.label}</span>
+                <Icon className="h-6 w-6" active={active} />
+                <span className="text-[12px] font-semibold leading-none">{item.label}</span>
               </Link>
             )
           })}
-          <button
-            type="button"
-            onClick={() => setMoreOpen(true)}
-            className={`group flex flex-[1_1_20%] flex-col items-center justify-center gap-[4px] transition-colors ${
-              moreMatches(pathname) ? 'text-black' : 'text-[#999999] active:text-[#666666]'
-            }`}
-          >
-            <div className="relative flex items-center justify-center">
-              <MoreIcon className={`h-[26px] w-[26px] transition-transform duration-200 ${moreMatches(pathname) ? 'scale-105' : 'scale-100 group-active:scale-95'}`} active={moreMatches(pathname)} />
-            </div>
-            <span className={`text-[10px] tracking-tight transition-all duration-200 ${moreMatches(pathname) ? 'font-semibold' : 'font-medium'}`}>More</span>
-          </button>
         </div>
       </nav>
-
-      <MobileBottomSheet open={moreOpen} onClose={closeMore} title="More">
-        <div className="space-y-1 pb-[env(safe-area-inset-bottom)]">
-          {moreNav.map((item) => {
-            const Icon = item.icon
-            const active = pathname.startsWith(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={closeMore}
-                className={`flex items-center gap-4 min-h-[52px] px-4 rounded-2xl transition-colors ${
-                  active ? 'bg-slate-100/80 text-black' : 'text-slate-700 active:bg-slate-100/50'
-                }`}
-              >
-                <div className={`p-2 rounded-xl ${active ? 'bg-white shadow-sm text-black' : 'bg-slate-100/80 text-slate-500'}`}>
-                  <Icon className="w-5 h-5" active={active} />
-                </div>
-                <span className="text-[16px] font-medium">{item.label}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </MobileBottomSheet>
     </div>
   )
 }
@@ -153,7 +87,9 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
 function MoreIcon({ className, active }: { className?: string; active?: boolean }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />
     </svg>
   )
 }
@@ -182,22 +118,14 @@ function CheckIcon({ className, active }: { className?: string; active?: boolean
 function CalendarIcon({ className, active }: { className?: string; active?: boolean }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
   )
 }
 function ProvidersIcon({ className, active }: { className?: string; active?: boolean }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
     </svg>
   )
 }
@@ -237,3 +165,5 @@ function GearIcon({ className, active }: { className?: string; active?: boolean 
     </svg>
   )
 }
+
+export { CalendarIcon, ProvidersIcon, FilesIcon, NeedsIcon, RoomIcon, GearIcon }

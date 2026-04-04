@@ -1,6 +1,6 @@
 'use client'
 
-import { addMonths, addWeeks, format, startOfWeek, subMonths, subWeeks } from 'date-fns'
+import { addMonths, format, subMonths } from 'date-fns'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
@@ -44,10 +44,11 @@ export function CalendarMobile() {
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetKey, setSheetKey] = useState<string | null>(null)
-  const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
+
+  useEffect(() => { setCalendarView('month') }, [setCalendarView])
 
   const loadMeta = useCallback(async () => {
     if (!project) return
@@ -78,14 +79,12 @@ export function CalendarMobile() {
     tasks: showTasks ? tasks.filter(t => taskDueOnLocalDay(t, d)) : [],
   })
 
-  const weekStart = startOfWeek(cursor, { weekStartsOn: 0 })
-
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
-        <h3 className="mb-2 text-xl font-medium text-[#3c4043]">No Project</h3>
+        <h3 className="mb-2 text-xl font-medium text-slate-700">No Project</h3>
         <p className="text-center text-[14px] text-slate-500">
-          <a href="/renovation" className="font-medium text-[#1a73e8]">
+          <a href="/renovation" className="font-medium text-indigo-600">
             Create a project first
           </a>
         </p>
@@ -97,113 +96,62 @@ export function CalendarMobile() {
   const sheetItems = sheetKey && sheetDate ? itemsForDay(sheetDate) : { events: [], tasks: [] }
 
   return (
-    <div className="flex h-full flex-col bg-white overflow-hidden pb-16">
-      <header className="flex flex-col border-b border-[#dadce0] bg-white pt-2 px-1">
-        <div className="flex items-center justify-between px-3 h-12">
-          <div className="flex items-center gap-3">
-            <button aria-label="Menu" className="p-1 -ml-1 text-[#5f6368] active:bg-[#f1f3f4] rounded-full">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
-            </button>
-            <h1 className="text-[20px] font-normal leading-none text-[#3c4043]">
-              {calendarView === 'month' ? format(cursor, 'MMMM') : format(weekStart, 'MMM')} 
-              <span className="text-[20px] ml-1">{format(calendarView === 'month' ? cursor : weekStart, 'yyyy')}</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-1">
+    <div className="flex h-full flex-col overflow-hidden pb-16">
+      <header className="flex flex-col border-b border-slate-200/60 bg-white pt-2 px-3">
+        <div className="flex items-center justify-between min-h-[48px]">
+          <h1 className="text-[18px] font-bold leading-none text-slate-900">
+            {format(cursor, 'MMMM yyyy')}
+          </h1>
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setCursor(calendarView === 'month' ? subMonths(cursor, 1) : subWeeks(cursor, 1))}
-              className="p-1 text-[#5f6368] active:bg-[#f1f3f4] rounded-full"
+              onClick={() => setCursor(subMonths(cursor, 1))}
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100"
+              aria-label="Previous month"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
             </button>
             <button
               onClick={() => setCursor(new Date())}
-              className="px-2 py-1 text-[13px] font-medium text-[#3c4043] rounded border border-[#dadce0] active:bg-[#f1f3f4]"
+              className="min-h-[44px] px-4 text-[14px] font-bold text-indigo-600 rounded-xl border border-slate-200 active:bg-slate-50"
             >
               Today
             </button>
             <button
-              onClick={() => setCursor(calendarView === 'month' ? addMonths(cursor, 1) : addWeeks(cursor, 1))}
-              className="p-1 text-[#5f6368] active:bg-[#f1f3f4] rounded-full"
+              onClick={() => setCursor(addMonths(cursor, 1))}
+              className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100"
+              aria-label="Next month"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
             </button>
-            <div className="relative ml-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMenuOpen((o) => !o)}
-                className="flex items-center gap-1 rounded-md px-2 py-1.5 text-[14px] font-medium text-[#3c4043] transition-colors focus:outline-none active:bg-[#f1f3f4]"
-              >
-                {calendarView === 'month' ? 'Month' : 'Week'}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-[#5f6368]">
-                  <path d="M7 10l5 5 5-5z" />
-                </svg>
-              </button>
-              {viewMenuOpen && (
-                <>
-                  <button
-                    type="button"
-                    className="fixed inset-0 z-40 h-full w-full cursor-default bg-transparent"
-                    onClick={() => setViewMenuOpen(false)}
-                    aria-label="Close menu"
-                    tabIndex={-1}
-                  />
-                  <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-lg border border-[#dadce0] bg-white py-1.5 shadow-lg animate-fade-in">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setCalendarView('week')
-                        setViewMenuOpen(false)
-                      }}
-                      className={`block w-full px-4 py-2 text-left text-[14px] active:bg-[#f1f3f4] ${calendarView === 'week' ? 'bg-[#f8f9fa] font-medium text-[#1a73e8]' : 'text-[#3c4043]'}`}
-                    >
-                      Week
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setCalendarView('month')
-                        setViewMenuOpen(false)
-                      }}
-                      className={`block w-full px-4 py-2 text-left text-[14px] active:bg-[#f1f3f4] ${calendarView === 'month' ? 'bg-[#f8f9fa] font-medium text-[#1a73e8]' : 'text-[#3c4043]'}`}
-                    >
-                      Month
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </div>
 
-        <div className="flex overflow-x-auto scrollbar-hide gap-2 px-3 pb-3 pt-1">
-          <button 
+        <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-3 pt-1">
+          <button
             type="button"
             onClick={() => setShowTasks(!showTasks)}
-            className={`flex whitespace-nowrap items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors ${
-              showTasks 
-                ? 'border-[#ceead6] bg-[#e6f4ea] text-[#137333]' 
-                : 'border-[#dadce0] bg-white text-[#5f6368]'
+            className={`flex whitespace-nowrap items-center gap-1.5 rounded-full border min-h-[44px] px-4 text-[14px] font-semibold transition-colors ${
+              showTasks
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-slate-200 bg-white text-slate-500'
             }`}
           >
-            {showTasks && <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+            {showTasks && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
             Tasks
           </button>
-          
-          <button 
+
+          <button
             type="button"
             onClick={() => setShowCompletedTasks(!showCompletedTasks)}
             disabled={!showTasks}
-            className={`flex whitespace-nowrap items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors ${
-              !showTasks ? 'opacity-50 border-[#dadce0] bg-white text-[#9aa0a6]' :
-              showCompletedTasks 
-                ? 'border-[#ceead6] bg-[#e6f4ea] text-[#137333]' 
-                : 'border-[#dadce0] bg-white text-[#5f6368]'
+            className={`flex whitespace-nowrap items-center gap-1.5 rounded-full border min-h-[44px] px-4 text-[14px] font-semibold transition-colors ${
+              !showTasks ? 'opacity-50 border-slate-200 bg-white text-slate-400' :
+              showCompletedTasks
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-slate-200 bg-white text-slate-500'
             }`}
           >
-            {showCompletedTasks && showTasks && <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>}
+            {showCompletedTasks && showTasks && <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>}
             Completed
           </button>
         </div>
@@ -233,20 +181,14 @@ export function CalendarMobile() {
         )}
       </div>
 
-      {/* Floating Action Button */}
       <button
         onClick={() => openNewEvent(null)}
-        className="fixed bottom-20 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-lg active:scale-95 transition-transform"
-        style={{
-          boxShadow: '0 1px 2px 0 rgba(60,64,67,0.30), 0 2px 6px 2px rgba(60,64,67,0.15)'
-        }}
+        className="fixed right-4 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-[0_8px_30px_rgba(79,70,229,0.45)] active:scale-95 transition-transform"
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
+        aria-label="Add event"
       >
-        <svg width="36" height="36" viewBox="0 0 36 36">
-          <path fill="#34A853" d="M16 16v14h4V20h10v-4H20V6h-4v10H6v4h10z" />
-          <path fill="#4285F4" d="M30 16H20v-4h10z" />
-          <path fill="#FBBC05" d="M6 16v4h10v-4z" />
-          <path fill="#EA4335" d="M20 16V6h-4v10z" />
-          <path fill="none" d="M0 0h36v36H0z" />
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
         </svg>
       </button>
 
@@ -259,16 +201,16 @@ export function CalendarMobile() {
         title=""
       >
         <div className="max-h-[min(70vh,500px)] space-y-4 overflow-y-auto px-4 pb-4">
-          <div className="flex items-center justify-between pb-2 border-b border-[#f1f3f4]">
-            <h3 className="text-[18px] font-normal text-[#3c4043] flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1a73e8] text-xl text-white">
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 className="text-[18px] font-semibold text-slate-900 flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-xl text-white font-bold">
                 {sheetDate ? format(sheetDate, 'd') : ''}
               </span>
               <span className="flex flex-col">
-                <span className="text-[12px] text-[#5f6368] font-medium leading-tight">
+                <span className="text-[13px] text-slate-500 font-medium leading-tight">
                   {sheetDate ? format(sheetDate, 'EEEE') : ''}
                 </span>
-                <span className="text-[15px] leading-tight">
+                <span className="text-[16px] leading-tight text-slate-800">
                   {sheetDate ? format(sheetDate, 'MMMM yyyy') : ''}
                 </span>
               </span>
@@ -277,12 +219,10 @@ export function CalendarMobile() {
 
           {sheetItems.events.length === 0 && (!showTasks || sheetItems.tasks.length === 0) ? (
             <div className="flex flex-col items-center justify-center py-8">
-              <svg className="mb-3 text-[#dadce0]" width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
-                 <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/>
+              <svg className="mb-3 w-12 h-12 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-[14px] font-normal text-[#5f6368]">
-                No events
-              </p>
+              <p className="text-[14px] font-medium text-slate-500">No events this day</p>
             </div>
           ) : (
             <ul className="space-y-0">
@@ -294,20 +234,20 @@ export function CalendarMobile() {
                       setSheetOpen(false)
                       openEditEvent(e)
                     }}
-                    className="flex w-full items-start gap-4 py-3 active:bg-[#f1f3f4] text-left"
+                    className="flex w-full items-start gap-4 min-h-[48px] py-3 active:bg-slate-50 rounded-lg text-left"
                     dir="auto"
                   >
-                    <div className="mt-1 flex-shrink-0">
-                      <div className={`h-3.5 w-3.5 rounded-full ${e.event_type === 'provider_meeting' ? 'bg-[#9333ea]' : 'bg-[#1a73e8]'}`} />
+                    <div className="mt-1.5 flex-shrink-0">
+                      <div className={`h-3 w-3 rounded-full ${e.event_type === 'provider_meeting' ? 'bg-purple-500' : 'bg-indigo-500'}`} />
                     </div>
-                    <div className="flex-1 border-b border-[#f1f3f4] pb-3">
+                    <div className="flex-1 border-b border-slate-100 pb-3">
                       <CalendarEventTitleAddress
                         title={e.title}
                         address={e.address}
-                        titleClassName="text-[15px] font-medium text-[#3c4043]"
-                        addressClassName="text-[13px] font-normal text-[#5f6368] truncate max-w-[90%]"
+                        titleClassName="text-[16px] font-medium text-slate-900"
+                        addressClassName="text-[14px] font-normal text-slate-500 truncate max-w-[90%]"
                       />
-                      <p className="mt-0.5 text-[13px] font-normal text-[#70757a]">
+                      <p className="mt-0.5 text-[14px] font-normal text-slate-500">
                         {e.is_all_day
                           ? 'All day'
                           : e.starts_at
@@ -328,19 +268,17 @@ export function CalendarMobile() {
                         setSheetOpen(false)
                         openEditTask(t)
                       }}
-                      className="flex w-full items-start gap-4 py-3 active:bg-[#f1f3f4] text-left"
+                      className="flex w-full items-start gap-4 min-h-[48px] py-3 active:bg-slate-50 rounded-lg text-left"
                       dir="auto"
                     >
                       <div className="mt-1 flex-shrink-0">
-                        <div className="h-4 w-4 rounded-[4px] border-2 border-[#137333] flex items-center justify-center" >
-                           {t.status === 'done' && <div className="h-2 w-2 bg-[#137333]" />}
+                        <div className="h-4 w-4 rounded-[4px] border-2 border-emerald-600 flex items-center justify-center">
+                           {t.status === 'done' && <div className="h-2 w-2 bg-emerald-600 rounded-sm" />}
                         </div>
                       </div>
-                      <div className="flex-1 border-b border-[#f1f3f4] pb-3">
-                        <p className="text-[15px] font-medium text-[#3c4043]">{t.title}</p>
-                        <p className="mt-0.5 text-[13px] font-normal text-[#137333]">
-                           Task
-                        </p>
+                      <div className="flex-1 border-b border-slate-100 pb-3">
+                        <p className="text-[16px] font-medium text-slate-900">{t.title}</p>
+                        <p className="mt-0.5 text-[14px] font-normal text-emerald-600">Task</p>
                       </div>
                     </button>
                   </li>

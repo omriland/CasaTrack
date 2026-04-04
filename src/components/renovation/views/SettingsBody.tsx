@@ -91,15 +91,13 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
   }
 
   return (
-    <div className={`space-y-6 max-w-2xl mx-auto animate-fade-in-up ${mobile ? 'pb-8' : 'pb-8'}`}>
-      {!mobile && (
-        <header className="flex flex-row items-end justify-between gap-4">
-          <div>
-            <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Settings</h1>
-            <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Manage your team, labels, budget, and project details.</p>
-          </div>
-        </header>
-      )}
+    <div className={`space-y-6 max-w-2xl mx-auto animate-fade-in-up ${mobile ? 'pb-28' : 'pb-8'}`}>
+      <header className={`flex ${flexRow} ${mobile ? 'items-start' : 'items-end'} justify-between gap-4`}>
+        <div>
+          <h1 className={`${mobile ? 'text-[26px]' : 'text-[32px]'} font-bold tracking-tight text-slate-900 font-sans`}>Settings</h1>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Manage your team, labels, budget, and project details.</p>
+        </div>
+      </header>
 
       <section id="budget" className={`bg-white rounded-[2rem] border border-slate-200/60 shadow-sm ${sec} space-y-4 scroll-mt-4`}>
         <h2 className="text-[18px] font-bold text-slate-900">Details</h2>
@@ -167,7 +165,7 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
             <p className="text-[14px] text-slate-500 mt-1">Allocate budget to specific work areas</p>
           </div>
           {lineSum > 0 && cap > 0 && Math.abs(lineSum - cap) > 1 && (
-            <span className="text-[11px] font-bold px-2 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wider shrink-0">Mismatch</span>
+            <span className="text-[12px] font-bold px-2 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wider shrink-0">Mismatch</span>
           )}
         </div>
         <div className="divide-y divide-slate-100">
@@ -351,7 +349,7 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
           {labels.map((l) => (
             <span key={l.id} className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white px-2.5 py-1 rounded shadow-sm" style={{ backgroundColor: l.color }}>
               {l.name}
-              <button type="button" className="opacity-70 hover:opacity-100 min-w-[32px] min-h-[32px] flex items-center justify-center" onClick={() => deleteLabel(l.id).then(load)}>
+              <button type="button" className="opacity-70 hover:opacity-100 min-w-[44px] min-h-[44px] flex items-center justify-center" onClick={() => deleteLabel(l.id).then(load)}>
                 ×
               </button>
             </span>
@@ -366,7 +364,7 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
                   key={color}
                   type="button"
                   onClick={() => setLbColor(color)}
-                  className={`w-7 h-7 rounded-[4px] transition-all focus:outline-none ${lbColor === color ? 'border-2 border-white ring-2 ring-slate-900 scale-110 shadow-md' : 'border border-black/10 hover:scale-110 shadow-sm'}`}
+                  className={`${mobile ? 'w-10 h-10' : 'w-7 h-7'} rounded-lg transition-all focus:outline-none ${lbColor === color ? 'border-2 border-white ring-2 ring-slate-900 scale-110 shadow-md' : 'border border-black/10 hover:scale-110 shadow-sm'}`}
                   style={{ backgroundColor: color }}
                   aria-label={`Select color ${color}`}
                 />
@@ -450,7 +448,7 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
 
       {archived.length > 0 && (
         <section className="mb-12">
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">Archived Projects</p>
+          <p className="text-[12px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">Archived Projects</p>
           <ul className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm divide-y divide-slate-100 overflow-hidden">
             {archived.map((p) => (
               <li key={p.id} className="p-5 text-[16px] font-medium text-slate-700 hover:bg-slate-50 transition-colors" dir="auto">

@@ -1,18 +1,24 @@
 'use client'
 
 import { useState } from 'react'
-import { PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
-import type { RenovationLabel, RenovationTask, TaskStatus } from '@/types/renovation'
+import type { RenovationTask, TaskStatus } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
-import { STATUSES, buildEpicSwimlanes, sortTasks } from './tasks-page-shared'
+import { STATUSES, sortTasks } from './tasks-page-shared'
 
 type StatusTab = 'all' | TaskStatus
+
+const PRIORITY_LABELS: Record<string, string> = {
+  urgent: 'Urgent',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+}
 
 export function TasksMobile() {
   const {
@@ -40,187 +46,38 @@ export function TasksMobile() {
     openView,
     filteredTasks,
     toggleTaskDone,
-    view,
-    setView,
   } = useTasksPageState()
 
   const [statusTab, setStatusTab] = useState<StatusTab>('all')
   const [filterOpen, setFilterOpen] = useState(false)
 
   const listTasksFiltered = filteredTasks.filter((t) => (statusTab === 'all' ? true : t.status === statusTab))
-
-  const renderCard = (t: RenovationTask) => {
-    const isDone = t.status === 'done'
-    const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
-    const createdByTitle = t.created_by ? `Created by ${t.created_by.name}` : undefined
-    const hasLabels = (t.label_ids?.length ?? 0) > 0
-    const hasDueAndProvider = Boolean(t.due_date) && Boolean(t.provider_id ?? t.provider)
-    const labelsOnOwnRow = hasLabels && hasDueAndProvider
-
-    const labelChipEls = (t.label_ids || []).map((lid) => {
-      const lb = labels.find((l: RenovationLabel) => l.id === lid)
-      return lb ? (
-        <span
-          key={lid}
-          className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] text-white whitespace-nowrap"
-          style={{ backgroundColor: lb.color }}
-        >
-          {lb.name}
-        </span>
-      ) : null
-    })
-
-    return (
-      <div
-        key={t.id}
-        className={`w-full text-left bg-white rounded-[6px] border border-[#dfe1e6] p-3 transition-colors active:bg-slate-50 relative ${isDone ? 'opacity-60 bg-slate-50' : ''}`}
-      >
-        <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
-          <p className={`text-[15px] text-right font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="rtl">
-            {t.title}
-          </p>
-
-          <div className="flex flex-wrap gap-1 mt-0.5">
-            <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-slate-100 text-[#5e6c84] uppercase">
-              {t.status.replace('_', ' ')}
-            </span>
-            {t.room && (
-              <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-[#dfe1e6] text-[#42526e] truncate max-w-[120px]">
-                {t.room.name}
-              </span>
-            )}
-            {labelsOnOwnRow ? labelChipEls : null}
-          </div>
-
-          <div className="flex items-center justify-between mt-1 h-6">
-            <div className="flex items-center gap-2">
-              <div className="relative shrink-0 w-6 h-6">
-                <div className={`absolute inset-0 flex items-center justify-center transition-opacity ${isDone ? 'opacity-0' : 'opacity-100'}`}>
-                   <div className="scale-90">{PRIORITY_ICONS[t.urgency]}</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleTaskDone(t.id, isDone)
-                  }}
-                  className={`absolute inset-0 w-full h-full rounded-[4px] border flex items-center justify-center transition-all ${
-                    isDone 
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm' 
-                      : 'bg-white/40 border-slate-300/60 shadow-sm opacity-0 active:opacity-100'
-                  }`}
-                  aria-label={isDone ? 'Mark as open' : 'Mark as done'}
-                >
-                  {isDone && (
-                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-
-              {!!t.body?.trim() && (
-                <div className="text-[#5e6c84] flex items-center justify-center">
-                  <svg className="w-[15px] h-[15px] opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h8" />
-                  </svg>
-                </div>
-              )}
-
-              {dueMeta && (
-                <div
-                  className={`flex items-center gap-1 text-[12px] font-semibold ${
-                    dueMeta.tone === 'overdue'
-                      ? 'text-[#de350b]'
-                      : dueMeta.tone === 'soon'
-                        ? 'text-[#ff991f]'
-                        : 'text-[#5e6c84]'
-                  }`}
-                >
-                  {dueMeta.label}
-                </div>
-              )}
-              {t.provider && (
-                <span className="text-[12px] text-[#5e6c84] font-medium truncate max-w-[100px]" title="Provider">
-                   • {t.provider.name}
-                </span>
-              )}
-            </div>
-
-            <div className="flex min-w-0 max-w-[58%] shrink-0 items-center justify-end gap-1.5">
-              {hasLabels && !labelsOnOwnRow && (
-                <div className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-0.5 overflow-hidden" dir="ltr">
-                  {(t.label_ids || []).map((lid) => {
-                    const lb = labels.find((l: RenovationLabel) => l.id === lid)
-                    return lb ? (
-                      <span
-                        key={lid}
-                        className="max-w-[72px] shrink truncate text-[10px] font-bold px-1 py-[1px] rounded-[3px] text-white"
-                        style={{ backgroundColor: lb.color }}
-                        title={lb.name}
-                      >
-                        {lb.name}
-                      </span>
-                    ) : null
-                  })}
-                </div>
-              )}
-              {t.assignee ? (
-                <div
-                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold shadow-sm"
-                  style={memberAvatarChipStyle(t.assignee.name)}
-                  title={t.assignee.name}
-                >
-                  <span className="leading-none">{memberAvatarLetter(t.assignee.name)}</span>
-                </div>
-              ) : (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-[#f4f5f7]">
-                  <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const filterActiveCount = (filterAssignee ? 1 : 0) + (filterLabel ? 1 : 0)
 
   if (!project) {
     return (
       <p className="text-center text-slate-500 py-16">
-        <a href="/renovation" className="text-indigo-600 font-semibold">
-          Create a project first
-        </a>
+        <a href="/renovation" className="text-indigo-600 font-semibold">Create a project first</a>
       </p>
     )
   }
 
   return (
-    <div className="space-y-4 pb-28 animate-fade-in-up">
-      <div className="flex items-start justify-end gap-3">
+    <div className="space-y-4 pb-28 animate-fade-in">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Tasks</h1>
+          <p className="text-[14px] text-slate-500 mt-0.5">Tap a task to view details</p>
+        </div>
         <MobileFilterButton onClick={() => setFilterOpen(true)} activeCount={filterActiveCount} />
       </div>
 
+      {/* Status tabs */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
         <button
           type="button"
-          onClick={() => setView(view === 'epic' ? 'status' : 'epic')}
-          className={`shrink-0 h-10 px-4 rounded-full text-[13px] font-bold transition-colors ${
-            view === 'epic' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'
-          }`}
-        >
-          Epic view
-        </button>
-        <button
-          type="button"
           onClick={() => setStatusTab('all')}
-          className={`shrink-0 h-10 px-4 rounded-full text-[13px] font-bold transition-colors ${
-            statusTab === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'
-          }`}
+          className={`shrink-0 min-h-[44px] px-5 rounded-full text-[14px] font-bold transition-colors ${statusTab === 'all' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'}`}
         >
           All ({filteredTasks.length})
         </button>
@@ -231,9 +88,7 @@ export function TasksMobile() {
               key={s}
               type="button"
               onClick={() => setStatusTab(s)}
-              className={`shrink-0 h-10 px-4 rounded-full text-[13px] font-bold capitalize transition-colors ${
-                statusTab === s ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'
-              }`}
+              className={`shrink-0 min-h-[44px] px-5 rounded-full text-[14px] font-bold capitalize transition-colors ${statusTab === s ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200'}`}
             >
               {s.replace('_', ' ')} ({c})
             </button>
@@ -244,75 +99,45 @@ export function TasksMobile() {
       {loading ? (
         <div className="space-y-3 animate-pulse">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-28 bg-slate-200/50 rounded-2xl" />
+            <div key={i} className="h-20 bg-slate-200/50 rounded-2xl" />
           ))}
         </div>
       ) : tasks.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-10 text-center shadow-sm">
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-10 text-center shadow-sm">
           <p className="text-[16px] font-bold text-slate-700">No tasks yet</p>
           <p className="text-[14px] text-slate-500 mt-1">Create your first task to get organized.</p>
           <button
             type="button"
             onClick={() => setTaskModalOpen(true)}
-            className="mt-5 min-h-[48px] px-6 rounded-xl bg-indigo-600 text-white text-[15px] font-bold w-full max-w-xs"
+            className="mt-5 min-h-[48px] px-6 rounded-xl bg-indigo-600 text-white text-[16px] font-bold w-full max-w-xs"
           >
-            + Add task
+            Add task
           </button>
         </div>
       ) : listTasksFiltered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/80 p-10 text-center">
-          <p className="text-[15px] font-semibold text-slate-600">No tasks in this column</p>
-          <p className="text-[13px] text-slate-500 mt-1">Try another status or clear filters.</p>
-        </div>
-      ) : view === 'epic' ? (
-        <div className="flex flex-col gap-4">
-          {buildEpicSwimlanes(listTasksFiltered, labels).map((lane) => (
-            <section key={lane.id} className="pb-3" aria-label={lane.title}>
-              <h3 className="flex items-center gap-2 px-0.5 py-1 text-[11px] font-bold uppercase tracking-wider text-[#5e6c84]">
-                {lane.color ? (
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full shadow-sm" style={{ backgroundColor: lane.color }} />
-                ) : (
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full border border-dashed border-[#c1c7d0] bg-white" />
-                )}
-                <span className="min-w-0 flex-1 truncate" dir="auto">
-                  {lane.title}
-                </span>
-                <span className="tabular-nums text-[#172b4d]">{lane.tasks.length}</span>
-              </h3>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-0.5 px-0.5">
-                {STATUSES.map((s) => {
-                  const paneTasks = lane.tasks.filter((t) => t.status === s).sort(sortTasks)
-                  return (
-                    <div
-                      key={`${lane.id}-${s}`}
-                      className="w-[min(78vw,260px)] shrink-0 rounded-xl border border-slate-200/80 bg-white/70 p-2 min-h-[100px]"
-                    >
-                      <h4 className="px-1 pb-2 text-[10px] font-bold uppercase tracking-wider text-[#5e6c84]">
-                        <span>{s.replace('_', ' ')}</span>
-                        <span className="tabular-nums text-[#172b4d]"> · {paneTasks.length}</span>
-                      </h4>
-                      <div className="flex flex-col gap-2">
-                        {paneTasks.map((t) => renderCard(t))}
-                        {paneTasks.length === 0 && (
-                          <p className="py-3 text-center text-[11px] font-medium text-slate-400">—</p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          ))}
+          <p className="text-[16px] font-semibold text-slate-600">No tasks here</p>
+          <p className="text-[14px] text-slate-500 mt-1">Try another status or clear filters.</p>
         </div>
       ) : (
-        <div className="space-y-2">{[...listTasksFiltered].sort(sortTasks).map(renderCard)}</div>
+        <div className="space-y-2">
+          {[...listTasksFiltered].sort(sortTasks).map((t) => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              onTap={() => openView(t)}
+              onToggleDone={() => toggleTaskDone(t.id, t.status === 'done')}
+            />
+          ))}
+        </div>
       )}
 
+      {/* FAB */}
       <button
         type="button"
         onClick={() => setTaskModalOpen(true)}
         className="fixed z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-[0_8px_30px_rgba(79,70,229,0.45)] transition-transform active:scale-95 right-4"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
         aria-label="Add task"
       >
         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,10 +145,11 @@ export function TasksMobile() {
         </svg>
       </button>
 
+      {/* Filter sheet */}
       <MobileBottomSheet open={filterOpen} onClose={() => setFilterOpen(false)} title="Filters">
         <div className="space-y-6 pb-4">
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Assignee</p>
+            <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Assignee</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -337,9 +163,7 @@ export function TasksMobile() {
                   key={m.id}
                   type="button"
                   onClick={() => setFilterAssignee(m.id)}
-                  className={`min-h-[44px] px-4 rounded-xl text-[14px] font-semibold border ${
-                    filterAssignee === m.id ? 'bg-indigo-50 border-indigo-200 text-indigo-800' : 'bg-white border-slate-200 text-slate-700'
-                  }`}
+                  className={`min-h-[44px] px-4 rounded-xl text-[14px] font-semibold border ${filterAssignee === m.id ? 'bg-indigo-50 border-indigo-200 text-indigo-800' : 'bg-white border-slate-200 text-slate-700'}`}
                   dir="auto"
                 >
                   {m.name}
@@ -348,7 +172,7 @@ export function TasksMobile() {
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Tag</p>
+            <p className="text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Tag</p>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -362,9 +186,7 @@ export function TasksMobile() {
                   key={l.id}
                   type="button"
                   onClick={() => setFilterLabel(l.id)}
-                  className={`min-h-[44px] px-4 rounded-xl text-[14px] font-semibold border ${
-                    filterLabel === l.id ? 'text-white border-transparent' : 'bg-white border-slate-200 text-slate-700'
-                  }`}
+                  className={`min-h-[44px] px-4 rounded-xl text-[14px] font-semibold border ${filterLabel === l.id ? 'text-white border-transparent' : 'bg-white border-slate-200 text-slate-700'}`}
                   style={filterLabel === l.id ? { backgroundColor: l.color } : undefined}
                 >
                   {l.name}
@@ -374,11 +196,8 @@ export function TasksMobile() {
           </div>
           <button
             type="button"
-            onClick={() => {
-              setFilterAssignee('')
-              setFilterLabel('')
-            }}
-            className="w-full min-h-[48px] rounded-xl border border-slate-200 text-[15px] font-bold text-slate-600"
+            onClick={() => { setFilterAssignee(''); setFilterLabel('') }}
+            className="w-full min-h-[48px] rounded-xl border border-slate-200 text-[16px] font-bold text-slate-600"
           >
             Clear filters
           </button>
@@ -393,10 +212,7 @@ export function TasksMobile() {
           rooms={rooms}
           providers={providers}
           onClose={() => setSheet(false)}
-          onSave={() => {
-            setSheet(false)
-            load()
-          }}
+          onSave={() => { setSheet(false); load() }}
         />
       )}
 
@@ -408,10 +224,7 @@ export function TasksMobile() {
           rooms={rooms}
           providers={providers}
           onClose={() => setViewing(null)}
-          onEdit={() => {
-            setViewing(null)
-            openEdit(viewing)
-          }}
+          onEdit={() => { setViewing(null); openEdit(viewing) }}
           onTaskChange={(updatedTask) => {
             setViewing(updatedTask)
             setTasks((prev) => prev.map((pt) => pt.id === updatedTask.id ? updatedTask : pt))
@@ -423,6 +236,71 @@ export function TasksMobile() {
           }
         />
       )}
+    </div>
+  )
+}
+
+function TaskCard({ task: t, onTap, onToggleDone }: { task: RenovationTask; onTap: () => void; onToggleDone: () => void }) {
+  const isDone = t.status === 'done'
+  const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
+  const priorityLabel = PRIORITY_LABELS[t.urgency] || ''
+
+  return (
+    <div className={`rounded-2xl bg-white border border-slate-200/60 shadow-sm overflow-hidden transition-opacity ${isDone ? 'opacity-60' : ''}`}>
+      <div className="flex items-center gap-3 p-4">
+        {/* Done toggle - always visible, 44x44 */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onToggleDone() }}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 transition-colors ${isDone ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300 text-transparent active:border-indigo-400'}`}
+          aria-label={isDone ? 'Mark as open' : 'Mark as done'}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </button>
+
+        {/* Card content - tap to open */}
+        <button type="button" onClick={onTap} className="flex-1 min-w-0 text-left">
+          <p className={`text-[16px] font-semibold leading-snug text-slate-900 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+            {t.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+            {dueMeta && (
+              <span className={`text-[13px] font-semibold tabular-nums ${
+                dueMeta.tone === 'overdue' ? 'text-rose-600' : dueMeta.tone === 'soon' ? 'text-amber-600' : 'text-slate-500'
+              }`}>
+                {dueMeta.label}
+              </span>
+            )}
+            {priorityLabel && t.urgency !== 'medium' && (
+              <span className={`text-[13px] font-semibold ${t.urgency === 'urgent' ? 'text-rose-600' : t.urgency === 'high' ? 'text-amber-600' : 'text-slate-400'}`}>
+                {priorityLabel}
+              </span>
+            )}
+            {t.room && (
+              <span className="text-[13px] font-medium text-slate-500 truncate max-w-[120px]">{t.room.name}</span>
+            )}
+          </div>
+        </button>
+
+        {/* Assignee */}
+        {t.assignee ? (
+          <div
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-[12px] font-bold"
+            style={memberAvatarChipStyle(t.assignee.name)}
+            title={t.assignee.name}
+          >
+            <span className="leading-none">{memberAvatarLetter(t.assignee.name)}</span>
+          </div>
+        ) : (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-200 bg-slate-50">
+            <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

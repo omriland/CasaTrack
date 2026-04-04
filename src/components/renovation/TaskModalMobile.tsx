@@ -73,7 +73,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
       >
         <div className="box-border w-full min-w-0 max-w-full space-y-5 px-4 pb-4 pt-4">
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label htmlFor="task-title-mobile" className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+            <label htmlFor="task-title-mobile" className="text-[13px] font-bold uppercase tracking-wider text-slate-500">
               Title
             </label>
             <input
@@ -89,7 +89,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
           </div>
 
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</label>
+            <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as TaskStatus)}
@@ -105,7 +105,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
           </div>
 
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Priority</label>
+            <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Priority</label>
             <select
               value={urgency}
               onChange={(e) => setUrgency(e.target.value as TaskUrgency)}
@@ -121,7 +121,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
           </div>
 
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Due date</label>
+            <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Due date</label>
             <div className="grid w-full min-w-0 max-w-full grid-cols-1 overflow-x-clip [&_.reno-native-date]:min-w-0">
               <DatePicker value={due} onChange={setDue} />
             </div>
@@ -138,7 +138,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
                     key={preset.label}
                     type="button"
                     onClick={() => setDue(target)}
-                    className={`min-h-[40px] min-w-0 rounded-xl px-1 text-center text-[11px] font-bold leading-tight transition-all ${
+                    className={`min-h-[44px] min-w-0 rounded-xl px-2 text-center text-[13px] font-bold leading-tight transition-all ${
                       act ? 'bg-indigo-100 text-indigo-800 shadow-sm' : 'bg-slate-100 text-slate-600 active:bg-slate-200'
                     }`}
                   >
@@ -150,7 +150,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
           </div>
 
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Assignee</label>
+            <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Assignee</label>
             <select
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
@@ -168,7 +168,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
 
           {rooms.length > 0 && (
             <div className="min-w-0 max-w-full space-y-1.5">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Room</label>
+              <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Room</label>
               <select value={roomId} onChange={(e) => setRoomId(e.target.value)} className={selectField} aria-label="Room">
                 <option value="">No room</option>
                 {rooms.map((r) => (
@@ -181,7 +181,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
           )}
 
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Service provider</label>
+            <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Service provider</label>
             <select
               value={providerId}
               onChange={(e) => setProviderId(e.target.value)}
@@ -199,7 +199,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
 
           {labels.length > 0 && (
             <div className="min-w-0 max-w-full space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Tags</label>
+              <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Tags</label>
               <div className="flex flex-wrap gap-2">
                 {labels.map((lb) => {
                   const isSelected = selLabels.includes(lb.id)
@@ -222,7 +222,7 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
           )}
 
           <div className="min-w-0 max-w-full space-y-1.5">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Description</label>
+            <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Description</label>
             <textarea
               dir="auto"
               value={body}
@@ -241,10 +241,10 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
             type="button"
             onClick={() => void handleDeleteClick()}
             className={`flex min-h-[52px] shrink-0 items-center justify-center rounded-xl font-bold transition-all ${
-              confirmDelete ? 'min-w-[100px] bg-rose-600 px-4 text-white' : 'w-[52px] border border-rose-100 bg-rose-50 text-rose-600 active:bg-rose-100'
+              confirmDelete ? 'min-w-[100px] bg-rose-600 px-4 text-white' : 'min-w-[80px] px-3 border border-rose-100 bg-rose-50 text-rose-600 active:bg-rose-100 gap-1.5'
             }`}
           >
-            {confirmDelete ? 'Sure?' : <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+            {confirmDelete ? 'Sure?' : <><svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg><span className="text-[14px]">Delete</span></>}
           </button>
         )}
         <button

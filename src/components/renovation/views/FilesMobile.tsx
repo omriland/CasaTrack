@@ -13,24 +13,17 @@ export function FilesMobile() {
     loading,
     uploading,
     uploadProgress,
-    dragOver,
-    setDragOver,
     filterRoom,
     setFilterRoom,
     defaultRoom,
     setDefaultRoom,
     searchQuery,
     setSearchQuery,
-    editingFileId,
-    editingFileName,
-    setEditingFileName,
     load,
     handleFiles,
     saveName,
-    startEditing,
     saveRoom,
     filtered,
-    setEditingFileId,
     rooms,
   } = useRenovationFilesPageState()
   const confirmAction = useConfirm()
@@ -38,8 +31,8 @@ export function FilesMobile() {
   if (!project) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] py-8">
-        <p className="text-slate-500 text-center px-4">You need an active project.</p>
-        <Link href="/renovation" className="mt-4 min-h-[48px] px-6 rounded-xl bg-indigo-600 text-white font-semibold inline-flex items-center">
+        <p className="text-slate-500 text-center px-4 text-[16px]">You need an active project.</p>
+        <Link href="/renovation" className="mt-4 min-h-[48px] px-6 rounded-xl bg-indigo-600 text-white font-semibold text-[16px] inline-flex items-center">
           Go to overview
         </Link>
       </div>
@@ -47,43 +40,23 @@ export function FilesMobile() {
   }
 
   return (
-    <div className="space-y-5 pb-8 animate-fade-in-up">
+    <div className="space-y-5 pb-28 animate-fade-in">
+      <header>
+        <h1 className="text-[24px] font-bold text-slate-900">Files</h1>
+        <p className="text-[14px] text-slate-500 mt-1">Contracts, PDFs, and scans in one place.</p>
+      </header>
 
-      {rooms.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col gap-2">
-          <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Default room for uploads</span>
-          <select value={defaultRoom} onChange={(e) => setDefaultRoom(e.target.value)} className="min-h-[48px] px-3 rounded-xl border border-slate-200 text-[15px] bg-slate-50">
-            <option value="">None</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div
-        onDragOver={(e) => {
-          e.preventDefault()
-          setDragOver(true)
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault()
-          setDragOver(false)
-          handleFiles(e.dataTransfer.files)
-        }}
-        className={`rounded-2xl border-2 border-dashed py-8 px-4 flex flex-col items-center transition-all ${
-          dragOver ? 'border-indigo-400 bg-indigo-50/80' : 'border-slate-200 bg-white'
-        }`}
-      >
-        <div className={`p-3 rounded-xl mb-2 ${dragOver ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}`}>
+      {/* Upload button */}
+      <div className="rounded-2xl bg-white border border-slate-200/60 p-5 shadow-sm flex flex-col items-center gap-3">
+        <div className="p-3 rounded-xl bg-slate-100 text-slate-500">
           <IconUpload />
         </div>
-        <p className="text-[15px] font-semibold text-slate-800 text-center">{dragOver ? 'Drop to upload' : 'Drag files here or choose'}</p>
-        <label className="mt-3 min-h-[44px] px-6 rounded-xl bg-slate-900 text-white text-[14px] font-bold flex items-center cursor-pointer">
-          Choose files
+        <label className="min-h-[48px] w-full max-w-xs rounded-xl bg-indigo-600 text-white text-[16px] font-bold flex items-center justify-center cursor-pointer active:scale-[0.98] transition-transform">
+          {uploading ? (
+            <span className="tabular-nums">{uploadProgress ? `${uploadProgress.done}/${uploadProgress.total}` : 'Uploading…'}</span>
+          ) : (
+            'Choose files to upload'
+          )}
           <input
             type="file"
             multiple
@@ -95,13 +68,21 @@ export function FilesMobile() {
             }}
           />
         </label>
-        {uploading && uploadProgress && (
-          <p className="text-[12px] font-bold text-indigo-600 mt-3 tabular-nums">
-            {uploadProgress.done} / {uploadProgress.total}
-          </p>
-        )}
       </div>
 
+      {rooms.length > 0 && (
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-4 flex flex-col gap-2 shadow-sm">
+          <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wide">Default room for uploads</span>
+          <select value={defaultRoom} onChange={(e) => setDefaultRoom(e.target.value)} className="min-h-[48px] px-3 rounded-xl border border-slate-200 text-[16px] bg-slate-50">
+            <option value="">None</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Search & filter */}
       <div className="space-y-3">
         <input
           type="search"
@@ -110,69 +91,64 @@ export function FilesMobile() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full min-h-[48px] px-4 rounded-xl border border-slate-200 text-[16px] outline-none focus:ring-2 focus:ring-indigo-500/20"
         />
-        <select value={filterRoom} onChange={(e) => setFilterRoom(e.target.value)} className="w-full min-h-[48px] px-3 rounded-xl border border-slate-200 text-[15px] bg-white">
-          <option value="">All rooms</option>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.name}
-            </option>
-          ))}
-        </select>
+        {rooms.length > 0 && (
+          <select value={filterRoom} onChange={(e) => setFilterRoom(e.target.value)} className="w-full min-h-[48px] px-3 rounded-xl border border-slate-200 text-[16px] bg-white">
+            <option value="">All rooms</option>
+            {rooms.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {loading ? (
-        <div className="space-y-2 animate-pulse">
+        <div className="space-y-3 animate-pulse">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-24 bg-slate-200/50 rounded-2xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-xl border border-slate-100 bg-white p-10 text-center text-slate-500 text-[15px]">No files match.</div>
+        <div className="rounded-2xl border border-slate-200/60 bg-white p-10 text-center shadow-sm">
+          {searchQuery || filterRoom ? (
+            <>
+              <p className="text-[16px] font-bold text-slate-700">No files match</p>
+              <p className="text-[14px] text-slate-500 mt-1">Try a different search or filter.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-[16px] font-bold text-slate-700">No files yet</p>
+              <p className="text-[14px] text-slate-500 mt-1">Upload your first file above.</p>
+            </>
+          )}
+        </div>
       ) : (
         <ul className="space-y-3">
           {filtered.map((f: RenovationFile) => (
-            <li key={f.id} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+            <li key={f.id} className="rounded-2xl border border-slate-200/60 bg-white p-4 shadow-sm">
               <div className="flex gap-3 items-start">
                 <div className="p-2.5 bg-slate-50 rounded-xl shrink-0">{getFileIcon(f.mime_type)}</div>
                 <div className="flex-1 min-w-0">
-                  {editingFileId === f.id ? (
-                    <input
-                      autoFocus
-                      dir="auto"
-                      value={editingFileName}
-                      onChange={(e) => setEditingFileName(e.target.value)}
-                      onBlur={() => saveName(f, editingFileName)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') saveName(f, editingFileName)
-                        if (e.key === 'Escape') setEditingFileId(null)
-                      }}
-                      className="w-full text-[15px] font-bold text-indigo-700 border border-indigo-200 rounded-lg px-2 py-1.5"
-                    />
-                  ) : (
-                    <button type="button" onClick={() => startEditing(f)} className="text-left w-full">
-                      <p className="text-[16px] font-bold text-slate-900 truncate">{f.display_name}</p>
-                      <p className="text-[12px] text-slate-400 font-medium mt-0.5">{formatBytes(f.file_size)}</p>
-                    </button>
+                  <p className="text-[16px] font-semibold text-slate-900 truncate" dir="auto">{f.display_name}</p>
+                  <p className="text-[14px] text-slate-400 font-medium mt-0.5">{formatBytes(f.file_size)}</p>
+                  {rooms.length > 0 && (
+                    <select
+                      value={f.room_id || ''}
+                      onChange={(e) => saveRoom(f, e.target.value)}
+                      className="mt-3 w-full min-h-[44px] px-3 rounded-xl border border-slate-200 text-[14px] bg-slate-50"
+                    >
+                      <option value="">No room</option>
+                      {rooms.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
                   )}
-                  <select
-                    value={f.room_id || ''}
-                    onChange={(e) => saveRoom(f, e.target.value)}
-                    className="mt-3 w-full min-h-[44px] px-3 rounded-xl border border-slate-200 text-[14px] bg-slate-50"
-                  >
-                    <option value="">Room</option>
-                    {rooms.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
                   <div className="flex gap-2 mt-3">
                     {f.public_url && (
                       <a
                         href={f.public_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 min-h-[44px] rounded-xl border border-slate-200 font-bold text-[14px] text-indigo-600 flex items-center justify-center gap-2"
+                        className="flex-1 min-h-[44px] rounded-xl border border-slate-200 font-bold text-[14px] text-indigo-600 flex items-center justify-center gap-2 active:bg-slate-50"
                       >
                         <IconExternal />
                         Open
@@ -181,7 +157,7 @@ export function FilesMobile() {
                     <button
                       type="button"
                       onClick={async () => (await confirmAction('Delete this file?')) && deleteProjectFile(f).then(load)}
-                      className="flex-1 min-h-[44px] rounded-xl bg-rose-50 text-rose-600 font-bold text-[14px] flex items-center justify-center gap-2"
+                      className="flex-1 min-h-[44px] rounded-xl bg-rose-50 text-rose-600 font-bold text-[14px] flex items-center justify-center gap-2 active:bg-rose-100"
                     >
                       <IconTrash />
                       Delete
