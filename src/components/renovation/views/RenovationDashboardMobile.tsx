@@ -132,9 +132,9 @@ export function RenovationDashboardMobile() {
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-[14px] font-bold text-slate-500 uppercase tracking-wide">Budget</h2>
               <Link
-                href="/renovation/budget"
+                href="/renovation/expenses"
                 className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 active:bg-slate-100"
-                aria-label="Budget details"
+                aria-label="Open expenses"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
