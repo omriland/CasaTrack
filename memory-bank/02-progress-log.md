@@ -2,6 +2,9 @@
 
 ## Renovation app (March 2025)
 
+### Completed (gallery lightbox album scope, April 2026)
+- **Photos / Albums:** Opening the lightbox from inside a label album now passes only that album’s photo list to [`Lightbox`](src/components/renovation/Lightbox.tsx) (`lightboxSlides` in [`GalleryBody.tsx`](src/components/renovation/views/GalleryBody.tsx)), so swipe stays within the chosen gallery. **All Photos** behavior unchanged (filtered/sorted grid).
+
 ### Completed (planned expenses, April 2026)
 - **Renovation expenses:** `is_planned` on `renovation_expenses` ([`14_expense_planned.sql`](supabase/renovation/14_expense_planned.sql)); [`RenovationExpense`](src/types/renovation.ts) + [`createExpense` / `updateExpense`](src/lib/renovation.ts); helpers `expenseIsPlanned`, `sumSpentExpenses`, `sumPlannedExpenses`; **this month** and **budget spent** use spent-only. UI: **Spent / Planned** segmented control in [`ExpenseFormFields`](src/components/renovation/ExpenseFormFields.tsx); expenses list **filters** + badges + split totals ([`useExpensesPageState`](src/components/renovation/views/useExpensesPageState.ts), desktop/mobile views); dashboard + settings show **planned total** when > 0; [`ExpenseDetailDrawer`](src/components/renovation/ExpenseDetailDrawer.tsx) **Planned** pill. Mobile add-expense modal uses `editing={null}`. Fixed dashboard mobile quick actions to use `setExpenseModalOpen` / `setTaskModalOpen`.
 

@@ -281,23 +281,9 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     return result
   }, [filtered, sortBy, rooms, tags])
 
-  /** Full list fallback so `findIndex` is never -1 when opening from a filtered grid. */
-  const lightboxSlides = useMemo(() => {
-    if (!lightbox) return null
-    const inFiltered = sortedFiltered.some((i) => i.id === lightbox.id)
-    const list = inFiltered ? sortedFiltered : items
-    const ix = list.findIndex((i) => i.id === lightbox.id)
-    if (ix < 0 || list.length === 0) return null
-    return { list, initialIndex: ix }
-  }, [lightbox, sortedFiltered, items])
-
   useEffect(() => {
     if (lightbox && !items.some((i) => i.id === lightbox.id)) setLightbox(null)
   }, [lightbox, items])
-
-  useEffect(() => {
-    if (lightbox && lightboxSlides === null) setLightbox(null)
-  }, [lightbox, lightboxSlides])
 
   const groupedItems = useMemo(() => {
     if (viewMode !== 'gallery') return []
@@ -319,6 +305,30 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
 
     return groups
   }, [sortedFiltered, tags, viewMode, filterTag])
+
+  /** Slide list for the lightbox: inside an album, only that album's photos; otherwise the All Photos / filter grid. */
+  const lightboxSlides = useMemo(() => {
+    if (!lightbox) return null
+
+    if (viewMode === 'gallery' && selectedAlbumId !== null) {
+      const group = groupedItems.find((g) => (g.tagId || 'untagged') === selectedAlbumId)
+      if (!group) return null
+      const list = group.items
+      const ix = list.findIndex((i) => i.id === lightbox.id)
+      if (ix < 0 || list.length === 0) return null
+      return { list, initialIndex: ix }
+    }
+
+    const inFiltered = sortedFiltered.some((i) => i.id === lightbox.id)
+    const list = inFiltered ? sortedFiltered : items
+    const ix = list.findIndex((i) => i.id === lightbox.id)
+    if (ix < 0 || list.length === 0) return null
+    return { list, initialIndex: ix }
+  }, [lightbox, viewMode, selectedAlbumId, groupedItems, sortedFiltered, items])
+
+  useEffect(() => {
+    if (lightbox && lightboxSlides === null) setLightbox(null)
+  }, [lightbox, lightboxSlides])
 
   const renderItem = (item: RenovationGalleryItem, showRoom: boolean = false, selectionOrder?: RenovationGalleryItem[]) => {
     const isSelected = selectedIds.has(item.id)
