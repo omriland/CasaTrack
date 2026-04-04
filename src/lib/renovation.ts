@@ -215,33 +215,50 @@ export async function deleteBudgetLine(id: string): Promise<void> {
 
 // --- Expenses ---
 
+export function expenseIsPlanned(e: RenovationExpense): boolean {
+  return e.is_planned === true
+}
+
+export function sumSpentExpenses(expenses: RenovationExpense[]): number {
+  return expenses.filter((e) => !expenseIsPlanned(e)).reduce((s, e) => s + Number(e.amount), 0)
+}
+
+export function sumPlannedExpenses(expenses: RenovationExpense[]): number {
+  return expenses.filter(expenseIsPlanned).reduce((s, e) => s + Number(e.amount), 0)
+}
+
 export async function listExpenses(projectId: string): Promise<RenovationExpense[]> {
   const { data, error } = await supabase
     .from('renovation_expenses')
     .select('*')
     .eq('project_id', projectId)
-    .order('expense_date', { ascending: false })
+    .order('expense_date', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return (data || []) as RenovationExpense[]
+  return ((data || []) as RenovationExpense[]).map((row) => ({
+    ...row,
+    expense_date: row.expense_date ?? null,
+    is_planned: row.is_planned === true,
+  }))
 }
 
 export async function sumExpenses(projectId: string): Promise<number> {
   const expenses = await listExpenses(projectId)
-  return expenses.reduce((s, e) => s + Number(e.amount), 0)
+  return sumSpentExpenses(expenses)
 }
 
 export async function createExpense(
   projectId: string,
   row: {
     amount: number
-    expense_date?: string
+    expense_date?: string | null
     vendor?: string | null
     category?: string | null
     notes?: string | null
     payment_method?: string | null
     receipt_storage_path?: string | null
+    is_planned?: boolean
   }
 ): Promise<RenovationExpense> {
   const { data, error } = await supabase
@@ -249,12 +266,16 @@ export async function createExpense(
     .insert({
       project_id: projectId,
       amount: row.amount,
-      expense_date: row.expense_date || new Date().toISOString().slice(0, 10),
+      expense_date:
+        row.expense_date === undefined || row.expense_date === null || row.expense_date === ''
+          ? null
+          : row.expense_date,
       vendor: row.vendor ?? null,
       category: row.category ?? null,
       notes: row.notes ?? null,
       payment_method: row.payment_method ?? null,
       receipt_storage_path: row.receipt_storage_path ?? null,
+      is_planned: row.is_planned ?? false,
     })
     .select()
     .single()
@@ -268,7 +289,14 @@ export async function updateExpense(
   updates: Partial<
     Pick<
       RenovationExpense,
-      'amount' | 'expense_date' | 'vendor' | 'category' | 'notes' | 'payment_method' | 'receipt_storage_path'
+      | 'amount'
+      | 'expense_date'
+      | 'vendor'
+      | 'category'
+      | 'notes'
+      | 'payment_method'
+      | 'receipt_storage_path'
+      | 'is_planned'
     >
   >
 ): Promise<void> {
@@ -1073,8 +1101,10 @@ export function expensesThisMonth(expenses: RenovationExpense[]): number {
   const y = now.getFullYear()
   const m = now.getMonth()
   return expenses
+    .filter((e) => !expenseIsPlanned(e))
+    .filter((e) => e.expense_date != null && e.expense_date !== '')
     .filter((e) => {
-      const d = new Date(e.expense_date + 'T12:00:00')
+      const d = new Date(e.expense_date! + 'T12:00:00')
       return d.getFullYear() === y && d.getMonth() === m
     })
     .reduce((s, e) => s + Number(e.amount), 0)

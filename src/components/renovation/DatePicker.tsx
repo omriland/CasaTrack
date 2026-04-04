@@ -86,7 +86,7 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
         <div className="reno-native-date w-full min-w-0 max-w-full overflow-x-clip">
           <input
             type="date"
-            value={value}
+            value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             className="box-border min-h-[44px] w-full min-w-0 max-w-full rounded border border-slate-200 bg-slate-50 py-2 pl-2 pr-2 text-[16px] font-semibold text-slate-800 shadow-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/20"
             aria-label={placeholder}

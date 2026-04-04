@@ -21,13 +21,19 @@ export function RenovationDashboardDesktop() {
     creating,
     handleCreate,
     spent,
+    plannedTotal,
     monthSpend,
     recentExpenses,
     gallery,
     dashLoading,
     cap,
-    pct,
+    committedTotal,
     over,
+    spentBarPct,
+    plannedBarPct,
+    remainingBalance,
+    remainingExcludingPlanned,
+    budgetOverAmount,
     openTasks,
     overdue,
     upcoming,
@@ -175,35 +181,73 @@ export function RenovationDashboardDesktop() {
               <div className="flex flex-row items-end justify-between gap-6">
                 <div>
                   <p className={`text-5xl font-bold tracking-tight tabular-nums mt-1 ${over ? 'text-rose-400' : 'text-white'}`}>
-                    {formatIls(cap - spent)}
+                    {formatIls(remainingBalance)}
                   </p>
+                  {plannedTotal > 0 && (
+                    <p className="mt-2 text-[12px] font-medium text-slate-400 tabular-nums">
+                      Excluding planned:{' '}
+                      <span className="text-slate-300">{formatIls(remainingExcludingPlanned)}</span>
+                    </p>
+                  )}
                   {over && (
                     <p className="inline-block mt-2 px-2.5 py-1 bg-rose-500/20 text-rose-300 text-[13px] font-bold rounded backdrop-blur-md">
-                      Exceeded by {formatIls(spent - cap)}
+                      Exceeded by {formatIls(budgetOverAmount)}
                     </p>
                   )}
                 </div>
 
                 <div className="flex-1 max-w-sm w-full bg-slate-800/50 rounded p-4 backdrop-blur-md border border-white/5">
-                  <div className="flex justify-between text-[13px] font-medium text-slate-300 mb-2 tabular-nums">
-                    <span>{formatIls(spent)} spent</span>
-                    <span>{formatIls(cap)} budget</span>
+                  <div className="flex justify-between text-[13px] font-medium text-slate-300 mb-2 tabular-nums gap-2">
+                    <span className="min-w-0">
+                      {plannedTotal > 0 ? (
+                        <>
+                          <span className="text-white/90">{formatIls(committedTotal)}</span>
+                          <span className="text-slate-400"> committed</span>
+                          <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
+                            {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
+                          </span>
+                        </>
+                      ) : (
+                        <span>{formatIls(spent)} spent</span>
+                      )}
+                    </span>
+                    <span className="shrink-0">{formatIls(cap)} budget</span>
                   </div>
-                  <div className="h-2.5 bg-slate-900/50 rounded-full overflow-hidden ring-1 ring-inset ring-white/10">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ease-out relative overflow-hidden ${over ? 'bg-rose-500' : pct >= 85 ? 'bg-amber-400' : 'bg-emerald-400'}`}
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    >
-                      <div className="absolute inset-0 bg-white/20 w-full animate-[shimmer_2s_infinite]" />
-                    </div>
+                  <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-900/50 ring-1 ring-inset ring-white/10">
+                    {spentBarPct > 0 && (
+                      <div
+                        className="relative h-full shrink-0 overflow-hidden bg-emerald-400 transition-[width] duration-1000 ease-out"
+                        style={{ width: `${spentBarPct}%` }}
+                      >
+                        <div className="absolute inset-0 w-full animate-[shimmer_2s_infinite] bg-white/20" />
+                      </div>
+                    )}
+                    {plannedBarPct > 0 && (
+                      <div
+                        className="relative h-full shrink-0 overflow-hidden bg-yellow-400 transition-[width] duration-1000 ease-out"
+                        style={{ width: `${plannedBarPct}%` }}
+                      >
+                        <div className="absolute inset-0 w-full animate-[shimmer_2s_infinite] bg-white/15" />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-8 py-4 bg-white/5 border-t border-white/10 flex justify-between items-center text-[14px]">
-              <span className="text-slate-400 font-medium">This month</span>
-              <span className="font-semibold tabular-nums text-white bg-white/10 px-3 py-1 rounded-full">{formatIls(monthSpend)}</span>
+            <div className="px-8 py-4 bg-white/5 border-t border-white/10 space-y-2 text-[14px]">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 font-medium">This month</span>
+                <span className="font-semibold tabular-nums text-white bg-white/10 px-3 py-1 rounded-full">{formatIls(monthSpend)}</span>
+              </div>
+              {plannedTotal > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-medium">Planned (upcoming)</span>
+                  <span className="font-semibold tabular-nums text-amber-200 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-400/20">
+                    {formatIls(plannedTotal)}
+                  </span>
+                </div>
+              )}
             </div>
           </section>
 
@@ -311,7 +355,14 @@ export function RenovationDashboardDesktop() {
                           )}
                         </div>
                       </div>
-                      <span className="font-bold text-slate-900 tabular-nums ml-4 text-[15px]">{formatIls(Number(e.amount))}</span>
+                      <div className="ml-4 flex flex-col items-end gap-1 shrink-0">
+                        {e.is_planned && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
+                            Planned
+                          </span>
+                        )}
+                        <span className="font-bold text-slate-900 tabular-nums text-[15px]">{formatIls(Number(e.amount))}</span>
+                      </div>
                     </li>
                   ))}
                 </ul>

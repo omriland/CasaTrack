@@ -15,7 +15,8 @@ export function formatIlsFull(amount: number): string {
   }).format(amount)
 }
 
-export function formatDateDisplay(isoDate: string): string {
+export function formatDateDisplay(isoDate: string | null | undefined): string {
+  if (isoDate == null || isoDate === '') return '—'
   const [y, m, d] = isoDate.split('-')
   if (!y || !m || !d) return isoDate
   return `${d}/${m}/${y}`

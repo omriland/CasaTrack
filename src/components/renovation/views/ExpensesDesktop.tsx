@@ -3,13 +3,19 @@
 import { ExpenseDetailDrawer } from '@/components/renovation/ExpenseDetailDrawer'
 import { ExpenseModal } from '@/components/renovation/ExpenseModal'
 import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
+import { cn } from '@/utils/common'
 import type { RenovationExpense } from '@/types/renovation'
-import { useExpensesPageState } from './useExpensesPageState'
+import { useExpensesPageState, type ExpenseListFilter } from './useExpensesPageState'
 
 export function ExpensesDesktop() {
   const {
     project,
     list,
+    filteredList,
+    expenseFilter,
+    setExpenseFilter,
+    spentTotal,
+    plannedTotal,
     loading,
     sheet,
     setSheet,
@@ -24,6 +30,22 @@ export function ExpensesDesktop() {
     addFilesToExpense,
     remove,
   } = useExpensesPageState()
+
+  const filterChip = (id: ExpenseListFilter, label: string) => (
+    <button
+      key={id}
+      type="button"
+      onClick={() => setExpenseFilter(id)}
+      className={cn(
+        'rounded-full px-4 py-2 text-[13px] font-bold transition-colors',
+        expenseFilter === id
+          ? 'bg-slate-900 text-white'
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      )}
+    >
+      {label}
+    </button>
+  )
 
   if (!project) {
     return (
@@ -40,7 +62,7 @@ export function ExpensesDesktop() {
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Expenses</h1>
-          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Track every shekel spent</p>
+          <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Track spending and upcoming costs</p>
         </div>
         <div>
           <button
@@ -75,8 +97,38 @@ export function ExpensesDesktop() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-50 mt-6 shadow-sm">
-          {list.map((row: RenovationExpense) => {
+        <>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-slate-400">Spent</p>
+              <p className="text-[22px] font-bold tabular-nums text-slate-900 mt-1">{formatIls(spentTotal)}</p>
+            </div>
+            <div className="rounded-2xl border border-amber-100 bg-amber-50/40 px-5 py-4 shadow-sm">
+              <p className="text-[12px] font-bold uppercase tracking-wider text-amber-800/70">Planned</p>
+              <p className="text-[22px] font-bold tabular-nums text-amber-950 mt-1">{formatIls(plannedTotal)}</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {filterChip('all', 'All')}
+            {filterChip('spent', 'Spent')}
+            {filterChip('planned', 'Planned')}
+          </div>
+
+          {filteredList.length === 0 ? (
+            <div className="rounded-3xl border border-slate-100 bg-slate-50/80 p-12 text-center mt-4">
+              <p className="text-[15px] font-semibold text-slate-600">No expenses match this filter.</p>
+              <button
+                type="button"
+                onClick={() => setExpenseFilter('all')}
+                className="mt-4 text-[14px] font-bold text-indigo-600 hover:underline"
+              >
+                Show all
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden divide-y divide-slate-50 mt-4 shadow-sm">
+          {filteredList.map((row: RenovationExpense) => {
             const attCount = attachmentCount(row)
             const isDrag = dragOverId === row.id
             return (
@@ -122,13 +174,28 @@ export function ExpensesDesktop() {
                           </span>
                         </>
                       )}
+                      {row.is_planned && (
+                        <>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-[12px] font-bold text-amber-800 bg-amber-100/90 px-2 py-0.5 rounded-full">
+                            Planned
+                          </span>
+                        </>
+                      )}
                       {isDrag && <span className="text-[12px] font-bold text-indigo-600">Drop to attach</span>}
                     </div>
                   </div>
                 </button>
 
                 <div className="flex items-center justify-end gap-4 shrink-0">
-                  <span className="text-[18px] font-extrabold text-slate-900 tabular-nums">{formatIls(Number(row.amount))}</span>
+                  <span
+                    className={cn(
+                      'text-[18px] font-extrabold tabular-nums',
+                      row.is_planned ? 'text-amber-900' : 'text-slate-900'
+                    )}
+                  >
+                    {formatIls(Number(row.amount))}
+                  </span>
 
                   <div className="flex items-center gap-2">
                     <label className="shrink-0 flex items-center justify-center h-9 px-3 rounded-lg bg-slate-100 text-slate-700 text-[12px] font-bold cursor-pointer hover:bg-slate-200 transition-colors">
@@ -158,7 +225,9 @@ export function ExpensesDesktop() {
               </div>
             )
           })}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {sheet && (

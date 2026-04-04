@@ -20,7 +20,7 @@
 
 #### Renovation App (New Module)
 1. ✅ **Dashboard & Profiles**: Multi-user profile switching, quick overview of budget, upcoming tasks, and recent photos.
-2. ✅ **Expenses**: Financial tracking, categorization, and receipt attachments.
+2. ✅ **Expenses**: Financial tracking, categorization, receipt attachments, **planned vs spent** (`is_planned`), filters, and spent-only budget rollups.
 3. ✅ **Tasks**: Drag-and-drop Kanban board (view by status or assignee), detailed task cards (room, labels, provider, due date).
 4. ✅ **Gallery**: Grouped by albums/tags with album covers, multi-photo uploads with progress, Lightbox viewing, and inline label creation.
 5. ✅ **Providers**: Centralized contact database for contractors and service providers.

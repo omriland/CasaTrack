@@ -75,12 +75,14 @@ export interface RenovationExpense {
   id: string
   project_id: string
   amount: number
-  expense_date: string
+  expense_date: string | null
   vendor: string | null
   category: string | null
   notes: string | null
   payment_method: string | null
   receipt_storage_path: string | null
+  /** True = expected cost not yet paid */
+  is_planned: boolean
   created_at: string
   updated_at: string
 }

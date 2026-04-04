@@ -1,15 +1,19 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   deleteExpense,
   listExpenses,
   listExpenseAttachmentsForExpenses,
+  sumPlannedExpenses,
+  sumSpentExpenses,
   uploadExpenseAttachment,
 } from '@/lib/renovation'
 import type { RenovationExpense, RenovationExpenseAttachment } from '@/types/renovation'
 import { useConfirm } from '@/providers/ConfirmProvider'
+
+export type ExpenseListFilter = 'all' | 'spent' | 'planned'
 
 export function useExpensesPageState() {
   const { project } = useRenovation()
@@ -21,6 +25,7 @@ export function useExpensesPageState() {
   const [dragOverId, setDragOverId] = useState<string | null>(null)
   /** Desktop + mobile: right detail drawer for an existing expense */
   const [viewing, setViewing] = useState<RenovationExpense | null>(null)
+  const [expenseFilter, setExpenseFilter] = useState<ExpenseListFilter>('all')
 
   const load = useCallback(async () => {
     if (!project) return
@@ -46,6 +51,15 @@ export function useExpensesPageState() {
     if (u) setViewing(u)
     else setViewing(null)
   }, [list, viewingId])
+
+  const filteredList = useMemo(() => {
+    if (expenseFilter === 'spent') return list.filter((e) => !e.is_planned)
+    if (expenseFilter === 'planned') return list.filter((e) => e.is_planned)
+    return list
+  }, [list, expenseFilter])
+
+  const spentTotal = useMemo(() => sumSpentExpenses(list), [list])
+  const plannedTotal = useMemo(() => sumPlannedExpenses(list), [list])
 
   const attachmentCount = useCallback(
     (exp: RenovationExpense) => {
@@ -90,6 +104,11 @@ export function useExpensesPageState() {
   return {
     project,
     list,
+    filteredList,
+    expenseFilter,
+    setExpenseFilter,
+    spentTotal,
+    plannedTotal,
     loading,
     sheet,
     setSheet,

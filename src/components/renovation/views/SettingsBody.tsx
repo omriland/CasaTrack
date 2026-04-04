@@ -27,6 +27,7 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
     gTags,
     lines,
     spent,
+    plannedTotal,
     total,
     setTotal,
     cont,
@@ -156,6 +157,12 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
             Spent: <span className="font-bold text-slate-900 tabular-nums">{loading ? '…' : formatIls(spent)}</span>
           </p>
         </div>
+        {plannedTotal > 0 && (
+          <p className="text-[15px] text-slate-500 pt-1">
+            Planned (upcoming):{' '}
+            <span className="font-bold text-amber-900 tabular-nums">{loading ? '…' : formatIls(plannedTotal)}</span>
+          </p>
+        )}
       </section>
 
       <section className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden">

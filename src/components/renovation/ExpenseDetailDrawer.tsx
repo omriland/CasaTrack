@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { deleteExpense } from '@/lib/renovation'
-import { formatDateDisplay, formatIls } from '@/lib/renovation-format'
 import type { RenovationExpense } from '@/types/renovation'
 import { useConfirm } from '@/providers/ConfirmProvider'
 import { ExpenseFormFields } from '@/components/renovation/ExpenseFormFields'
@@ -35,7 +34,8 @@ export function ExpenseDetailDrawer({
   })
   const { save, saving, uploadingAttach, editing: editingRow } = form
 
-  const title = editingRow?.vendor || editingRow?.category || 'Expense'
+  const vendor = (editingRow?.vendor ?? expense.vendor ?? '').trim()
+  const category = (editingRow?.category ?? expense.category ?? '').trim()
 
   const handleDelete = async () => {
     if (!(await confirmAction('Delete this expense?'))) return
@@ -60,40 +60,60 @@ export function ExpenseDetailDrawer({
         aria-hidden
       />
       <div className="animate-slide-in-right fixed inset-y-0 right-0 z-[210] flex w-[100vw] flex-col bg-white shadow-[-8px_0_24px_-12px_rgba(9,30,66,0.15)] md:w-[576px] lg:w-[640px]">
-        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-4 md:px-6">
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Expense</p>
-            <h2 className="mt-0.5 truncate text-[22px] font-bold tracking-tight text-slate-900" dir="auto">
-              {title}
-            </h2>
-            <p className="mt-1 text-[14px] font-semibold tabular-nums text-slate-600">
-              {formatIls(Number(editingRow?.amount ?? expense.amount))}
-              <span className="mx-2 text-slate-300">·</span>
-              <span className="font-medium text-slate-500">{formatDateDisplay(editingRow?.expense_date ?? expense.expense_date)}</span>
-            </p>
+        <header className="flex shrink-0 flex-col gap-3 border-b border-slate-200 px-5 py-4 md:px-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <p className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Expense</p>
+              {(editingRow?.is_planned ?? expense.is_planned) && (
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full leading-none">
+                  Planned
+                </span>
+              )}
+            </div>
+            <div className="flex shrink-0 items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="flex h-10 min-w-[40px] items-center justify-center rounded-lg px-2 text-[13px] font-bold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
+                aria-label="Delete expense"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => void handleDelete()}
-              disabled={deleting}
-              className="flex h-10 min-w-[40px] items-center justify-center rounded-lg px-2 text-[13px] font-bold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-50"
-              aria-label="Delete expense"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100"
-              aria-label="Close"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+          <div className="w-full min-w-0 text-right leading-tight">
+            {vendor && category ? (
+              <p className="text-[22px] tracking-tight text-slate-900" dir="auto">
+                <span className="font-bold">{vendor}</span>
+                <span className="mx-1.5 font-normal text-slate-300" aria-hidden>
+                  |
+                </span>
+                <span className="font-medium text-slate-600">{category}</span>
+              </p>
+            ) : vendor ? (
+              <p className="text-[22px] font-bold tracking-tight text-slate-900" dir="auto">
+                {vendor}
+              </p>
+            ) : category ? (
+              <p className="text-[22px] font-bold tracking-tight text-slate-900" dir="auto">
+                {category}
+              </p>
+            ) : (
+              <p className="text-[22px] font-bold tracking-tight text-slate-900">Expense</p>
+            )}
           </div>
         </header>
 

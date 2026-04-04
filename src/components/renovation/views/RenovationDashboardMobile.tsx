@@ -20,14 +20,20 @@ export function RenovationDashboardMobile() {
     creating,
     handleCreate,
     spent,
+    plannedTotal,
     dashLoading,
     cap,
-    pct,
+    committedTotal,
     over,
+    spentBarPct,
+    plannedBarPct,
+    remainingBalance,
+    remainingExcludingPlanned,
+    budgetOverAmount,
     upcoming,
     upcomingEvents,
   } = useRenovationDashboardPage()
-  const { isExpenseModalOpen, setIsExpenseModalOpen, isTaskModalOpen, setIsTaskModalOpen } = useRenovation()
+  const { setExpenseModalOpen, setTaskModalOpen } = useRenovation()
 
   if (loading) return null
 
@@ -138,21 +144,46 @@ export function RenovationDashboardMobile() {
               </Link>
             </div>
             <p className={`text-[28px] font-bold tabular-nums leading-tight ${over ? 'text-rose-600' : 'text-slate-900'}`}>
-              {formatIls(cap - spent)}
+              {formatIls(remainingBalance)}
               <span className="text-[16px] font-semibold text-slate-400 ml-2">remaining</span>
             </p>
-            {over && (
-              <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(spent - cap)}</p>
+            {plannedTotal > 0 && (
+              <p className="text-[13px] text-slate-500 mt-1.5 tabular-nums">
+                Excluding planned:{' '}
+                <span className="font-semibold text-slate-700">{formatIls(remainingExcludingPlanned)}</span>
+              </p>
             )}
-            <div className="mt-3 h-2.5 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all ${over ? 'bg-rose-500' : pct >= 85 ? 'bg-amber-400' : 'bg-emerald-500'}`}
-                style={{ width: `${Math.min(pct, 100)}%` }}
-              />
+            {over && (
+              <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(budgetOverAmount)}</p>
+            )}
+            <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+              {spentBarPct > 0 && (
+                <div
+                  className="h-full shrink-0 bg-emerald-500 transition-[width] duration-700 ease-out"
+                  style={{ width: `${spentBarPct}%` }}
+                />
+              )}
+              {plannedBarPct > 0 && (
+                <div
+                  className="h-full shrink-0 bg-yellow-400 transition-[width] duration-700 ease-out"
+                  style={{ width: `${plannedBarPct}%` }}
+                />
+              )}
             </div>
             <div className="flex justify-between text-[14px] font-medium text-slate-500 mt-2 tabular-nums">
-              <span>{formatIls(spent)} spent</span>
-              <span>{formatIls(cap)} total</span>
+              <span className="min-w-0">
+                {plannedTotal > 0 ? (
+                  <>
+                    {formatIls(committedTotal)} committed
+                    <span className="block text-[12px] font-normal text-slate-400 mt-0.5">
+                      {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
+                    </span>
+                  </>
+                ) : (
+                  <span>{formatIls(spent)} spent</span>
+                )}
+              </span>
+              <span className="shrink-0">{formatIls(cap)} total</span>
             </div>
           </section>
 
@@ -220,7 +251,7 @@ export function RenovationDashboardMobile() {
             <h2 className="text-[18px] font-bold text-slate-900 mb-1">Quick actions</h2>
             <button
               type="button"
-              onClick={() => setIsExpenseModalOpen(true)}
+              onClick={() => setExpenseModalOpen(true)}
               className="flex w-full items-center gap-4 min-h-[56px] px-4 py-3 rounded-2xl bg-white border border-slate-200/60 shadow-sm active:bg-slate-50 transition-colors"
             >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
@@ -233,7 +264,7 @@ export function RenovationDashboardMobile() {
 
             <button
               type="button"
-              onClick={() => setIsTaskModalOpen(true)}
+              onClick={() => setTaskModalOpen(true)}
               className="flex w-full items-center gap-4 min-h-[56px] px-4 py-3 rounded-2xl bg-white border border-slate-200/60 shadow-sm active:bg-slate-50 transition-colors"
             >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">

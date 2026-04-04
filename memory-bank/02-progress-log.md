@@ -2,6 +2,9 @@
 
 ## Renovation app (March 2025)
 
+### Completed (planned expenses, April 2026)
+- **Renovation expenses:** `is_planned` on `renovation_expenses` ([`14_expense_planned.sql`](supabase/renovation/14_expense_planned.sql)); [`RenovationExpense`](src/types/renovation.ts) + [`createExpense` / `updateExpense`](src/lib/renovation.ts); helpers `expenseIsPlanned`, `sumSpentExpenses`, `sumPlannedExpenses`; **this month** and **budget spent** use spent-only. UI: **Spent / Planned** segmented control in [`ExpenseFormFields`](src/components/renovation/ExpenseFormFields.tsx); expenses list **filters** + badges + split totals ([`useExpensesPageState`](src/components/renovation/views/useExpensesPageState.ts), desktop/mobile views); dashboard + settings show **planned total** when > 0; [`ExpenseDetailDrawer`](src/components/renovation/ExpenseDetailDrawer.tsx) **Planned** pill. Mobile add-expense modal uses `editing={null}`. Fixed dashboard mobile quick actions to use `setExpenseModalOpen` / `setTaskModalOpen`.
+
 ### Completed (calendar task drawer desktop, March 2026)
 - **Desktop renovation calendar:** clicking a **task** chip opens [`TaskDetailDrawer`](src/components/renovation/TaskDetailDrawer.tsx) (same right “wing” as Tasks). **Edit** still opens [`TaskModal`](src/components/renovation/TaskModal.tsx). [`useCalendarPageState`](src/components/renovation/views/useCalendarPageState.ts): `viewingTask`, `openTaskFormModal` / `taskFormModalOpen`; mobile unchanged full-screen [`TaskModalMobile`](src/components/renovation/TaskModalMobile.tsx).
 

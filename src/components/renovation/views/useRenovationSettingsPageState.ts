@@ -14,6 +14,8 @@ import {
   listLabels,
   listRooms,
   listTeamMembers,
+  sumPlannedExpenses,
+  sumSpentExpenses,
   updateProject,
 } from '@/lib/renovation'
 import type {
@@ -37,6 +39,7 @@ export function useRenovationSettingsPageState() {
   const [gTags, setGTags] = useState<RenovationGalleryTag[]>([])
   const [lines, setLines] = useState<RenovationBudgetLine[]>([])
   const [spent, setSpent] = useState(0)
+  const [plannedTotal, setPlannedTotal] = useState(0)
   const [total, setTotal] = useState('')
   const [cont, setCont] = useState('')
   const [loading, setLoading] = useState(true)
@@ -68,7 +71,8 @@ export function useRenovationSettingsPageState() {
       setLabels(l)
       setGTags(g)
       setLines(bl)
-      setSpent(ex.reduce((s, e) => s + Number(e.amount), 0))
+      setSpent(sumSpentExpenses(ex))
+      setPlannedTotal(sumPlannedExpenses(ex))
       setTotal(String(project.total_budget))
       setCont(String(project.contingency_amount))
       setProjNotes(project.notes || '')
@@ -140,6 +144,7 @@ export function useRenovationSettingsPageState() {
     gTags,
     lines,
     spent,
+    plannedTotal,
     total,
     setTotal,
     cont,

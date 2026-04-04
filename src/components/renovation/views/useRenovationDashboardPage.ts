@@ -11,6 +11,8 @@ import {
   listGalleryItems,
   listTasks,
   expensesThisMonth,
+  sumPlannedExpenses,
+  sumSpentExpenses,
 } from '@/lib/renovation'
 import { taskDueCalendarDiffDays } from '@/lib/renovation-format'
 import type {
@@ -68,6 +70,7 @@ export function useRenovationDashboardPage() {
   const [contingency, setContingency] = useState('')
   const [creating, setCreating] = useState(false)
   const [spent, setSpent] = useState(0)
+  const [plannedTotal, setPlannedTotal] = useState(0)
   const [monthSpend, setMonthSpend] = useState(0)
   const [recentExpenses, setRecentExpenses] = useState<RenovationExpense[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
@@ -85,7 +88,8 @@ export function useRenovationDashboardPage() {
         listCalendarEvents(project.id).catch(() => [] as RenovationCalendarEvent[]),
         listGalleryItems(project.id),
       ])
-      setSpent(ex.reduce((s, e) => s + Number(e.amount), 0))
+      setSpent(sumSpentExpenses(ex))
+      setPlannedTotal(sumPlannedExpenses(ex))
       setMonthSpend(expensesThisMonth(ex))
       setRecentExpenses(ex.slice(0, 5))
       setTasks(t)
@@ -124,9 +128,40 @@ export function useRenovationDashboardPage() {
     }
   }
 
-  const cap = project ? effectiveBudget(project) : 0
-  const pct = cap > 0 ? Math.min(100, (spent / cap) * 100) : 0
-  const over = project ? spent > cap && cap > 0 : false
+  const {
+    cap,
+    committedTotal,
+    over,
+    remainingBalance,
+    remainingExcludingPlanned,
+    budgetOverAmount,
+    spentBarPct,
+    plannedBarPct,
+  } = useMemo(() => {
+    const capVal = project ? effectiveBudget(project) : 0
+    const committed = spent + plannedTotal
+    const overVal = project ? committed > capVal && capVal > 0 : false
+
+    let spentBarPct = capVal > 0 ? (spent / capVal) * 100 : 0
+    let plannedBarPct = capVal > 0 ? (plannedTotal / capVal) * 100 : 0
+    if (spentBarPct + plannedBarPct > 100) {
+      const t = spentBarPct + plannedBarPct
+      spentBarPct = (spentBarPct / t) * 100
+      plannedBarPct = (plannedBarPct / t) * 100
+    }
+
+    return {
+      cap: capVal,
+      committedTotal: committed,
+      over: overVal,
+      remainingBalance: capVal - committed,
+      remainingExcludingPlanned: capVal - spent,
+      budgetOverAmount: Math.max(0, committed - capVal),
+      spentBarPct,
+      plannedBarPct,
+    }
+  }, [project, spent, plannedTotal])
+
   const openTasks = tasks.filter((t) => t.status !== 'done').length
   const overdue = tasks.filter((t) => {
     if (!t.due_date || t.status === 'done') return false
@@ -159,6 +194,7 @@ export function useRenovationDashboardPage() {
     creating,
     handleCreate,
     spent,
+    plannedTotal,
     monthSpend,
     recentExpenses,
     tasks,
@@ -166,8 +202,13 @@ export function useRenovationDashboardPage() {
     dashLoading,
     loadDash,
     cap,
-    pct,
+    committedTotal,
     over,
+    remainingBalance,
+    remainingExcludingPlanned,
+    budgetOverAmount,
+    spentBarPct,
+    plannedBarPct,
     openTasks,
     overdue,
     upcoming,

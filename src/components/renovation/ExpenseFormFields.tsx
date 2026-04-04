@@ -3,6 +3,7 @@
 import { renovationPublicUrl } from '@/lib/renovation'
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { useExpenseForm } from '@/components/renovation/useExpenseForm'
+import { cn } from '@/utils/common'
 
 export type ExpenseFormFieldsModel = ReturnType<typeof useExpenseForm>
 
@@ -27,6 +28,8 @@ export function ExpenseFormFields({ form, autoFocusAmount = true }: ExpenseFormF
     setNotes,
     payment,
     setPayment,
+    isPlanned,
+    setIsPlanned,
     saving,
     uploadingAttach,
     attachments,
@@ -58,6 +61,35 @@ export function ExpenseFormFields({ form, autoFocusAmount = true }: ExpenseFormF
         </div>
       </div>
 
+      <div className="space-y-2">
+        <p className="text-center text-[11px] font-bold uppercase tracking-widest text-slate-400">Type</p>
+        <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+          <button
+            type="button"
+            onClick={() => setIsPlanned(false)}
+            className={cn(
+              'flex-1 rounded-lg py-2.5 text-[14px] font-bold transition-colors',
+              !isPlanned ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            )}
+          >
+            Spent
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsPlanned(true)}
+            className={cn(
+              'flex-1 rounded-lg py-2.5 text-[14px] font-bold transition-colors',
+              isPlanned ? 'bg-amber-50 text-amber-900 ring-1 ring-amber-200/80' : 'text-slate-500 hover:text-slate-700'
+            )}
+          >
+            Planned
+          </button>
+        </div>
+        <p className="text-center text-[12px] text-slate-400 px-2">
+          {isPlanned ? 'Not paid yet — counts toward “planned” totals, not budget spent.' : 'Money already out.'}
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Vendor</label>
@@ -83,8 +115,27 @@ export function ExpenseFormFields({ form, autoFocusAmount = true }: ExpenseFormF
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Date</label>
-          <DatePicker value={date} onChange={setDate} />
+          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+            {isPlanned ? 'Expected date (optional)' : 'Date'}
+          </label>
+          <div className="flex gap-2 items-start">
+            <div className="min-w-0 flex-1">
+              <DatePicker
+                value={date}
+                onChange={setDate}
+                placeholder={isPlanned ? 'No date' : 'Select date'}
+              />
+            </div>
+            {isPlanned && date ? (
+              <button
+                type="button"
+                onClick={() => setDate('')}
+                className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
         </div>
         <div className="space-y-1.5">
           <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Payment</label>

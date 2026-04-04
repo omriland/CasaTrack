@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   createExpense,
@@ -23,16 +23,23 @@ export function useExpenseForm({
 }) {
   const { project } = useRenovation()
   const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState('')
   const [vendor, setVendor] = useState('')
   const [category, setCategory] = useState('')
   const [notes, setNotes] = useState('')
   const [payment, setPayment] = useState('')
+  const [isPlanned, setIsPlanned] = useState(false)
   const [saving, setSaving] = useState(false)
   const [attachments, setAttachments] = useState<RenovationExpenseAttachment[]>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [uploadingAttach, setUploadingAttach] = useState(false)
   const confirmAction = useConfirm()
+  const prevPlannedRef = useRef<boolean | null>(null)
+  const editingKey = editing?.id ?? 'new'
+
+  useEffect(() => {
+    prevPlannedRef.current = null
+  }, [editingKey])
 
   const loadAttachments = useCallback(async () => {
     if (!editing?.id) {
@@ -46,8 +53,6 @@ export function useExpenseForm({
     }
   }, [editing?.id])
 
-  const editingKey = editing?.id ?? 'new'
-
   useEffect(() => {
     if (editing) {
       setAmount(
@@ -56,11 +61,12 @@ export function useExpenseForm({
           .map((part, i) => (i === 0 ? part.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : part))
           .join('.')
       )
-      setDate(editing.expense_date)
+      setDate(editing.expense_date ?? '')
       setVendor(editing.vendor || '')
       setCategory(editing.category || '')
       setNotes(editing.notes || '')
       setPayment(editing.payment_method || '')
+      setIsPlanned(editing.is_planned === true)
     } else {
       setAmount('')
       setDate(new Date().toISOString().slice(0, 10))
@@ -68,10 +74,26 @@ export function useExpenseForm({
       setCategory('')
       setNotes('')
       setPayment('')
+      setIsPlanned(false)
     }
     setPendingFiles([])
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form when switching expense only (editingKey); avoid clearing pending on parent re-renders with new object ref
   }, [editingKey])
+
+  useEffect(() => {
+    if (prevPlannedRef.current === null) {
+      prevPlannedRef.current = isPlanned
+      return
+    }
+    if (prevPlannedRef.current === isPlanned) return
+    prevPlannedRef.current = isPlanned
+    if (isPlanned) {
+      setDate('')
+    } else if (!date.trim()) {
+      setDate(new Date().toISOString().slice(0, 10))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when isPlanned toggles; date read intentionally stale for empty check
+  }, [isPlanned, editingKey])
 
   useEffect(() => {
     loadAttachments()
@@ -145,27 +167,36 @@ export function useExpenseForm({
     if (!project) return
     const n = Number(amount.replace(/,/g, ''))
     if (Number.isNaN(n)) return
+    const resolvedDate = isPlanned
+      ? date.trim() === ''
+        ? null
+        : date.trim()
+      : date.trim() === ''
+        ? new Date().toISOString().slice(0, 10)
+        : date.trim()
     setSaving(true)
     try {
       if (editing) {
         await updateExpense(editing.id, {
           amount: n,
-          expense_date: date,
+          expense_date: resolvedDate,
           vendor: vendor || null,
           category: category || null,
           notes: notes || null,
           payment_method: payment || null,
+          is_planned: isPlanned,
         })
         await attachPendingToExpenseId(editing.id)
         await loadAttachments()
       } else {
         const created = await createExpense(project.id, {
           amount: n,
-          expense_date: date,
+          expense_date: resolvedDate,
           vendor: vendor || null,
           category: category || null,
           notes: notes || null,
           payment_method: payment || null,
+          is_planned: isPlanned,
         })
         await attachPendingToExpenseId(created.id)
       }
@@ -192,6 +223,8 @@ export function useExpenseForm({
     setNotes,
     payment,
     setPayment,
+    isPlanned,
+    setIsPlanned,
     saving,
     uploadingAttach,
     attachments,
