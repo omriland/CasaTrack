@@ -1,3 +1,4 @@
+import { defaultTimedEnd } from '@/lib/calendar-datetime'
 import { supabase } from '@/lib/supabase'
 import type {
   RenovationProject,
@@ -737,12 +738,6 @@ export async function listCalendarEvents(projectId: string): Promise<RenovationC
     provider: e.provider_id ? providerMap.get(e.provider_id) ?? null : null,
     created_by: e.created_by_member_id ? memberMap.get(e.created_by_member_id) ?? null : null,
   }))
-}
-
-function defaultTimedEnd(startsAtIso: string): string {
-  const d = new Date(startsAtIso)
-  if (Number.isNaN(d.getTime())) return startsAtIso
-  return new Date(d.getTime() + 60 * 60 * 1000).toISOString()
 }
 
 export async function createCalendarEvent(

@@ -2,28 +2,18 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { DatePicker } from '@/components/renovation/DatePicker'
+import {
+  CALENDAR_DATETIME_LOCAL_STEP_SEC,
+  defaultTimedEnd,
+  endsAtPreservingDuration,
+  fromDatetimeLocal,
+  toDatetimeLocalValue,
+} from '@/lib/calendar-datetime'
 import { deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
 import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 import { format, parseISO } from 'date-fns'
-
-function toDatetimeLocalValue(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function fromDatetimeLocal(s: string): string {
-  return new Date(s).toISOString()
-}
-
-function defaultTimedEnd(startIso: string): string {
-  const d = new Date(startIso)
-  d.setHours(d.getHours() + 1)
-  return d.toISOString()
-}
 
 type DetailPicker = 'type' | 'provider' | null
 
@@ -588,17 +578,23 @@ export function CalendarEventDetailDrawer({
                       <span className="mb-1 block text-[13px] font-semibold text-[#5e6c84]">Starts</span>
                       <input
                         type="datetime-local"
+                        step={CALENDAR_DATETIME_LOCAL_STEP_SEC}
                         value={event.starts_at ? toDatetimeLocalValue(event.starts_at) : ''}
                         onChange={(e) => {
                           const v = e.target.value
                           if (!v) return
                           const iso = fromDatetimeLocal(v)
+                          const prevStart = event.starts_at
+                          const endsAt =
+                            prevStart != null
+                              ? endsAtPreservingDuration(prevStart, event.ends_at, iso)
+                              : defaultTimedEnd(iso)
                           void persist({
                             is_all_day: false,
                             start_date: null,
                             end_date: null,
                             starts_at: iso,
-                            ends_at: event.ends_at || defaultTimedEnd(iso),
+                            ends_at: endsAt,
                           })
                         }}
                         className="box-border w-full min-h-[40px] rounded-md border border-slate-200 bg-white px-2 py-2 text-[14px] font-semibold text-[#172b4d] shadow-sm focus:border-[#4c9aff] focus:outline-none focus:ring-1 focus:ring-[#4c9aff]"
@@ -608,6 +604,7 @@ export function CalendarEventDetailDrawer({
                       <span className="mb-1 block text-[13px] font-semibold text-[#5e6c84]">Ends (optional)</span>
                       <input
                         type="datetime-local"
+                        step={CALENDAR_DATETIME_LOCAL_STEP_SEC}
                         value={event.ends_at ? toDatetimeLocalValue(event.ends_at) : ''}
                         onChange={(e) => {
                           const v = e.target.value

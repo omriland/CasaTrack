@@ -4,24 +4,18 @@ import { useEffect, useState } from 'react'
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
+import {
+  CALENDAR_DATETIME_LOCAL_STEP_SEC,
+  endsAtPreservingDuration,
+  fromDatetimeLocal,
+  toDatetimeLocalValue,
+} from '@/lib/calendar-datetime'
 import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
 import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 
 const selectField =
   'box-border w-full min-w-0 max-w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/20'
-
-function toDatetimeLocalValue(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-function fromDatetimeLocal(s: string): string {
-  const d = new Date(s)
-  return d.toISOString()
-}
 
 function defaultDayStartIso(dayKey: string): string {
   const [y, m, d] = dayKey.split('-').map(Number)
@@ -301,8 +295,24 @@ export function CalendarEventModal({
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Starts</label>
             <input
               type="datetime-local"
+              step={CALENDAR_DATETIME_LOCAL_STEP_SEC}
               value={startLocal}
-              onChange={(e) => setStartLocal(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value
+                if (!next) {
+                  setStartLocal('')
+                  return
+                }
+                if (startLocal.trim() && endLocal.trim()) {
+                  const newEndIso = endsAtPreservingDuration(
+                    fromDatetimeLocal(startLocal),
+                    fromDatetimeLocal(endLocal.trim()),
+                    fromDatetimeLocal(next)
+                  )
+                  setEndLocal(toDatetimeLocalValue(newEndIso))
+                }
+                setStartLocal(next)
+              }}
               className={`${selectField} mt-1`}
               required
             />
@@ -311,6 +321,7 @@ export function CalendarEventModal({
             <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Ends (optional)</label>
             <input
               type="datetime-local"
+              step={CALENDAR_DATETIME_LOCAL_STEP_SEC}
               value={endLocal}
               onChange={(e) => setEndLocal(e.target.value)}
               className={`${selectField} mt-1`}

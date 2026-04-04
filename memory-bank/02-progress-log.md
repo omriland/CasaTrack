@@ -2,6 +2,9 @@
 
 ## Renovation app (March 2025)
 
+### Completed (calendar timed inputs, April 2026)
+- **Renovation calendar:** `datetime-local` for Starts/Ends uses **5-minute** steps (`step={300}`) in [`CalendarEventModal`](src/components/renovation/CalendarEventModal.tsx) and [`CalendarEventDetailDrawer`](src/components/renovation/CalendarEventDetailDrawer.tsx). Changing **Starts** only keeps event **duration** (end = new start + previous span; if no stored end, span = 1h via [`endsAtPreservingDuration`](src/lib/calendar-datetime.ts)). Shared helpers in [`calendar-datetime.ts`](src/lib/calendar-datetime.ts); [`defaultTimedEnd`](src/lib/renovation.ts) re-exported from there.
+
 ### Completed (gallery lightbox album scope, April 2026)
 - **Photos / Albums:** Opening the lightbox from inside a label album now passes only that album’s photo list to [`Lightbox`](src/components/renovation/Lightbox.tsx) (`lightboxSlides` in [`GalleryBody.tsx`](src/components/renovation/views/GalleryBody.tsx)), so swipe stays within the chosen gallery. **All Photos** behavior unchanged (filtered/sorted grid).
 
