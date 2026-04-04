@@ -21,7 +21,6 @@ export function FilesMobile() {
     setSearchQuery,
     load,
     handleFiles,
-    saveName,
     saveRoom,
     filtered,
     rooms,

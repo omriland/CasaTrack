@@ -7,17 +7,17 @@ import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSh
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { memberAvatarChipStyle, memberAvatarLetter } from '@/lib/member-avatar'
-import type { RenovationTask, TaskStatus } from '@/types/renovation'
+import type { RenovationTask, TaskStatus, TaskUrgency } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
 import { STATUSES, sortTasks } from './tasks-page-shared'
 
 type StatusTab = 'all' | TaskStatus
 
-const PRIORITY_LABELS: Record<string, string> = {
-  urgent: 'Urgent',
-  high: 'High',
-  medium: 'Medium',
+const PRIORITY_LABELS: Record<TaskUrgency, string> = {
   low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  critical: 'Urgent',
 }
 
 export function TasksMobile() {
@@ -274,7 +274,7 @@ function TaskCard({ task: t, onTap, onToggleDone }: { task: RenovationTask; onTa
               </span>
             )}
             {priorityLabel && t.urgency !== 'medium' && (
-              <span className={`text-[13px] font-semibold ${t.urgency === 'urgent' ? 'text-rose-600' : t.urgency === 'high' ? 'text-amber-600' : 'text-slate-400'}`}>
+              <span className={`text-[13px] font-semibold ${t.urgency === 'critical' ? 'text-rose-600' : t.urgency === 'high' ? 'text-amber-600' : 'text-slate-400'}`}>
                 {priorityLabel}
               </span>
             )}
