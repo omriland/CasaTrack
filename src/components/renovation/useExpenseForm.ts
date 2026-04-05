@@ -12,14 +12,24 @@ import {
 import type { RenovationExpense, RenovationExpenseAttachment } from '@/types/renovation'
 import { useConfirm } from '@/providers/ConfirmProvider'
 
+export type ExpenseFormVariant = 'default' | 'spentOnly' | 'plannedOnly'
+
 export function useExpenseForm({
   editing,
   onSave,
   onAttachmentsChanged,
+  variant = 'default',
+  createLinkedPlannedId = null,
+  prefillPlannedRow = null,
 }: {
   editing?: RenovationExpense | null
   onSave: () => void
   onAttachmentsChanged?: () => void
+  variant?: ExpenseFormVariant
+  /** New spent row only: FK to planned expense */
+  createLinkedPlannedId?: string | null
+  /** Seed amount / vendor / category when opening linked spend form */
+  prefillPlannedRow?: RenovationExpense | null
 }) {
   const { project } = useRenovation()
   const [amount, setAmount] = useState('')
@@ -35,10 +45,15 @@ export function useExpenseForm({
   const [uploadingAttach, setUploadingAttach] = useState(false)
   const confirmAction = useConfirm()
   const prevPlannedRef = useRef<boolean | null>(null)
+  const prefillAppliedForId = useRef<string | null>(null)
   const editingKey = editing?.id ?? 'new'
+
+  const showTypeToggle = variant === 'default'
+  const plannedMode = variant === 'plannedOnly' || (variant === 'default' && isPlanned)
 
   useEffect(() => {
     prevPlannedRef.current = null
+    prefillAppliedForId.current = null
   }, [editingKey])
 
   const loadAttachments = useCallback(async () => {
@@ -74,13 +89,33 @@ export function useExpenseForm({
       setCategory('')
       setNotes('')
       setPayment('')
-      setIsPlanned(false)
+      setIsPlanned(variant === 'plannedOnly')
     }
     setPendingFiles([])
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reset form when switching expense only (editingKey); avoid clearing pending on parent re-renders with new object ref
   }, [editingKey])
 
   useEffect(() => {
+    if (editing || variant !== 'spentOnly' || !prefillPlannedRow) return
+    if (prefillAppliedForId.current === prefillPlannedRow.id) return
+    prefillAppliedForId.current = prefillPlannedRow.id
+    setAmount(
+      String(prefillPlannedRow.amount)
+        .split('.')
+        .map((part, i) => (i === 0 ? part.replace(/\B(?=(\d{3})+(?!\d))/g, ',') : part))
+        .join('.')
+    )
+    setVendor(prefillPlannedRow.vendor || '')
+    setCategory(prefillPlannedRow.category || '')
+  }, [editing, variant, prefillPlannedRow?.id, prefillPlannedRow])
+
+  useEffect(() => {
+    if (variant === 'plannedOnly') setIsPlanned(true)
+    if (variant === 'spentOnly') setIsPlanned(false)
+  }, [variant])
+
+  useEffect(() => {
+    if (variant !== 'default') return
     if (prevPlannedRef.current === null) {
       prevPlannedRef.current = isPlanned
       return
@@ -93,7 +128,7 @@ export function useExpenseForm({
       setDate(new Date().toISOString().slice(0, 10))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when isPlanned toggles; date read intentionally stale for empty check
-  }, [isPlanned, editingKey])
+  }, [isPlanned, editingKey, variant])
 
   useEffect(() => {
     loadAttachments()
@@ -167,7 +202,7 @@ export function useExpenseForm({
     if (!project) return
     const n = Number(amount.replace(/,/g, ''))
     if (Number.isNaN(n)) return
-    const resolvedDate = isPlanned
+    const resolvedDate = plannedMode
       ? date.trim() === ''
         ? null
         : date.trim()
@@ -177,6 +212,8 @@ export function useExpenseForm({
     setSaving(true)
     try {
       if (editing) {
+        const nextLink =
+          plannedMode ? null : (editing.linked_planned_expense_id ?? createLinkedPlannedId ?? null)
         await updateExpense(editing.id, {
           amount: n,
           expense_date: resolvedDate,
@@ -184,7 +221,8 @@ export function useExpenseForm({
           category: category || null,
           notes: notes || null,
           payment_method: payment || null,
-          is_planned: isPlanned,
+          is_planned: plannedMode,
+          linked_planned_expense_id: nextLink,
         })
         await attachPendingToExpenseId(editing.id)
         await loadAttachments()
@@ -196,7 +234,8 @@ export function useExpenseForm({
           category: category || null,
           notes: notes || null,
           payment_method: payment || null,
-          is_planned: isPlanned,
+          is_planned: plannedMode,
+          linked_planned_expense_id: plannedMode ? null : createLinkedPlannedId ?? null,
         })
         await attachPendingToExpenseId(created.id)
       }
@@ -225,6 +264,8 @@ export function useExpenseForm({
     setPayment,
     isPlanned,
     setIsPlanned,
+    plannedMode,
+    showTypeToggle,
     saving,
     uploadingAttach,
     attachments,

@@ -83,8 +83,20 @@ export interface RenovationExpense {
   receipt_storage_path: string | null
   /** True = expected cost not yet paid */
   is_planned: boolean
+  /** Spent rows only: optional link to a planned row this payment counts toward */
+  linked_planned_expense_id: string | null
   created_at: string
   updated_at: string
+}
+
+/** Cash paid toward a vendor row (partial payments vs “actual” amount). */
+export interface RenovationVendorPayment {
+  id: string
+  project_id: string
+  vendor_key: string
+  amount: number
+  note: string | null
+  created_at: string
 }
 
 /** Multiple files per expense (bucket: renovation-files) */

@@ -18,7 +18,9 @@ import type {
   RenovationProvider,
   RenovationCalendarEvent,
   CalendarEventType,
+  RenovationVendorPayment,
 } from '@/types/renovation'
+import { normalizeVendorKey } from '@/lib/renovation-vendor-budget'
 
 const BUCKET = 'renovation-gallery'
 const FILES_BUCKET = 'renovation-files'
@@ -216,6 +218,22 @@ export async function deleteBudgetLine(id: string): Promise<void> {
 
 // --- Expenses ---
 
+export function mapExpenseRow(row: RenovationExpense): RenovationExpense {
+  return {
+    ...row,
+    expense_date: row.expense_date ?? null,
+    is_planned: row.is_planned === true,
+    linked_planned_expense_id: row.linked_planned_expense_id ?? null,
+  }
+}
+
+export async function getExpenseById(id: string): Promise<RenovationExpense | null> {
+  const { data, error } = await supabase.from('renovation_expenses').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  return mapExpenseRow(data as RenovationExpense)
+}
+
 export function expenseIsPlanned(e: RenovationExpense): boolean {
   return e.is_planned === true
 }
@@ -228,6 +246,29 @@ export function sumPlannedExpenses(expenses: RenovationExpense[]): number {
   return expenses.filter(expenseIsPlanned).reduce((s, e) => s + Number(e.amount), 0)
 }
 
+/** Sum of spent rows linked to a given planned expense id. */
+export function sumSpentLinkedToPlanned(expenses: RenovationExpense[], plannedId: string): number {
+  return expenses
+    .filter((e) => !expenseIsPlanned(e) && e.linked_planned_expense_id === plannedId)
+    .reduce((s, e) => s + Number(e.amount), 0)
+}
+
+/**
+ * Remaining “open” amount per planned row after linked spent (not below zero).
+ * Sum across all planned rows — used for budget bar / committed breakdown.
+ */
+export function openPlannedRemainderTotal(expenses: RenovationExpense[]): number {
+  return expenses.filter(expenseIsPlanned).reduce((sum, p) => {
+    const linked = sumSpentLinkedToPlanned(expenses, p.id)
+    return sum + Math.max(0, Number(p.amount) - linked)
+  }, 0)
+}
+
+/** committed = all spent + Σ max(0, planned − linked spent per plan) */
+export function committedTowardCap(expenses: RenovationExpense[]): number {
+  return sumSpentExpenses(expenses) + openPlannedRemainderTotal(expenses)
+}
+
 export async function listExpenses(projectId: string): Promise<RenovationExpense[]> {
   const { data, error } = await supabase
     .from('renovation_expenses')
@@ -237,11 +278,7 @@ export async function listExpenses(projectId: string): Promise<RenovationExpense
     .order('created_at', { ascending: false })
 
   if (error) throw error
-  return ((data || []) as RenovationExpense[]).map((row) => ({
-    ...row,
-    expense_date: row.expense_date ?? null,
-    is_planned: row.is_planned === true,
-  }))
+  return ((data || []) as RenovationExpense[]).map(mapExpenseRow)
 }
 
 export async function sumExpenses(projectId: string): Promise<number> {
@@ -260,8 +297,14 @@ export async function createExpense(
     payment_method?: string | null
     receipt_storage_path?: string | null
     is_planned?: boolean
+    linked_planned_expense_id?: string | null
   }
 ): Promise<RenovationExpense> {
+  const isPlanned = row.is_planned ?? false
+  const linkId =
+    isPlanned || row.linked_planned_expense_id === undefined || row.linked_planned_expense_id === null
+      ? null
+      : row.linked_planned_expense_id
   const { data, error } = await supabase
     .from('renovation_expenses')
     .insert({
@@ -276,13 +319,14 @@ export async function createExpense(
       notes: row.notes ?? null,
       payment_method: row.payment_method ?? null,
       receipt_storage_path: row.receipt_storage_path ?? null,
-      is_planned: row.is_planned ?? false,
+      is_planned: isPlanned,
+      linked_planned_expense_id: linkId,
     })
     .select()
     .single()
 
   if (error) throw error
-  return data as RenovationExpense
+  return mapExpenseRow(data as RenovationExpense)
 }
 
 export async function updateExpense(
@@ -298,6 +342,7 @@ export async function updateExpense(
       | 'payment_method'
       | 'receipt_storage_path'
       | 'is_planned'
+      | 'linked_planned_expense_id'
     >
   >
 ): Promise<void> {
@@ -317,6 +362,153 @@ export async function deleteExpense(id: string): Promise<void> {
   }
   const { error } = await supabase.from('renovation_expenses').delete().eq('id', id)
   if (error) throw error
+}
+
+/** Replace all planned rows for this vendor with a single planned expense of `amount` (0 removes planned). */
+export async function setVendorPlannedTotal(projectId: string, vendorDisplay: string, amount: number): Promise<void> {
+  const key = normalizeVendorKey(vendorDisplay)
+  const all = await listExpenses(projectId)
+  const planned = all.filter((e) => expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const spent = all.filter((e) => !expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const oldPlannedIds = new Set(planned.map((p) => p.id))
+
+  for (const p of planned) await deleteExpense(p.id)
+
+  let newPlannedId: string | null = null
+  if (amount > 0) {
+    const created = await createExpense(projectId, {
+      vendor: vendorDisplay.trim() || null,
+      amount,
+      is_planned: true,
+      expense_date: null,
+    })
+    newPlannedId = created.id
+  }
+
+  for (const s of spent) {
+    const wasLinked = s.linked_planned_expense_id && oldPlannedIds.has(s.linked_planned_expense_id)
+    await updateExpense(s.id, {
+      linked_planned_expense_id: wasLinked ? newPlannedId : (s.linked_planned_expense_id ?? null),
+    })
+  }
+}
+
+/** Set total spent for vendor: merges multiple spent rows into one (keeps oldest for attachments). */
+export async function setVendorSpentTotal(projectId: string, vendorDisplay: string, amount: number): Promise<void> {
+  const key = normalizeVendorKey(vendorDisplay)
+  const all = await listExpenses(projectId)
+  const spent = all.filter((e) => !expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const planned = all.find((e) => expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const linkId = planned?.id ?? null
+
+  if (amount <= 0) {
+    for (const s of spent) await deleteExpense(s.id)
+    return
+  }
+
+  if (spent.length === 0) {
+    await createExpense(projectId, {
+      vendor: vendorDisplay.trim() || null,
+      amount,
+      is_planned: false,
+      expense_date: new Date().toISOString().slice(0, 10),
+      linked_planned_expense_id: linkId,
+    })
+    return
+  }
+
+  const sorted = [...spent].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  const [keep, ...rest] = sorted
+  await updateExpense(keep!.id, { amount, linked_planned_expense_id: linkId })
+  for (const r of rest) await deleteExpense(r.id)
+}
+
+/** Ensure at least one expense row exists for this vendor (0₪ planned) so attachments can be stored. */
+export async function ensureVendorExpenseForAttachments(projectId: string, vendorDisplay: string): Promise<string> {
+  const key = normalizeVendorKey(vendorDisplay)
+  const all = await listExpenses(projectId)
+  const rows = all.filter((e) => normalizeVendorKey(e.vendor) === key)
+  const spent = rows.find((e) => !expenseIsPlanned(e))
+  if (spent) return spent.id
+  const planned = rows.find((e) => expenseIsPlanned(e))
+  if (planned) return planned.id
+  const created = await createExpense(projectId, {
+    vendor: vendorDisplay.trim() || null,
+    amount: 0,
+    is_planned: true,
+    expense_date: null,
+  })
+  return created.id
+}
+
+export async function updateVendorExpenseMeta(
+  projectId: string,
+  vendorDisplay: string,
+  patch: { category?: string | null; notes?: string | null; payment_method?: string | null }
+): Promise<void> {
+  const key = normalizeVendorKey(vendorDisplay)
+  const all = await listExpenses(projectId)
+  const rows = all.filter((e) => normalizeVendorKey(e.vendor) === key)
+  for (const e of rows) {
+    await updateExpense(e.id, patch)
+  }
+}
+
+async function renameVendorPaymentKeys(projectId: string, fromKey: string, toKey: string): Promise<void> {
+  if (fromKey === toKey) return
+  const { error } = await supabase
+    .from('renovation_vendor_payments')
+    .update({ vendor_key: toKey })
+    .eq('project_id', projectId)
+    .eq('vendor_key', fromKey)
+  if (error) throw error
+}
+
+export async function renameVendorAcrossExpenses(projectId: string, fromKey: string, toDisplayName: string): Promise<void> {
+  const trimmed = toDisplayName.trim()
+  const toKey = normalizeVendorKey(trimmed)
+  const all = await listExpenses(projectId)
+  const rows = all.filter((e) => normalizeVendorKey(e.vendor) === fromKey)
+  for (const e of rows) {
+    await updateExpense(e.id, { vendor: trimmed || null })
+  }
+  await renameVendorPaymentKeys(projectId, fromKey, toKey)
+}
+
+export async function listVendorPayments(projectId: string): Promise<RenovationVendorPayment[]> {
+  const { data, error } = await supabase
+    .from('renovation_vendor_payments')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return ((data || []) as RenovationVendorPayment[]).map((row) => ({
+    ...row,
+    amount: Number(row.amount),
+    note: row.note ?? null,
+  }))
+}
+
+export async function createVendorPayment(
+  projectId: string,
+  vendorKey: string,
+  row: { amount: number; note?: string | null }
+): Promise<RenovationVendorPayment> {
+  const { data, error } = await supabase
+    .from('renovation_vendor_payments')
+    .insert({
+      project_id: projectId,
+      vendor_key: vendorKey,
+      amount: row.amount,
+      note: row.note?.trim() ? row.note.trim() : null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  const p = data as RenovationVendorPayment
+  return { ...p, amount: Number(p.amount), note: p.note ?? null }
 }
 
 export async function listExpenseAttachmentsForExpense(expenseId: string): Promise<RenovationExpenseAttachment[]> {

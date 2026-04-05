@@ -126,7 +126,15 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
       </section>
 
       <section className={`bg-white rounded-[2rem] border border-slate-200/60 shadow-sm ${sec} space-y-4`}>
-        <h2 className="text-[18px] font-bold text-slate-900">Budget Totals</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-[18px] font-bold text-slate-900">Budget Totals</h2>
+          <Link
+            href="/renovation/budget"
+            className="text-[14px] font-bold text-indigo-600 hover:text-indigo-500 shrink-0"
+          >
+            Vendor budget vs actual →
+          </Link>
+        </div>
         <div className={`grid ${grid2} gap-4`}>
           <div>
             <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Total Budget (₪)</label>

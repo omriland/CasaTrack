@@ -15,7 +15,7 @@ import {
   getStoredProfileMemberId,
   setStoredProfileMemberId,
 } from '@/lib/renovation-profile'
-import type { RenovationProject, RenovationTeamMember } from '@/types/renovation'
+import type { RenovationExpense, RenovationProject, RenovationTeamMember } from '@/types/renovation'
 
 function resolveProfileFromMembers(
   projectId: string,
@@ -26,6 +26,13 @@ function resolveProfileFromMembers(
   if (match) return { active: match, needsPick: false }
   if (members.length > 0) return { active: null, needsPick: true }
   return { active: null, needsPick: false }
+}
+
+export type ExpenseModalOpenOptions = {
+  /** Edit an existing row (skips new-spend picker) */
+  editing?: RenovationExpense | null
+  /** New spent row linked to this planned row (skips picker) */
+  linkToPlanned?: RenovationExpense | null
 }
 
 type Ctx = {
@@ -45,8 +52,13 @@ type Ctx = {
   isExpenseModalOpen: boolean
   isQuickUploadOpen: boolean
   quickUploadFile: File | null
+  expenseModalEditing: RenovationExpense | null
+  expenseModalLinkToPlanned: RenovationExpense | null
+  expenseModalPickPlannedForNewSpend: boolean
   setTaskModalOpen: (open: boolean) => void
   setExpenseModalOpen: (open: boolean) => void
+  /** Open expense modal: default new spent flow shows “link to plan” picker first. */
+  openExpenseModal: (opts?: ExpenseModalOpenOptions) => void
   setQuickUploadFile: (file: File | null) => void
 }
 
@@ -62,8 +74,29 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
   const [needsProfilePick, setNeedsProfilePick] = useState(false)
 
   const [isTaskModalOpen, setTaskModalOpen] = useState(false)
-  const [isExpenseModalOpen, setExpenseModalOpen] = useState(false)
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false)
+  const [expenseModalEditing, setExpenseModalEditing] = useState<RenovationExpense | null>(null)
+  const [expenseModalLinkToPlanned, setExpenseModalLinkToPlanned] = useState<RenovationExpense | null>(null)
+  const [expenseModalPickPlannedForNewSpend, setExpenseModalPickPlannedForNewSpend] = useState(true)
   const [quickUploadFile, setQuickUploadFile] = useState<File | null>(null)
+
+  const setExpenseModalOpen = useCallback((open: boolean) => {
+    setIsExpenseModalOpen(open)
+    if (!open) {
+      setExpenseModalEditing(null)
+      setExpenseModalLinkToPlanned(null)
+      setExpenseModalPickPlannedForNewSpend(true)
+    }
+  }, [])
+
+  const openExpenseModal = useCallback((opts?: ExpenseModalOpenOptions) => {
+    const editing = opts?.editing ?? null
+    const link = opts?.linkToPlanned ?? null
+    setExpenseModalEditing(editing)
+    setExpenseModalLinkToPlanned(link)
+    setExpenseModalPickPlannedForNewSpend(!editing && !link)
+    setIsExpenseModalOpen(true)
+  }, [])
 
   const refresh = useCallback(async () => {
     try {
@@ -193,6 +226,10 @@ export function RenovationProvider({ children }: { children: ReactNode }) {
         quickUploadFile,
         setTaskModalOpen,
         setExpenseModalOpen,
+        openExpenseModal,
+        expenseModalEditing,
+        expenseModalLinkToPlanned,
+        expenseModalPickPlannedForNewSpend,
         setQuickUploadFile,
       }}
     >

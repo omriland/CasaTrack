@@ -1,5 +1,9 @@
 'use client'
 
+import { useToast } from '@/components/ui/Toast'
+import type { RenovationNeed, RenovationRoom } from '@/types/renovation'
+import { formatNeedsAsCopyList } from './needs-page-shared'
+
 type Props = {
   completed: boolean
   onToggle: () => void
@@ -42,6 +46,53 @@ export function NeedDoneToggle({ completed, onToggle, mobile }: Props) {
           </svg>
         ) : null}
       </span>
+    </button>
+  )
+}
+
+export function NeedsCopyListButton({
+  items,
+  rooms,
+  disabled,
+  label,
+  className,
+}: {
+  items: RenovationNeed[]
+  rooms: RenovationRoom[]
+  disabled: boolean
+  label: string
+  className?: string
+}) {
+  const toast = useToast()
+
+  const copy = async () => {
+    const text = formatNeedsAsCopyList(items, rooms)
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      toast.success('List copied')
+    } catch (e) {
+      console.error(e)
+      toast.error('Could not copy')
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void copy()}
+      disabled={disabled}
+      className={className}
+    >
+      <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+        />
+      </svg>
+      <span>{label}</span>
     </button>
   )
 }

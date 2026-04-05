@@ -31,3 +31,26 @@ export function groupNeedsByRoom(items: RenovationNeed[], rooms: RenovationRoom[
   if (unassigned.length > 0) groups.push({ kind: 'unassigned', needs: unassigned })
   return groups
 }
+
+/** Plain-text list for clipboard: room sections (when rooms exist) and `- title` lines, `(done)` for completed. */
+export function formatNeedsAsCopyList(items: RenovationNeed[], rooms: RenovationRoom[]): string {
+  if (items.length === 0) return ''
+  const groups = groupNeedsByRoom(items, rooms)
+  const blocks: string[] = []
+
+  for (const group of groups) {
+    const lines: string[] = []
+    if (rooms.length > 0) {
+      const heading = group.kind === 'room' ? group.name : 'No room'
+      lines.push(heading)
+    }
+    for (const need of group.needs) {
+      const t = need.title.trim()
+      if (!t) continue
+      lines.push(`- ${t}${need.completed ? ' (done)' : ''}`)
+    }
+    if (lines.length > 0) blocks.push(lines.join('\n'))
+  }
+
+  return blocks.join('\n\n')
+}

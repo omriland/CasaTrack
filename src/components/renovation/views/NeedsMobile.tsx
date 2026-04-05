@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileStickyFooter } from '@/components/renovation/mobile/MobileStickyFooter'
 import type { RenovationNeed, RenovationRoom } from '@/types/renovation'
-import { NeedDoneToggle } from './needs-shared'
+import { NeedDoneToggle, NeedsCopyListButton } from './needs-shared'
 import { groupNeedsByRoom } from './needs-page-shared'
 import { useNeedsPageState } from './useNeedsPageState'
 
@@ -63,11 +63,20 @@ export function NeedsMobile() {
 
   return (
     <div className="min-w-0 max-w-full space-y-5 overflow-x-hidden pb-28 animate-fade-in">
-      <header className="min-w-0" dir="rtl">
-        <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Needs</h1>
-        <p className="mt-1 text-right text-[14px] font-medium leading-snug text-slate-500">
-          רשימת קניות והערות לדירה
-        </p>
+      <header className="flex min-w-0 flex-row items-start justify-between gap-3" dir="rtl">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Needs</h1>
+          <p className="mt-1 text-right text-[14px] font-medium leading-snug text-slate-500">
+            רשימת קניות והערות לדירה
+          </p>
+        </div>
+        <NeedsCopyListButton
+          items={items}
+          rooms={rooms}
+          disabled={loading || items.length === 0}
+          label="העתק רשימה"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-[13px] font-bold text-slate-700 shadow-sm active:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
+        />
       </header>
 
       {loading ? (

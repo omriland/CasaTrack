@@ -28,6 +28,10 @@ export function RenovationShell({ children }: { children: ReactNode }) {
     setTaskModalOpen,
     isExpenseModalOpen,
     setExpenseModalOpen,
+    openExpenseModal,
+    expenseModalEditing,
+    expenseModalLinkToPlanned,
+    expenseModalPickPlannedForNewSpend,
     isQuickUploadOpen,
     quickUploadFile,
     setQuickUploadFile,
@@ -78,7 +82,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
 
       if (e.key === 'n') {
         e.preventDefault()
-        setExpenseModalOpen(true)
+        openExpenseModal()
       }
       if (e.key === 'c') {
         e.preventDefault()
@@ -109,7 +113,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
       window.removeEventListener('keydown', handleKeys)
       window.removeEventListener('paste', handlePaste)
     }
-  }, [setExpenseModalOpen, setTaskModalOpen, setQuickUploadFile])
+  }, [openExpenseModal, setExpenseModalOpen, setTaskModalOpen, setQuickUploadFile])
 
   if (loading || (project && !profileBootstrapDone)) {
     return (
@@ -146,6 +150,9 @@ export function RenovationShell({ children }: { children: ReactNode }) {
       {isExpenseModalOpen &&
         (isMobile ? (
           <ExpenseModalMobile
+            editing={expenseModalEditing ?? undefined}
+            linkToPlanned={expenseModalLinkToPlanned ?? undefined}
+            pickPlannedForNewSpend={expenseModalPickPlannedForNewSpend}
             onClose={() => setExpenseModalOpen(false)}
             onSave={() => {
               setExpenseModalOpen(false)
@@ -154,6 +161,9 @@ export function RenovationShell({ children }: { children: ReactNode }) {
           />
         ) : (
           <ExpenseModal
+            editing={expenseModalEditing ?? undefined}
+            linkToPlanned={expenseModalLinkToPlanned ?? undefined}
+            pickPlannedForNewSpend={expenseModalPickPlannedForNewSpend}
             onClose={() => setExpenseModalOpen(false)}
             onSave={() => {
               setExpenseModalOpen(false)

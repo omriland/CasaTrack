@@ -1,17 +1,20 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRenovation } from '@/components/renovation/RenovationContext'
+import { VendorBudgetView } from '@/components/renovation/views/VendorBudgetView'
 
-/** Deep links to `/renovation/budget` land on the budget section in Settings. */
-export default function RenovationBudgetRedirectPage() {
-  const router = useRouter()
-  useEffect(() => {
-    router.replace('/renovation/settings#budget')
-  }, [router])
-  return (
-    <div className="flex min-h-[40vh] items-center justify-center text-[15px] font-medium text-slate-500">
-      Opening budget…
-    </div>
-  )
+export default function RenovationBudgetPage() {
+  const { project } = useRenovation()
+
+  if (!project) {
+    return (
+      <p className="text-center text-slate-500 py-16">
+        <a href="/renovation" className="text-indigo-600 font-semibold">
+          Create a project first
+        </a>
+      </p>
+    )
+  }
+
+  return <VendorBudgetView projectId={project.id} />
 }

@@ -11,6 +11,7 @@ const primaryNav = [
   { href: '/renovation', label: 'Home', icon: HomeIcon, match: (p: string) => p === '/renovation' },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
   { href: '/renovation/expenses', label: 'Expenses', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
+  { href: '/renovation/budget', label: 'Budget', icon: WalletIcon, match: (p: string) => p.startsWith('/renovation/budget') },
   { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
   { href: '/renovation/more', label: 'More', icon: MoreIcon, match: (p: string) => p === '/renovation/more' || moreMatches(p) },
 ] as const
@@ -76,7 +77,7 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
                   }`}
               >
                 <Icon className="h-6 w-6" active={active} />
-                <span className="text-[12px] font-semibold leading-none">{item.label}</span>
+                <span className="text-[10px] sm:text-[11px] font-semibold leading-tight text-center max-w-[4.25rem]">{item.label}</span>
               </Link>
             )
           })}
@@ -107,6 +108,18 @@ function CardIcon({ className, active }: { className?: string; active?: boolean 
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  )
+}
+function WalletIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={active ? 2.5 : 2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M3 10h18v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8zm0-4a2 2 0 012-2h11l5 5v1H3V6z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 14h.01" />
     </svg>
   )
 }

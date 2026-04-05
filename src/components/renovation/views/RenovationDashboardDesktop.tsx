@@ -7,7 +7,7 @@ import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profi
 import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardDesktop() {
-  const { setExpenseModalOpen } = useRenovation()
+  const { openExpenseModal } = useRenovation()
   const {
     project,
     loading,
@@ -135,7 +135,7 @@ export function RenovationDashboardDesktop() {
         <div className="flex gap-3">
           <button
             type="button"
-            onClick={() => setExpenseModalOpen(true)}
+            onClick={() => openExpenseModal()}
             className="px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded text-[14px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
           >
             + Add Expense

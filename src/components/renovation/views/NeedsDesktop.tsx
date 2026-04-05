@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import type { RenovationNeed } from '@/types/renovation'
-import { NeedDoneToggle } from './needs-shared'
+import { NeedDoneToggle, NeedsCopyListButton } from './needs-shared'
 import { groupNeedsByRoom } from './needs-page-shared'
 import { useNeedsPageState } from './useNeedsPageState'
 
@@ -39,9 +39,20 @@ export function NeedsDesktop() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <header>
-        <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Needs</h1>
-        <p className="text-[15px] text-slate-500 mt-1">What you need from the apartment — add items and optionally link them to a room.</p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Needs</h1>
+          <p className="text-[15px] text-slate-500 mt-1">
+            What you need from the apartment — add items and optionally link them to a room.
+          </p>
+        </div>
+        <NeedsCopyListButton
+          items={items}
+          rooms={rooms}
+          disabled={loading || items.length === 0}
+          label="Copy list"
+          className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-[14px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50"
+        />
       </header>
 
       <form onSubmit={addItem} className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm space-y-3">

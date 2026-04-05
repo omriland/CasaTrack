@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation module stable; **calendar** at `/renovation/calendar` (FullCalendar month/week, events + provider meetings + task dues, Sun-first, Fri–Sat weekend).
-**Status**: Calendar uses FullCalendar (dynamic client bundle); SQL `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`. Manual QA: timed/all-day, provider meetings, drag-select create, drag/resize update, tasks toggle, mobile sheet.
+**Priority**: Renovation module stable; **Budget** at `/renovation/budget` includes vendor-level **partial payments** (`renovation_vendor_payments`, migration `17_vendor_payments.sql`) with proportional row fill.
+**Status**: Run new SQL in Supabase if not applied. Calendar unchanged: FullCalendar; `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`.
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session
