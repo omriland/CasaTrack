@@ -226,8 +226,10 @@ export function VendorBudgetDesktopGrid({
         },
         // Apply payment progress gradient + force font on every cell
         afterRenderer(td: HTMLTableCellElement, row: number) {
-          // Force font on every cell (bypasses global !important CSS)
-          td.style.fontFamily = "'Open Sans Hebrew', 'Open Sans', Calibri, Arial, sans-serif"
+          // Force font with inline !important — beats ALL CSS rules
+          const fontStack = "'Open Sans', Calibri, Arial, sans-serif"
+          td.style.setProperty('font-family', fontStack, 'important')
+          td.style.setProperty('font-size', '14px', 'important')
 
           const tr = td.parentElement as HTMLTableRowElement | null
           if (!tr) return
@@ -249,8 +251,10 @@ export function VendorBudgetDesktopGrid({
         afterInit() {
           const container = containerRef.current
           if (!container) return
+          const fontStack = "'Open Sans', Calibri, Arial, sans-serif"
           container.querySelectorAll<HTMLElement>('th').forEach((th) => {
-            th.style.fontFamily = "'Open Sans Hebrew', 'Open Sans', Calibri, Arial, sans-serif"
+            th.style.setProperty('font-family', fontStack, 'important')
+            th.style.setProperty('font-size', '13px', 'important')
           })
         },
       })
