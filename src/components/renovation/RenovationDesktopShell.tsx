@@ -8,7 +8,6 @@ import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
 
 const nav = [
   { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
-  { href: '/renovation/expenses', label: 'Expenses', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
   { href: '/renovation/budget', label: 'Budget', icon: WalletIcon, match: (p: string) => p.startsWith('/renovation/budget') },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
   { href: '/renovation/calendar', label: 'Calendar', icon: CalendarIcon, match: (p: string) => p.startsWith('/renovation/calendar') },

@@ -17,8 +17,8 @@ type Props = {
   ) => Promise<void>
   onBodyContextMenu: (tableRow: TableRow, clientX: number, clientY: number) => void
   addDraftAfter: (afterKey: string | null) => void
-  /** Returns the payment progress (0–1) for a given row */
-  getPaymentProgress: (tableRow: TableRow) => number
+  /** Returns the total paid sum for a given row */
+  getPaidSum: (tableRow: TableRow) => number
 }
 
 const FIELD_MAP: Record<number, 'vendor' | 'budget' | 'actual'> = {
@@ -34,7 +34,7 @@ export function VendorBudgetDesktopGrid({
   onCellValueChanged,
   onBodyContextMenu,
   addDraftAfter,
-  getPaymentProgress,
+  getPaidSum,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const hotInstanceRef = useRef<any>(null)
@@ -46,8 +46,8 @@ export function VendorBudgetDesktopGrid({
   onBodyContextMenuRef.current = onBodyContextMenu
   const addDraftAfterRef = useRef(addDraftAfter)
   addDraftAfterRef.current = addDraftAfter
-  const getPaymentProgressRef = useRef(getPaymentProgress)
-  getPaymentProgressRef.current = getPaymentProgress
+  const getPaidSumRef = useRef(getPaidSum)
+  getPaidSumRef.current = getPaidSum
 
   // Format a number with commas and ₪ sign
   const fmtNIS = (v: string | number): string => {
@@ -56,33 +56,55 @@ export function VendorBudgetDesktopGrid({
     return `₪ ${n.toLocaleString('en-US')}`
   }
 
-  // Build a simple 2D array
+  // Get color for paid percentage
+  const paidColor = (pct: number): string => {
+    if (pct >= 100) return '#00a53c'
+    if (pct >= 60) return '#0443f1'
+    if (pct >= 30) return '#ff9800'
+    return '#ff273b'
+  }
+
+  // Build a simple 2D array — 4 columns: Vendor, Budget, Actual, Paid
   const { data, rowMeta } = useMemo(() => {
     const rows: (string | number)[][] = []
     const meta: (TableRow | null)[] = []
+    let totalPaid = 0
 
     for (const r of tableRows) {
+      const paid = getPaidSum(r)
+      totalPaid += paid
+
       if (r.kind === 'draft') {
-        rows.push([r.draft.vendorInput || '', '', ''])
+        rows.push([r.draft.vendorInput || '', '', '', ''])
         meta.push(r)
       } else {
         const m = r.model
         const hasReal = m.spentTotal > 0
+        const effectiveActual = hasReal ? m.spentTotal : m.budgetTotal
+        const pct = effectiveActual > 0 ? Math.round((paid / effectiveActual) * 100) : 0
+
         rows.push([
           m.displayVendor,
           m.budgetTotal || 0,
           hasReal ? m.spentTotal : '',
+          paid > 0 ? `₪ ${paid.toLocaleString('en-US')} (${pct}%)` : '',
         ])
         meta.push(r)
       }
     }
 
     // Totals row
-    rows.push(['Totals', footerBudget, footerActual])
+    const overallPct = footerActual > 0 ? Math.round((totalPaid / footerActual) * 100) : 0
+    rows.push([
+      'Totals',
+      footerBudget,
+      footerActual,
+      totalPaid > 0 ? `₪ ${totalPaid.toLocaleString('en-US')} (${overallPct}%)` : '',
+    ])
     meta.push(null)
 
-    return { data: rows, rowMeta: meta }
-  }, [tableRows, footerBudget, footerActual])
+    return { data: rows, rowMeta: meta, footerPaid: totalPaid, footerPaidPct: overallPct }
+  }, [tableRows, footerBudget, footerActual, getPaidSum])
 
   const rowMetaRef = useRef(rowMeta)
   rowMetaRef.current = rowMeta
@@ -155,21 +177,53 @@ export function VendorBudgetDesktopGrid({
         }
       }
 
+      // Custom renderer for Paid column — color-coded by percentage
+      const paidRenderer = function (
+        _instance: any, td: HTMLTableCellElement, row: number, _col: number,
+        _prop: any, value: any, _cellProperties: any
+      ) {
+        td.style.textAlign = 'center'
+        td.dir = 'ltr'
+        td.textContent = value || ''
+
+        const totalRowIdx = dataRef.current.length - 1
+
+        if (!value || value === '') {
+          td.style.color = ''
+          return
+        }
+
+        // Extract percentage from "₪ X,XXX (YY%)"
+        const pctMatch = String(value).match(/\((\d+)%\)/)
+        const pct = pctMatch ? parseInt(pctMatch[1], 10) : 0
+
+        // Apply color using setProperty to beat global CSS
+        const color = paidColor(pct)
+        td.style.setProperty('color', color, 'important')
+
+        if (row === totalRowIdx) {
+          td.style.fontWeight = '700'
+        } else {
+          td.style.fontWeight = '600'
+        }
+      }
+
       hot = new Handsontable(containerRef.current, {
         data: dataRef.current.map((row) => [...row]),
         licenseKey: 'non-commercial-and-evaluation',
-        colHeaders: ['Vendor', 'Budget', 'Actual'],
+        colHeaders: ['Vendor', 'Budget', 'Actual', 'Paid'],
         rowHeaders: false,
         manualColumnResize: true,
         stretchH: 'all',
         width: '100%',
         height: '100%',
         layoutDirection: 'rtl',
-        rowHeights: 38,
+        colWidths: [300, 130, 130, 130],
         columns: [
           { type: 'text' },
           { type: 'numeric', renderer: currencyRenderer },
           { type: 'numeric', renderer: actualRenderer },
+          { type: 'text', renderer: paidRenderer, readOnly: true },
         ],
         // Disable Handsontable's built-in context menu — we use a unified custom one
         contextMenu: false,
@@ -210,9 +264,15 @@ export function VendorBudgetDesktopGrid({
             cellProps.readOnly = true
             cellProps.className = 'htCenter htBold ht-totals-row'
           } else {
-            cellProps.readOnly = false
-            if (col === 1 || col === 2) {
+            // Paid column is always read-only
+            if (col === 3) {
+              cellProps.readOnly = true
               cellProps.className = 'htCenter'
+            } else {
+              cellProps.readOnly = false
+              if (col === 1 || col === 2) {
+                cellProps.className = 'htCenter'
+              }
             }
 
             const tableRow = rowMetaRef.current[row]
@@ -224,28 +284,11 @@ export function VendorBudgetDesktopGrid({
           }
           return cellProps
         },
-        // Apply payment progress gradient + force font on every cell
-        afterRenderer(td: HTMLTableCellElement, row: number) {
-          // Force font with inline !important — beats ALL CSS rules
+        // Force font on every cell
+        afterRenderer(td: HTMLTableCellElement) {
           const fontStack = "'Open Sans', Calibri, Arial, sans-serif"
           td.style.setProperty('font-family', fontStack, 'important')
           td.style.setProperty('font-size', '14px', 'important')
-
-          const tr = td.parentElement as HTMLTableRowElement | null
-          if (!tr) return
-
-          const totalRowIdx = dataRef.current.length - 1
-          if (row === totalRowIdx) return
-
-          const tableRow = rowMetaRef.current[row]
-          if (!tableRow || tableRow.kind !== 'data') return
-
-          const progress = getPaymentProgressRef.current(tableRow)
-          if (progress > 0) {
-            const pct = Math.min(100, Math.max(0, progress * 100))
-            tr.style.background = `linear-gradient(to left, rgb(220 252 231) 0%, rgb(220 252 231) ${pct}%, white ${pct}%, white 100%)`
-            td.style.backgroundColor = 'transparent'
-          }
         },
         // Force font on column headers too
         afterInit() {
@@ -254,8 +297,17 @@ export function VendorBudgetDesktopGrid({
           const fontStack = "'Open Sans', Calibri, Arial, sans-serif"
           container.querySelectorAll<HTMLElement>('th').forEach((th) => {
             th.style.setProperty('font-family', fontStack, 'important')
-            th.style.setProperty('font-size', '13px', 'important')
           })
+        },
+        // Force font on editor input when editing begins
+        afterBeginEditing() {
+          const fontStack = "'Open Sans', Calibri, Arial, sans-serif"
+          setTimeout(() => {
+            document.querySelectorAll<HTMLElement>('.handsontableInput').forEach((el) => {
+              el.style.setProperty('font-family', fontStack, 'important')
+              el.style.setProperty('font-size', '14px', 'important')
+            })
+          }, 0)
         },
       })
 
@@ -282,16 +334,16 @@ export function VendorBudgetDesktopGrid({
   return (
     <div className="w-full overflow-hidden border border-slate-200 bg-white shadow-sm rounded-lg">
       <style>{`
-        /* Force Calibri font via the CSS variable that Handsontable reads */
+        /* Force font via the CSS variable that Handsontable reads */
         [class*=ht-theme-main] {
-          --ht-font-family: Calibri, 'Segoe UI', Arial, sans-serif !important;
+          --ht-font-family: 'Open Sans', Calibri, Arial, sans-serif !important;
         }
         [class*=ht-theme-main] .handsontable,
         [class*=ht-theme-main] .handsontable td,
         [class*=ht-theme-main] .handsontable th,
         [class*=ht-theme-main] .handsontable input,
         [class*=ht-theme-main] .handsontable textarea {
-          font-family: Calibri, 'Segoe UI', Arial, sans-serif !important;
+          font-family: 'Open Sans', Calibri, Arial, sans-serif !important;
         }
         .ht-ghost-actual { color: #94a3b8 !important; }
         .ht-draft-placeholder { color: #94a3b8 !important; font-style: italic !important; }
@@ -306,8 +358,8 @@ export function VendorBudgetDesktopGrid({
           background-color: #ffffff;
         }
 
-        /* Row hover highlight — skip rows with payment gradient */
-        .ht-theme-main .handsontable tbody tr:not([style*="linear-gradient"]):hover td {
+        /* Row hover highlight */
+        .ht-theme-main .handsontable tbody tr:hover td {
           background-color: rgba(219, 234, 254, 0.5) !important;
           transition: background-color 0.12s ease;
         }
@@ -319,6 +371,7 @@ export function VendorBudgetDesktopGrid({
         }
         /* Editor input styling */
         [class*=ht-theme-main] .handsontableInput {
+          font-family: 'Open Sans', Calibri, Arial, sans-serif !important;
           font-size: 14px !important;
           padding: 6px 8px !important;
           box-shadow: inset 0 0 0 2px #3b82f6 !important;
@@ -326,23 +379,15 @@ export function VendorBudgetDesktopGrid({
           background: #eff6ff !important;
         }
 
-        /* Column headers styling */
-        [class*=ht-theme-main] .handsontable thead th {
-          background-color: #f1f5f9 !important;
-          font-weight: 600 !important;
-          font-size: 13px !important;
-          color: #475569 !important;
-          text-transform: uppercase !important;
-          letter-spacing: 0.03em !important;
-        }
-
-        /* Hide scrollbar but keep scrolling */
+        /* Remove scrollbar gutter completely */
         .ht-theme-main .wtHolder {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
         }
         .ht-theme-main .wtHolder::-webkit-scrollbar {
-          display: none;
+          width: 0px !important;
+          height: 0px !important;
+          display: none !important;
         }
       `}</style>
       <div

@@ -15,6 +15,8 @@ export interface ExpenseDetailDrawerProps {
   onAttachmentsChanged?: () => void
   /** After delete succeeds */
   onDeleted: () => void
+  /** If true, hide amounts/dates/payments and only show Vendor, Notes, Attachments */
+  minimalMode?: boolean
 }
 
 /** Right-hand detail panel for viewing/editing an expense (matches TaskDetailDrawer shell). */
@@ -24,6 +26,7 @@ export function ExpenseDetailDrawer({
   onSaved,
   onAttachmentsChanged,
   onDeleted,
+  minimalMode = false,
 }: ExpenseDetailDrawerProps) {
   const confirmAction = useConfirm()
   const [deleting, setDeleting] = useState(false)
@@ -128,7 +131,7 @@ export function ExpenseDetailDrawer({
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-6">
-            <ExpenseFormFields form={form} autoFocusAmount={false} />
+            <ExpenseFormFields form={form} autoFocusAmount={false} minimalMode={minimalMode} />
           </div>
           <div className="flex shrink-0 gap-3 border-t border-slate-200 bg-white px-5 py-4 md:px-6">
             <button

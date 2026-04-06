@@ -10,7 +10,6 @@ import { cn } from '@/utils/common'
 const primaryNav = [
   { href: '/renovation', label: 'Home', icon: HomeIcon, match: (p: string) => p === '/renovation' },
   { href: '/renovation/tasks', label: 'Tasks', icon: CheckIcon, match: (p: string) => p.startsWith('/renovation/tasks') },
-  { href: '/renovation/expenses', label: 'Expenses', icon: CardIcon, match: (p: string) => p.startsWith('/renovation/expenses') },
   { href: '/renovation/budget', label: 'Budget', icon: WalletIcon, match: (p: string) => p.startsWith('/renovation/budget') },
   { href: '/renovation/gallery', label: 'Photos', icon: PhotoIcon, match: (p: string) => p.startsWith('/renovation/gallery') },
   { href: '/renovation/more', label: 'More', icon: MoreIcon, match: (p: string) => p === '/renovation/more' || moreMatches(p) },

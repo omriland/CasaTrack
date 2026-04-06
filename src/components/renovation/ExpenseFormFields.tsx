@@ -11,10 +11,12 @@ type ExpenseFormFieldsProps = {
   form: ExpenseFormFieldsModel
   /** When false, amount field is not auto-focused (e.g. detail drawer). Default true. */
   autoFocusAmount?: boolean
+  /** When true, only shows Vendor, Notes, and Files (hides amount, date, category, payment). */
+  minimalMode?: boolean
 }
 
 /** Shared expense form fields (amount, vendor, category, date, payment, notes, attachments). */
-export function ExpenseFormFields({ form, autoFocusAmount = true }: ExpenseFormFieldsProps) {
+export function ExpenseFormFields({ form, autoFocusAmount = true, minimalMode = false }: ExpenseFormFieldsProps) {
   const {
     amount,
     handleAmountChange,
@@ -45,54 +47,58 @@ export function ExpenseFormFields({ form, autoFocusAmount = true }: ExpenseFormF
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-center justify-center py-2">
-        <label className="mb-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">Total Amount</label>
-        <div className="group relative inline-block">
-          <span className="absolute -left-5 top-1/2 -translate-y-1/2 text-[32px] font-light text-slate-300">₪</span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={amount}
-            onChange={(e) => handleAmountChange(e.target.value)}
-            className="w-[220px] bg-transparent px-3 py-1 text-center text-[44px] font-bold leading-none text-slate-800 outline-none transition-all placeholder:text-slate-200"
-            placeholder="0.00"
-            required
-            autoFocus={autoFocusAmount}
-          />
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-50 bg-slate-100 transition-all duration-300 group-focus-within:scale-x-100 group-focus-within:bg-indigo-500" />
-        </div>
-      </div>
-
-      {showTypeToggle ? (
-        <div className="space-y-2">
-          <p className="text-center text-[11px] font-bold uppercase tracking-widest text-slate-400">Type</p>
-          <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            <button
-              type="button"
-              onClick={() => setIsPlanned(false)}
-              className={cn(
-                'flex-1 rounded-lg py-2.5 text-[14px] font-bold transition-colors',
-                !isPlanned ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              )}
-            >
-              Spent
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsPlanned(true)}
-              className={cn(
-                'flex-1 rounded-lg py-2.5 text-[14px] font-bold transition-colors',
-                isPlanned ? 'bg-amber-50 text-amber-900 ring-1 ring-amber-200/80' : 'text-slate-500 hover:text-slate-700'
-              )}
-            >
-              Planned
-            </button>
+      {!minimalMode && (
+        <>
+          <div className="flex flex-col items-center justify-center py-2">
+            <label className="mb-0.5 text-[11px] font-bold uppercase tracking-widest text-slate-400">Total Amount</label>
+            <div className="group relative inline-block">
+              <span className="absolute -left-5 top-1/2 -translate-y-1/2 text-[32px] font-light text-slate-300">₪</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => handleAmountChange(e.target.value)}
+                className="w-[220px] bg-transparent px-3 py-1 text-center text-[44px] font-bold leading-none text-slate-800 outline-none transition-all placeholder:text-slate-200"
+                placeholder="0.00"
+                required
+                autoFocus={autoFocusAmount}
+              />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 scale-x-50 bg-slate-100 transition-all duration-300 group-focus-within:scale-x-100 group-focus-within:bg-indigo-500" />
+            </div>
           </div>
-          <p className="text-center text-[12px] text-slate-400 px-2">
-            {plannedMode ? 'Not paid yet — manage planned costs on the Budget tab.' : 'Money already out.'}
-          </p>
-        </div>
-      ) : null}
+
+          {showTypeToggle ? (
+            <div className="space-y-2">
+              <p className="text-center text-[11px] font-bold uppercase tracking-widest text-slate-400">Type</p>
+              <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPlanned(false)}
+                  className={cn(
+                    'flex-1 rounded-lg py-2.5 text-[14px] font-bold transition-colors',
+                    !isPlanned ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  )}
+                >
+                  Spent
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsPlanned(true)}
+                  className={cn(
+                    'flex-1 rounded-lg py-2.5 text-[14px] font-bold transition-colors',
+                    isPlanned ? 'bg-amber-50 text-amber-900 ring-1 ring-amber-200/80' : 'text-slate-500 hover:text-slate-700'
+                  )}
+                >
+                  Planned
+                </button>
+              </div>
+              <p className="text-center text-[12px] text-slate-400 px-2">
+                {plannedMode ? 'Not paid yet — manage planned costs on the Budget tab.' : 'Money already out.'}
+              </p>
+            </div>
+          ) : null}
+        </>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
@@ -117,41 +123,43 @@ export function ExpenseFormFields({ form, autoFocusAmount = true }: ExpenseFormF
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            {plannedMode ? 'Expected date (optional)' : 'Date'}
-          </label>
-          <div className="flex gap-2 items-start">
-            <div className="min-w-0 flex-1">
-              <DatePicker
-                value={date}
-                onChange={setDate}
-                placeholder={plannedMode ? 'No date' : 'Select date'}
-              />
+      {!minimalMode && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+              {plannedMode ? 'Expected date (optional)' : 'Date'}
+            </label>
+            <div className="flex gap-2 items-start">
+              <div className="min-w-0 flex-1">
+                <DatePicker
+                  value={date}
+                  onChange={setDate}
+                  placeholder={plannedMode ? 'No date' : 'Select date'}
+                />
+              </div>
+              {plannedMode && date ? (
+                <button
+                  type="button"
+                  onClick={() => setDate('')}
+                  className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+                >
+                  Clear
+                </button>
+              ) : null}
             </div>
-            {plannedMode && date ? (
-              <button
-                type="button"
-                onClick={() => setDate('')}
-                className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-bold text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
-              >
-                Clear
-              </button>
-            ) : null}
+          </div>
+          <div className="space-y-1.5">
+            <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Payment</label>
+            <input
+              dir="auto"
+              value={payment}
+              onChange={(e) => setPayment(e.target.value)}
+              placeholder="Credit, Cash..."
+              className="h-11 w-full rounded border border-slate-200 bg-slate-50 px-3 text-[14px] font-semibold text-slate-800 shadow-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
           </div>
         </div>
-        <div className="space-y-1.5">
-          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Payment</label>
-          <input
-            dir="auto"
-            value={payment}
-            onChange={(e) => setPayment(e.target.value)}
-            placeholder="Credit, Cash..."
-            className="h-11 w-full rounded border border-slate-200 bg-slate-50 px-3 text-[14px] font-semibold text-slate-800 shadow-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-          />
-        </div>
-      </div>
+      )}
 
       <div className="space-y-1.5">
         <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Notes</label>

@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { VendorDetailDrawer } from '@/components/renovation/VendorDetailDrawer'
 import {
   Fragment,
   useCallback,
@@ -14,15 +15,12 @@ import {
 import { useRenovationMobile } from '@/components/renovation/RenovationViewportContext'
 import {
   createVendorPayment,
-  ensureVendorExpenseForAttachments,
   listExpenses,
   listVendorPayments,
   renameVendorAcrossExpenses,
   setVendorPlannedTotal,
   setVendorSpentTotal,
   sumPlannedExpenses,
-  updateVendorExpenseMeta,
-  uploadExpenseAttachment,
 } from '@/lib/renovation'
 import { buildVendorBudgetRows, type VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
 import { formatIls } from '@/lib/renovation-format'
@@ -261,115 +259,6 @@ function MobileRowInsertHandle({ onInsert, label }: { onInsert: () => void; labe
   )
 }
 
-function VendorMetaModal({
-  open,
-  vendorLabel,
-  initialCategory,
-  initialNotes,
-  initialPayment,
-  onClose,
-  onSave,
-}: {
-  open: boolean
-  vendorLabel: string
-  initialCategory: string
-  initialNotes: string
-  initialPayment: string
-  onClose: () => void
-  onSave: (p: { category: string; notes: string; payment: string }) => Promise<void>
-}) {
-  const [category, setCategory] = useState(initialCategory)
-  const [notes, setNotes] = useState(initialNotes)
-  const [payment, setPayment] = useState(initialPayment)
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    if (open) {
-      setCategory(initialCategory)
-      setNotes(initialNotes)
-      setPayment(initialPayment)
-    }
-  }, [open, initialCategory, initialNotes, initialPayment])
-
-  if (!open) return null
-
-  return (
-    <div
-      className="fixed inset-0 z-[260] flex items-end sm:items-center justify-center bg-slate-900/40 p-0 sm:p-4"
-      dir="rtl"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-5 shadow-xl sm:p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-bold text-slate-900">פרטי ספק</h2>
-        <p className="text-sm text-slate-500 mt-1" dir="auto">
-          {vendorLabel}
-        </p>
-        <div className="mt-4 space-y-3">
-          <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">קטגוריה</label>
-            <input
-              dir="auto"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-[15px] font-medium"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">תשלום</label>
-            <input
-              dir="auto"
-              value={payment}
-              onChange={(e) => setPayment(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-[15px] font-medium"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">הערות</label>
-            <textarea
-              dir="auto"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="mt-1 w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-[15px] font-medium"
-            />
-          </div>
-        </div>
-        <div className="mt-5 flex gap-2 flex-row-reverse">
-          <button
-            type="button"
-            disabled={saving}
-            onClick={async () => {
-              setSaving(true)
-              try {
-                await onSave({ category, notes, payment })
-                onClose()
-              } catch (e) {
-                console.error(e)
-                alert('Could not save')
-              } finally {
-                setSaving(false)
-              }
-            }}
-            className="flex-1 rounded-xl bg-indigo-600 py-3 text-[15px] font-bold text-white disabled:opacity-50"
-          >
-            {saving ? '…' : 'שמירה'}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 rounded-xl border border-slate-200 py-3 text-[15px] font-bold text-slate-700"
-          >
-            ביטול
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function VendorBudgetView({ projectId }: { projectId: string }) {
   const isMobile = useRenovationMobile()
   const [expenses, setExpenses] = useState<RenovationExpense[]>([])
@@ -377,11 +266,10 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<EditState | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; row: TableRow } | null>(null)
-  const [metaRow, setMetaRow] = useState<VendorBudgetRowModel | null>(null)
   const [payments, setPayments] = useState<RenovationVendorPayment[]>([])
   const [paymentModal, setPaymentModal] = useState<{ vendorKey: string; displayVendor: string } | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const attachForVendorRef = useRef<string | null>(null)
+  const [viewPaymentsModal, setViewPaymentsModal] = useState<{ vendorKey: string; displayVendor: string } | null>(null)
+  const [detailVendor, setDetailVendor] = useState<VendorBudgetRowModel | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastTouch = useRef({ x: 0, y: 0 })
 
@@ -527,11 +415,10 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
     setMenu({ x: clientX, y: clientY, row: tableRow })
   }, [])
 
-  const getPaymentProgress = useCallback(
+  const getPaidSum = useCallback(
     (tableRow: TableRow): number => {
       if (tableRow.kind !== 'data') return 0
-      const paid = paidSumForVendor(tableRow.model.key)
-      return vendorPaidProgress(paid, tableRow.model)
+      return paidSumForVendor(tableRow.model.key)
     },
     [paidSumForVendor]
   )
@@ -615,46 +502,6 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
       const show = hasReal ? m.spentTotal : m.budgetTotal
       setEditing({ rowKey: m.key, field, value: String(Math.round(show)) })
     }
-  }
-
-  const openAttach = async (r: TableRow) => {
-    const label = vendorLabelForRow(r)
-    if (r.kind === 'draft' && !r.draft.vendorInput.trim()) {
-      alert('תן שם לספק לפני צירוף קבצים.')
-      return
-    }
-    try {
-      const id = await ensureVendorExpenseForAttachments(projectId, label)
-      attachForVendorRef.current = id
-      fileInputRef.current?.click()
-    } catch (e) {
-      console.error(e)
-      alert('לא ניתן להכין צירוף.')
-    }
-  }
-
-  const onFilesPicked = async (files: FileList | null) => {
-    const expenseId = attachForVendorRef.current
-    attachForVendorRef.current = null
-    if (!expenseId || !files?.length) return
-    try {
-      for (let i = 0; i < files.length; i++) {
-        await uploadExpenseAttachment(projectId, expenseId, files[i]!)
-      }
-      await load()
-    } catch (e) {
-      console.error(e)
-      alert('Upload failed.')
-    }
-    if (fileInputRef.current) fileInputRef.current.value = ''
-  }
-
-  const openMeta = (r: TableRow) => {
-    if (r.kind === 'draft') {
-      alert('שמור את הספק (תקציב או ביצוע) לפני עריכת פרטים.')
-      return
-    }
-    setMetaRow(r.model)
   }
 
   const clearLongPress = () => {
@@ -826,21 +673,10 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
     return null
   }
 
-  const firstExpenseMeta = (m: VendorBudgetRowModel) => {
-    const ex = m.plannedChronological[0] ?? m.spentChronological[0]
-    return {
-      category: ex?.category ?? '',
-      notes: ex?.notes ?? '',
-      payment: ex?.payment_method ?? '',
-    }
-  }
 
-  const metaInitial = metaRow ? firstExpenseMeta(metaRow) : { category: '', notes: '', payment: '' }
 
   return (
     <div className="space-y-4 pb-24 md:pb-8 animate-fade-in" dir="rtl">
-      <input ref={fileInputRef} type="file" multiple className="hidden" onChange={(e) => void onFilesPicked(e.target.files)} />
-
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Budget</h1>
         <button
@@ -942,7 +778,7 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           onCellValueChanged={handleGridCellValueChanged}
           onBodyContextMenu={onGridBodyContextMenu}
           addDraftAfter={addDraftAfter}
-          getPaymentProgress={getPaymentProgress}
+          getPaidSum={getPaidSum}
         />
       )}
 
@@ -950,7 +786,7 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
         <div
           data-vendor-budget-menu="1"
           role="menu"
-          dir="rtl"
+          dir="ltr"
           className="fixed z-[270] min-w-[200px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl text-start"
           style={{
             left: Math.min(menu.x, typeof window !== 'undefined' ? window.innerWidth - 220 : menu.x),
@@ -985,33 +821,39 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
                 setPaymentModal({ vendorKey: rw.model.key, displayVendor: rw.model.displayVendor })
               }}
             >
-              Add payment…
+              Add payment
             </button>
           )}
-          <button
-            type="button"
-            role="menuitem"
-            className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
-            onClick={() => {
-              const r = menu.row
-              setMenu(null)
-              void openAttach(r)
-            }}
-          >
-            צירוף קבצים…
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
-            onClick={() => {
-              const r = menu.row
-              setMenu(null)
-              openMeta(r)
-            }}
-          >
-            עריכת פרטים…
-          </button>
+          {menu.row.kind === 'data' && (paymentsByVendor.get(menu.row.model.key)?.length ?? 0) > 0 && (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
+              onClick={() => {
+                const rw = menu.row
+                if (rw.kind !== 'data') return
+                setMenu(null)
+                setViewPaymentsModal({ vendorKey: rw.model.key, displayVendor: rw.model.displayVendor })
+              }}
+            >
+              View payments
+            </button>
+          )}
+          {menu.row.kind === 'data' && (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
+              onClick={() => {
+                const rw = menu.row
+                if (rw.kind !== 'data') return
+                setMenu(null)
+                setDetailVendor(rw.model)
+              }}
+            >
+              Info
+            </button>
+          )}
         </div>
       )}
 
@@ -1027,23 +869,83 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
         }}
       />
 
-      <VendorMetaModal
-        open={!!metaRow}
-        vendorLabel={metaRow?.displayVendor ?? ''}
-        initialCategory={metaInitial.category}
-        initialNotes={metaInitial.notes}
-        initialPayment={metaInitial.payment}
-        onClose={() => setMetaRow(null)}
-        onSave={async ({ category, notes, payment }) => {
-          if (!metaRow) return
-          await updateVendorExpenseMeta(projectId, metaRow.displayVendor, {
-            category: category || null,
-            notes: notes || null,
-            payment_method: payment || null,
-          })
-          await load()
-        }}
-      />
+      {viewPaymentsModal && (
+        <div
+          className="fixed inset-0 z-[265] flex items-end sm:items-center justify-center bg-slate-900/40 p-0 sm:p-4"
+          dir="rtl"
+          onClick={() => setViewPaymentsModal(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl sm:rounded-2xl bg-white p-5 shadow-xl sm:p-6 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Payments</h2>
+                <p className="text-sm text-slate-500 mt-0.5" dir="auto">
+                  {viewPaymentsModal.displayVendor}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewPaymentsModal(null)}
+                className="rounded-full p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </button>
+            </div>
+
+            {(() => {
+              const vendorPayments = paymentsByVendor.get(viewPaymentsModal.vendorKey) ?? []
+              const totalPaid = vendorPayments.reduce((s, p) => s + Number(p.amount), 0)
+              return (
+                <>
+                  {vendorPayments.length === 0 ? (
+                    <p className="mt-4 text-sm text-slate-400 text-center py-6">No payments recorded</p>
+                  ) : (
+                    <div className="mt-4 space-y-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+                      {vendorPayments.map((p, i) => (
+                        <div key={p.id} className="flex items-baseline gap-2 text-[14px]" dir="auto">
+                          <span className="font-bold text-slate-400 tabular-nums">{i + 1}.</span>
+                          <span dir="ltr" className="font-bold tabular-nums text-slate-900">
+                            {formatIls(Number(p.amount))}
+                          </span>
+                          {p.note?.trim() && (
+                            <span className="text-slate-600 text-[13px]">{p.note.trim()}</span>
+                          )}
+                          <span className="mr-auto text-[11px] text-slate-400 tabular-nums" dir="ltr">
+                            {new Date(p.created_at).toLocaleDateString('he-IL')}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {vendorPayments.length > 0 && (
+                    <div className="mt-3 flex items-baseline justify-between rounded-xl bg-slate-100 px-4 py-2.5">
+                      <span className="text-[12px] font-bold uppercase tracking-wider text-slate-500">Total paid</span>
+                      <span dir="ltr" className="text-[16px] font-bold tabular-nums text-slate-900">
+                        {formatIls(totalPaid)}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {detailVendor && (
+        <VendorDetailDrawer
+          projectId={projectId}
+          vendorRow={detailVendor}
+          onClose={() => setDetailVendor(null)}
+          onSaved={() => void load()}
+        />
+      )}
     </div>
   )
 }
