@@ -21,7 +21,6 @@ import {
   setVendorPlannedTotal,
   setVendorSpentTotal,
   sumPlannedExpenses,
-  sumSpentExpenses,
   updateVendorExpenseMeta,
   uploadExpenseAttachment,
 } from '@/lib/renovation'
@@ -454,7 +453,13 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   }, [])
 
   const footerBudget = sumPlannedExpenses(expenses)
-  const footerActual = sumSpentExpenses(expenses)
+  // Effective actual total: real spent if entered, otherwise fallback to budget
+  const footerActual = useMemo(() => {
+    return dataModels.reduce((sum, m) => {
+      const effectiveActual = m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
+      return sum + effectiveActual
+    }, 0)
+  }, [dataModels])
 
   const rowKey = (r: TableRow) => (r.kind === 'draft' ? r.draft.localKey : r.model.key)
 

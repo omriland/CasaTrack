@@ -71,7 +71,7 @@ export function VendorBudgetDesktopGrid({
         rows.push([
           m.displayVendor,
           m.budgetTotal || 0,
-          hasReal ? m.spentTotal : m.budgetTotal || 0,
+          hasReal ? m.spentTotal : '',
         ])
         meta.push(r)
       }
@@ -102,7 +102,7 @@ export function VendorBudgetDesktopGrid({
 
       if (destroyed || !containerRef.current) return
 
-      // Custom renderer for currency columns — centered
+      // Custom renderer for budget column — centered
       const currencyRenderer = function (
         _instance: any, td: HTMLTableCellElement, _row: number, _col: number,
         _prop: any, value: any, _cellProperties: any
@@ -110,6 +110,49 @@ export function VendorBudgetDesktopGrid({
         td.textContent = fmtNIS(value)
         td.style.textAlign = 'center'
         td.dir = 'ltr'
+      }
+
+      // Custom renderer for actual column — color-coded vs budget
+      const actualRenderer = function (
+        _instance: any, td: HTMLTableCellElement, row: number, _col: number,
+        _prop: any, value: any, _cellProperties: any
+      ) {
+        td.style.textAlign = 'center'
+        td.dir = 'ltr'
+
+        const tableRow = rowMetaRef.current[row]
+        const hasRealValue = value !== '' && value !== null && value !== undefined && value !== 0
+        const numValue = hasRealValue ? (typeof value === 'string' ? Number(value.toString().replace(/,/g, '')) : Number(value)) : 0
+
+        if (hasRealValue) {
+          td.textContent = fmtNIS(value)
+          // Color based on comparison with budget
+          if (tableRow && tableRow.kind === 'data') {
+            const budget = tableRow.model.budgetTotal
+            if (budget > 0) {
+              if (numValue < budget) {
+                td.style.color = '#16a34a' // green — under budget
+              } else if (numValue > budget) {
+                td.style.color = '#dc2626' // red — over budget
+              } else {
+                td.style.color = '#1e293b' // dark slate — equal
+              }
+            } else {
+              td.style.color = '#1e293b'
+            }
+          } else {
+            td.style.color = '#1e293b'
+          }
+        } else {
+          // No real actual — show budget fallback in gray
+          if (tableRow && tableRow.kind === 'data' && tableRow.model.budgetTotal > 0) {
+            td.textContent = fmtNIS(tableRow.model.budgetTotal)
+            td.style.color = '#94a3b8' // light gray — fallback
+          } else {
+            td.textContent = ''
+            td.style.color = ''
+          }
+        }
       }
 
       hot = new Handsontable(containerRef.current, {
@@ -126,7 +169,7 @@ export function VendorBudgetDesktopGrid({
         columns: [
           { type: 'text' },
           { type: 'numeric', renderer: currencyRenderer },
-          { type: 'numeric', renderer: currencyRenderer },
+          { type: 'numeric', renderer: actualRenderer },
         ],
         // Disable Handsontable's built-in context menu — we use a unified custom one
         contextMenu: false,
@@ -174,12 +217,6 @@ export function VendorBudgetDesktopGrid({
 
             const tableRow = rowMetaRef.current[row]
             if (tableRow) {
-              if (col === 2 && tableRow.kind === 'data') {
-                const hasReal = tableRow.model.spentTotal > 0
-                if (!hasReal && tableRow.model.budgetTotal > 0) {
-                  cellProps.className = 'htCenter ht-ghost-actual'
-                }
-              }
               if (col === 0 && tableRow.kind === 'draft' && !tableRow.draft.vendorInput.trim()) {
                 cellProps.className = 'ht-draft-placeholder'
               }
