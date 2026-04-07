@@ -112,7 +112,8 @@ export function CalendarEventModal({
         const now = new Date()
         now.setMinutes(0, 0, 0)
         setStartLocal(toDatetimeLocalValue(now.toISOString()))
-        setEndLocal('')
+        now.setHours(now.getHours() + 1)
+        setEndLocal(toDatetimeLocalValue(now.toISOString()))
       }
     }
   }, [open, editing, initialDayKey, initialTimedRange])
@@ -310,6 +311,10 @@ export function CalendarEventModal({
                     fromDatetimeLocal(next)
                   )
                   setEndLocal(toDatetimeLocalValue(newEndIso))
+                } else if (!endLocal.trim()) {
+                  const startD = new Date(fromDatetimeLocal(next))
+                  startD.setHours(startD.getHours() + 1)
+                  setEndLocal(toDatetimeLocalValue(startD.toISOString()))
                 }
                 setStartLocal(next)
               }}

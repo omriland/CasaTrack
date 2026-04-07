@@ -10,15 +10,16 @@ import {
   listExpenses,
   listGalleryItems,
   listTasks,
+  listVendorPayments,
   expensesThisMonth,
 } from '@/lib/renovation'
 import { buildVendorBudgetRows } from '@/lib/renovation-vendor-budget'
 import { taskDueCalendarDiffDays } from '@/lib/renovation-format'
 import type {
   RenovationCalendarEvent,
-  RenovationExpense,
   RenovationGalleryItem,
   RenovationTask,
+  RenovationVendorPayment,
 } from '@/types/renovation'
 
 function eventStartMs(ev: RenovationCalendarEvent): number | null {
@@ -71,7 +72,7 @@ export function useRenovationDashboardPage() {
   const [spent, setSpent] = useState(0)
   const [plannedTotal, setPlannedTotal] = useState(0)
   const [monthSpend, setMonthSpend] = useState(0)
-  const [recentExpenses, setRecentExpenses] = useState<RenovationExpense[]>([])
+  const [recentPayments, setRecentPayments] = useState<RenovationVendorPayment[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
   const [calendarEvents, setCalendarEvents] = useState<RenovationCalendarEvent[]>([])
   const [gallery, setGallery] = useState<RenovationGalleryItem[]>([])
@@ -81,11 +82,12 @@ export function useRenovationDashboardPage() {
     if (!project) return
     setDashLoading(true)
     try {
-      const [ex, t, cal, g] = await Promise.all([
+      const [ex, t, cal, g, vp] = await Promise.all([
         listExpenses(project.id),
         listTasks(project.id),
         listCalendarEvents(project.id).catch(() => [] as RenovationCalendarEvent[]),
         listGalleryItems(project.id),
+        listVendorPayments(project.id).catch(() => [] as RenovationVendorPayment[]),
       ])
       const vendorRows = buildVendorBudgetRows(ex)
       const actualSpent = vendorRows.reduce((s, r) => s + r.spentTotal, 0)
@@ -94,7 +96,11 @@ export function useRenovationDashboardPage() {
       setSpent(actualSpent)
       setPlannedTotal(unspentBudget)
       setMonthSpend(expensesThisMonth(ex))
-      setRecentExpenses(ex.slice(0, 5))
+      
+      // Sort payments newest first and limit to 4
+      const sortedPayments = [...vp].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      setRecentPayments(sortedPayments.slice(0, 4))
+      
       setTasks(t)
       setCalendarEvents(cal)
       setGallery(g.slice(0, 6))
@@ -220,7 +226,7 @@ export function useRenovationDashboardPage() {
     spent,
     plannedTotal,
     monthSpend,
-    recentExpenses,
+    recentPayments,
     tasks,
     gallery,
     dashLoading,

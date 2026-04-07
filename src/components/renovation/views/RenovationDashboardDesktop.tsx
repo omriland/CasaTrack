@@ -22,7 +22,7 @@ export function RenovationDashboardDesktop() {
     handleCreate,
     spent,
     plannedTotal,
-    recentExpenses,
+    recentPayments,
     gallery,
     dashLoading,
     cap,
@@ -310,46 +310,44 @@ export function RenovationDashboardDesktop() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
                   </div>
-                  <h2 className="text-[20px] font-bold text-slate-900">Recent Spend</h2>
+                  <h2 className="text-[20px] font-bold text-slate-900">Recent Payments</h2>
                 </div>
-                <Link href="/renovation/expenses" className="text-[14px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition-colors active:scale-95">
-                  View All
+                <Link href="/renovation/budget" className="text-[14px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition-colors active:scale-95">
+                  View Budget
                 </Link>
               </div>
 
-              {recentExpenses.length === 0 ? (
+              {recentPayments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-3">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                   </div>
-                  <p className="text-[15px] font-medium text-slate-500">No expenses logged yet</p>
+                  <p className="text-[15px] font-medium text-slate-500">No payments logged yet</p>
                 </div>
               ) : (
                 <ul className="space-y-2.5">
-                  {recentExpenses.map((e) => (
-                    <li key={e.id} className="flex items-center justify-between p-3 rounded hover:bg-slate-50 transition-colors">
+                  {recentPayments.map((p) => (
+                    <li key={p.id} className="flex items-center justify-between p-3 rounded hover:bg-slate-50 transition-colors">
                       <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0 text-[14px] font-bold uppercase">
-                          {(e.vendor || e.category || 'X')[0]}
+                          {(p.vendor_key || 'X')[0]}
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-slate-800 text-[15px] truncate" dir="auto">
-                            {e.vendor || e.category || 'General Expense'}
+                            {p.vendor_key || 'General'}
                           </p>
-                          {e.vendor && e.category && (
-                            <p className="text-[12px] text-slate-500 font-medium truncate mt-0.5">{e.category}</p>
+                          {p.note && (
+                            <p className="text-[12px] text-slate-500 font-medium truncate mt-0.5" dir="auto">{p.note}</p>
                           )}
                         </div>
                       </div>
                       <div className="ml-4 flex flex-col items-end gap-1 shrink-0">
-                        {e.is_planned && (
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">
-                            Planned
-                          </span>
-                        )}
-                        <span className="font-bold text-slate-900 tabular-nums text-[15px]">{formatIls(Number(e.amount))}</span>
+                        <span className="font-bold text-slate-900 tabular-nums text-[15px]">{formatIls(Number(p.amount))}</span>
+                        <span className="text-[11px] text-slate-400 font-medium tabular-nums">
+                          {new Date(p.created_at).toLocaleDateString('he-IL')}
+                        </span>
                       </div>
                     </li>
                   ))}

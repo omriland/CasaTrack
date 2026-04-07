@@ -678,15 +678,8 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8 animate-fade-in" dir="rtl">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Budget</h1>
-        <button
-          type="button"
-          onClick={() => addDraftAfter(null)}
-          className="shrink-0 rounded-xl bg-indigo-600 px-4 py-2.5 text-[15px] font-bold text-white shadow-sm"
-        >
-          + Add row at top
-        </button>
+      <header className="flex items-center justify-between" dir="ltr">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl text-left">Budget</h1>
       </header>
 
       {loading ? (
