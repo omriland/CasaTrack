@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useRef, useMemo, useEffect } from 'react'
 import 'handsontable/styles/handsontable.min.css'
@@ -37,7 +38,7 @@ export function VendorBudgetDesktopGrid({
   getPaidSum,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const hotInstanceRef = useRef<unknown>(null)
+  const hotInstanceRef = useRef<any>(null)
 
   // Keep refs to latest callbacks to avoid stale closures
   const onCellValueChangedRef = useRef(onCellValueChanged)
@@ -114,7 +115,7 @@ export function VendorBudgetDesktopGrid({
 
   // Imperatively mount Handsontable
   useEffect(() => {
-    let hot: unknown = null
+    let hot: any = null
     let destroyed = false
 
     async function init() {
@@ -126,8 +127,8 @@ export function VendorBudgetDesktopGrid({
 
       // Custom renderer for budget column — centered
       const currencyRenderer = function (
-        _instance: unknown, td: HTMLTableCellElement, _row: number, _col: number,
-        _prop: unknown, value: unknown, _cellProperties: unknown
+        _instance: any, td: HTMLTableCellElement, _row: number, _col: number,
+        _prop: any, value: any, _cellProperties: any
       ) {
         td.textContent = fmtNIS(value)
         td.style.textAlign = 'center'
@@ -136,8 +137,8 @@ export function VendorBudgetDesktopGrid({
 
       // Custom renderer for actual column — color-coded vs budget
       const actualRenderer = function (
-        _instance: unknown, td: HTMLTableCellElement, row: number, _col: number,
-        _prop: unknown, value: unknown, _cellProperties: unknown
+        _instance: any, td: HTMLTableCellElement, row: number, _col: number,
+        _prop: any, value: any, _cellProperties: any
       ) {
         td.style.textAlign = 'center'
         td.dir = 'ltr'
@@ -179,8 +180,8 @@ export function VendorBudgetDesktopGrid({
 
       // Custom renderer for Paid column — color-coded by percentage
       const paidRenderer = function (
-        _instance: unknown, td: HTMLTableCellElement, row: number, _col: number,
-        _prop: unknown, value: unknown, _cellProperties: unknown
+        _instance: any, td: HTMLTableCellElement, row: number, _col: number,
+        _prop: any, value: any, _cellProperties: any
       ) {
         td.style.textAlign = 'center'
         td.dir = 'ltr'
@@ -229,11 +230,10 @@ export function VendorBudgetDesktopGrid({
         contextMenu: false,
         // Click-to-edit: single click enters edit, Enter confirms
         enterBeginsEditing: true,
-        afterChange(changes: unknown[] | null, source: string) {
+        afterChange(changes: any[] | null, source: string) {
           if (source === 'loadData' || source === 'revert' || !changes) return
 
-          for (const change of changes) {
-            const [rowIdx, colIdx, oldValue, newValue] = change as [number, number, unknown, unknown]
+          for (const [rowIdx, colIdx, oldValue, newValue] of changes) {
             if (oldValue === newValue) continue
             const tableRow = rowMetaRef.current[rowIdx]
             if (!tableRow) continue
@@ -242,13 +242,13 @@ export function VendorBudgetDesktopGrid({
             if (!field) continue
 
             const revert = () => {
-              ;(hot as { setDataAtCell: Function })?.setDataAtCell(rowIdx, colIdx, oldValue, 'revert')
+              hot?.setDataAtCell(rowIdx, colIdx as number, oldValue, 'revert')
             }
             void onCellValueChangedRef.current(tableRow, field, String(newValue ?? ''), revert)
           }
         },
         // Single right-click handler → fires the unified parent context menu
-        afterOnCellContextMenu(event: MouseEvent, coords: { row: number; col: number }) {
+        afterOnCellContextMenu(event: MouseEvent, coords: any) {
           event.preventDefault()
           if (coords.row >= 0 && coords.row < rowMetaRef.current.length) {
             const tableRow = rowMetaRef.current[coords.row]
@@ -258,7 +258,7 @@ export function VendorBudgetDesktopGrid({
           }
         },
         cells(row: number, col: number) {
-          const cellProps: Record<string, unknown> = {}
+          const cellProps: any = {}
           const totalRowIdx = dataRef.current.length - 1
 
           if (row === totalRowIdx) {

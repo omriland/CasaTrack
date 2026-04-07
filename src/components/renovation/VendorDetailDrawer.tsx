@@ -85,7 +85,7 @@ export function VendorDetailDrawer({ projectId, vendorRow, onClose, onSaved }: V
       const targetId = await ensureVendorExpenseForAttachments(projectId, vendorRow.displayVendor)
       const list = Array.from(files)
       for (const f of list) {
-        await uploadExpenseAttachment(targetId, f)
+        await uploadExpenseAttachment(projectId, targetId, f)
       }
       await loadAttachments()
       onSaved() // notify parent 
