@@ -11,9 +11,8 @@ import {
   listGalleryItems,
   listTasks,
   expensesThisMonth,
-  sumPlannedExpenses,
-  sumSpentExpenses,
 } from '@/lib/renovation'
+import { buildVendorBudgetRows } from '@/lib/renovation-vendor-budget'
 import { taskDueCalendarDiffDays } from '@/lib/renovation-format'
 import type {
   RenovationCalendarEvent,
@@ -88,8 +87,12 @@ export function useRenovationDashboardPage() {
         listCalendarEvents(project.id).catch(() => [] as RenovationCalendarEvent[]),
         listGalleryItems(project.id),
       ])
-      setSpent(sumSpentExpenses(ex))
-      setPlannedTotal(sumPlannedExpenses(ex))
+      const vendorRows = buildVendorBudgetRows(ex)
+      const actualSpent = vendorRows.reduce((s, r) => s + r.spentTotal, 0)
+      const unspentBudget = vendorRows.reduce((s, r) => s + Math.max(0, r.budgetTotal - r.spentTotal), 0)
+
+      setSpent(actualSpent)
+      setPlannedTotal(unspentBudget)
       setMonthSpend(expensesThisMonth(ex))
       setRecentExpenses(ex.slice(0, 5))
       setTasks(t)
@@ -158,7 +161,7 @@ export function useRenovationDashboardPage() {
       remainingExcludingPlanned: capVal - spent,
       budgetOverAmount: Math.max(0, committed - capVal),
       spentBarPct,
-      plannedBarPct,
+      plannedBarPct, // Represents unspent pipeline
     }
   }, [project, spent, plannedTotal])
 

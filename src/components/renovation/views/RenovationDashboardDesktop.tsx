@@ -22,7 +22,6 @@ export function RenovationDashboardDesktop() {
     handleCreate,
     spent,
     plannedTotal,
-    monthSpend,
     recentExpenses,
     gallery,
     dashLoading,
@@ -237,20 +236,7 @@ export function RenovationDashboardDesktop() {
               </div>
             </div>
 
-            <div className="px-8 py-4 bg-white/5 border-t border-white/10 space-y-2 text-[14px]">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-medium">This month</span>
-                <span className="font-semibold tabular-nums text-white bg-white/10 px-3 py-1 rounded-full">{formatIls(monthSpend)}</span>
-              </div>
-              {plannedTotal > 0 && (
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400 font-medium">Planned (upcoming)</span>
-                  <span className="font-semibold tabular-nums text-amber-200 bg-amber-500/20 px-3 py-1 rounded-full border border-amber-400/20">
-                    {formatIls(plannedTotal)}
-                  </span>
-                </div>
-              )}
-            </div>
+
           </section>
 
           <section className="grid grid-cols-2 gap-5">

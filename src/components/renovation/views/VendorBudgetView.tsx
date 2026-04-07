@@ -15,6 +15,7 @@ import {
 import { useRenovationMobile } from '@/components/renovation/RenovationViewportContext'
 import {
   createVendorPayment,
+  deleteExpense,
   listExpenses,
   listVendorPayments,
   renameVendorAcrossExpenses,
@@ -854,6 +855,33 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
               Info
             </button>
           )}
+          <button
+            type="button"
+            role="menuitem"
+            className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-rose-600 hover:bg-slate-50 border-t border-slate-100 mt-1"
+            onClick={async () => {
+              const rw = menu.row
+              setMenu(null)
+              if (rw.kind === 'draft') {
+                setDrafts(d => d.filter(x => x.localKey !== rw.draft.localKey))
+                return
+              }
+              if (!confirm(`Are you sure you want to delete '${rw.model.displayVendor}' and all its associated expenses?`)) return
+              
+              try {
+                const toDelete = [...rw.model.plannedChronological, ...rw.model.spentChronological]
+                for (const exp of toDelete) {
+                  await deleteExpense(exp.id)
+                }
+                await load()
+              } catch (err) {
+                console.error(err)
+                alert('Failed to delete vendor row')
+              }
+            }}
+          >
+            Delete row
+          </button>
         </div>
       )}
 

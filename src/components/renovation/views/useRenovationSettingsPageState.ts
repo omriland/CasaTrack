@@ -14,10 +14,9 @@ import {
   listLabels,
   listRooms,
   listTeamMembers,
-  sumPlannedExpenses,
-  sumSpentExpenses,
   updateProject,
 } from '@/lib/renovation'
+import { buildVendorBudgetRows } from '@/lib/renovation-vendor-budget'
 import type {
   RenovationBudgetLine,
   RenovationGalleryTag,
@@ -71,8 +70,11 @@ export function useRenovationSettingsPageState() {
       setLabels(l)
       setGTags(g)
       setLines(bl)
-      setSpent(sumSpentExpenses(ex))
-      setPlannedTotal(sumPlannedExpenses(ex))
+      const vendorRows = buildVendorBudgetRows(ex)
+      const actualSpent = vendorRows.reduce((acc, row) => acc + row.spentTotal, 0)
+      const unspentPipeline = vendorRows.reduce((acc, row) => acc + Math.max(0, row.budgetTotal - row.spentTotal), 0)
+      setSpent(actualSpent)
+      setPlannedTotal(unspentPipeline)
       setTotal(String(project.total_budget))
       setCont(String(project.contingency_amount))
       setProjNotes(project.notes || '')

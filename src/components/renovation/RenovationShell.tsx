@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { usePathname } from 'next/navigation'
 import { useRenovation } from './RenovationContext'
 import { RenovationProfileGate } from './RenovationProfileGate'
 import { ExpenseModal } from './ExpenseModal'
@@ -17,6 +18,7 @@ import { RenovationViewportProvider } from './RenovationViewportContext'
 const MOBILE_MQ = '(max-width: 767px)'
 
 export function RenovationShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const {
     loading,
     project,
@@ -79,6 +81,8 @@ export function RenovationShell({ children }: { children: ReactNode }) {
     const handleKeys = (e: KeyboardEvent) => {
       if (window.matchMedia(MOBILE_MQ).matches) return
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return
+      if (pathname.startsWith('/renovation/budget')) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
 
       if (e.key === 'n') {
         e.preventDefault()
@@ -94,6 +98,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
       }
     }
     const handlePaste = (e: ClipboardEvent) => {
+      if (pathname.startsWith('/renovation/budget')) return
       const items = e.clipboardData?.items
       if (!items) return
       for (let i = 0; i < items.length; i++) {
@@ -113,7 +118,7 @@ export function RenovationShell({ children }: { children: ReactNode }) {
       window.removeEventListener('keydown', handleKeys)
       window.removeEventListener('paste', handlePaste)
     }
-  }, [openExpenseModal, setExpenseModalOpen, setTaskModalOpen, setQuickUploadFile])
+  }, [openExpenseModal, setExpenseModalOpen, setTaskModalOpen, setQuickUploadFile, pathname])
 
   if (loading || (project && !profileBootstrapDone)) {
     return (
