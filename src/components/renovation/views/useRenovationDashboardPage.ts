@@ -97,8 +97,12 @@ export function useRenovationDashboardPage() {
       setPlannedTotal(unspentBudget)
       setMonthSpend(expensesThisMonth(ex))
       
-      // Sort payments newest first and limit to 4
-      const sortedPayments = [...vp].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      const activeVendorKeys = new Set(vendorRows.map(vr => vr.key))
+      
+      // Sort payments newest first, filter out deleted vendors/empty budget, and limit to 4
+      const sortedPayments = [...vp]
+        .filter(p => activeVendorKeys.has(p.vendor_key))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       setRecentPayments(sortedPayments.slice(0, 4))
       
       setTasks(t)
