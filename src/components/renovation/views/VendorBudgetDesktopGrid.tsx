@@ -37,7 +37,7 @@ export function VendorBudgetDesktopGrid({
   getPaidSum,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const hotInstanceRef = useRef<any>(null)
+  const hotInstanceRef = useRef<unknown>(null)
 
   // Keep refs to latest callbacks to avoid stale closures
   const onCellValueChangedRef = useRef(onCellValueChanged)
@@ -114,7 +114,7 @@ export function VendorBudgetDesktopGrid({
 
   // Imperatively mount Handsontable
   useEffect(() => {
-    let hot: any = null
+    let hot: unknown = null
     let destroyed = false
 
     async function init() {
@@ -126,8 +126,8 @@ export function VendorBudgetDesktopGrid({
 
       // Custom renderer for budget column — centered
       const currencyRenderer = function (
-        _instance: any, td: HTMLTableCellElement, _row: number, _col: number,
-        _prop: any, value: any, _cellProperties: any
+        _instance: unknown, td: HTMLTableCellElement, _row: number, _col: number,
+        _prop: unknown, value: unknown, _cellProperties: unknown
       ) {
         td.textContent = fmtNIS(value)
         td.style.textAlign = 'center'
@@ -136,8 +136,8 @@ export function VendorBudgetDesktopGrid({
 
       // Custom renderer for actual column — color-coded vs budget
       const actualRenderer = function (
-        _instance: any, td: HTMLTableCellElement, row: number, _col: number,
-        _prop: any, value: any, _cellProperties: any
+        _instance: unknown, td: HTMLTableCellElement, row: number, _col: number,
+        _prop: unknown, value: unknown, _cellProperties: unknown
       ) {
         td.style.textAlign = 'center'
         td.dir = 'ltr'
@@ -179,8 +179,8 @@ export function VendorBudgetDesktopGrid({
 
       // Custom renderer for Paid column — color-coded by percentage
       const paidRenderer = function (
-        _instance: any, td: HTMLTableCellElement, row: number, _col: number,
-        _prop: any, value: any, _cellProperties: any
+        _instance: unknown, td: HTMLTableCellElement, row: number, _col: number,
+        _prop: unknown, value: unknown, _cellProperties: unknown
       ) {
         td.style.textAlign = 'center'
         td.dir = 'ltr'
@@ -229,10 +229,11 @@ export function VendorBudgetDesktopGrid({
         contextMenu: false,
         // Click-to-edit: single click enters edit, Enter confirms
         enterBeginsEditing: true,
-        afterChange(changes: any[] | null, source: string) {
+        afterChange(changes: unknown[] | null, source: string) {
           if (source === 'loadData' || source === 'revert' || !changes) return
 
-          for (const [rowIdx, colIdx, oldValue, newValue] of changes) {
+          for (const change of changes) {
+            const [rowIdx, colIdx, oldValue, newValue] = change as [number, number, unknown, unknown]
             if (oldValue === newValue) continue
             const tableRow = rowMetaRef.current[rowIdx]
             if (!tableRow) continue
@@ -241,13 +242,13 @@ export function VendorBudgetDesktopGrid({
             if (!field) continue
 
             const revert = () => {
-              hot?.setDataAtCell(rowIdx, colIdx as number, oldValue, 'revert')
+              ;(hot as { setDataAtCell: Function })?.setDataAtCell(rowIdx, colIdx, oldValue, 'revert')
             }
             void onCellValueChangedRef.current(tableRow, field, String(newValue ?? ''), revert)
           }
         },
         // Single right-click handler → fires the unified parent context menu
-        afterOnCellContextMenu(event: MouseEvent, coords: any) {
+        afterOnCellContextMenu(event: MouseEvent, coords: { row: number; col: number }) {
           event.preventDefault()
           if (coords.row >= 0 && coords.row < rowMetaRef.current.length) {
             const tableRow = rowMetaRef.current[coords.row]
@@ -257,7 +258,7 @@ export function VendorBudgetDesktopGrid({
           }
         },
         cells(row: number, col: number) {
-          const cellProps: any = {}
+          const cellProps: Record<string, unknown> = {}
           const totalRowIdx = dataRef.current.length - 1
 
           if (row === totalRowIdx) {
