@@ -54,7 +54,7 @@ There are no automated tests in this project.
 
 The renovation module has a deliberate viewport-based component split at Tailwind `md` (768px):
 
-1. `RenovationShell` (in `src/app/renovation/layout.tsx` → `RenovationProvider` → `RenovationShell`) detects viewport client-side via `window.matchMedia('(max-width: 767px)')` and provides it via `RenovationViewportProvider`.
+1. `RenovationShell` (in `src/app/renovation/layout.tsx` → `RenovationProvider` → `RenovationShell`) detects viewport client-side via `window.matchMedia('(max-width: 768px)')` and provides it via `RenovationViewportProvider`.
 2. Every route page calls `useRenovationMobile()` and mounts either `*Desktop` or `*Mobile` view:
    ```tsx
    // pattern used in every renovation page

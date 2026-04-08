@@ -50,9 +50,7 @@ export function RenovationDashboardDesktop() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
           </div>
-          <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
-            Start your project
-          </h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Start your project</h1>
           <p className="text-[16px] text-slate-500 mt-3 px-4 leading-relaxed font-medium">
             Set up your main project space. You can archive it later and start fresh.
           </p>
@@ -127,7 +125,7 @@ export function RenovationDashboardDesktop() {
           ) : (
             <p className="text-[19px] font-semibold text-slate-500 mb-2">{greet.label}</p>
           )}
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900" dir="auto">
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900" dir="auto">
             {project.name}
           </h1>
         </div>

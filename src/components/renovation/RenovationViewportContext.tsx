@@ -14,7 +14,7 @@ export function RenovationViewportProvider({
   return <RenovationViewportContext.Provider value={isMobile}>{children}</RenovationViewportContext.Provider>
 }
 
-/** True when viewport is max-width 767px (Tailwind below `md`). Only use under RenovationShell. */
+/** True when viewport is max-width 768px (matches Tailwind `md` at 768 — iPad portrait / common DevTools widths). Only use under RenovationShell. */
 export function useRenovationMobile() {
   return useContext(RenovationViewportContext)
 }

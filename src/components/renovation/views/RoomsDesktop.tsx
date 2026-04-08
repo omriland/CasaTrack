@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Lightbox } from '@/components/renovation/Lightbox'
 import { RoomIconGlyph, ROOM_ICON_TILE, normalizeRoomIconKey } from '@/components/renovation/room-icons'
 import { RoomIconPickerDialog } from '@/components/renovation/RoomIconPicker'
+import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
+import { notesContentEqual } from '@/lib/room-notes-html'
 import { useRoomsPageState } from './useRoomsPageState'
 
 export function RoomsDesktop() {
@@ -17,7 +19,7 @@ export function RoomsDesktop() {
     tags,
     loading,
     selectedId,
-    setSelectedId,
+    selectRoom,
     lightbox,
     setLightbox,
     editName,
@@ -27,6 +29,7 @@ export function RoomsDesktop() {
     editIconKey,
     setEditIconKey,
     saving,
+    saveAck,
     load,
     selectedRoom,
     roomTasks,
@@ -39,8 +42,8 @@ export function RoomsDesktop() {
 
   useEffect(() => {
     if (loading || rooms.length === 0 || selectedId) return
-    setSelectedId(rooms[0]!.id)
-  }, [loading, rooms, selectedId, setSelectedId])
+    selectRoom(rooms[0]!.id)
+  }, [loading, rooms, selectedId, selectRoom])
 
   if (!project) {
     return (
@@ -63,7 +66,7 @@ export function RoomsDesktop() {
   return (
     <div className="space-y-6 pb-12 animate-fade-in-up">
       <header className="flex flex-col gap-1.5 px-2">
-        <h1 className="text-[36px] font-extrabold tracking-tight text-slate-900 font-sans">Spaces</h1>
+        <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Spaces</h1>
         <p className="text-[16px] font-medium text-slate-500 max-w-2xl">
           Manage your rooms. Select a space on the left to view and edit its notes, tasks, needs, and photos.
         </p>
@@ -135,11 +138,11 @@ export function RoomsDesktop() {
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={() => setSelectedId(room.id)}
+                        onClick={() => selectRoom(room.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault()
-                            setSelectedId(room.id)
+                            selectRoom(room.id)
                           }
                         }}
                         className={`relative flex cursor-pointer items-start gap-3.5 rounded-2xl p-3.5 outline-none transition-all duration-300 focus-visible:ring-2 focus-visible:ring-indigo-500/50 ${
@@ -154,7 +157,7 @@ export function RoomsDesktop() {
                           aria-label="Change room icon"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setSelectedId(room.id)
+                            selectRoom(room.id)
                             setIconPickerOpen(true)
                           }}
                           className={`flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-[1rem] transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${ROOM_ICON_TILE[ri]} ${active ? 'shadow-md' : 'shadow-sm group-hover:shadow-md'}`}
@@ -226,22 +229,36 @@ export function RoomsDesktop() {
                       />
                     </div>
                     
-                    <button
-                      type="button"
-                      onClick={saveRoom}
-                      disabled={
-                        saving ||
-                        (editName.trim() === selectedRoom.name &&
-                          (editNotes || '') === (selectedRoom.notes || '') &&
-                          normalizeRoomIconKey(selectedRoom.room_icon_key) === editIconKey)
-                      }
-                      className="group relative flex h-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 px-7 text-[15px] font-bold text-white shadow-sm transition-all duration-300 hover:bg-slate-800 hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none disabled:hover:scale-100"
-                    >
-                      <span className="relative z-10">{saving ? 'Saving…' : 'Save Changes'}</span>
-                      {!saving && (
-                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                    <div className="flex shrink-0 items-center gap-3">
+                      {saveAck && !saving && (
+                        <span
+                          className="flex items-center gap-1.5 text-[13px] font-semibold text-emerald-600 tabular-nums animate-fade-in"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Saved
+                        </span>
                       )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={saveRoom}
+                        disabled={
+                          saving ||
+                          (editName.trim() === selectedRoom.name &&
+                            notesContentEqual(editNotes, selectedRoom.notes) &&
+                            normalizeRoomIconKey(selectedRoom.room_icon_key) === editIconKey)
+                        }
+                        className="group relative flex h-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-900 px-7 text-[15px] font-bold text-white shadow-sm transition-all duration-300 hover:bg-slate-800 hover:shadow-md disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none disabled:hover:scale-100"
+                      >
+                        <span className="relative z-10">{saving ? 'Saving…' : 'Save Changes'}</span>
+                        {!saving && (
+                          <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -259,14 +276,13 @@ export function RoomsDesktop() {
                           Room Notes
                         </label>
                       </div>
-                      <textarea
-                        dir="auto"
+                      <RoomNotesMarkdownEditor
+                        instanceKey={selectedId ?? ''}
                         value={editNotes}
-                        onChange={(e) => setEditNotes(e.target.value)}
+                        onChange={setEditNotes}
                         onBlur={saveRoom}
                         placeholder="Plans, specs, dimensions, ideas for this space…"
-                        rows={4}
-                        className="w-full resize-y rounded-xl border border-slate-100 bg-slate-50/50 px-5 py-4 text-[16px] leading-relaxed text-slate-800 placeholder:text-slate-400 transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 custom-scrollbar"
+                        className="w-full"
                       />
                     </div>
 

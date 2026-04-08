@@ -1,5 +1,10 @@
 # Development Progress Log
 
+## April 2026 — room notes markdown
+- **Spaces + Settings (add room):** WYSIWYG **TipTap** in [`RoomNotesMarkdownEditor`](src/components/renovation/RoomNotesMarkdownEditor.tsx); DB stores **sanitized HTML** ([`room-notes-html.ts`](src/lib/room-notes-html.ts): `isomorphic-dompurify` + legacy **markdown/plain** import via `marked`). Bold / underline / bullet list + **⌘B**; **Varela Round** on ProseMirror. [`selectRoom`](src/components/renovation/views/useRoomsPageState.ts) syncs selection + notes in one render; dirty checks use `notesContentEqual`.
+- **Tab / segmented label typography:** View and filter tabs use **`text-[14px] font-semibold`** (property hunt Cards/Kanban/Map; renovation Tasks, Expenses, Rooms section pills + accordion titles, Calendar desktop filters + Month/Week control, Gallery Albums/All + Select, Needs “Completed” toggle, mobile main nav labels).
+- **Renovation calendar day view:** [`CalendarViewMode`](src/components/renovation/views/useCalendarPageState.ts) adds **`day`**; [`RenovationFullCalendarInner`](src/components/renovation/RenovationFullCalendarInner.tsx) maps it to FullCalendar **`timeGridDay`**. **Mobile:** [`CalendarMobile`](src/components/renovation/views/CalendarMobile.tsx) **Month | Day** segment + sticky header; prev/next by month or day. **Desktop:** [`CalendarDesktop`](src/components/renovation/views/CalendarDesktop.tsx) view menu **Month / Week / Day**. Mobile coerces **`week` → `month`** only (calendar is under **More** on narrow viewports).
+
 ## Renovation app (March 2025)
 
 ### Completed (vendor budget vs actual table, April 2026)

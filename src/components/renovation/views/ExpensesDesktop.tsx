@@ -37,7 +37,7 @@ export function ExpensesDesktop() {
       type="button"
       onClick={() => setExpenseFilter(id)}
       className={cn(
-        'rounded-full px-4 py-2 text-[13px] font-bold transition-colors',
+        'rounded-full px-4 py-2 text-[14px] font-semibold transition-colors',
         expenseFilter === id
           ? 'bg-slate-900 text-white'
           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -61,7 +61,7 @@ export function ExpensesDesktop() {
     <div className="space-y-6 pb-8 animate-fade-in-up">
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
-          <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Expenses</h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Expenses</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Track spending and upcoming costs</p>
         </div>
         <div>

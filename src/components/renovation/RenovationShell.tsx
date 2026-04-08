@@ -15,7 +15,8 @@ import { RenovationDesktopShell } from './RenovationDesktopShell'
 import { RenovationMobileShell } from './RenovationMobileShell'
 import { RenovationViewportProvider } from './RenovationViewportContext'
 
-const MOBILE_MQ = '(max-width: 767px)'
+/** Include 768px so iPad portrait + DevTools “768” presets match mobile (Tailwind `md` also starts at 768). */
+const MOBILE_MQ = '(max-width: 768px)'
 
 export function RenovationShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()

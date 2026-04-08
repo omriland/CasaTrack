@@ -106,7 +106,7 @@ export function FilesDesktop() {
           <div className="p-6 bg-indigo-600 text-white rounded-3xl mb-6 shadow-2xl shadow-indigo-500/30 animate-bounce">
             <IconUpload />
           </div>
-          <h2 className="text-[32px] font-bold text-indigo-900 tracking-tight">Drop files to upload</h2>
+          <h2 className="text-[32px] font-bold tracking-tight text-slate-900">Drop files to upload</h2>
           <p className="text-[18px] text-indigo-600/80 mt-2 font-medium">
             Release anywhere to add them to your project
           </p>
@@ -136,7 +136,7 @@ export function FilesDesktop() {
 
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
-          <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Project Files</h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Project Files</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Keep all your receipts, contracts, and blueprints in one place.</p>
         </div>
 

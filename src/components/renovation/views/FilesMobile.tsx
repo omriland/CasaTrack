@@ -41,7 +41,7 @@ export function FilesMobile() {
   return (
     <div className="space-y-5 pb-28 animate-fade-in">
       <header>
-        <h1 className="text-[24px] font-bold text-slate-900">Files</h1>
+        <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Files</h1>
         <p className="text-[14px] text-slate-500 mt-1">Contracts, PDFs, and scans in one place.</p>
       </header>
 

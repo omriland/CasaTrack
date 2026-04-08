@@ -313,7 +313,7 @@ export default function HomeContent() {
                 <div className="flex bg-gray-50 rounded-xl p-1 gap-1 border border-[rgba(0,0,0,0.06)]">
                   <button
                     onClick={() => setViewMode('cards')}
-                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[14px] font-semibold transition-all duration-200 ${
                       viewMode === 'cards'
                         ? 'bg-black text-white shadow-sm'
                         : 'text-black/40 hover:text-black hover:bg-black/5'
@@ -326,7 +326,7 @@ export default function HomeContent() {
                   </button>
                   <button
                     onClick={() => setViewMode('kanban')}
-                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[14px] font-semibold transition-all duration-200 ${
                       viewMode === 'kanban'
                         ? 'bg-black text-white shadow-sm'
                         : 'text-black/40 hover:text-black hover:bg-black/5'
@@ -341,7 +341,7 @@ export default function HomeContent() {
                   </button>
                   <button
                     onClick={() => setViewMode('map')}
-                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all duration-200 ${
+                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-lg text-[14px] font-semibold transition-all duration-200 ${
                       viewMode === 'map'
                         ? 'bg-black text-white shadow-sm'
                         : 'text-black/40 hover:text-black hover:bg-black/5'
@@ -412,7 +412,7 @@ export default function HomeContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14-4H5m14 8H5" />
                   </svg>
                 </div>
-                <span className={`text-[10px] font-extrabold transition-all duration-300 ${viewMode === 'cards' ? 'opacity-100' : 'opacity-70'}`}>
+                <span className={`text-[14px] font-semibold leading-tight transition-all duration-300 ${viewMode === 'cards' ? 'opacity-100' : 'opacity-70'}`}>
                   Cards
                 </span>
               </button>
@@ -431,7 +431,7 @@ export default function HomeContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
                   </svg>
                 </div>
-                <span className={`text-[10px] font-extrabold transition-all duration-300 ${viewMode === 'kanban' ? 'opacity-100' : 'opacity-70'}`}>
+                <span className={`text-[14px] font-semibold leading-tight transition-all duration-300 ${viewMode === 'kanban' ? 'opacity-100' : 'opacity-70'}`}>
                   Kanban
                 </span>
               </button>
@@ -451,7 +451,7 @@ export default function HomeContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
-                <span className={`text-[10px] font-extrabold transition-all duration-300 ${viewMode === 'map' ? 'opacity-100' : 'opacity-70'}`}>
+                <span className={`text-[14px] font-semibold leading-tight transition-all duration-300 ${viewMode === 'map' ? 'opacity-100' : 'opacity-70'}`}>
                   Map
                 </span>
               </button>

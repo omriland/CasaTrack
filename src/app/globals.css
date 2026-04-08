@@ -756,3 +756,59 @@ input[type=number] {
   border-top-color: transparent;
   border-bottom-color: transparent;
 }
+
+/* Renovation room notes — TipTap / ProseMirror */
+/* Varela Round is single-weight (400); global body uses font-synthesis: none, so re-enable
+   synthetic bold here or <strong> looks identical to body text. */
+.room-notes-editor .ProseMirror {
+  outline: none;
+  padding: 0.75rem 0.875rem;
+  font-size: 15px;
+  line-height: 1.625;
+  color: #0f172a;
+  font-synthesis: weight;
+}
+
+.room-notes-editor .ProseMirror strong,
+.room-notes-editor .ProseMirror b {
+  font-weight: 700;
+  font-synthesis: weight;
+}
+
+.room-notes-editor .ProseMirror p {
+  margin: 0.25em 0;
+}
+
+.room-notes-editor .ProseMirror p:first-child {
+  margin-top: 0;
+}
+
+.room-notes-editor .ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.room-notes-editor .ProseMirror ul,
+.room-notes-editor .ProseMirror ol {
+  margin: 0.35em 0;
+  padding-left: 1.35rem;
+}
+
+.room-notes-editor .ProseMirror ul {
+  list-style-type: disc;
+}
+
+.room-notes-editor .ProseMirror ol {
+  list-style-type: decimal;
+}
+
+.room-notes-editor .ProseMirror li p {
+  margin: 0;
+}
+
+.room-notes-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}

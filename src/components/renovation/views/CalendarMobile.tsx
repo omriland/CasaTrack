@@ -1,6 +1,6 @@
 'use client'
 
-import { addMonths, format, subMonths } from 'date-fns'
+import { addDays, addMonths, format, subDays, subMonths } from 'date-fns'
 import { useCallback, useEffect, useState } from 'react'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
@@ -48,7 +48,10 @@ export function CalendarMobile() {
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
 
-  useEffect(() => { setCalendarView('month') }, [setCalendarView])
+  /** Week view is desktop-only; fall back to month on mobile. */
+  useEffect(() => {
+    if (calendarView === 'week') setCalendarView('month')
+  }, [calendarView, setCalendarView])
 
   const loadMeta = useCallback(async () => {
     if (!project) return
@@ -97,36 +100,68 @@ export function CalendarMobile() {
 
   return (
     <div className="flex h-full flex-col overflow-hidden pb-16">
-      <header className="flex flex-col border-b border-slate-200/60 bg-white pt-2 px-3">
-        <div className="flex items-center justify-between min-h-[48px]">
-          <h1 className="text-[18px] font-bold leading-none text-slate-900">
-            {format(cursor, 'MMMM yyyy')}
+      <header className="sticky top-0 z-10 flex flex-col border-b border-slate-200/60 bg-white pt-2 px-3 shadow-[0_4px_12px_-4px_rgba(15,23,42,0.08)]">
+        <div className="flex items-center justify-between gap-2 min-h-[48px]">
+          <h1 className="min-w-0 text-[24px] font-bold tracking-tight leading-tight text-slate-900">
+            {calendarView === 'month' ? format(cursor, 'MMMM yyyy') : format(cursor, 'EEE, MMM d')}
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <button
-              onClick={() => setCursor(subMonths(cursor, 1))}
+              type="button"
+              onClick={() =>
+                setCursor(calendarView === 'month' ? subMonths(cursor, 1) : subDays(cursor, 1))
+              }
               className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100"
-              aria-label="Previous month"
+              aria-label={calendarView === 'month' ? 'Previous month' : 'Previous day'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
             </button>
             <button
+              type="button"
               onClick={() => setCursor(new Date())}
-              className="min-h-[44px] px-4 text-[14px] font-bold text-indigo-600 rounded-xl border border-slate-200 active:bg-slate-50"
+              className="min-h-[44px] px-4 text-[14px] font-semibold text-indigo-600 rounded-xl border border-slate-200 active:bg-slate-50"
             >
               Today
             </button>
             <button
-              onClick={() => setCursor(addMonths(cursor, 1))}
+              type="button"
+              onClick={() =>
+                setCursor(calendarView === 'month' ? addMonths(cursor, 1) : addDays(cursor, 1))
+              }
               className="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 active:bg-slate-100"
-              aria-label="Next month"
+              aria-label={calendarView === 'month' ? 'Next month' : 'Next day'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
         </div>
 
-        <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-3 pt-1">
+        <div className="mt-1 flex w-full rounded-xl bg-slate-100/90 p-1">
+          <button
+            type="button"
+            onClick={() => setCalendarView('month')}
+            className={`min-h-[40px] flex-1 rounded-lg text-[14px] font-semibold transition-all ${
+              calendarView === 'month'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-500'
+            }`}
+          >
+            Month
+          </button>
+          <button
+            type="button"
+            onClick={() => setCalendarView('day')}
+            className={`min-h-[40px] flex-1 rounded-lg text-[14px] font-semibold transition-all ${
+              calendarView === 'day'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-500'
+            }`}
+          >
+            Day
+          </button>
+        </div>
+
+        <div className="flex overflow-x-auto scrollbar-hide gap-2 pb-3 pt-2">
           <button
             type="button"
             onClick={() => setShowTasks(!showTasks)}

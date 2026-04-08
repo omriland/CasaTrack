@@ -76,7 +76,8 @@ export function RenovationFullCalendarInner({
   useLayoutEffect(() => {
     const api = ref.current?.getApi()
     if (!api) return
-    const want = view === 'week' ? 'timeGridWeek' : 'dayGridMonth'
+    const want =
+      view === 'week' ? 'timeGridWeek' : view === 'day' ? 'timeGridDay' : 'dayGridMonth'
     if (api.view.type !== want) api.changeView(want)
     api.gotoDate(cursor)
   }, [cursor, view])
@@ -131,7 +132,7 @@ export function RenovationFullCalendarInner({
   const monthOpts =
     view === 'month'
       ? { aspectRatio: compact ? 0.92 : 1.42, dayMaxEvents: true as const }
-      : { contentHeight: compact ? 520 : 720 }
+      : { contentHeight: compact ? (view === 'day' ? 560 : 520) : 720 }
 
   return (
     <div
@@ -141,7 +142,9 @@ export function RenovationFullCalendarInner({
         key={view}
         ref={ref}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView={view === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
+        initialView={
+          view === 'week' ? 'timeGridWeek' : view === 'day' ? 'timeGridDay' : 'dayGridMonth'
+        }
         initialDate={cursor}
         headerToolbar={false}
         firstDay={0}
@@ -149,7 +152,7 @@ export function RenovationFullCalendarInner({
         slotMinTime={SLOT_MIN}
         slotMaxTime={SLOT_MAX}
         scrollTime="07:00:00"
-        nowIndicator={view === 'week'}
+        nowIndicator={view === 'week' || view === 'day'}
         eventMinHeight={compact ? 20 : 24}
         slotLabelFormat={{
           hour: '2-digit',
@@ -169,7 +172,7 @@ export function RenovationFullCalendarInner({
         {...monthOpts}
         events={mergedEvents}
         dayHeaderContent={arg => {
-          if (arg.view.type !== 'timeGridWeek') return arg.text
+          if (arg.view.type !== 'timeGridWeek' && arg.view.type !== 'timeGridDay') return arg.text
           const dow = format(arg.date, 'EEE').toUpperCase()
           const d = format(arg.date, 'd')
           if (compact) {
@@ -210,7 +213,9 @@ export function RenovationFullCalendarInner({
         dayCellClassNames={arg => (isWeekendFriSat(arg.date) ? 'reno-cal-weekend' : '')}
         eventClassNames={() => ['reno-cal-event-root']}
         dayHeaderClassNames={arg =>
-          arg.view.type === 'timeGridWeek' ? ['reno-cal-gcal-day-header'] : []
+          arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay'
+            ? ['reno-cal-gcal-day-header']
+            : []
         }
         eventContent={arg => {
           const ep = arg.event.extendedProps as Record<string, unknown>
@@ -219,7 +224,7 @@ export function RenovationFullCalendarInner({
 
           const timePrefix = !arg.event.allDay && arg.timeText ? `${arg.timeText} ` : ''
           const isWeekTimed =
-            arg.view.type === 'timeGridWeek' &&
+            (arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay') &&
             !arg.event.allDay &&
             (timedDurationMs(arg) ?? 0) >= 3600000
           const titleClass = isWeekTimed

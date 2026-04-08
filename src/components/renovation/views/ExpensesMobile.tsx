@@ -34,7 +34,7 @@ export function ExpensesMobile() {
       type="button"
       onClick={() => setExpenseFilter(id)}
       className={cn(
-        'rounded-full px-3.5 py-2 text-[13px] font-bold transition-colors',
+        'rounded-full px-3.5 py-2 text-[14px] font-semibold transition-colors',
         expenseFilter === id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600'
       )}
     >

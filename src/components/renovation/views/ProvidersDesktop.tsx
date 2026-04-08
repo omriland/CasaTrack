@@ -24,7 +24,7 @@ export function ProvidersDesktop() {
       <header className="space-y-1">
         <div className="flex flex-row items-end justify-between gap-4">
           <div>
-            <h1 className="text-[34px] font-bold tracking-tight text-slate-900">Providers</h1>
+            <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Providers</h1>
             <p className="text-[15px] text-slate-500 mt-0.5 max-w-md">Service providers and contractors</p>
           </div>
           <button

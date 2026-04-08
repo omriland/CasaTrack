@@ -4,7 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 
 export { useRenovationMobile } from './RenovationViewportContext'
 
-const MOBILE_MQ = '(max-width: 767px)'
+const MOBILE_MQ = '(max-width: 768px)'
 
 /**
  * Matches Tailwind `md` breakpoint (viewport &lt; 768px).

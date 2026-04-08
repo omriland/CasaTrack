@@ -311,7 +311,7 @@ export function TasksDesktop() {
       <header className="flex flex-row items-end justify-between gap-4">
         <div>
           <div className="flex items-baseline gap-3">
-            <h1 className="text-[32px] font-bold tracking-tight text-slate-900 font-sans">Tasks</h1>
+            <h1 className="text-[32px] font-bold tracking-tight text-slate-900">Tasks</h1>
             {(filterAssignee || filterLabel) && (
               <span className="text-[14px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full animate-fade-in">
                 Showing {filteredTasks.length} / {tasks.length}
@@ -338,7 +338,7 @@ export function TasksDesktop() {
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`h-10 px-4 rounded-full text-[14px] font-bold transition-all capitalize whitespace-nowrap ${
+              className={`h-10 px-4 rounded-full text-[14px] font-semibold transition-all capitalize whitespace-nowrap ${
                 view === v ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
               }`}
             >
@@ -348,7 +348,7 @@ export function TasksDesktop() {
           <button
             type="button"
             onClick={() => setView('epic')}
-            className={`h-10 px-4 rounded-full text-[14px] font-bold transition-all whitespace-nowrap ${
+            className={`h-10 px-4 rounded-full text-[14px] font-semibold transition-all whitespace-nowrap ${
               view === 'epic' ? 'bg-indigo-600 text-white shadow-md' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
             }`}
           >

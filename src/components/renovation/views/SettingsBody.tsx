@@ -16,6 +16,7 @@ import {
 } from '@/lib/renovation'
 import type { RenovationSettingsPageCtx } from './useRenovationSettingsPageState'
 import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
+import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
 
 export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; mobile: boolean }) {
   const {
@@ -95,7 +96,7 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
     <div className={`space-y-6 max-w-2xl mx-auto animate-fade-in-up ${mobile ? 'pb-28' : 'pb-8'}`}>
       <header className={`flex ${flexRow} ${mobile ? 'items-start' : 'items-end'} justify-between gap-4`}>
         <div>
-          <h1 className={`${mobile ? 'text-[26px]' : 'text-[32px]'} font-bold tracking-tight text-slate-900 font-sans`}>Settings</h1>
+          <h1 className={`${mobile ? 'text-[24px]' : 'text-[32px]'} font-bold tracking-tight text-slate-900`}>Settings</h1>
           <p className="text-[15px] font-medium text-slate-400 mt-1 max-w-md">Manage your team, labels, budget, and project details.</p>
         </div>
       </header>
@@ -327,13 +328,13 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
               onChange={(e) => setRoomName(e.target.value)}
               className={`w-full ${inp} px-4 rounded-xl border border-slate-200 text-[15px] bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400`}
             />
-            <textarea
-              dir="auto"
-              placeholder="Optional paragraph about this room…"
+            <RoomNotesMarkdownEditor
+              instanceKey="settings-add-room"
+              variant="compact"
+              placeholder="Optional notes for this room…"
               value={roomNotes}
-              onChange={(e) => setRoomNotes(e.target.value)}
-              rows={2}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-[15px] bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none placeholder:text-slate-400"
+              onChange={setRoomNotes}
+              className="w-full"
             />
             <button
               type="button"

@@ -30,7 +30,7 @@ export default function MorePage() {
 
   return (
     <div className="animate-fade-in pb-8">
-      <h1 className="text-[24px] font-bold tracking-tight text-slate-900 mb-6">More</h1>
+      <h1 className="mb-6 text-[24px] font-bold tracking-tight text-slate-900">More</h1>
       <div className="space-y-2">
         {sections.map((item) => {
           const Icon = item.icon

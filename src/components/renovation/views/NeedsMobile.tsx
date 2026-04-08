@@ -123,7 +123,7 @@ export function NeedsMobile() {
               <button
                 type="button"
                 onClick={() => setShowCompleted(!showCompleted)}
-                className="flex items-center gap-2 px-0.5 min-h-[44px] text-[14px] font-bold text-slate-400 active:text-slate-600"
+                className="flex items-center gap-2 px-0.5 min-h-[44px] text-[14px] font-semibold text-slate-400 active:text-slate-600"
               >
                 <svg className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

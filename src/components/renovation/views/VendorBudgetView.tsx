@@ -679,7 +679,7 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-4 pb-24 md:pb-8 animate-fade-in" dir="rtl">
       <header className="flex items-center justify-between" dir="ltr">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl text-left">Budget</h1>
+        <h1 className="text-[24px] font-bold tracking-tight text-slate-900 md:text-[32px] text-left">Budget</h1>
       </header>
 
       {loading ? (

@@ -76,7 +76,7 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
                   }`}
               >
                 <Icon className="h-6 w-6" active={active} />
-                <span className="text-[10px] sm:text-[11px] font-semibold leading-tight text-center max-w-[4.25rem]">{item.label}</span>
+                <span className="text-[14px] font-semibold leading-tight text-center max-w-[4.25rem]">{item.label}</span>
               </Link>
             )
           })}

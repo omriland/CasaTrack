@@ -5,7 +5,7 @@ import { useRenovation } from '@/components/renovation/RenovationContext'
 import { listCalendarEvents, listProviders, listTasks } from '@/lib/renovation'
 import type { RenovationCalendarEvent, RenovationProvider, RenovationTask } from '@/types/renovation'
 
-export type CalendarViewMode = 'month' | 'week'
+export type CalendarViewMode = 'month' | 'week' | 'day'
 
 export function useCalendarPageState() {
   const { project } = useRenovation()

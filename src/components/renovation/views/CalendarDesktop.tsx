@@ -1,6 +1,6 @@
 'use client'
 
-import { addDays, addMonths, addWeeks, format, startOfWeek, subMonths, subWeeks } from 'date-fns'
+import { addDays, addMonths, addWeeks, format, startOfWeek, subDays, subMonths, subWeeks } from 'date-fns'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CalendarEventDetailDrawer } from '@/components/renovation/CalendarEventDetailDrawer'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
@@ -125,6 +125,7 @@ export function CalendarDesktop() {
 
   return (
     <div className="flex flex-col gap-0 bg-white pb-8 animate-fade-in-up">
+      <h1 className="text-[32px] font-bold tracking-tight text-slate-900 pb-2">Calendar</h1>
       {/* Top Controls Header (Google Style) */}
       <header className="flex flex-col items-start gap-4 border-[#dadce0] pb-4 pt-1 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
@@ -162,20 +163,44 @@ export function CalendarDesktop() {
               <button
                 type="button"
                 onClick={() =>
-                  setCursor(calendarView === 'month' ? subMonths(cursor, 1) : subWeeks(cursor, 1))
+                  setCursor(
+                    calendarView === 'month'
+                      ? subMonths(cursor, 1)
+                      : calendarView === 'week'
+                        ? subWeeks(cursor, 1)
+                        : subDays(cursor, 1)
+                  )
                 }
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4] transition-colors"
-                aria-label={calendarView === 'month' ? 'Previous month' : 'Previous week'}
+                aria-label={
+                  calendarView === 'month'
+                    ? 'Previous month'
+                    : calendarView === 'week'
+                      ? 'Previous week'
+                      : 'Previous day'
+                }
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
               </button>
               <button
                 type="button"
                 onClick={() =>
-                  setCursor(calendarView === 'month' ? addMonths(cursor, 1) : addWeeks(cursor, 1))
+                  setCursor(
+                    calendarView === 'month'
+                      ? addMonths(cursor, 1)
+                      : calendarView === 'week'
+                        ? addWeeks(cursor, 1)
+                        : addDays(cursor, 1)
+                  )
                 }
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4] transition-colors"
-                aria-label={calendarView === 'month' ? 'Next month' : 'Next week'}
+                aria-label={
+                  calendarView === 'month'
+                    ? 'Next month'
+                    : calendarView === 'week'
+                      ? 'Next week'
+                      : 'Next day'
+                }
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
               </button>
@@ -183,7 +208,9 @@ export function CalendarDesktop() {
             <h2 className="ml-2 mt-1 text-[22px] font-normal leading-none text-[#3c4043]">
               {calendarView === 'month'
                 ? format(cursor, 'MMMM yyyy')
-                : `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`}
+                : calendarView === 'week'
+                  ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
+                  : format(cursor, 'EEEE, MMMM d, yyyy')}
             </h2>
           </div>
         </div>
@@ -194,7 +221,7 @@ export function CalendarDesktop() {
             <button
               type="button"
               onClick={() => setShowTasks(!showTasks)}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] font-semibold transition-colors ${
                 showTasks
                   ? 'border-[#ceead6] bg-[#e6f4ea] text-[#137333]'
                   : 'border-[#dadce0] bg-white text-[#5f6368] hover:bg-[#f8f9fa]'
@@ -212,7 +239,7 @@ export function CalendarDesktop() {
               type="button"
               onClick={() => setShowCompletedTasks(!showCompletedTasks)}
               disabled={!showTasks}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] font-semibold transition-colors ${
                 !showTasks
                   ? 'cursor-not-allowed border-[#dadce0] bg-white text-[#9aa0a6] opacity-50'
                   : showCompletedTasks
@@ -233,9 +260,9 @@ export function CalendarDesktop() {
             <button
               type="button"
               onClick={() => setViewMenuOpen((o) => !o)}
-              className="flex h-10 items-center gap-2 rounded-md border border-[#dadce0] px-3 text-[14px] font-medium text-[#3c4043] transition-colors hover:bg-[#f1f3f4] focus:outline-none"
+              className="flex h-10 items-center gap-2 rounded-md border border-[#dadce0] px-3 text-[14px] font-semibold text-[#3c4043] transition-colors hover:bg-[#f1f3f4] focus:outline-none"
             >
-              {calendarView === 'month' ? 'Month' : 'Week'}
+              {calendarView === 'month' ? 'Month' : calendarView === 'week' ? 'Week' : 'Day'}
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-[#5f6368]">
                 <path d="M7 10l5 5 5-5z" />
               </svg>
@@ -249,18 +276,7 @@ export function CalendarDesktop() {
                   aria-label="Close menu"
                   tabIndex={-1}
                 />
-                <div className="absolute right-0 top-full z-50 mt-1 w-36 rounded-lg border border-[#dadce0] bg-white py-1.5 shadow-lg animate-fade-in">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCalendarView('week')
-                      setViewMenuOpen(false)
-                    }}
-                    className={`block w-full px-4 py-2 text-left text-[14px] hover:bg-[#f1f3f4] ${calendarView === 'week' ? 'bg-[#f8f9fa] font-medium text-[#1a73e8]' : 'text-[#3c4043]'}`}
-                  >
-                    Week
-                  </button>
+                <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-[#dadce0] bg-white py-1.5 shadow-lg animate-fade-in">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -268,9 +284,31 @@ export function CalendarDesktop() {
                       setCalendarView('month')
                       setViewMenuOpen(false)
                     }}
-                    className={`block w-full px-4 py-2 text-left text-[14px] hover:bg-[#f1f3f4] ${calendarView === 'month' ? 'bg-[#f8f9fa] font-medium text-[#1a73e8]' : 'text-[#3c4043]'}`}
+                    className={`block w-full px-4 py-2 text-left text-[14px] font-semibold hover:bg-[#f1f3f4] ${calendarView === 'month' ? 'bg-[#f8f9fa] text-[#1a73e8]' : 'text-[#3c4043]'}`}
                   >
                     Month
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCalendarView('week')
+                      setViewMenuOpen(false)
+                    }}
+                    className={`block w-full px-4 py-2 text-left text-[14px] font-semibold hover:bg-[#f1f3f4] ${calendarView === 'week' ? 'bg-[#f8f9fa] text-[#1a73e8]' : 'text-[#3c4043]'}`}
+                  >
+                    Week
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setCalendarView('day')
+                      setViewMenuOpen(false)
+                    }}
+                    className={`block w-full px-4 py-2 text-left text-[14px] font-semibold hover:bg-[#f1f3f4] ${calendarView === 'day' ? 'bg-[#f8f9fa] text-[#1a73e8]' : 'text-[#3c4043]'}`}
+                  >
+                    Day
                   </button>
                 </div>
               </>

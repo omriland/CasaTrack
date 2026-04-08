@@ -7,6 +7,8 @@ import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSh
 import { RoomIconGlyph, ROOM_ICON_TILE, normalizeRoomIconKey } from '@/components/renovation/room-icons'
 import { RoomIconPickerGrid } from '@/components/renovation/RoomIconPicker'
 import { cn } from '@/utils/common'
+import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
+import { notesContentEqual } from '@/lib/room-notes-html'
 import { useRoomsPageState } from './useRoomsPageState'
 
 /** Clears sticky header + chip row when scrolling to a section */
@@ -34,7 +36,7 @@ export function RoomsMobile() {
     tags,
     loading,
     selectedId,
-    setSelectedId,
+    selectRoom,
     lightbox,
     setLightbox,
     editName,
@@ -44,6 +46,7 @@ export function RoomsMobile() {
     editIconKey,
     setEditIconKey,
     saving,
+    saveAck,
     load,
     selectedRoom,
     roomTasks,
@@ -78,7 +81,7 @@ export function RoomsMobile() {
     if (!selectedRoom) return false
     return (
       editName.trim() !== selectedRoom.name ||
-      (editNotes || '') !== (selectedRoom.notes || '') ||
+      !notesContentEqual(editNotes, selectedRoom.notes) ||
       editIconKey !== normalizeRoomIconKey(selectedRoom.room_icon_key)
     )
   }, [selectedRoom, editName, editNotes, editIconKey])
@@ -86,9 +89,9 @@ export function RoomsMobile() {
   useEffect(() => {
     if (loading || rooms.length === 0) return
     if (!selectedId || !rooms.some((r) => r.id === selectedId)) {
-      setSelectedId(rooms[0].id)
+      selectRoom(rooms[0].id)
     }
-  }, [loading, rooms, selectedId, setSelectedId])
+  }, [loading, rooms, selectedId, selectRoom])
 
   useEffect(() => {
     if (!roomPickerOpen) return
@@ -188,8 +191,20 @@ export function RoomsMobile() {
           )}
 
           <div className="sticky top-0 z-20 -mx-3 mb-4 space-y-3 border-b border-transparent bg-[#f0f2f6]/90 px-3 pb-3 pt-0 backdrop-blur-xl">
-            <div className="flex items-baseline justify-between gap-2 px-0.5">
-              <h2 className="text-[13px] font-semibold uppercase tracking-wide text-slate-500">Spaces</h2>
+            <div className="flex items-center justify-between gap-2 px-0.5">
+              <h1 className="text-[24px] font-bold tracking-tight text-slate-900">Spaces</h1>
+              {saveAck && !saving && (
+                <span
+                  className="flex items-center gap-1 text-[12px] font-semibold text-emerald-600 animate-fade-in"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Saved
+                </span>
+              )}
             </div>
 
             <div
@@ -253,7 +268,7 @@ export function RoomsMobile() {
                         role="option"
                         aria-selected={selectedId === rm.id}
                         onClick={() => {
-                          setSelectedId(rm.id)
+                          selectRoom(rm.id)
                           setRoomPickerOpen(false)
                         }}
                         className={cn(
@@ -289,7 +304,7 @@ export function RoomsMobile() {
                     key={id}
                     type="button"
                     onClick={() => scrollToSection(id)}
-                    className="flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white py-2 pl-3.5 pr-3 text-[13px] font-semibold text-slate-900 active:bg-slate-50"
+                    className="flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white py-2 pl-3.5 pr-3 text-[14px] font-semibold text-slate-900 active:bg-slate-50"
                   >
                     {label}
                     <span className="grid min-h-[22px] min-w-[22px] place-items-center rounded-md bg-slate-50 px-1.5 text-[12px] font-bold tabular-nums text-slate-500">
@@ -317,7 +332,7 @@ export function RoomsMobile() {
                       </svg>
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[15px] font-semibold text-slate-900">Notes</span>
+                      <span className="block text-[14px] font-semibold text-slate-900">Notes</span>
                       <span className="block text-[12px] font-medium text-slate-500">Plans and measurements</span>
                     </span>
                   </span>
@@ -325,14 +340,13 @@ export function RoomsMobile() {
                 </button>
                 {openNotes && (
                   <div className="border-t border-slate-200 px-4 pb-4 pt-1">
-                    <textarea
-                      dir="auto"
+                    <RoomNotesMarkdownEditor
+                      instanceKey={selectedId ?? ''}
                       value={editNotes}
-                      onChange={(e) => setEditNotes(e.target.value)}
+                      onChange={setEditNotes}
                       onBlur={() => void saveRoom()}
                       placeholder="Add notes for this space…"
-                      rows={4}
-                      className="w-full resize-y rounded-xl border border-slate-200 bg-[#fafbfc] px-3.5 py-3 text-[15px] font-normal leading-relaxed text-slate-900 outline-none transition-[box-shadow] placeholder:text-slate-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-start"
+                      className="w-full"
                     />
                   </div>
                 )}
@@ -354,7 +368,7 @@ export function RoomsMobile() {
                       </svg>
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[15px] font-semibold text-slate-900">Tasks</span>
+                      <span className="block text-[14px] font-semibold text-slate-900">Tasks</span>
                       <span className="block text-[12px] font-medium text-slate-500">Linked to this room</span>
                     </span>
                   </span>
@@ -434,7 +448,7 @@ export function RoomsMobile() {
                       </svg>
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-[15px] font-semibold text-slate-900">Needs</span>
+                      <span className="block text-[14px] font-semibold text-slate-900">Needs</span>
                       <span className="block text-[12px] font-medium text-slate-500">Shopping and requirements</span>
                     </span>
                   </span>
@@ -532,7 +546,7 @@ export function RoomsMobile() {
                         </svg>
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-[15px] font-semibold text-slate-900">Gallery</span>
+                        <span className="block text-[14px] font-semibold text-slate-900">Gallery</span>
                         <span className="block text-[12px] font-medium text-slate-500">Photos tagged with this room</span>
                       </span>
                     </span>

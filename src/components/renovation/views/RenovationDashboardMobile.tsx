@@ -44,7 +44,7 @@ export function RenovationDashboardMobile() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
           </div>
-          <h1 className="text-[24px] font-extrabold tracking-tight text-slate-900 leading-tight">Start your project</h1>
+          <h1 className="text-[24px] font-bold tracking-tight text-slate-900 leading-tight">Start your project</h1>
           <p className="text-[16px] text-slate-500 mt-2 leading-relaxed font-medium px-1">
             Set up your space. You can change details later in Settings.
           </p>

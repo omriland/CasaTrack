@@ -482,7 +482,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
       )}
       <header className={`flex justify-between gap-3 ${mobile ? 'flex-row items-center' : 'flex-col md:flex-row md:items-end'}`}>
         <div className="min-w-0 flex-1">
-          <h1 className={`font-bold tracking-tight text-slate-900 font-sans ${mobile ? 'text-[24px]' : 'text-[32px]'}`}>Photos</h1>
+          <h1 className={`font-bold tracking-tight text-slate-900 ${mobile ? 'text-[24px]' : 'text-[32px]'}`}>Photos</h1>
           {mobile ? (
             <p className="text-[14px] font-medium text-slate-500 mt-0.5">
               {mobileSelectMode ? 'Tap photos to select' : 'Tap to view, select for bulk actions'}
@@ -521,7 +521,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <button
               type="button"
               onClick={() => handleViewModeChange('gallery')}
-              className={`rounded-lg px-4 min-h-[44px] text-[14px] font-bold transition-all ${viewMode === 'gallery'
+              className={`rounded-lg px-4 min-h-[44px] text-[14px] font-semibold transition-all ${viewMode === 'gallery'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-slate-500'
                 }`}
@@ -531,7 +531,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <button
               type="button"
               onClick={() => handleViewModeChange('all')}
-              className={`rounded-lg px-4 min-h-[44px] text-[14px] font-bold transition-all ${viewMode === 'all'
+              className={`rounded-lg px-4 min-h-[44px] text-[14px] font-semibold transition-all ${viewMode === 'all'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-slate-500'
                 }`}
@@ -558,7 +558,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
                     setMobileSelectMode(true)
                   }
                 }}
-                className={`min-h-[44px] shrink-0 rounded-2xl px-4 text-[13px] font-bold transition-colors ${mobileSelectMode
+                className={`min-h-[44px] shrink-0 rounded-2xl px-4 text-[14px] font-semibold transition-colors ${mobileSelectMode
                     ? 'bg-slate-900 text-white shadow-md'
                     : 'border border-slate-200 bg-white text-slate-700 shadow-sm'
                   }`}
@@ -574,7 +574,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <button
               type="button"
               onClick={() => handleViewModeChange('gallery')}
-              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${viewMode === 'gallery'
+              className={`rounded-lg px-5 py-2 text-[14px] font-semibold transition-all ${viewMode === 'gallery'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
                 }`}
@@ -584,7 +584,7 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <button
               type="button"
               onClick={() => handleViewModeChange('all')}
-              className={`rounded-lg px-5 py-2 text-[14px] font-bold transition-all ${viewMode === 'all'
+              className={`rounded-lg px-5 py-2 text-[14px] font-semibold transition-all ${viewMode === 'all'
                   ? 'bg-white text-indigo-600 shadow-sm'
                   : 'text-slate-500 hover:text-slate-700'
                 }`}
