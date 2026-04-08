@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { profileCanViewBudget } from '@/lib/renovation-profile'
 import { useRenovation } from './RenovationContext'
 import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
 
@@ -43,7 +44,12 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto pb-2 scrollbar-hide min-h-0">
-          {nav.map((item) => {
+          {nav
+            .filter(
+              (item) =>
+                item.href !== '/renovation/budget' || profileCanViewBudget(activeProfile?.name),
+            )
+            .map((item) => {
             const active = item.match(pathname)
             const Icon = item.icon
             return (

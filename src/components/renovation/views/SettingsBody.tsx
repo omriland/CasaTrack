@@ -14,11 +14,15 @@ import {
   deleteTeamMember,
   updateBudgetLine,
 } from '@/lib/renovation'
-import type { RenovationSettingsPageCtx } from './useRenovationSettingsPageState'
+import { useRenovation } from '@/components/renovation/RenovationContext'
 import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
 import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
+import { profileCanViewBudget } from '@/lib/renovation-profile'
+import type { RenovationSettingsPageCtx } from './useRenovationSettingsPageState'
 
 export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; mobile: boolean }) {
+  const { activeProfile } = useRenovation()
+  const canBudget = profileCanViewBudget(activeProfile?.name)
   const {
     project,
     archived,

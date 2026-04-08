@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { formatIls, formatTaskDue } from '@/lib/renovation-format'
-import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
+import { profileCanViewBudget, profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
 import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardDesktop() {
@@ -113,6 +113,7 @@ export function RenovationDashboardDesktop() {
 
   const greet = timeGreetingForProfile(activeProfile?.name)
   const greetName = activeProfile ? profileFirstName(activeProfile.name) : null
+  const canBudget = profileCanViewBudget(activeProfile?.name)
 
   return (
     <div className="space-y-8 pb-8">
@@ -150,92 +151,92 @@ export function RenovationDashboardDesktop() {
         </div>
       ) : (
         <>
-          <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded shadow-xl text-white">
-            <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none text-white">
-              <svg className="w-64 h-64 -mt-16 -mr-16 transform rotate-12" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                <path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-              </svg>
-            </div>
-
-            <div className="relative p-8">
-              <div className="flex justify-between items-start mb-4">
-                <span className="text-[13px] text-slate-300 font-semibold uppercase tracking-widest flex items-center gap-2">Remaining Balance</span>
-                <Link
-                  href="/renovation/budget"
-                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95"
-                >
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
+          {canBudget && (
+            <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded shadow-xl text-white">
+              <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none text-white">
+                <svg className="w-64 h-64 -mt-16 -mr-16 transform rotate-12" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                  <path d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                </svg>
               </div>
 
-              <div className="flex flex-row items-end justify-between gap-6">
-                <div className="flex min-w-0 flex-col items-stretch">
-                  <div className="flex flex-col items-start" dir="ltr">
-                    <p
-                      className={`w-fit max-w-full text-5xl font-bold tracking-tight tabular-nums mt-1 ${over ? 'text-rose-400' : 'text-white'}`}
-                    >
-                      {formatIls(remainingBalance)}
-                    </p>
-                    {plannedTotal > 0 && (
-                      <div className="mt-2 w-fit max-w-full space-y-0.5">
-                        <p className="text-[12px] font-medium text-slate-400">Excluding planned</p>
-                        <p className="w-fit max-w-full text-[12px] font-semibold tabular-nums text-slate-300">
-                          {formatIls(remainingExcludingPlanned)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {over && (
-                    <p className="inline-block mt-2 px-2.5 py-1 bg-rose-500/20 text-rose-300 text-[13px] font-bold rounded backdrop-blur-md">
-                      Exceeded by {formatIls(budgetOverAmount)}
-                    </p>
-                  )}
+              <div className="relative p-8">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-[13px] text-slate-300 font-semibold uppercase tracking-widest flex items-center gap-2">Remaining Balance</span>
+                  <Link
+                    href="/renovation/budget"
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors active:scale-95"
+                  >
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                 </div>
 
-                <div className="flex-1 max-w-sm w-full bg-slate-800/50 rounded p-4 backdrop-blur-md border border-white/5">
-                  <div className="flex justify-between text-[13px] font-medium text-slate-300 mb-2 tabular-nums gap-2">
-                    <span className="min-w-0">
-                      {plannedTotal > 0 ? (
-                        <>
-                          <span className="text-white/90">{formatIls(committedTotal)}</span>
-                          <span className="text-slate-400"> committed</span>
-                          <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
-                            {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
-                          </span>
-                        </>
-                      ) : (
-                        <span>{formatIls(spent)} spent</span>
+                <div className="flex flex-row items-end justify-between gap-6">
+                  <div className="flex min-w-0 flex-col items-stretch">
+                    <div className="flex flex-col items-start" dir="ltr">
+                      <p
+                        className={`w-fit max-w-full text-5xl font-bold tracking-tight tabular-nums mt-1 ${over ? 'text-rose-400' : 'text-white'}`}
+                      >
+                        {formatIls(remainingBalance)}
+                      </p>
+                      {plannedTotal > 0 && (
+                        <div className="mt-2 w-fit max-w-full space-y-0.5">
+                          <p className="text-[12px] font-medium text-slate-400">Excluding planned</p>
+                          <p className="w-fit max-w-full text-[12px] font-semibold tabular-nums text-slate-300">
+                            {formatIls(remainingExcludingPlanned)}
+                          </p>
+                        </div>
                       )}
-                    </span>
-                    <span className="shrink-0">{formatIls(cap)} budget</span>
+                    </div>
+                    {over && (
+                      <p className="inline-block mt-2 px-2.5 py-1 bg-rose-500/20 text-rose-300 text-[13px] font-bold rounded backdrop-blur-md">
+                        Exceeded by {formatIls(budgetOverAmount)}
+                      </p>
+                    )}
                   </div>
-                  <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-900/50 ring-1 ring-inset ring-white/10">
-                    {spentBarPct > 0 && (
-                      <div
-                        className="relative h-full shrink-0 overflow-hidden bg-emerald-400 transition-[width] duration-1000 ease-out"
-                        style={{ width: `${spentBarPct}%` }}
-                      >
-                        <div className="absolute inset-0 w-full animate-[shimmer_2s_infinite] bg-white/20" />
-                      </div>
-                    )}
-                    {plannedBarPct > 0 && (
-                      <div
-                        className="relative h-full shrink-0 overflow-hidden bg-yellow-400 transition-[width] duration-1000 ease-out"
-                        style={{ width: `${plannedBarPct}%` }}
-                      >
-                        <div className="absolute inset-0 w-full animate-[shimmer_2s_infinite] bg-white/15" />
-                      </div>
-                    )}
+
+                  <div className="flex-1 max-w-sm w-full bg-slate-800/50 rounded p-4 backdrop-blur-md border border-white/5">
+                    <div className="flex justify-between text-[13px] font-medium text-slate-300 mb-2 tabular-nums gap-2">
+                      <span className="min-w-0">
+                        {plannedTotal > 0 ? (
+                          <>
+                            <span className="text-white/90">{formatIls(committedTotal)}</span>
+                            <span className="text-slate-400"> committed</span>
+                            <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
+                              {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
+                            </span>
+                          </>
+                        ) : (
+                          <span>{formatIls(spent)} spent</span>
+                        )}
+                      </span>
+                      <span className="shrink-0">{formatIls(cap)} budget</span>
+                    </div>
+                    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-900/50 ring-1 ring-inset ring-white/10">
+                      {spentBarPct > 0 && (
+                        <div
+                          className="relative h-full shrink-0 overflow-hidden bg-emerald-400 transition-[width] duration-1000 ease-out"
+                          style={{ width: `${spentBarPct}%` }}
+                        >
+                          <div className="absolute inset-0 w-full animate-[shimmer_2s_infinite] bg-white/20" />
+                        </div>
+                      )}
+                      {plannedBarPct > 0 && (
+                        <div
+                          className="relative h-full shrink-0 overflow-hidden bg-yellow-400 transition-[width] duration-1000 ease-out"
+                          style={{ width: `${plannedBarPct}%` }}
+                        >
+                          <div className="absolute inset-0 w-full animate-[shimmer_2s_infinite] bg-white/15" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-
-          </section>
+            </section>
+          )}
 
           <section className="grid grid-cols-2 gap-5">
             <div className="bg-white rounded border border-slate-200/60 p-6 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
@@ -310,9 +311,11 @@ export function RenovationDashboardDesktop() {
                   </div>
                   <h2 className="text-[20px] font-bold text-slate-900">Recent Payments</h2>
                 </div>
-                <Link href="/renovation/budget" className="text-[14px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition-colors active:scale-95">
-                  View Budget
-                </Link>
+                {canBudget && (
+                  <Link href="/renovation/budget" className="text-[14px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-4 py-2 rounded-full transition-colors active:scale-95">
+                    View Budget
+                  </Link>
+                )}
               </div>
 
               {recentPayments.length === 0 ? (

@@ -45,6 +45,12 @@ export function timeOfDayGreeting(date = new Date()): { label: string; key: Time
   return { label: 'Good night', key: 'night' }
 }
 
+/** First-name match (Latin, accent-stripped) for who may see vendor budget UI and project budget totals in Settings. */
+const BUDGET_ACCESS_FIRST_NAMES = new Set(['omri', 'tamar'])
+
+/** Hebrew given name for Tamar — matches when the stored first token is exactly this. */
+const BUDGET_ACCESS_FIRST_NAMES_HEBREW = new Set(['תמר'])
+
 /** Hardcoded: these first names get Spanish greetings on the renovation overview */
 const SPANISH_GREETING_FIRST_NAMES = new Set(['tamar', 'rinat'])
 
@@ -55,6 +61,20 @@ export function profileUsesSpanishGreeting(fullName: string | null | undefined):
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
   return SPANISH_GREETING_FIRST_NAMES.has(first)
+}
+
+/**
+ * Vendor budget page, overview budget widget, and budget sections in Settings are limited to these profiles (first name).
+ */
+export function profileCanViewBudget(fullName: string | null | undefined): boolean {
+  if (!fullName?.trim()) return false
+  const rawFirst = profileFirstName(fullName).trim()
+  if (BUDGET_ACCESS_FIRST_NAMES_HEBREW.has(rawFirst)) return true
+  const ascii = rawFirst
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+  return BUDGET_ACCESS_FIRST_NAMES.has(ascii)
 }
 
 const SPANISH_BY_SLOT: Record<TimeGreetingKey, string> = {

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { formatIls } from '@/lib/renovation-format'
-import { profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
+import { profileCanViewBudget, profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
 import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardMobile() {
@@ -109,6 +109,7 @@ export function RenovationDashboardMobile() {
 
   const greet = timeGreetingForProfile(activeProfile?.name)
   const greetName = activeProfile ? profileFirstName(activeProfile.name) : null
+  const canBudget = profileCanViewBudget(activeProfile?.name)
 
   return (
     <div className="space-y-5 pb-8 animate-fade-in">
@@ -127,61 +128,62 @@ export function RenovationDashboardMobile() {
         </div>
       ) : (
         <>
-          {/* Budget summary */}
-          <section className="rounded-2xl bg-white border border-slate-200/60 p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-[14px] font-bold text-slate-500 uppercase tracking-wide">Budget</h2>
-              <Link
-                href="/renovation/expenses"
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 active:bg-slate-100"
-                aria-label="Open expenses"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
-            <div className="flex flex-col items-start" dir="ltr">
-              <p
-                className={`w-fit max-w-full text-[28px] font-bold tabular-nums leading-tight ${over ? 'text-rose-600' : 'text-slate-900'}`}
-              >
-                {formatIls(remainingBalance)}
-                <span className="text-[16px] font-semibold text-slate-400 ml-2">remaining</span>
-              </p>
-            </div>
-            {over && (
-              <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(budgetOverAmount)}</p>
-            )}
-            <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
-              {spentBarPct > 0 && (
-                <div
-                  className="h-full shrink-0 bg-emerald-500 transition-[width] duration-700 ease-out"
-                  style={{ width: `${spentBarPct}%` }}
-                />
+          {canBudget && (
+            <section className="rounded-2xl bg-white border border-slate-200/60 p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-[14px] font-bold text-slate-500 uppercase tracking-wide">Budget</h2>
+                <Link
+                  href="/renovation/expenses"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 active:bg-slate-100"
+                  aria-label="Open expenses"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+              <div className="flex flex-col items-start" dir="ltr">
+                <p
+                  className={`w-fit max-w-full text-[28px] font-bold tabular-nums leading-tight ${over ? 'text-rose-600' : 'text-slate-900'}`}
+                >
+                  {formatIls(remainingBalance)}
+                  <span className="text-[16px] font-semibold text-slate-400 ml-2">remaining</span>
+                </p>
+              </div>
+              {over && (
+                <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(budgetOverAmount)}</p>
               )}
-              {plannedBarPct > 0 && (
-                <div
-                  className="h-full shrink-0 bg-yellow-400 transition-[width] duration-700 ease-out"
-                  style={{ width: `${plannedBarPct}%` }}
-                />
-              )}
-            </div>
-            <div className="flex justify-between text-[14px] font-medium text-slate-500 mt-2 tabular-nums">
-              <span className="min-w-0">
-                {plannedTotal > 0 ? (
-                  <>
-                    {formatIls(committedTotal)} committed
-                    <span className="block text-[12px] font-normal text-slate-400 mt-0.5">
-                      {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
-                    </span>
-                  </>
-                ) : (
-                  <span>{formatIls(spent)} spent</span>
+              <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+                {spentBarPct > 0 && (
+                  <div
+                    className="h-full shrink-0 bg-emerald-500 transition-[width] duration-700 ease-out"
+                    style={{ width: `${spentBarPct}%` }}
+                  />
                 )}
-              </span>
-              <span className="shrink-0">{formatIls(cap)} total</span>
-            </div>
-          </section>
+                {plannedBarPct > 0 && (
+                  <div
+                    className="h-full shrink-0 bg-yellow-400 transition-[width] duration-700 ease-out"
+                    style={{ width: `${plannedBarPct}%` }}
+                  />
+                )}
+              </div>
+              <div className="flex justify-between text-[14px] font-medium text-slate-500 mt-2 tabular-nums">
+                <span className="min-w-0">
+                  {plannedTotal > 0 ? (
+                    <>
+                      {formatIls(committedTotal)} committed
+                      <span className="block text-[12px] font-normal text-slate-400 mt-0.5">
+                        {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
+                      </span>
+                    </>
+                  ) : (
+                    <span>{formatIls(spent)} spent</span>
+                  )}
+                </span>
+                <span className="shrink-0">{formatIls(cap)} total</span>
+              </div>
+            </section>
+          )}
 
           {/* Upcoming tasks & events */}
           {upcomingCalendarEventsTwoWeeks.length > 0 && (
