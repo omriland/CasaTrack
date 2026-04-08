@@ -22,7 +22,6 @@ import type { RenovationSettingsPageCtx } from './useRenovationSettingsPageState
 
 export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; mobile: boolean }) {
   const { activeProfile } = useRenovation()
-  const canBudget = profileCanViewBudget(activeProfile?.name)
   const {
     project,
     archived,
@@ -130,117 +129,121 @@ export function SettingsBody({ ctx, mobile }: { ctx: RenovationSettingsPageCtx; 
         </div>
       </section>
 
-      <section className={`bg-white rounded-[2rem] border border-slate-200/60 shadow-sm ${sec} space-y-4`}>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-[18px] font-bold text-slate-900">Budget Totals</h2>
-          <Link
-            href="/renovation/budget"
-            className="text-[14px] font-bold text-indigo-600 hover:text-indigo-500 shrink-0"
-          >
-            Vendor budget vs actual →
-          </Link>
-        </div>
-        <div className={`grid ${grid2} gap-4`}>
-          <div>
-            <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Total Budget (₪)</label>
-            <input
-              type="number"
-              value={total}
-              onChange={(e) => setTotal(e.target.value)}
-              onBlur={saveTotals}
-              className={`w-full ${inp} px-4 rounded-xl border border-slate-200 text-[16px] bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all tabular-nums`}
-            />
-          </div>
-          <div>
-            <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Contingency (₪)</label>
-            <input
-              type="number"
-              value={cont}
-              onChange={(e) => setCont(e.target.value)}
-              onBlur={saveTotals}
-              className={`w-full ${inp} px-4 rounded-xl border border-slate-200 text-[16px] bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all tabular-nums`}
-            />
-          </div>
-        </div>
-        <div className={`flex ${flexRow} ${mobile ? '' : 'sm:justify-between'} gap-2 text-[15px] pt-2 border-t border-slate-100`}>
-          <p className="text-slate-500">
-            Effective cap: <span className="font-bold text-slate-900 tabular-nums">{formatIls(cap)}</span>
-          </p>
-          <p className="text-slate-500">
-            Spent: <span className="font-bold text-slate-900 tabular-nums">{loading ? '…' : formatIls(spent)}</span>
-          </p>
-        </div>
-        {plannedTotal > 0 && (
-          <p className="text-[15px] text-slate-500 pt-1">
-            Planned (upcoming):{' '}
-            <span className="font-bold text-amber-900 tabular-nums">{loading ? '…' : formatIls(plannedTotal)}</span>
-          </p>
-        )}
-      </section>
-
-      <section className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden">
-        <div className={`${head} border-b border-slate-100 bg-slate-50/50 flex justify-between items-start gap-4`}>
-          <div>
-            <h2 className="text-[18px] font-bold text-slate-900">Budget by Category</h2>
-            <p className="text-[14px] text-slate-500 mt-1">Allocate budget to specific work areas</p>
-          </div>
-          {lineSum > 0 && cap > 0 && Math.abs(lineSum - cap) > 1 && (
-            <span className="text-[12px] font-bold px-2 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wider shrink-0">Mismatch</span>
-          )}
-        </div>
-        <div className="divide-y divide-slate-100">
-          {lines.map((line) => (
-            <div key={line.id} className={`flex ${flexRow} ${mobile ? '' : 'sm:items-center'} gap-3 ${mobile ? 'p-4' : 'p-4 sm:p-5'} hover:bg-slate-50/50 transition-colors`}>
-              <input
-                dir="auto"
-                defaultValue={line.category_name}
-                onBlur={async (e) => {
-                  const v = e.target.value.trim()
-                  if (v && v !== line.category_name) await updateBudgetLine(line.id, { category_name: v })
-                  await load()
-                }}
-                className={`flex-1 w-full ${inp} px-3 rounded-lg border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-[15px] font-medium bg-transparent focus:bg-white outline-none transition-all`}
-              />
-              <div className={`flex items-center gap-3 ${mobile ? 'w-full' : ''}`}>
+      {profileCanViewBudget(activeProfile?.name) && (
+        <>
+          <section className={`bg-white rounded-[2rem] border border-slate-200/60 shadow-sm ${sec} space-y-4`}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-[18px] font-bold text-slate-900">Budget Totals</h2>
+              <Link
+                href="/renovation/budget"
+                className="text-[14px] font-bold text-indigo-600 hover:text-indigo-500 shrink-0"
+              >
+                Vendor budget vs actual →
+              </Link>
+            </div>
+            <div className={`grid ${grid2} gap-4`}>
+              <div>
+                <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Total Budget (₪)</label>
                 <input
                   type="number"
-                  defaultValue={line.amount_allocated}
-                  onBlur={async (e) => {
-                    const v = Number(e.target.value)
-                    if (!Number.isNaN(v)) await updateBudgetLine(line.id, { amount_allocated: v })
-                    await load()
-                  }}
-                  className={`${mobile ? 'flex-1' : 'w-32'} ${inp} px-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-[15px] tabular-nums text-right outline-none transition-all`}
+                  value={total}
+                  onChange={(e) => setTotal(e.target.value)}
+                  onBlur={saveTotals}
+                  className={`w-full ${inp} px-4 rounded-xl border border-slate-200 text-[16px] bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all tabular-nums`}
                 />
-                <button type="button" onClick={() => deleteBudgetLine(line.id).then(load)} className="text-rose-500 text-[14px] font-semibold px-2 hover:bg-rose-50 min-h-[44px] rounded-lg transition-colors shrink-0">
-                  Remove
-                </button>
+              </div>
+              <div>
+                <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wide block mb-1">Contingency (₪)</label>
+                <input
+                  type="number"
+                  value={cont}
+                  onChange={(e) => setCont(e.target.value)}
+                  onBlur={saveTotals}
+                  className={`w-full ${inp} px-4 rounded-xl border border-slate-200 text-[16px] bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all tabular-nums`}
+                />
               </div>
             </div>
-          ))}
-          <div className={`${mobile ? 'p-4' : 'p-4 sm:p-5'} flex ${flexRow} gap-3 bg-slate-50/30`}>
-            <input
-              dir="auto"
-              placeholder="Ex: Kitchen Cabinets"
-              value={newCat}
-              onChange={(e) => setBudgetCat(e.target.value)}
-              className={`flex-1 min-w-[150px] ${inp} px-4 rounded-xl border border-slate-200 text-[15px] bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400`}
-            />
-            <div className={`flex gap-3 ${mobile ? 'flex-col w-full' : ''}`}>
-              <input
-                type="number"
-                placeholder="₪ amount"
-                value={newAmt}
-                onChange={(e) => setBudgetAmt(e.target.value)}
-                className={`${mobile ? 'w-full' : 'w-full sm:w-32'} ${inp} px-4 rounded-xl border border-slate-200 text-[15px] bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400 tabular-nums`}
-              />
-              <button type="button" onClick={addBudgetLine} className={`${inp} px-6 rounded-xl bg-slate-900 text-white text-[14px] font-bold hover:bg-slate-800 transition-colors shrink-0 whitespace-nowrap`}>
-                Add Item
-              </button>
+            <div className={`flex ${flexRow} ${mobile ? '' : 'sm:justify-between'} gap-2 text-[15px] pt-2 border-t border-slate-100`}>
+              <p className="text-slate-500">
+                Effective cap: <span className="font-bold text-slate-900 tabular-nums">{formatIls(cap)}</span>
+              </p>
+              <p className="text-slate-500">
+                Spent: <span className="font-bold text-slate-900 tabular-nums">{loading ? '…' : formatIls(spent)}</span>
+              </p>
             </div>
-          </div>
-        </div>
-      </section>
+            {plannedTotal > 0 && (
+              <p className="text-[15px] text-slate-500 pt-1">
+                Planned (upcoming):{' '}
+                <span className="font-bold text-amber-900 tabular-nums">{loading ? '…' : formatIls(plannedTotal)}</span>
+              </p>
+            )}
+          </section>
+
+          <section className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden">
+            <div className={`${head} border-b border-slate-100 bg-slate-50/50 flex justify-between items-start gap-4`}>
+              <div>
+                <h2 className="text-[18px] font-bold text-slate-900">Budget by Category</h2>
+                <p className="text-[14px] text-slate-500 mt-1">Allocate budget to specific work areas</p>
+              </div>
+              {lineSum > 0 && cap > 0 && Math.abs(lineSum - cap) > 1 && (
+                <span className="text-[12px] font-bold px-2 py-1 rounded bg-orange-50 text-orange-600 border border-orange-100 uppercase tracking-wider shrink-0">Mismatch</span>
+              )}
+            </div>
+            <div className="divide-y divide-slate-100">
+              {lines.map((line) => (
+                <div key={line.id} className={`flex ${flexRow} ${mobile ? '' : 'sm:items-center'} gap-3 ${mobile ? 'p-4' : 'p-4 sm:p-5'} hover:bg-slate-50/50 transition-colors`}>
+                  <input
+                    dir="auto"
+                    defaultValue={line.category_name}
+                    onBlur={async (e) => {
+                      const v = e.target.value.trim()
+                      if (v && v !== line.category_name) await updateBudgetLine(line.id, { category_name: v })
+                      await load()
+                    }}
+                    className={`flex-1 w-full ${inp} px-3 rounded-lg border border-transparent hover:border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-[15px] font-medium bg-transparent focus:bg-white outline-none transition-all`}
+                  />
+                  <div className={`flex items-center gap-3 ${mobile ? 'w-full' : ''}`}>
+                    <input
+                      type="number"
+                      defaultValue={line.amount_allocated}
+                      onBlur={async (e) => {
+                        const v = Number(e.target.value)
+                        if (!Number.isNaN(v)) await updateBudgetLine(line.id, { amount_allocated: v })
+                        await load()
+                      }}
+                      className={`${mobile ? 'flex-1' : 'w-32'} ${inp} px-3 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-[15px] tabular-nums text-right outline-none transition-all`}
+                    />
+                    <button type="button" onClick={() => deleteBudgetLine(line.id).then(load)} className="text-rose-500 text-[14px] font-semibold px-2 hover:bg-rose-50 min-h-[44px] rounded-lg transition-colors shrink-0">
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className={`${mobile ? 'p-4' : 'p-4 sm:p-5'} flex ${flexRow} gap-3 bg-slate-50/30`}>
+                <input
+                  dir="auto"
+                  placeholder="Ex: Kitchen Cabinets"
+                  value={newCat}
+                  onChange={(e) => setBudgetCat(e.target.value)}
+                  className={`flex-1 min-w-[150px] ${inp} px-4 rounded-xl border border-slate-200 text-[15px] bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400`}
+                />
+                <div className={`flex gap-3 ${mobile ? 'flex-col w-full' : ''}`}>
+                  <input
+                    type="number"
+                    placeholder="₪ amount"
+                    value={newAmt}
+                    onChange={(e) => setBudgetAmt(e.target.value)}
+                    className={`${mobile ? 'w-full' : 'w-full sm:w-32'} ${inp} px-4 rounded-xl border border-slate-200 text-[15px] bg-white outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400 tabular-nums`}
+                  />
+                  <button type="button" onClick={addBudgetLine} className={`${inp} px-6 rounded-xl bg-slate-900 text-white text-[14px] font-bold hover:bg-slate-800 transition-colors shrink-0 whitespace-nowrap`}>
+                    Add Item
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden">
         <div className={`${head} border-b border-slate-100 bg-slate-50/50`}>

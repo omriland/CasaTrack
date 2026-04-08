@@ -1,5 +1,8 @@
 # Development Progress Log
 
+## April 2026 — budget visibility by profile
+- **Vendor budget + overview widget + Settings budget blocks** are shown only when the active renovation profile’s **first name** matches **Omri** or **Tamar** (Latin, case- and accent-insensitive) or **תמר** (`profileCanViewBudget` in [`renovation-profile.ts`](src/lib/renovation-profile.ts)). Others: no Budget nav tab, redirect from `/renovation/budget`, hidden dashboard cards and Settings “Budget Totals” / “Budget by Category”.
+
 ## April 2026 — room notes markdown
 - **Spaces + Settings (add room):** WYSIWYG **TipTap** in [`RoomNotesMarkdownEditor`](src/components/renovation/RoomNotesMarkdownEditor.tsx); DB stores **sanitized HTML** ([`room-notes-html.ts`](src/lib/room-notes-html.ts): `isomorphic-dompurify` + legacy **markdown/plain** import via `marked`). Bold / underline / bullet list + **⌘B**; **Varela Round** on ProseMirror. [`selectRoom`](src/components/renovation/views/useRoomsPageState.ts) syncs selection + notes in one render; dirty checks use `notesContentEqual`.
 - **Tab / segmented label typography:** View and filter tabs use **`text-[14px] font-semibold`** (property hunt Cards/Kanban/Map; renovation Tasks, Expenses, Rooms section pills + accordion titles, Calendar desktop filters + Month/Week control, Gallery Albums/All + Select, Needs “Completed” toggle, mobile main nav labels).
