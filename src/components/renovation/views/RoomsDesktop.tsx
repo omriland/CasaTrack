@@ -13,7 +13,6 @@ export function RoomsDesktop() {
   const {
     project,
     rooms,
-    gallery,
     tags,
     loading,
     selectedId,
