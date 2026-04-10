@@ -13,8 +13,6 @@ export function RoomsDesktop() {
   const {
     project,
     rooms,
-    tasks,
-    needs,
     gallery,
     tags,
     loading,
