@@ -98,19 +98,23 @@ export function VendorBudgetToolbar({
                 d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
               />
             </svg>
-            {filterActive
-              ? `Rooms (${filterRoomIds.length})`
-              : 'Rooms'}
+            {filterActive ? `Rooms (${filterRoomIds.length})` : 'Rooms'}
+            {filterActive && (
+              <span
+                role="button"
+                aria-label="Clear room filter"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onFilterRoomIdsChange([])
+                }}
+                className="ml-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white hover:bg-rose-600 transition-colors"
+              >
+                <svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="currentColor">
+                  <path d="M6.414 5l2.293-2.293a1 1 0 00-1.414-1.414L5 3.586 2.707 1.293A1 1 0 001.293 2.707L3.586 5 1.293 7.293a1 1 0 001.414 1.414L5 6.414l2.293 2.293a1 1 0 001.414-1.414L6.414 5z" />
+                </svg>
+              </span>
+            )}
           </button>
-          {filterActive && (
-            <button
-              type="button"
-              onClick={() => onFilterRoomIdsChange([])}
-              className="ml-1 text-[13px] font-bold text-rose-600 hover:underline"
-            >
-              Clear
-            </button>
-          )}
           {filterOpen && (
             <div className="absolute right-0 top-full z-40 mt-1 max-h-64 min-w-[14rem] overflow-y-auto rounded-xl border border-slate-200 bg-white py-1 shadow-lg">
               {rooms.length === 0 ? (
