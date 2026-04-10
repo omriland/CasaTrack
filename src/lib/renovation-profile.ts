@@ -64,7 +64,8 @@ export function profileUsesSpanishGreeting(fullName: string | null | undefined):
 }
 
 /**
- * Vendor budget page, overview budget widget, and budget sections in Settings are limited to these profiles (first name).
+ * Vendor budget page, overview budget widget, and **Budget Totals** in Settings (first name).
+ * **Budget by Category** (including room links) is visible to every profile with a project.
  */
 export function profileCanViewBudget(fullName: string | null | undefined): boolean {
   if (!fullName?.trim()) return false

@@ -4,10 +4,12 @@
 import React, { useRef, useMemo, useEffect } from 'react'
 import 'handsontable/styles/handsontable.min.css'
 import 'handsontable/styles/ht-theme-main.min.css'
+import type { RenovationRoom } from '@/types/renovation'
 import type { TableRow } from './vendor-budget-types'
 
 type Props = {
   tableRows: TableRow[]
+  rooms: RenovationRoom[]
   footerBudget: number
   footerActual: number
   onCellValueChanged: (
@@ -20,22 +22,26 @@ type Props = {
   addDraftAfter: (afterKey: string | null) => void
   /** Returns the total paid sum for a given row */
   getPaidSum: (tableRow: TableRow) => number
+  /** Single-click Rooms column on a data row — includes the TD's bounding rect */
+  onRoomsCellClick?: (row: TableRow, rect: DOMRect) => void
 }
 
 const FIELD_MAP: Record<number, 'vendor' | 'budget' | 'actual'> = {
   0: 'vendor',
-  1: 'budget',
-  2: 'actual',
+  2: 'budget',
+  3: 'actual',
 }
 
 export function VendorBudgetDesktopGrid({
   tableRows,
+  rooms,
   footerBudget,
   footerActual,
   onCellValueChanged,
   onBodyContextMenu,
   addDraftAfter,
   getPaidSum,
+  onRoomsCellClick,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const hotInstanceRef = useRef<any>(null)
@@ -49,6 +55,8 @@ export function VendorBudgetDesktopGrid({
   addDraftAfterRef.current = addDraftAfter
   const getPaidSumRef = useRef(getPaidSum)
   getPaidSumRef.current = getPaidSum
+  const onRoomsCellClickRef = useRef(onRoomsCellClick)
+  onRoomsCellClickRef.current = onRoomsCellClick
 
   // Format a number with commas and ₪ sign
   const fmtNIS = (v: string | number): string => {
@@ -65,8 +73,17 @@ export function VendorBudgetDesktopGrid({
     return '#ff273b'
   }
 
-  // Build a simple 2D array — 4 columns: Vendor, Budget, Actual, Paid
+  // 5 columns: Vendor, Rooms, Budget, Actual, Paid
   const { data, rowMeta } = useMemo(() => {
+    const roomNameById = new Map(rooms.map((x) => [x.id, x.name]))
+    const roomCellText = (ids: string[]) =>
+      ids.length === 0
+        ? '—'
+        : [...ids]
+            .map((id) => roomNameById.get(id) ?? '…')
+            .sort((a, b) => a.localeCompare(b, 'he', { sensitivity: 'base' }))
+            .join(', ')
+
     const rows: (string | number)[][] = []
     const meta: (TableRow | null)[] = []
     let totalPaid = 0
@@ -76,7 +93,7 @@ export function VendorBudgetDesktopGrid({
       totalPaid += paid
 
       if (r.kind === 'draft') {
-        rows.push([r.draft.vendorInput || '', '', '', ''])
+        rows.push([r.draft.vendorInput || '', '—', '', '', ''])
         meta.push(r)
       } else {
         const m = r.model
@@ -86,6 +103,7 @@ export function VendorBudgetDesktopGrid({
 
         rows.push([
           m.displayVendor,
+          roomCellText(m.room_ids),
           m.budgetTotal || 0,
           hasReal ? m.spentTotal : '',
           paid > 0 ? `₪ ${paid.toLocaleString('en-US')} (${pct}%)` : '',
@@ -94,10 +112,10 @@ export function VendorBudgetDesktopGrid({
       }
     }
 
-    // Totals row
     const overallPct = footerActual > 0 ? Math.round((totalPaid / footerActual) * 100) : 0
     rows.push([
       'Totals',
+      '',
       footerBudget,
       footerActual,
       totalPaid > 0 ? `₪ ${totalPaid.toLocaleString('en-US')} (${overallPct}%)` : '',
@@ -105,7 +123,7 @@ export function VendorBudgetDesktopGrid({
     meta.push(null)
 
     return { data: rows, rowMeta: meta, footerPaid: totalPaid, footerPaidPct: overallPct }
-  }, [tableRows, footerBudget, footerActual, getPaidSum])
+  }, [tableRows, rooms, footerBudget, footerActual, getPaidSum])
 
   const rowMetaRef = useRef(rowMeta)
   rowMetaRef.current = rowMeta
@@ -126,6 +144,19 @@ export function VendorBudgetDesktopGrid({
       if (destroyed || !containerRef.current) return
 
       // Custom renderer for budget column — centered
+      const roomsRenderer = function (
+        _instance: any, td: HTMLTableCellElement, _row: number, _col: number,
+        _prop: any, value: any, _cellProperties: any
+      ) {
+        const t = value === '' || value == null ? '—' : String(value)
+        td.textContent = t
+        td.style.textAlign = 'start'
+        td.style.paddingInline = '10px'
+        td.dir = 'auto'
+        td.title = t !== '—' ? t : ''
+        td.style.cursor = 'pointer'
+      }
+
       const currencyRenderer = function (
         _instance: any, td: HTMLTableCellElement, _row: number, _col: number,
         _prop: any, value: any, _cellProperties: any
@@ -212,16 +243,17 @@ export function VendorBudgetDesktopGrid({
       hot = new Handsontable(containerRef.current, {
         data: dataRef.current.map((row) => [...row]),
         licenseKey: 'non-commercial-and-evaluation',
-        colHeaders: ['Vendor', 'Budget', 'Actual', 'Paid'],
+        colHeaders: ['Vendor', 'Rooms', 'Budget', 'Actual', 'Paid'],
         rowHeaders: false,
         manualColumnResize: true,
         stretchH: 'all',
         width: '100%',
         height: '100%',
         layoutDirection: 'rtl',
-        colWidths: [300, 130, 130, 130],
+        colWidths: [220, 200, 120, 120, 130],
         columns: [
           { type: 'text' },
+          { type: 'text', readOnly: true, renderer: roomsRenderer },
           { type: 'numeric', renderer: currencyRenderer },
           { type: 'numeric', renderer: actualRenderer },
           { type: 'text', renderer: paidRenderer, readOnly: true },
@@ -263,15 +295,17 @@ export function VendorBudgetDesktopGrid({
 
           if (row === totalRowIdx) {
             cellProps.readOnly = true
-            cellProps.className = 'htCenter htBold ht-totals-row'
+            cellProps.className =
+              col === 1 ? 'htBold ht-totals-row' : col === 0 ? 'htBold ht-totals-row' : 'htCenter htBold ht-totals-row'
           } else {
-            // Paid column is always read-only
-            if (col === 3) {
+            if (col === 4) {
               cellProps.readOnly = true
               cellProps.className = 'htCenter'
+            } else if (col === 1) {
+              cellProps.readOnly = true
             } else {
               cellProps.readOnly = false
-              if (col === 1 || col === 2) {
+              if (col === 2 || col === 3) {
                 cellProps.className = 'htCenter'
               }
             }
@@ -324,6 +358,31 @@ export function VendorBudgetDesktopGrid({
       }
       hotInstanceRef.current = null
     }
+  }, [])
+
+  // Single-click on Rooms column (col 1) opens the rooms picker
+  useEffect(() => {
+    const root = containerRef.current
+    if (!root) return
+
+    const onClick = (ev: MouseEvent) => {
+      const td = (ev.target as HTMLElement).closest('tbody td') as HTMLTableCellElement | null
+      if (!td) return
+      const tr = td.parentElement
+      const tbody = tr?.parentElement
+      if (!tbody || !tr || tbody.tagName !== 'TBODY') return
+      const row = Array.prototype.indexOf.call(tbody.children, tr)
+      const col = Array.prototype.indexOf.call(tr.children, td)
+      if (col !== 1 || row < 0) return
+      const totalRowIdx = dataRef.current.length - 1
+      if (row >= totalRowIdx) return
+      const tableRow = rowMetaRef.current[row]
+      if (tableRow?.kind === 'data') {
+        onRoomsCellClickRef.current?.(tableRow, td.getBoundingClientRect())
+      }
+    }
+    root.addEventListener('click', onClick)
+    return () => root.removeEventListener('click', onClick)
   }, [])
 
   // Update data when it changes
@@ -390,6 +449,16 @@ export function VendorBudgetDesktopGrid({
           height: 0px !important;
           display: none !important;
         }
+
+        /* Cap Handsontable sticky-clone z-indexes so our popovers float above them */
+        .ht-theme-main .ht_clone_top,
+        .ht-theme-main .ht_clone_left,
+        .ht-theme-main .ht_clone_top_left_corner,
+        .ht-theme-main .ht_clone_bottom,
+        .ht-theme-main .ht_clone_bottom_left_corner { z-index: 20 !important; }
+
+        /* "Click to edit" cursor on the Rooms column */
+        .ht-theme-main .handsontable tbody tr td:nth-child(2) { cursor: pointer !important; }
       `}</style>
       <div
         ref={containerRef}

@@ -1,7 +1,15 @@
 # Development Progress Log
 
+## April 2026 — vendor budget tab: rooms, sort, filter
+- **DB:** [`19_vendor_budget_rooms.sql`](supabase/renovation/19_vendor_budget_rooms.sql) — `renovation_vendor_budget_rooms` (`project_id`, normalized `vendor_key`, `room_id`).
+- **App:** [`VendorBudgetView`](src/components/renovation/views/VendorBudgetView.tsx) loads links via [`listVendorBudgetRoomLinks`](src/lib/renovation.ts) / [`setVendorBudgetRooms`](src/lib/renovation.ts); rename/delete vendor sync keys. **Desktop:** Handsontable column **Rooms** + double-click to edit; **mobile:** [`BudgetLineRoomsPicker`](src/components/renovation/BudgetLineRoomsPicker.tsx). **Toolbar:** [`VendorBudgetToolbar`](src/components/renovation/views/VendorBudgetToolbar.tsx) — sort by vendor or rooms (A–Z / Z–A), room multi-select filter (row visible if it includes **any** selected room; rows with no rooms hidden when filter active). Footer totals follow filtered rows.
+
+## April 2026 — budget lines ↔ rooms (Settings)
+- **DB:** [`18_budget_line_rooms.sql`](supabase/renovation/18_budget_line_rooms.sql) junction `renovation_budget_line_rooms` (user-applied in Supabase).
+- **App:** [`listBudgetLines`](src/lib/renovation.ts) loads junction in a second query (no PostgREST embed); [`setBudgetLineRooms`](src/lib/renovation.ts) replaces links. **Settings → Budget by Category** (`#budget-by-category`): [`BudgetLineRoomsPicker`](src/components/renovation/BudgetLineRoomsPicker.tsx); section is **visible to all profiles**; **Budget Totals** + vendor budget stay Omri/Tamar-only ([`profileCanViewBudget`](src/lib/renovation-profile.ts)). **`/renovation/budget`** banner points to Settings for rooms.
+
 ## April 2026 — budget visibility by profile
-- **Vendor budget + overview widget + Settings budget blocks** are shown only when the active renovation profile’s **first name** matches **Omri** or **Tamar** (Latin, case- and accent-insensitive) or **תמר** (`profileCanViewBudget` in [`renovation-profile.ts`](src/lib/renovation-profile.ts)). Others: no Budget nav tab, redirect from `/renovation/budget`, hidden dashboard cards and Settings “Budget Totals” / “Budget by Category”.
+- **Vendor budget + overview widget + Settings “Budget Totals”** are shown only when the active profile’s **first name** matches **Omri** or **Tamar** (Latin, accent-stripped) or **תמר** (`profileCanViewBudget` in [`renovation-profile.ts`](src/lib/renovation-profile.ts)). Others: no Budget nav tab, redirect from `/renovation/budget`, hidden dashboard budget cards and Settings **Budget Totals**. **Settings “Budget by Category”** (category lines + **Rooms** column) is visible to **all** profiles.
 
 ## April 2026 — room notes markdown
 - **Spaces + Settings (add room):** WYSIWYG **TipTap** in [`RoomNotesMarkdownEditor`](src/components/renovation/RoomNotesMarkdownEditor.tsx); DB stores **sanitized HTML** ([`room-notes-html.ts`](src/lib/room-notes-html.ts): `isomorphic-dompurify` + legacy **markdown/plain** import via `marked`). Bold / underline / bullet list + **⌘B**; **Varela Round** on ProseMirror. [`selectRoom`](src/components/renovation/views/useRoomsPageState.ts) syncs selection + notes in one render; dirty checks use `notesContentEqual`.

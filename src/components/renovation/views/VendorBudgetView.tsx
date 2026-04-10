@@ -1,6 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import { createPortal } from 'react-dom'
 import { VendorDetailDrawer } from '@/components/renovation/VendorDetailDrawer'
 import {
   Fragment,
@@ -16,18 +17,29 @@ import { useRenovationMobile } from '@/components/renovation/RenovationViewportC
 import {
   createVendorPayment,
   deleteExpense,
+  deleteVendorBudgetRoomsForVendor,
   listExpenses,
+  listRooms,
+  listVendorBudgetRoomLinks,
   listVendorPayments,
   renameVendorAcrossExpenses,
+  setVendorBudgetRooms,
   setVendorPlannedTotal,
   setVendorSpentTotal,
-  sumPlannedExpenses,
+  vendorRoomLinksByVendorKey,
 } from '@/lib/renovation'
-import { buildVendorBudgetRows, type VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
+import {
+  buildVendorBudgetRows,
+  sortVendorBudgetModels,
+  type VendorBudgetRowModel,
+  type VendorBudgetSortDir,
+  type VendorBudgetSortKey,
+} from '@/lib/renovation-vendor-budget'
 import { formatIls } from '@/lib/renovation-format'
-import type { RenovationExpense, RenovationVendorPayment } from '@/types/renovation'
+import type { RenovationExpense, RenovationRoom, RenovationVendorPayment } from '@/types/renovation'
 import { cn } from '@/utils/common'
 import type { DraftRow, TableRow } from './vendor-budget-types'
+import { VendorBudgetToolbar } from './VendorBudgetToolbar'
 
 const START_KEY = '__start__'
 
@@ -260,10 +272,91 @@ function MobileRowInsertHandle({ onInsert, label }: { onInsert: () => void; labe
   )
 }
 
+// ── Inline rooms picker anchored to a grid cell ──────────────────────────────
+
+type RoomsPopoverProps = {
+  rooms: RenovationRoom[]
+  selectedIds: string[]
+  displayVendor: string
+  rect: DOMRect
+  onToggle: (roomId: string, checked: boolean) => void
+  onClose: () => void
+}
+
+function RoomsPopover({ rooms, selectedIds, displayVendor, rect, onToggle, onClose }: RoomsPopoverProps) {
+  const panelRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!panelRef.current?.contains(e.target as Node)) onClose()
+    }
+    const t = setTimeout(() => document.addEventListener('mousedown', handler), 0)
+    return () => { clearTimeout(t); document.removeEventListener('mousedown', handler) }
+  }, [onClose])
+
+  const PANEL_W = Math.max(rect.width, 220)
+  const PANEL_MAX_H = 288
+  const spaceBelow = window.innerHeight - rect.bottom - 8
+  const top = spaceBelow >= 120 ? rect.bottom + 4 : rect.top - Math.min(PANEL_MAX_H, rooms.length * 46 + 44) - 4
+  const left = Math.min(rect.left, window.innerWidth - PANEL_W - 8)
+
+  const panel = (
+    <div
+      ref={panelRef}
+      data-vendor-budget-rooms-popover="1"
+      style={{ top, left, width: PANEL_W, maxHeight: PANEL_MAX_H, zIndex: 260 }}
+      className="fixed overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl"
+    >
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-3 py-2 backdrop-blur-sm">
+        <span className="text-[12px] font-bold uppercase tracking-wide text-slate-500 truncate" dir="auto">
+          {displayVendor}
+        </span>
+        <button
+          type="button"
+          onClick={onClose}
+          className="ml-2 shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden>
+            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+          </svg>
+        </button>
+      </div>
+      {rooms.length === 0 ? (
+        <p className="px-3 py-5 text-center text-[13px] text-slate-400">No rooms in this project.</p>
+      ) : (
+        rooms.map((r) => (
+          <label key={r.id} className="flex cursor-pointer items-center gap-2.5 px-3 py-2.5 hover:bg-slate-50">
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(r.id)}
+              onChange={(e) => onToggle(r.id, e.target.checked)}
+              className="h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/30"
+            />
+            <span className="text-[14px] font-medium text-slate-800" dir="auto">{r.name}</span>
+          </label>
+        ))
+      )}
+    </div>
+  )
+
+  if (typeof document === 'undefined') return null
+  return createPortal(panel, document.body)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function VendorBudgetView({ projectId }: { projectId: string }) {
   const isMobile = useRenovationMobile()
   const [expenses, setExpenses] = useState<RenovationExpense[]>([])
   const [drafts, setDrafts] = useState<DraftRow[]>([])
+  const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  const [vendorRoomLinkRows, setVendorRoomLinkRows] = useState<Awaited<ReturnType<typeof listVendorBudgetRoomLinks>>>(
+    []
+  )
+  const [sortKey, setSortKey] = useState<VendorBudgetSortKey>('vendor')
+  const [sortDir, setSortDir] = useState<VendorBudgetSortDir>('asc')
+  const [filterRoomIds, setFilterRoomIds] = useState<string[]>([])
+  const [roomsPopover, setRoomsPopover] = useState<{ vendorKey: string; displayVendor: string; rect: DOMRect } | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<EditState | null>(null)
   const [menu, setMenu] = useState<{ x: number; y: number; row: TableRow } | null>(null)
@@ -277,9 +370,16 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [ex, pay] = await Promise.all([listExpenses(projectId), listVendorPayments(projectId)])
+      const [ex, pay, rms, vlinks] = await Promise.all([
+        listExpenses(projectId),
+        listVendorPayments(projectId),
+        listRooms(projectId),
+        listVendorBudgetRoomLinks(projectId),
+      ])
       setExpenses(ex)
       setPayments(pay)
+      setRooms(rms)
+      setVendorRoomLinkRows(vlinks)
     } catch (e) {
       console.error(e)
     } finally {
@@ -290,6 +390,24 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   useEffect(() => {
     void load()
   }, [load])
+
+  /** Toggle a room on a vendor row: optimistic local update + background DB write, no full reload. */
+  const toggleVendorRoom = useCallback((vendorKey: string, roomId: string, checked: boolean) => {
+    setVendorRoomLinkRows((prev) => {
+      const currentIds = prev.filter((l) => l.vendor_key === vendorKey).map((l) => l.room_id)
+      const nextIds = checked
+        ? [...new Set([...currentIds, roomId])]
+        : currentIds.filter((id) => id !== roomId)
+      setVendorBudgetRooms(projectId, vendorKey, nextIds).catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : JSON.stringify(err)
+        console.error('[vendor rooms] save failed:', msg)
+      })
+      return [
+        ...prev.filter((l) => l.vendor_key !== vendorKey),
+        ...nextIds.map((room_id) => ({ vendor_key: vendorKey, room_id })),
+      ]
+    })
+  }, [projectId])
 
   useEffect(() => {
     if (!menu) return
@@ -305,9 +423,41 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
     }
   }, [menu])
 
-  const dataModels = useMemo(() => buildVendorBudgetRows(expenses), [expenses])
+  const vendorRoomMap = useMemo(() => vendorRoomLinksByVendorKey(vendorRoomLinkRows), [vendorRoomLinkRows])
 
-  const tableRows: TableRow[] = useMemo(() => mergeTableRows(dataModels, drafts), [dataModels, drafts])
+  const dataModelsWithRooms = useMemo(() => {
+    const base = buildVendorBudgetRows(expenses)
+    return base.map((m) => ({ ...m, room_ids: vendorRoomMap.get(m.key) ?? [] }))
+  }, [expenses, vendorRoomMap])
+
+  const roomNameById = useMemo(() => new Map(rooms.map((r) => [r.id, r.name])), [rooms])
+
+  const sortedDataModels = useMemo(
+    () => sortVendorBudgetModels(dataModelsWithRooms, sortKey, sortDir, roomNameById),
+    [dataModelsWithRooms, sortKey, sortDir, roomNameById]
+  )
+
+  const mergedTableRows = useMemo(() => mergeTableRows(sortedDataModels, drafts), [sortedDataModels, drafts])
+
+  const filterSet = useMemo(() => new Set(filterRoomIds), [filterRoomIds])
+
+  const tableRows: TableRow[] = useMemo(() => {
+    if (filterSet.size === 0) return mergedTableRows
+    return mergedTableRows.filter((r) => {
+      if (r.kind === 'draft') return true
+      const ids = r.model.room_ids
+      if (ids.length === 0) return false
+      return ids.some((id) => filterSet.has(id))
+    })
+  }, [mergedTableRows, filterSet])
+
+  const footerModels = useMemo(() => {
+    if (filterSet.size === 0) return sortedDataModels
+    return sortedDataModels.filter((m) => {
+      if (m.room_ids.length === 0) return false
+      return m.room_ids.some((id) => filterSet.has(id))
+    })
+  }, [sortedDataModels, filterSet])
 
   const paymentsByVendor = useMemo(() => {
     const m = new Map<string, RenovationVendorPayment[]>()
@@ -341,14 +491,19 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
     ])
   }, [])
 
-  const footerBudget = sumPlannedExpenses(expenses)
-  // Effective actual total: real spent if entered, otherwise fallback to budget
+  const footerBudget = useMemo(
+    () => footerModels.reduce((s, m) => s + m.budgetTotal, 0),
+    [footerModels]
+  )
+
   const footerActual = useMemo(() => {
-    return dataModels.reduce((sum, m) => {
+    return footerModels.reduce((sum, m) => {
       const effectiveActual = m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
       return sum + effectiveActual
     }, 0)
-  }, [dataModels])
+  }, [footerModels])
+
+  const hasVendorData = dataModelsWithRooms.length > 0
 
   const rowKey = (r: TableRow) => (r.kind === 'draft' ? r.draft.localKey : r.model.key)
 
@@ -682,9 +837,23 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
         <h1 className="text-[24px] font-bold tracking-tight text-slate-900 md:text-[32px] text-left">Budget</h1>
       </header>
 
+      {!loading && (hasVendorData || drafts.length > 0) && (
+        <VendorBudgetToolbar
+          rooms={rooms}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={(k, d) => {
+            setSortKey(k)
+            setSortDir(d)
+          }}
+          filterRoomIds={filterRoomIds}
+          onFilterRoomIdsChange={setFilterRoomIds}
+        />
+      )}
+
       {loading ? (
         <div className="h-48 rounded-2xl bg-slate-100 animate-pulse" />
-      ) : tableRows.length === 0 ? (
+      ) : !hasVendorData && drafts.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center space-y-4">
           <p className="font-semibold text-slate-700">No vendors yet</p>
           <button
@@ -694,6 +863,13 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           >
             + Add first row
           </button>
+        </div>
+      ) : hasVendorData &&
+        filterSet.size > 0 &&
+        !tableRows.some((r) => r.kind === 'data') ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-6 text-center text-[15px] font-medium text-amber-950" dir="ltr">
+          No vendor rows include any of the selected rooms. Clear the room filter or assign rooms to vendors (double-click
+          the Rooms column on desktop, or use the picker on mobile).
         </div>
       ) : isMobile ? (
         <div className="space-y-0">
@@ -724,6 +900,31 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
                 <div className="min-h-[44px] flex items-center" onDoubleClick={() => startEdit(r, 'vendor')}>
                   {renderCell(r, 'vendor')}
                 </div>
+                {r.kind === 'data' && (
+                  <div className="space-y-1">
+                    <p className="text-[11px] font-bold uppercase text-slate-500">Rooms</p>
+                    <div className="flex flex-col gap-1">
+                      {rooms.length === 0 ? (
+                        <p className="text-[13px] text-slate-400">No rooms yet</p>
+                      ) : (
+                        rooms.map((rm) => {
+                          const checked = (r.model.room_ids).includes(rm.id)
+                          return (
+                            <label key={rm.id} className="flex items-center gap-2 min-h-[44px]">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => toggleVendorRoom(r.model.key, rm.id, e.target.checked)}
+                                className="h-5 w-5 rounded border-slate-300 text-indigo-600"
+                              />
+                              <span className="text-[15px] font-medium text-slate-800" dir="auto">{rm.name}</span>
+                            </label>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <p className="text-[11px] font-bold uppercase text-amber-800/80">Budget</p>
@@ -767,12 +968,28 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
       ) : (
         <VendorBudgetDesktopGrid
           tableRows={tableRows}
+          rooms={rooms}
           footerBudget={footerBudget}
           footerActual={footerActual}
           onCellValueChanged={handleGridCellValueChanged}
           onBodyContextMenu={onGridBodyContextMenu}
           addDraftAfter={addDraftAfter}
           getPaidSum={getPaidSum}
+          onRoomsCellClick={(row, rect) => {
+            if (row.kind !== 'data') return
+            setRoomsPopover({ vendorKey: row.model.key, displayVendor: row.model.displayVendor, rect })
+          }}
+        />
+      )}
+
+      {roomsPopover && (
+        <RoomsPopover
+          rooms={rooms}
+          selectedIds={vendorRoomMap.get(roomsPopover.vendorKey) ?? []}
+          displayVendor={roomsPopover.displayVendor}
+          rect={roomsPopover.rect}
+          onToggle={(roomId, checked) => toggleVendorRoom(roomsPopover.vendorKey, roomId, checked)}
+          onClose={() => setRoomsPopover(null)}
         />
       )}
 
@@ -803,6 +1020,22 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           </button>
           {/* Separator */}
           <div className="my-1 border-t border-slate-100" />
+          {menu.row.kind === 'data' && (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
+              onClick={() => {
+                const rw = menu.row
+                if (rw.kind !== 'data') return
+                const fakeRect = new DOMRect(menu.x, menu.y, 220, 0)
+                setMenu(null)
+                setRoomsPopover({ vendorKey: rw.model.key, displayVendor: rw.model.displayVendor, rect: fakeRect })
+              }}
+            >
+              Rooms…
+            </button>
+          )}
           {menu.row.kind === 'data' && (
             <button
               type="button"
@@ -866,6 +1099,7 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
                 for (const exp of toDelete) {
                   await deleteExpense(exp.id)
                 }
+                await deleteVendorBudgetRoomsForVendor(projectId, rw.model.key)
                 await load()
               } catch (err) {
                 console.error(err)

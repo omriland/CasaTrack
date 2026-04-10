@@ -177,15 +177,58 @@ export async function deleteTeamMember(id: string): Promise<void> {
 
 // --- Budget lines ---
 
+function mergeBudgetLineRoomIds(
+  lines: Omit<RenovationBudgetLine, 'room_ids'>[],
+  links: { budget_line_id: string; room_id: string }[]
+): RenovationBudgetLine[] {
+  const byLine = new Map<string, string[]>()
+  for (const l of links) {
+    const list = byLine.get(l.budget_line_id) ?? []
+    list.push(l.room_id)
+    byLine.set(l.budget_line_id, list)
+  }
+  return lines.map((row) => ({
+    ...row,
+    room_ids: byLine.get(row.id) ?? [],
+  }))
+}
+
 export async function listBudgetLines(projectId: string): Promise<RenovationBudgetLine[]> {
-  const { data, error } = await supabase
+  const { data: lines, error } = await supabase
     .from('renovation_budget_lines')
     .select('*')
     .eq('project_id', projectId)
     .order('sort_order')
 
   if (error) throw error
-  return (data || []) as RenovationBudgetLine[]
+  const list = (lines || []) as Omit<RenovationBudgetLine, 'room_ids'>[]
+  if (list.length === 0) return []
+
+  const ids = list.map((r) => r.id)
+  const { data: linkRows, error: linkErr } = await supabase
+    .from('renovation_budget_line_rooms')
+    .select('budget_line_id, room_id')
+    .in('budget_line_id', ids)
+
+  if (linkErr) {
+    console.warn('renovation_budget_line_rooms:', linkErr.message)
+    return mergeBudgetLineRoomIds(list, [])
+  }
+  return mergeBudgetLineRoomIds(list, (linkRows || []) as { budget_line_id: string; room_id: string }[])
+}
+
+/** Replace room links for a budget line (empty array clears all). */
+export async function setBudgetLineRooms(budgetLineId: string, roomIds: string[]): Promise<void> {
+  const { error: delErr } = await supabase
+    .from('renovation_budget_line_rooms')
+    .delete()
+    .eq('budget_line_id', budgetLineId)
+  if (delErr) throw delErr
+  if (roomIds.length === 0) return
+  const { error: insErr } = await supabase.from('renovation_budget_line_rooms').insert(
+    roomIds.map((room_id) => ({ budget_line_id: budgetLineId, room_id }))
+  )
+  if (insErr) throw insErr
 }
 
 export async function createBudgetLine(
@@ -200,7 +243,7 @@ export async function createBudgetLine(
     .single()
 
   if (error) throw error
-  return data as RenovationBudgetLine
+  return { ...(data as Omit<RenovationBudgetLine, 'room_ids'>), room_ids: [] }
 }
 
 export async function updateBudgetLine(
@@ -464,6 +507,41 @@ async function renameVendorPaymentKeys(projectId: string, fromKey: string, toKey
   if (error) throw error
 }
 
+async function renameVendorBudgetRoomKeys(projectId: string, fromKey: string, toKey: string): Promise<void> {
+  if (fromKey === toKey) return
+  const { data: fromRows, error: selFromErr } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .select('room_id')
+    .eq('project_id', projectId)
+    .eq('vendor_key', fromKey)
+  if (selFromErr) throw selFromErr
+  if (!fromRows?.length) return
+
+  const { data: toRows, error: selToErr } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .select('room_id')
+    .eq('project_id', projectId)
+    .eq('vendor_key', toKey)
+  if (selToErr) throw selToErr
+  const already = new Set((toRows ?? []).map((r: { room_id: string }) => r.room_id))
+
+  const { error: delErr } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('vendor_key', fromKey)
+  if (delErr) throw delErr
+
+  const toAdd = fromRows
+    .map((r: { room_id: string }) => r.room_id)
+    .filter((room_id) => !already.has(room_id))
+  if (toAdd.length === 0) return
+  const { error: insErr } = await supabase.from('renovation_vendor_budget_rooms').insert(
+    toAdd.map((room_id) => ({ project_id: projectId, vendor_key: toKey, room_id }))
+  )
+  if (insErr) throw insErr
+}
+
 export async function renameVendorAcrossExpenses(projectId: string, fromKey: string, toDisplayName: string): Promise<void> {
   const trimmed = toDisplayName.trim()
   const toKey = normalizeVendorKey(trimmed)
@@ -473,6 +551,55 @@ export async function renameVendorAcrossExpenses(projectId: string, fromKey: str
     await updateExpense(e.id, { vendor: trimmed || null })
   }
   await renameVendorPaymentKeys(projectId, fromKey, toKey)
+  await renameVendorBudgetRoomKeys(projectId, fromKey, toKey)
+}
+
+export type VendorBudgetRoomLink = { vendor_key: string; room_id: string }
+
+export async function listVendorBudgetRoomLinks(projectId: string): Promise<VendorBudgetRoomLink[]> {
+  const { data, error } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .select('vendor_key, room_id')
+    .eq('project_id', projectId)
+
+  if (error) {
+    console.warn('renovation_vendor_budget_rooms:', error.message)
+    return []
+  }
+  return (data || []) as VendorBudgetRoomLink[]
+}
+
+export function vendorRoomLinksByVendorKey(links: VendorBudgetRoomLink[]): Map<string, string[]> {
+  const m = new Map<string, string[]>()
+  for (const l of links) {
+    const list = m.get(l.vendor_key) ?? []
+    list.push(l.room_id)
+    m.set(l.vendor_key, list)
+  }
+  return m
+}
+
+export async function setVendorBudgetRooms(projectId: string, vendorKey: string, roomIds: string[]): Promise<void> {
+  const { error: delErr } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('vendor_key', vendorKey)
+  if (delErr) throw new Error(delErr.message)
+  if (roomIds.length === 0) return
+  const { error: insErr } = await supabase.from('renovation_vendor_budget_rooms').insert(
+    roomIds.map((room_id) => ({ project_id: projectId, vendor_key: vendorKey, room_id }))
+  )
+  if (insErr) throw new Error(insErr.message)
+}
+
+export async function deleteVendorBudgetRoomsForVendor(projectId: string, vendorKey: string): Promise<void> {
+  const { error } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('vendor_key', vendorKey)
+  if (error) throw error
 }
 
 export async function listVendorPayments(projectId: string): Promise<RenovationVendorPayment[]> {

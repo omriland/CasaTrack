@@ -17,6 +17,8 @@ export type VendorBudgetRowModel = {
   /** Oldest first — kept when merging spent rows */
   spentChronological: RenovationExpense[]
   plannedChronological: RenovationExpense[]
+  /** Filled from `renovation_vendor_budget_rooms` in the budget tab */
+  room_ids: string[]
 }
 
 export function buildVendorBudgetRows(expenses: RenovationExpense[]): VendorBudgetRowModel[] {
@@ -62,11 +64,46 @@ export function buildVendorBudgetRows(expenses: RenovationExpense[]): VendorBudg
       spentIds: g.spent.map((x) => x.id),
       spentChronological,
       plannedChronological,
+      room_ids: [],
     })
   }
 
   rows.sort((a, b) => a.displayVendor.localeCompare(b.displayVendor, undefined, { sensitivity: 'base' }))
   return rows
+}
+
+export type VendorBudgetSortKey = 'vendor' | 'rooms'
+export type VendorBudgetSortDir = 'asc' | 'desc'
+
+function roomsSortKey(model: VendorBudgetRowModel, roomNameById: Map<string, string>): string {
+  return [...model.room_ids]
+    .map((id) => roomNameById.get(id) ?? '')
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'he', { sensitivity: 'base' }))
+    .join('\u0000')
+}
+
+/** Sort data rows (drafts are merged separately). */
+export function sortVendorBudgetModels(
+  models: VendorBudgetRowModel[],
+  sortKey: VendorBudgetSortKey,
+  sortDir: VendorBudgetSortDir,
+  roomNameById: Map<string, string>
+): VendorBudgetRowModel[] {
+  const mult = sortDir === 'asc' ? 1 : -1
+  const out = [...models]
+  out.sort((a, b) => {
+    if (sortKey === 'vendor') {
+      const c = a.displayVendor.localeCompare(b.displayVendor, undefined, { sensitivity: 'base' })
+      return c * mult
+    }
+    const ra = roomsSortKey(a, roomNameById)
+    const rb = roomsSortKey(b, roomNameById)
+    const c = ra.localeCompare(rb, 'he', { sensitivity: 'base' })
+    if (c !== 0) return c * mult
+    return a.displayVendor.localeCompare(b.displayVendor, undefined, { sensitivity: 'base' }) * mult
+  })
+  return out
 }
 
 /** Prefer spent row for attachments; else planned; else null */

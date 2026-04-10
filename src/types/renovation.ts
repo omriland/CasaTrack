@@ -69,6 +69,8 @@ export interface RenovationBudgetLine {
   category_name: string
   amount_allocated: number
   sort_order: number
+  /** Linked via `renovation_budget_line_rooms`; empty = not scoped to specific rooms */
+  room_ids: string[]
 }
 
 export interface RenovationExpense {
