@@ -1,8 +1,17 @@
 # Development Progress Log
 
-## April 2026 — vendor budget tab: rooms, sort, filter
+## April 2026 — vendor budget tab redesign (TanStack Table)
+- **Replaced Handsontable** with `@tanstack/react-table` (~15 KB vs ~500 KB). Removed `handsontable`, `@handsontable/react-wrapper`, `ag-grid-community`, `ag-grid-react` from deps. Deleted `VendorBudgetDesktopGrid.tsx`.
+- **New files:**
+  - [`VendorBudgetTable.tsx`](src/components/renovation/views/VendorBudgetTable.tsx) — TanStack Table: 6 columns (Vendor, Rooms, Budget, Actual, Paid, Progress), clickable column-header sorting, inline click-to-edit cells, room chips with click-to-open dropdown (portal), sticky header/footer, zebra rows. Progress column hidden on iPad (<1024px).
+  - [`VendorBudgetMobileList.tsx`](src/components/renovation/views/VendorBudgetMobileList.tsx) — compact card list with progress bars, tap-to-edit via MobileBottomSheet, room checkboxes, inline payments, add vendor button.
+  - [`VendorBudgetProgressBar.tsx`](src/components/renovation/views/VendorBudgetProgressBar.tsx) — stacked bar: paid (emerald), unpaid-in-budget (amber), over-budget (rose).
+  - [`vendor-budget-export.ts`](src/components/renovation/views/vendor-budget-export.ts) — CSV export with BOM for Excel compatibility.
+- **[`VendorBudgetToolbar.tsx`](src/components/renovation/views/VendorBudgetToolbar.tsx):** search input, room filter dropdown, export CSV button. Removed sort dropdown (now column-header sorting).
+- **[`VendorBudgetView.tsx`](src/components/renovation/views/VendorBudgetView.tsx):** simplified orchestrator — search state, room filter, renders `VendorBudgetTable` (desktop) or `VendorBudgetMobileList` (mobile). Context menu, payment modals, detail drawer unchanged. ViewPaymentsModal extracted to separate function.
+
+## April 2026 — vendor budget tab: rooms, sort, filter (pre-redesign)
 - **DB:** [`19_vendor_budget_rooms.sql`](supabase/renovation/19_vendor_budget_rooms.sql) — `renovation_vendor_budget_rooms` (`project_id`, normalized `vendor_key`, `room_id`).
-- **App:** [`VendorBudgetView`](src/components/renovation/views/VendorBudgetView.tsx) loads links via [`listVendorBudgetRoomLinks`](src/lib/renovation.ts) / [`setVendorBudgetRooms`](src/lib/renovation.ts); rename/delete vendor sync keys. **Desktop:** Handsontable column **Rooms** + double-click to edit; **mobile:** [`BudgetLineRoomsPicker`](src/components/renovation/BudgetLineRoomsPicker.tsx). **Toolbar:** [`VendorBudgetToolbar`](src/components/renovation/views/VendorBudgetToolbar.tsx) — sort by vendor or rooms (A–Z / Z–A), room multi-select filter (row visible if it includes **any** selected room; rows with no rooms hidden when filter active). Footer totals follow filtered rows.
 
 ## April 2026 — budget lines ↔ rooms (Settings)
 - **DB:** [`18_budget_line_rooms.sql`](supabase/renovation/18_budget_line_rooms.sql) junction `renovation_budget_line_rooms` (user-applied in Supabase).
