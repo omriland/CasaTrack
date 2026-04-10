@@ -2,10 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import type { ReactNode } from 'react'
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { profileCanViewBudget } from '@/lib/renovation-profile'
 import { useRenovation } from './RenovationContext'
 import { MemberAvatarTile } from '@/components/renovation/MemberAvatar'
+
+const COLLAPSED_KEY = 'reno-sidebar-collapsed'
+const SIDEBAR_W = 240
+const SIDEBAR_W_COLLAPSED = 72
 
 const nav = [
   { href: '/renovation', label: 'Overview', icon: HomeIcon, match: (p: string) => p === '/renovation' },
@@ -24,26 +28,69 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { project, activeProfile, teamMembers, openProfilePicker } = useRenovation()
 
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem(COLLAPSED_KEY) === '1'
+  })
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0')
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName)) return
+      if (e.key === '[' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        toggleCollapsed()
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [toggleCollapsed])
+
+  const sidebarW = collapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W
+
   return (
-    <div className="reno-app min-h-screen bg-slate-50/50 text-slate-900 pb-0 pl-60 flex selection:bg-indigo-100 selection:text-indigo-900">
-      <aside className="flex flex-col fixed left-0 top-0 bottom-0 w-60 bg-white/70 backdrop-blur-3xl border-r border-slate-200/60 pt-safe z-40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)]">
-        <div className="px-6 pt-8 pb-6 bg-gradient-to-b from-white to-transparent">
-          <Link href="/" className="group inline-flex items-center text-[13px] font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
-            <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
-            Property Hunt
-          </Link>
-          <div className="mt-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Renovation</h1>
-              <p className="text-[13px] font-medium text-slate-500 mt-1 line-clamp-1">{project?.name || 'Project Hub'}</p>
-            </div>
-            {project && (
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" title="Active Project"></div>
+    <div
+      className="reno-app min-h-screen bg-slate-50/50 text-slate-900 pb-0 flex selection:bg-indigo-100 selection:text-indigo-900 transition-[padding-left] duration-300 ease-in-out"
+      style={{ paddingLeft: sidebarW }}
+    >
+      <aside
+        className="flex flex-col fixed left-0 top-0 bottom-0 bg-white/70 backdrop-blur-3xl border-r border-slate-200/60 pt-safe z-40 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)] transition-[width] duration-300 ease-in-out"
+        style={{ width: sidebarW }}
+      >
+        <div className={`bg-gradient-to-b from-white to-transparent transition-all duration-300 ${collapsed ? 'px-3 pt-5 pb-4' : 'px-6 pt-8 pb-6'}`}>
+          {!collapsed && (
+            <Link href="/" className="group inline-flex items-center text-[13px] font-semibold text-indigo-600 hover:text-indigo-500 transition-colors">
+              <svg className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7"/></svg>
+              Property Hunt
+            </Link>
+          )}
+          <div className={`flex items-center justify-between ${collapsed ? '' : 'mt-6'}`}>
+            {collapsed ? (
+              <Link href="/" className="mx-auto w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-bold shadow-sm" title="Back to Property Hunt">
+                R
+              </Link>
+            ) : (
+              <>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900">Renovation</h1>
+                  <p className="text-[13px] font-medium text-slate-500 mt-1 line-clamp-1">{project?.name || 'Project Hub'}</p>
+                </div>
+                {project && (
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" title="Active Project"></div>
+                )}
+              </>
             )}
           </div>
         </div>
 
-        <nav className="flex-1 px-4 space-y-1 overflow-y-auto pb-2 scrollbar-hide min-h-0">
+        <nav className={`flex-1 space-y-1 overflow-y-auto pb-2 scrollbar-hide min-h-0 transition-all duration-300 ${collapsed ? 'px-2' : 'px-4'}`}>
           {nav
             .filter(
               (item) =>
@@ -56,43 +103,77 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center gap-3.5 px-3.5 py-2.5 rounded text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
+                title={collapsed ? item.label : undefined}
+                className={`group flex items-center rounded text-[15px] font-medium transition-all duration-300 relative overflow-hidden ${
+                  collapsed ? 'justify-center px-0 py-2.5' : 'gap-3.5 px-3.5 py-2.5'
+                } ${
                   active
                     ? 'text-indigo-700 bg-indigo-50/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4),0_2px_4px_rgba(79,70,229,0.05)] ring-1 ring-indigo-100'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
-                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-600 rounded-r-full" />}
+                {active && !collapsed && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-indigo-600 rounded-r-full" />}
                 <div className={`p-1.5 rounded transition-colors ${active ? 'bg-indigo-600/10 text-indigo-600' : 'bg-slate-100 group-hover:bg-white text-slate-400 group-hover:text-slate-600 shadow-sm'}`}>
                   <Icon className="w-5 h-5" active={active} />
                 </div>
-                {item.label}
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </Link>
             )
           })}
         </nav>
 
         {project && activeProfile && teamMembers.length > 0 && (
-          <div className="shrink-0 px-4 pb-4 pt-3 border-t border-slate-200/80 bg-white/50">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Profile</p>
+          <div className={`shrink-0 border-t border-slate-200/80 bg-white/50 transition-all duration-300 ${collapsed ? 'px-2 pb-3 pt-3' : 'px-4 pb-4 pt-3'}`}>
+            {!collapsed && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Profile</p>}
             <button
               type="button"
               onClick={openProfilePicker}
-              className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-left group"
+              title={collapsed ? `${activeProfile.name} — Switch profile` : undefined}
+              className={`w-full flex items-center rounded-xl transition-all text-left group ${
+                collapsed
+                  ? 'justify-center p-1.5 hover:bg-indigo-50'
+                  : 'gap-3 p-2.5 bg-slate-50 border border-slate-200/80 hover:bg-indigo-50 hover:border-indigo-200'
+              }`}
             >
               <MemberAvatarTile
                 name={activeProfile.name}
                 className="h-9 w-9 shrink-0 rounded-lg text-[11px] font-extrabold shadow-inner"
               />
-              <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-bold text-slate-800 truncate" dir="auto">
-                  {activeProfile.name}
-                </p>
-                <p className="text-[11px] font-semibold text-indigo-600 group-hover:text-indigo-500">Switch profile</p>
-              </div>
+              {!collapsed && (
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-bold text-slate-800 truncate" dir="auto">
+                    {activeProfile.name}
+                  </p>
+                  <p className="text-[11px] font-semibold text-indigo-600 group-hover:text-indigo-500">Switch profile</p>
+                </div>
+              )}
             </button>
           </div>
         )}
+
+        {/* Collapse toggle */}
+        <div className={`shrink-0 border-t border-slate-200/60 transition-all duration-300 ${collapsed ? 'px-2 py-2' : 'px-4 py-2'}`}>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title={collapsed ? 'Expand sidebar (⌘[)' : 'Collapse sidebar (⌘[)'}
+            className={`w-full flex items-center rounded-lg py-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 ${
+              collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'
+            }`}
+          >
+            <svg
+              className={`w-4 h-4 shrink-0 transition-transform duration-300 ${collapsed ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 19V5" />
+            </svg>
+            {!collapsed && <span className="text-[13px] font-medium">Collapse</span>}
+          </button>
+        </div>
       </aside>
 
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-8 pt-safe mt-12 pt-6 pb-12 min-h-screen animate-fade-in">
