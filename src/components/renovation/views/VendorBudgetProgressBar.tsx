@@ -18,7 +18,7 @@ export function VendorBudgetProgressBar({ budget, actual, paid }: Props) {
   const redW = (overAmt / cap) * 100
 
   return (
-    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+    <div className="flex h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
       {paidW > 0 && <div className="h-full bg-emerald-500" style={{ width: `${paidW}%` }} />}
       {amberW > 0 && <div className="h-full bg-amber-400" style={{ width: `${amberW}%` }} />}
       {redW > 0 && <div className="h-full bg-rose-500" style={{ width: `${redW}%` }} />}

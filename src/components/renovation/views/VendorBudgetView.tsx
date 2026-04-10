@@ -20,6 +20,7 @@ import {
   setVendorBudgetRooms,
   setVendorPlannedTotal,
   setVendorSpentTotal,
+  updateVendorExpenseMeta,
   vendorRoomLinksByVendorKey,
 } from '@/lib/renovation'
 import {
@@ -410,6 +411,15 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
 
   /* ── Commit helpers ── */
 
+  const commitCategory = async (r: TableRow, raw: string) => {
+    if (r.kind !== 'data') return
+    const next = raw.trim()
+    await updateVendorExpenseMeta(projectId, r.model.displayVendor, {
+      category: next || null,
+    })
+    await load()
+  }
+
   const commitVendor = async (r: TableRow, raw: string) => {
     const next = raw.trim()
     if (r.kind === 'draft') {
@@ -457,9 +467,10 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   }
 
   const handleCommitEdit = useCallback(
-    async (row: TableRow, field: 'vendor' | 'budget' | 'actual', value: string) => {
+    async (row: TableRow, field: 'vendor' | 'category' | 'budget' | 'actual', value: string) => {
       try {
         if (field === 'vendor') await commitVendor(row, value)
+        else if (field === 'category') await commitCategory(row, value)
         else if (field === 'budget') await commitBudget(row, value)
         else await commitActual(row, value)
       } catch (err) {

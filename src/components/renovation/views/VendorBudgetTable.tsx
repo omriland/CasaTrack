@@ -22,7 +22,7 @@ type VendorTableMeta = {
   rooms: RenovationRoom[]
   roomNameById: Map<string, string>
   paidSumForVendor: (key: string) => number
-  onCommitEdit: (row: TableRow, field: 'vendor' | 'budget' | 'actual', value: string) => Promise<void>
+  onCommitEdit: (row: TableRow, field: 'vendor' | 'category' | 'budget' | 'actual', value: string) => Promise<void>
   onToggleRoom: (vendorKey: string, roomId: string, checked: boolean) => void
   openRoomsDropdown: (info: RoomsDropdownState) => void
   footerBudget: number
@@ -42,7 +42,7 @@ type Props = {
   rooms: RenovationRoom[]
   roomNameById: Map<string, string>
   paidSumForVendor: (key: string) => number
-  onCommitEdit: (row: TableRow, field: 'vendor' | 'budget' | 'actual', value: string) => Promise<void>
+  onCommitEdit: (row: TableRow, field: 'vendor' | 'category' | 'budget' | 'actual', value: string) => Promise<void>
   onToggleRoom: (vendorKey: string, roomId: string, checked: boolean) => void
   onContextMenu: (row: TableRow, x: number, y: number) => void
   footerBudget: number
@@ -266,7 +266,7 @@ function buildColumns(
             className="flex items-center gap-1.5 select-none"
             onClick={column.getToggleSortingHandler()}
           >
-            Vendor
+            Title
             <SortIcon direction={column.getIsSorted()} />
           </button>
         ),
@@ -303,6 +303,44 @@ function buildColumns(
           )
         },
         footer: () => <span className="font-bold text-slate-900">Totals</span>,
+      }
+    ),
+
+    columnHelper.accessor(
+      (row) => (row.kind === 'data' ? row.model.displayCategory : ''),
+      {
+        id: 'category',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1.5 select-none"
+            onClick={column.getToggleSortingHandler()}
+          >
+            Vendor
+            <SortIcon direction={column.getIsSorted()} />
+          </button>
+        ),
+        cell: ({ row, table }) => {
+          const meta = table.options.meta as VendorTableMeta
+          const r = row.original
+          if (r.kind === 'draft') return <span className="text-slate-400">—</span>
+          const val = r.model.displayCategory
+          return (
+            <EditableCell
+              value={val}
+              onSave={(v) => void meta.onCommitEdit(r, 'category', v)}
+              display={
+                val ? (
+                  <span className="block truncate text-slate-700" dir="auto">
+                    {val}
+                  </span>
+                ) : undefined
+              }
+              placeholder="Unknown"
+              inputDir="auto"
+            />
+          )
+        },
+        footer: () => null,
       }
     ),
 
@@ -597,6 +635,7 @@ function buildColumns(
 
 const COL_HEADER_CLS: Record<string, string> = {
   vendor: 'text-start',
+  category: 'text-start w-[140px]',
   rooms: 'text-start w-[180px]',
   budget: 'text-end w-[120px]',
   actual: 'text-end w-[120px]',
@@ -606,6 +645,7 @@ const COL_HEADER_CLS: Record<string, string> = {
 
 const COL_CELL_CLS: Record<string, string> = {
   vendor: 'text-start',
+  category: 'text-start',
   rooms: 'text-start',
   budget: '',
   actual: '',

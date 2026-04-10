@@ -140,12 +140,12 @@ export function VendorDetailDrawer({ projectId, vendorRow, onClose, onSaved }: V
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Vendor Name</label>
+                <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Title</label>
                 <input dir="auto" value={vendor} onChange={e => setVendor(e.target.value)} disabled className="opacity-60 h-11 w-full rounded border border-slate-200 bg-slate-50 px-3 text-[14px] font-semibold text-slate-800 shadow-sm" />
                 <p className="px-1 text-[10px] text-slate-400">Edit directly in grid to rename</p>
               </div>
               <div className="space-y-1.5">
-                <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Category</label>
+                <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Vendor</label>
                 <input dir="auto" value={category} onChange={e => setCategory(e.target.value)} placeholder="Materials..." className="h-11 w-full rounded border border-slate-200 bg-slate-50 px-3 text-[14px] font-semibold text-slate-800 shadow-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
               </div>
             </div>

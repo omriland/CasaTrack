@@ -102,7 +102,7 @@ export function ExpenseFormFields({ form, autoFocusAmount = true, minimalMode = 
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Vendor</label>
+          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Title</label>
           <input
             dir="auto"
             value={vendor}
@@ -112,7 +112,7 @@ export function ExpenseFormFields({ form, autoFocusAmount = true, minimalMode = 
           />
         </div>
         <div className="space-y-1.5">
-          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Category</label>
+          <label className="px-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">Vendor</label>
           <input
             dir="auto"
             value={category}

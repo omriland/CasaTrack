@@ -19,7 +19,7 @@ type Props = {
   paymentsByVendor: Map<string, RenovationVendorPayment[]>
   onCommitEdit: (
     row: TableRow,
-    field: 'vendor' | 'budget' | 'actual',
+    field: 'vendor' | 'category' | 'budget' | 'actual',
     value: string
   ) => Promise<void>
   onToggleRoom: (vendorKey: string, roomId: string, checked: boolean) => void
@@ -123,6 +123,7 @@ function VendorDetailSheet({
   const model = isData ? row.model : null
   const vendorName =
     isData ? model!.displayVendor : row.draft.vendorInput || ''
+  const categoryStr = isData ? (model!.displayCategory ?? '') : ''
   const budgetStr = isData ? String(Math.round(model!.budgetTotal)) : '0'
   const actualStr = isData
     ? String(
@@ -135,13 +136,23 @@ function VendorDetailSheet({
   return (
     <MobileBottomSheet open title={vendorName || 'New vendor'} onClose={onClose}>
       <div className="space-y-5 pb-4" dir="rtl">
-        {/* Vendor name */}
+        {/* Title (vendor db field) */}
         <SheetField
-          label="Vendor"
+          label="Title"
           value={vendorName}
           onCommit={(v) => void onCommitEdit(row, 'vendor', v)}
           dir="auto"
         />
+
+        {/* Vendor (category db field) */}
+        {isData && (
+          <SheetField
+            label="Vendor"
+            value={categoryStr}
+            onCommit={(v) => void onCommitEdit(row, 'category', v)}
+            dir="auto"
+          />
+        )}
 
         {/* Budget + Actual side by side */}
         <div className="grid grid-cols-2 gap-3">

@@ -10,6 +10,8 @@ export function normalizeVendorKey(vendor: string | null | undefined): string {
 export type VendorBudgetRowModel = {
   key: string
   displayVendor: string
+  /** Category from the first expense in this group; used as the "Vendor" label in the budget table */
+  displayCategory: string
   budgetTotal: number
   spentTotal: number
   plannedIds: string[]
@@ -55,9 +57,11 @@ export function buildVendorBudgetRows(expenses: RenovationExpense[]): VendorBudg
     const plannedChronological = [...g.planned].sort(
       (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     )
+    const firstExpense = plannedChronological[0] ?? spentChronological[0]
     rows.push({
       key,
       displayVendor: g.displayVendor,
+      displayCategory: (firstExpense?.category ?? '').trim(),
       budgetTotal: g.planned.reduce((s, x) => s + Number(x.amount), 0),
       spentTotal: g.spent.reduce((s, x) => s + Number(x.amount), 0),
       plannedIds: g.planned.map((x) => x.id),

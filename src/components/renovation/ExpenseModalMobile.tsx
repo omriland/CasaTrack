@@ -192,7 +192,7 @@ export function ExpenseModalMobile({
 
               <div className="min-w-0 max-w-full space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Vendor</label>
+                  <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Title</label>
                   <input
                     dir="auto"
                     value={vendor}
@@ -202,7 +202,7 @@ export function ExpenseModalMobile({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Category</label>
+                  <label className="text-[13px] font-bold text-slate-500 uppercase tracking-wider px-0.5">Vendor</label>
                   <input
                     dir="auto"
                     value={category}
