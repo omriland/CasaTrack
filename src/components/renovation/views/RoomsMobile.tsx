@@ -7,6 +7,7 @@ import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSh
 import { RoomIconGlyph, ROOM_ICON_TILE, normalizeRoomIconKey } from '@/components/renovation/room-icons'
 import { RoomIconPickerGrid } from '@/components/renovation/RoomIconPicker'
 import { cn } from '@/utils/common'
+import { RoomInlineTaskAdd } from '@/components/renovation/RoomInlineTaskAdd'
 import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
 import { notesContentEqual } from '@/lib/room-notes-html'
 import { useRoomsPageState } from './useRoomsPageState'
@@ -54,6 +55,7 @@ export function RoomsMobile() {
     roomPhotos,
     saveRoom,
     saveTaskTitle,
+    addTaskToRoom,
     saveNeedTitle,
     toggleNeedCompleted,
   } = useRoomsPageState()
@@ -378,55 +380,61 @@ export function RoomsMobile() {
                   </div>
                 </button>
                 {openTasks && (
-                  <div className="border-t border-slate-200 bg-[#fafbfc]/80 px-2 pb-3 pt-2">
+                  <div className="border-t border-slate-200 bg-[#fafbfc]/80 px-2 pb-3 pt-2 space-y-2">
                     {roomTasks.length === 0 ? (
-                      <p className="py-6 text-center text-[14px] font-medium text-slate-400">No tasks linked yet.</p>
+                      <div className="space-y-3 py-2">
+                        <p className="text-center text-[14px] font-medium text-slate-400">No tasks linked yet.</p>
+                        <RoomInlineTaskAdd roomId={selectedId} onAdd={addTaskToRoom} variant="mobile" />
+                      </div>
                     ) : (
-                      <ul className="flex flex-col gap-2">
-                        {roomTasks.map((t) => (
-                          <li key={t.id}>
-                            {editingTaskId === t.id ? (
-                              <input
-                                autoFocus
-                                dir="auto"
-                                value={draftTaskTitle}
-                                onChange={(e) => setDraftTaskTitle(e.target.value)}
-                                onBlur={() => commitTaskEdit()}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.preventDefault()
-                                    commitTaskEdit()
-                                  }
-                                  if (e.key === 'Escape') {
-                                    setEditingTaskId(null)
-                                    setDraftTaskTitle('')
-                                  }
-                                }}
-                                className="min-h-[48px] w-full rounded-[6px] border border-slate-200 bg-white px-3 text-[15px] font-medium text-slate-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-start"
-                              />
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setEditingTaskId(t.id)
-                                  setDraftTaskTitle(t.title)
-                                }}
-                                className="flex min-h-[48px] w-full items-center justify-between gap-2 rounded-[6px] border border-slate-200 bg-white px-3 py-2.5 text-start active:bg-slate-50"
-                                dir="auto"
-                              >
-                                <span className="min-w-0 flex-1 truncate text-[15px] font-medium leading-snug text-slate-900">
-                                  {t.title}
-                                </span>
-                                {t.status !== 'done' && (
-                                  <span className="shrink-0 rounded-md bg-slate-50 px-2 py-0.5 text-[12px] font-bold uppercase tracking-wide text-slate-500">
-                                    {t.status.replace('_', ' ')}
+                      <>
+                        <ul className="flex flex-col gap-2 max-h-[min(40vh,280px)] overflow-y-auto">
+                          {roomTasks.map((t) => (
+                            <li key={t.id}>
+                              {editingTaskId === t.id ? (
+                                <input
+                                  autoFocus
+                                  dir="auto"
+                                  value={draftTaskTitle}
+                                  onChange={(e) => setDraftTaskTitle(e.target.value)}
+                                  onBlur={() => commitTaskEdit()}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault()
+                                      commitTaskEdit()
+                                    }
+                                    if (e.key === 'Escape') {
+                                      setEditingTaskId(null)
+                                      setDraftTaskTitle('')
+                                    }
+                                  }}
+                                  className="min-h-[48px] w-full rounded-[6px] border border-slate-200 bg-white px-3 text-[15px] font-medium text-slate-900 outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 text-start"
+                                />
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingTaskId(t.id)
+                                    setDraftTaskTitle(t.title)
+                                  }}
+                                  className="flex min-h-[48px] w-full items-center justify-between gap-2 rounded-[6px] border border-slate-200 bg-white px-3 py-2.5 text-start active:bg-slate-50"
+                                  dir="auto"
+                                >
+                                  <span className="min-w-0 flex-1 truncate text-[15px] font-medium leading-snug text-slate-900">
+                                    {t.title}
                                   </span>
-                                )}
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                                  {t.status !== 'done' && (
+                                    <span className="shrink-0 rounded-md bg-slate-50 px-2 py-0.5 text-[12px] font-bold uppercase tracking-wide text-slate-500">
+                                      {t.status.replace('_', ' ')}
+                                    </span>
+                                  )}
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                        <RoomInlineTaskAdd roomId={selectedId} onAdd={addTaskToRoom} variant="mobile" />
+                      </>
                     )}
                   </div>
                 )}

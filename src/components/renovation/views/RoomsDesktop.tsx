@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Lightbox } from '@/components/renovation/Lightbox'
 import { RoomIconGlyph, ROOM_ICON_TILE, normalizeRoomIconKey } from '@/components/renovation/room-icons'
 import { RoomIconPickerDialog } from '@/components/renovation/RoomIconPicker'
+import { RoomInlineTaskAdd } from '@/components/renovation/RoomInlineTaskAdd'
 import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
 import { notesContentEqual } from '@/lib/room-notes-html'
 import { useRoomsPageState } from './useRoomsPageState'
@@ -33,6 +34,7 @@ export function RoomsDesktop() {
     roomNeeds,
     roomPhotos,
     saveRoom,
+    addTaskToRoom,
   } = useRoomsPageState()
 
   const [iconPickerOpen, setIconPickerOpen] = useState(false)
@@ -196,31 +198,35 @@ export function RoomsDesktop() {
                     <span className="text-[12px] font-semibold text-slate-400 tabular-nums">{roomTasks.length}</span>
                   </div>
                   {roomTasks.length === 0 ? (
-                    <div className="flex items-center justify-center py-8 text-center">
-                      <div>
-                        <p className="text-[14px] text-slate-400">No tasks linked</p>
-                        <Link href="/renovation/tasks" className="mt-1 inline-block text-[13px] font-medium text-indigo-500 hover:text-indigo-600">Add tasks →</Link>
-                      </div>
+                    <div className="space-y-3 py-4 text-center">
+                      <p className="text-[14px] text-slate-400">No tasks linked yet</p>
+                      <RoomInlineTaskAdd roomId={selectedId} onAdd={addTaskToRoom} />
+                      <Link href="/renovation/tasks" className="inline-block text-[13px] font-medium text-indigo-500 hover:text-indigo-600">
+                        Open tasks board →
+                      </Link>
                     </div>
                   ) : (
-                    <ul className="space-y-1 max-h-[260px] overflow-y-auto custom-scrollbar pr-1">
-                      {roomTasks.map((t) => (
-                        <li key={t.id}>
-                          <Link
-                            href="/renovation/tasks"
-                            className="group flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[14px] text-slate-700 transition-colors hover:bg-indigo-50 hover:text-indigo-900"
-                            dir="auto"
-                          >
-                            <span className="truncate">{t.title}</span>
-                            {t.status !== 'done' && (
-                              <span className="shrink-0 text-[11px] font-medium text-slate-400 group-hover:text-indigo-500">
-                                {t.status.replace('_', ' ')}
-                              </span>
-                            )}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="space-y-2">
+                      <ul className="space-y-1 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                        {roomTasks.map((t) => (
+                          <li key={t.id}>
+                            <Link
+                              href="/renovation/tasks"
+                              className="group flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[14px] text-slate-700 transition-colors hover:bg-indigo-50 hover:text-indigo-900"
+                              dir="auto"
+                            >
+                              <span className="truncate">{t.title}</span>
+                              {t.status !== 'done' && (
+                                <span className="shrink-0 text-[11px] font-medium text-slate-400 group-hover:text-indigo-500">
+                                  {t.status.replace('_', ' ')}
+                                </span>
+                              )}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                      <RoomInlineTaskAdd roomId={selectedId} onAdd={addTaskToRoom} />
+                    </div>
                   )}
                 </div>
 

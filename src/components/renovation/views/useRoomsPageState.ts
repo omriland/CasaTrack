@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
+  createTask,
   listGalleryItems,
   listNeeds,
   listRooms,
@@ -23,7 +24,7 @@ import type {
 } from '@/types/renovation'
 
 export function useRoomsPageState() {
-  const { project } = useRenovation()
+  const { project, activeProfile } = useRenovation()
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
   const [needs, setNeeds] = useState<RenovationNeed[]>([])
@@ -121,7 +122,9 @@ export function useRoomsPageState() {
   )
 
   const selectedRoom = selectedId ? rooms.find((r) => r.id === selectedId) : null
-  const roomTasks = selectedId ? tasks.filter((t) => t.room_id === selectedId) : []
+  const roomTasks = selectedId
+    ? tasks.filter((t) => t.room_id === selectedId && t.status !== 'done')
+    : []
   const roomNeeds = selectedId ? needs.filter((n) => n.room_id === selectedId) : []
   const roomPhotos = selectedId ? gallery.filter((p) => p.room_id === selectedId) : []
 
@@ -179,6 +182,29 @@ export function useRoomsPageState() {
       }
     },
     [tasks, load],
+  )
+
+  const addTaskToRoom = useCallback(
+    async (roomId: string, title: string): Promise<boolean> => {
+      if (!project) return false
+      const trimmed = title.trim()
+      if (!trimmed) return false
+      try {
+        await createTask(project.id, {
+          title: trimmed,
+          room_id: roomId,
+          created_by_member_id: activeProfile?.id ?? null,
+        })
+        const next = await listTasks(project.id)
+        setTasks(next)
+        return true
+      } catch (e) {
+        console.error(e)
+        alert('Failed to add task')
+        return false
+      }
+    },
+    [project, activeProfile],
   )
 
   const saveNeedTitle = useCallback(
@@ -240,6 +266,7 @@ export function useRoomsPageState() {
     roomPhotos,
     saveRoom,
     saveTaskTitle,
+    addTaskToRoom,
     saveNeedTitle,
     toggleNeedCompleted,
   }
