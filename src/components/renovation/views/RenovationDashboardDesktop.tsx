@@ -327,25 +327,33 @@ export function RenovationDashboardDesktop() {
               ) : (
                 <ul className="space-y-2.5">
                   {recentPayments.map((p) => (
-                    <li key={p.id} className="flex items-center justify-between p-3 rounded hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0 text-[14px] font-bold uppercase">
-                          {(p.vendor_key || 'X')[0]}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-slate-800 text-[15px] truncate" dir="auto">
+                    <li
+                      key={p.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded hover:bg-slate-50 transition-colors"
+                      dir="ltr"
+                    >
+                      {/* Left: amount + date */}
+                      <div className="flex shrink-0 flex-col items-start gap-1">
+                        <span className="text-[15px] font-bold tabular-nums text-slate-900">
+                          {formatIls(Number(p.amount))}
+                        </span>
+                        <span className="text-[11px] font-medium tabular-nums text-slate-400">
+                          {new Date(p.created_at).toLocaleDateString('he-IL')}
+                        </span>
+                      </div>
+                      {/* Right (R→L: avatar, title): title left of avatar */}
+                      <div className="flex min-w-0 flex-1 items-center justify-end gap-3 overflow-hidden">
+                        <div className="min-w-0 flex-1" dir="rtl">
+                          <p className="truncate text-[15px] font-semibold text-slate-800">
                             {p.vendor_key || 'General'}
                           </p>
                           {p.note && (
-                            <p className="text-[12px] text-slate-500 font-medium truncate mt-0.5" dir="auto">{p.note}</p>
+                            <p className="mt-0.5 truncate text-[12px] font-medium text-slate-500">{p.note}</p>
                           )}
                         </div>
-                      </div>
-                      <div className="ml-4 flex flex-col items-end gap-1 shrink-0">
-                        <span className="font-bold text-slate-900 tabular-nums text-[15px]">{formatIls(Number(p.amount))}</span>
-                        <span className="text-[11px] text-slate-400 font-medium tabular-nums">
-                          {new Date(p.created_at).toLocaleDateString('he-IL')}
-                        </span>
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[14px] font-bold uppercase text-slate-500">
+                          {(p.vendor_key || 'X')[0]}
+                        </div>
                       </div>
                     </li>
                   ))}
