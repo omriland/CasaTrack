@@ -790,7 +790,17 @@ input[type=number] {
 .room-notes-editor .ProseMirror ul,
 .room-notes-editor .ProseMirror ol {
   margin: 0.35em 0;
-  padding-left: 2.25rem;
+  margin-inline-start: 0.35rem;
+  /* Default LTR / neutral until :dir(rtl) overrides */
+  padding-left: 2rem;
+  padding-right: 0.5rem;
+}
+
+/* dir="auto" on the editor leaves attr as "auto"; :dir() matches computed RTL (e.g. Hebrew) */
+.room-notes-editor .ProseMirror:dir(rtl) ul,
+.room-notes-editor .ProseMirror:dir(rtl) ol {
+  padding-right: 2.5rem;
+  padding-left: 0.75rem;
 }
 
 .room-notes-editor .ProseMirror ul {
