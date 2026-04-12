@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import { useRenovationMobile } from '@/components/renovation/RenovationViewportContext'
@@ -25,6 +26,7 @@ import {
 } from '@/lib/renovation'
 import {
   buildVendorBudgetRows,
+  normalizeVendorKey,
   type VendorBudgetRowModel,
 } from '@/lib/renovation-vendor-budget'
 import { formatIls } from '@/lib/renovation-format'
@@ -66,6 +68,24 @@ function parseAmountInput(raw: string): number | null {
   const n = Number(raw.replace(/,/g, '').replace(/^\s+|\s+$/g, ''))
   if (Number.isNaN(n) || n < 0) return null
   return n
+}
+
+/** Keep row order stable across edits; new vendors append. Full `load()` clears the ref to allow resort. */
+function applyStableRowOrder<T extends { key: string }>(next: T[], previousKeyOrder: string[]): T[] {
+  const byKey = new Map(next.map((m) => [m.key, m]))
+  const used = new Set<string>()
+  const out: T[] = []
+  for (const k of previousKeyOrder) {
+    const m = byKey.get(k)
+    if (m) {
+      out.push(m)
+      used.add(m.key)
+    }
+  }
+  for (const m of next) {
+    if (!used.has(m.key)) out.push(m)
+  }
+  return out
 }
 
 /* ─── Payment modal ──────────────────────────────────────────────────────────── */
@@ -270,10 +290,31 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   const [viewPaymentsModal, setViewPaymentsModal] = useState<{ vendorKey: string; displayVendor: string } | null>(null)
   const [detailVendor, setDetailVendor] = useState<VendorBudgetRowModel | null>(null)
 
+  /** When non-null, table row order follows this key list until the next full `load()`. */
+  const budgetStableKeyOrderRef = useRef<string[] | null>(null)
+  const [saveAck, setSaveAck] = useState(false)
+  const saveAckTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flashSaveAck = useCallback(() => {
+    setSaveAck(true)
+    if (saveAckTimerRef.current) clearTimeout(saveAckTimerRef.current)
+    saveAckTimerRef.current = setTimeout(() => {
+      setSaveAck(false)
+      saveAckTimerRef.current = null
+    }, 2200)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (saveAckTimerRef.current) clearTimeout(saveAckTimerRef.current)
+    }
+  }, [])
+
   /* ── Data loading ── */
 
   const load = useCallback(async () => {
     setLoading(true)
+    budgetStableKeyOrderRef.current = null
     try {
       const [ex, pay, rms, vlinks] = await Promise.all([
         listExpenses(projectId),
@@ -294,6 +335,31 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
 
   useEffect(() => { void load() }, [load])
 
+  /** Refresh budget-driving data without the full-page loading skeleton or reordering rows. */
+  const silentRefreshBudgetData = useCallback(async () => {
+    try {
+      const [ex, pay, vlinks] = await Promise.all([
+        listExpenses(projectId),
+        listVendorPayments(projectId),
+        listVendorBudgetRoomLinks(projectId),
+      ])
+      setExpenses(ex)
+      setPayments(pay)
+      setVendorRoomLinkRows(vlinks)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [projectId])
+
+  const silentRefreshPayments = useCallback(async () => {
+    try {
+      const pay = await listVendorPayments(projectId)
+      setPayments(pay)
+    } catch (e) {
+      console.error(e)
+    }
+  }, [projectId])
+
   /* ── Derived data ── */
 
   const vendorRoomMap = useMemo(
@@ -303,7 +369,17 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
 
   const dataModelsWithRooms = useMemo(() => {
     const base = buildVendorBudgetRows(expenses)
-    return base.map((m) => ({ ...m, room_ids: vendorRoomMap.get(m.key) ?? [] }))
+    const withRooms = base.map((m) => ({ ...m, room_ids: vendorRoomMap.get(m.key) ?? [] }))
+    if (withRooms.length === 0) {
+      return withRooms
+    }
+    if (budgetStableKeyOrderRef.current === null) {
+      budgetStableKeyOrderRef.current = withRooms.map((m) => m.key)
+      return withRooms
+    }
+    const ordered = applyStableRowOrder(withRooms, budgetStableKeyOrderRef.current)
+    budgetStableKeyOrderRef.current = ordered.map((m) => m.key)
+    return ordered
   }, [expenses, vendorRoomMap])
 
   const roomNameById = useMemo(
@@ -414,10 +490,16 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   const commitCategory = async (r: TableRow, raw: string) => {
     if (r.kind !== 'data') return
     const next = raw.trim()
+    const key = normalizeVendorKey(r.model.displayVendor)
     await updateVendorExpenseMeta(projectId, r.model.displayVendor, {
       category: next || null,
     })
-    await load()
+    setExpenses((prev) =>
+      prev.map((e) =>
+        normalizeVendorKey(e.vendor) === key ? { ...e, category: next || null } : e
+      )
+    )
+    flashSaveAck()
   }
 
   const commitVendor = async (r: TableRow, raw: string) => {
@@ -432,8 +514,15 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
     }
     if (next === r.model.displayVendor) return
     if (!next) { alert('שם הספק לא יכול להיות ריק.'); return }
-    await renameVendorAcrossExpenses(projectId, r.model.key, next)
-    await load()
+    const oldKey = r.model.key
+    await renameVendorAcrossExpenses(projectId, oldKey, next)
+    const newKey = normalizeVendorKey(next)
+    const ord = budgetStableKeyOrderRef.current
+    if (ord) {
+      budgetStableKeyOrderRef.current = ord.map((k) => (k === oldKey ? newKey : k))
+    }
+    await silentRefreshBudgetData()
+    flashSaveAck()
   }
 
   const commitBudget = async (r: TableRow, raw: string) => {
@@ -444,11 +533,13 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
       if (!v) { alert('תן שם לספק לפני הזנת תקציב.'); return }
       await setVendorPlannedTotal(projectId, v, n)
       setDrafts((prev) => prev.filter((d) => d.localKey !== r.draft.localKey))
-      await load()
+      await silentRefreshBudgetData()
+      flashSaveAck()
       return
     }
     await setVendorPlannedTotal(projectId, r.model.displayVendor, n)
-    await load()
+    await silentRefreshBudgetData()
+    flashSaveAck()
   }
 
   const commitActual = async (r: TableRow, raw: string) => {
@@ -459,28 +550,30 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
       if (!v) { alert('תן שם לספק לפני הזנת תקציב.'); return }
       await setVendorSpentTotal(projectId, v, n)
       setDrafts((prev) => prev.filter((d) => d.localKey !== r.draft.localKey))
-      await load()
+      await silentRefreshBudgetData()
+      flashSaveAck()
       return
     }
     await setVendorSpentTotal(projectId, r.model.displayVendor, n)
-    await load()
+    await silentRefreshBudgetData()
+    flashSaveAck()
   }
 
-  const handleCommitEdit = useCallback(
-    async (row: TableRow, field: 'vendor' | 'category' | 'budget' | 'actual', value: string) => {
-      try {
-        if (field === 'vendor') await commitVendor(row, value)
-        else if (field === 'category') await commitCategory(row, value)
-        else if (field === 'budget') await commitBudget(row, value)
-        else await commitActual(row, value)
-      } catch (err) {
-        console.error(err)
-        alert('השמירה נכשלה.')
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [projectId, load]
-  )
+  const handleCommitEdit = async (
+    row: TableRow,
+    field: 'vendor' | 'category' | 'budget' | 'actual',
+    value: string
+  ) => {
+    try {
+      if (field === 'vendor') await commitVendor(row, value)
+      else if (field === 'category') await commitCategory(row, value)
+      else if (field === 'budget') await commitBudget(row, value)
+      else await commitActual(row, value)
+    } catch (err) {
+      console.error(err)
+      alert('השמירה נכשלה.')
+    }
+  }
 
   /* ── Row management ── */
 
@@ -555,10 +648,24 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8 animate-fade-in" dir="rtl">
-      <header className="flex items-center justify-between" dir="ltr">
-        <h1 className="text-[24px] font-bold tracking-tight text-slate-900 md:text-[32px] text-left">
-          Budget
-        </h1>
+      <header className="flex items-center justify-between gap-3" dir="ltr">
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <h1 className="text-[24px] font-bold tracking-tight text-slate-900 md:text-[32px] text-left">
+            Budget
+          </h1>
+          {saveAck && (
+            <span
+              className="flex items-center gap-1 text-[13px] font-semibold text-emerald-600 animate-fade-in"
+              role="status"
+              aria-live="polite"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              Saved
+            </span>
+          )}
+        </div>
       </header>
 
       {!loading && (hasVendorData || drafts.length > 0) && (
@@ -721,7 +828,8 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
         onAdd={async (amount, note) => {
           if (!paymentModal) return
           await createVendorPayment(projectId, paymentModal.vendorKey, { amount, note: note || null })
-          await load()
+          await silentRefreshPayments()
+          flashSaveAck()
         }}
       />
 
@@ -738,7 +846,9 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           projectId={projectId}
           vendorRow={detailVendor}
           onClose={() => setDetailVendor(null)}
-          onSaved={() => void load()}
+          onSaved={() => {
+            void silentRefreshBudgetData().then(() => flashSaveAck())
+          }}
         />
       )}
     </div>

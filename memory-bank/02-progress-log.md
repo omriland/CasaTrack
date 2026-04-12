@@ -1,5 +1,8 @@
 # Development Progress Log
 
+## April 2026 — vendor budget: incremental save UX
+- **[`VendorBudgetView.tsx`](src/components/renovation/views/VendorBudgetView.tsx):** After inline edits (budget/actual/vendor/category), payments, and detail drawer save — **`silentRefreshBudgetData()`** (no `loading` skeleton) instead of full **`load()`**; header **Saved** (green, ~2.2s) like Rooms. **Stable row order** across edits (`budgetStableKeyOrderRef` + `applyStableRowOrder`): rows stay put until a full load (e.g. initial mount, delete row). **`handleCommitEdit`** is a plain async function (no `useCallback`) so commit helpers are never stale.
+
 ## April 2026 — vendor budget tab redesign (TanStack Table)
 - **Replaced Handsontable** with `@tanstack/react-table` (~15 KB vs ~500 KB). Removed `handsontable`, `@handsontable/react-wrapper`, `ag-grid-community`, `ag-grid-react` from deps. Deleted `VendorBudgetDesktopGrid.tsx`.
 - **New files:**
