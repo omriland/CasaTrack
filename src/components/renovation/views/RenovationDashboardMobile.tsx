@@ -30,7 +30,7 @@ export function RenovationDashboardMobile() {
     budgetOverAmount,
     upcomingCalendarEventsTwoWeeks,
   } = useRenovationDashboardPage()
-  const { openExpenseModal, setTaskModalOpen } = useRenovation()
+  const { setTaskModalOpen } = useRenovation()
 
   if (loading) return null
 
@@ -216,19 +216,6 @@ export function RenovationDashboardMobile() {
           {/* Quick actions */}
           <section className="space-y-2">
             <h2 className="text-[18px] font-bold text-slate-900 mb-1">Quick actions</h2>
-            <button
-              type="button"
-              onClick={() => openExpenseModal()}
-              className="flex w-full items-center gap-4 min-h-[56px] px-4 py-3 rounded-2xl bg-white border border-slate-200/60 shadow-sm active:bg-slate-50 transition-colors"
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-              <span className="text-[16px] font-semibold text-slate-900">Add Expense</span>
-            </button>
-
             <button
               type="button"
               onClick={() => setTaskModalOpen(true)}

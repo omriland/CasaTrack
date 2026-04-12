@@ -1,13 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useRenovation } from '@/components/renovation/RenovationContext'
 import { formatIls, formatTaskDue } from '@/lib/renovation-format'
 import { profileCanViewBudget, profileFirstName, timeGreetingForProfile } from '@/lib/renovation-profile'
 import { formatUpcomingEventWhen, useRenovationDashboardPage } from './useRenovationDashboardPage'
 
 export function RenovationDashboardDesktop() {
-  const { openExpenseModal } = useRenovation()
   const {
     project,
     loading,
@@ -128,15 +126,6 @@ export function RenovationDashboardDesktop() {
           <h1 className="text-[32px] font-bold tracking-tight text-slate-900" dir="auto">
             {project.name}
           </h1>
-        </div>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => openExpenseModal()}
-            className="px-5 py-2.5 bg-white border border-slate-200 shadow-sm rounded text-[14px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
-          >
-            + Add Expense
-          </button>
         </div>
       </header>
 
