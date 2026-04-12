@@ -19,8 +19,7 @@ export function RenovationDashboardMobile() {
     setContingency,
     creating,
     handleCreate,
-    spent,
-    plannedTotal,
+    paidColumnTotal,
     dashLoading,
     cap,
     committedTotal,
@@ -167,21 +166,20 @@ export function RenovationDashboardMobile() {
                   />
                 )}
               </div>
-              <div className="flex justify-between text-[14px] font-medium text-slate-500 mt-2 tabular-nums">
-                <span className="min-w-0">
-                  {plannedTotal > 0 ? (
-                    <>
-                      {formatIls(committedTotal)} committed
-                      <span className="block text-[12px] font-normal text-slate-400 mt-0.5">
-                        {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
-                      </span>
-                    </>
-                  ) : (
-                    <span>{formatIls(spent)} spent</span>
-                  )}
-                </span>
-                <span className="shrink-0">{formatIls(cap)} total</span>
-              </div>
+              <dl className="mt-3 space-y-1.5 text-[13px] font-medium text-slate-600 tabular-nums">
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500 shrink-0">Total budget</dt>
+                  <dd className="font-semibold text-slate-900">{formatIls(cap)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500 shrink-0">Committed</dt>
+                  <dd className="font-semibold text-slate-900">{formatIls(committedTotal)}</dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-slate-500 shrink-0">Spent</dt>
+                  <dd className="font-semibold text-emerald-700">{formatIls(paidColumnTotal)}</dd>
+                </div>
+              </dl>
             </section>
           )}
 

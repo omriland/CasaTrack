@@ -69,8 +69,13 @@ export function useRenovationDashboardPage() {
   const [budget, setBudget] = useState('')
   const [contingency, setContingency] = useState('')
   const [creating, setCreating] = useState(false)
-  const [spent, setSpent] = useState(0)
-  const [plannedTotal, setPlannedTotal] = useState(0)
+  /**
+   * Same as Budget tab footer "Actual": per vendor `spentTotal > 0 ? spentTotal : budgetTotal`, summed.
+   * (VendorBudgetView `footerActual` with no room/search filter = all `buildVendorBudgetRows` models.)
+   */
+  const [actualColumnTotal, setActualColumnTotal] = useState(0)
+  /** Same as Budget tab footer "Paid": sum of payment amounts for those vendor rows only. */
+  const [paidColumnTotal, setPaidColumnTotal] = useState(0)
   const [monthSpend, setMonthSpend] = useState(0)
   const [recentPayments, setRecentPayments] = useState<RenovationVendorPayment[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
@@ -90,11 +95,18 @@ export function useRenovationDashboardPage() {
         listVendorPayments(project.id).catch(() => [] as RenovationVendorPayment[]),
       ])
       const vendorRows = buildVendorBudgetRows(ex)
-      const actualSpent = vendorRows.reduce((s, r) => s + r.spentTotal, 0)
-      const unspentBudget = vendorRows.reduce((s, r) => s + Math.max(0, r.budgetTotal - r.spentTotal), 0)
+      const actualTotal = vendorRows.reduce((sum, m) => {
+        const effectiveActual = m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
+        return sum + effectiveActual
+      }, 0)
+      const vendorKeys = new Set(vendorRows.map((r) => r.key))
+      const paidTotal = vp.reduce(
+        (s, p) => (vendorKeys.has(p.vendor_key) ? s + Number(p.amount) : s),
+        0,
+      )
 
-      setSpent(actualSpent)
-      setPlannedTotal(unspentBudget)
+      setActualColumnTotal(actualTotal)
+      setPaidColumnTotal(paidTotal)
       setMonthSpend(expensesThisMonth(ex))
       
       const activeVendorKeys = new Set(vendorRows.map(vr => vr.key))
@@ -146,17 +158,20 @@ export function useRenovationDashboardPage() {
     committedTotal,
     over,
     remainingBalance,
-    remainingExcludingPlanned,
+    remainingAfterPayments,
     budgetOverAmount,
     spentBarPct,
     plannedBarPct,
   } = useMemo(() => {
     const capVal = project ? effectiveBudget(project) : 0
-    const committed = spent + plannedTotal
+    const committed = actualColumnTotal
     const overVal = project ? committed > capVal && capVal > 0 : false
 
-    let spentBarPct = capVal > 0 ? (spent / capVal) * 100 : 0
-    let plannedBarPct = capVal > 0 ? (plannedTotal / capVal) * 100 : 0
+    const paid = paidColumnTotal
+    const committedUnpaid = Math.max(0, committed - paid)
+
+    let spentBarPct = capVal > 0 ? (paid / capVal) * 100 : 0
+    let plannedBarPct = capVal > 0 ? (committedUnpaid / capVal) * 100 : 0
     if (spentBarPct + plannedBarPct > 100) {
       const t = spentBarPct + plannedBarPct
       spentBarPct = (spentBarPct / t) * 100
@@ -168,12 +183,12 @@ export function useRenovationDashboardPage() {
       committedTotal: committed,
       over: overVal,
       remainingBalance: capVal - committed,
-      remainingExcludingPlanned: capVal - spent,
+      remainingAfterPayments: committed - paid,
       budgetOverAmount: Math.max(0, committed - capVal),
       spentBarPct,
-      plannedBarPct, // Represents unspent pipeline
+      plannedBarPct,
     }
-  }, [project, spent, plannedTotal])
+  }, [project, actualColumnTotal, paidColumnTotal])
 
   const openTasks = tasks.filter((t) => t.status !== 'done').length
   const overdue = tasks.filter((t) => {
@@ -227,8 +242,7 @@ export function useRenovationDashboardPage() {
     setContingency,
     creating,
     handleCreate,
-    spent,
-    plannedTotal,
+    paidColumnTotal,
     monthSpend,
     recentPayments,
     tasks,
@@ -239,7 +253,7 @@ export function useRenovationDashboardPage() {
     committedTotal,
     over,
     remainingBalance,
-    remainingExcludingPlanned,
+    remainingAfterPayments,
     budgetOverAmount,
     spentBarPct,
     plannedBarPct,

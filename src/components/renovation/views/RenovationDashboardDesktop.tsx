@@ -20,8 +20,7 @@ export function RenovationDashboardDesktop() {
     setContingency,
     creating,
     handleCreate,
-    spent,
-    plannedTotal,
+    paidColumnTotal,
     recentPayments,
     gallery,
     dashLoading,
@@ -31,7 +30,7 @@ export function RenovationDashboardDesktop() {
     spentBarPct,
     plannedBarPct,
     remainingBalance,
-    remainingExcludingPlanned,
+    remainingAfterPayments,
     budgetOverAmount,
     openTasks,
     overdue,
@@ -181,11 +180,11 @@ export function RenovationDashboardDesktop() {
                       >
                         {formatIls(remainingBalance)}
                       </p>
-                      {plannedTotal > 0 && (
+                      {(paidColumnTotal > 0 || committedTotal > 0) && (
                         <div className="mt-2 w-fit max-w-full space-y-0.5">
-                          <p className="text-[12px] font-medium text-slate-400">Excluding planned</p>
+                          <p className="text-[12px] font-medium text-slate-400">Left to be paid</p>
                           <p className="w-fit max-w-full text-[12px] font-semibold tabular-nums text-slate-300">
-                            {formatIls(remainingExcludingPlanned)}
+                            {formatIls(remainingAfterPayments)}
                           </p>
                         </div>
                       )}
@@ -198,23 +197,21 @@ export function RenovationDashboardDesktop() {
                   </div>
 
                   <div className="flex-1 max-w-sm w-full bg-slate-800/50 rounded p-4 backdrop-blur-md border border-white/5">
-                    <div className="flex justify-between text-[13px] font-medium text-slate-300 mb-2 tabular-nums gap-2">
-                      <span className="min-w-0">
-                        {plannedTotal > 0 ? (
-                          <>
-                            <span className="text-white/90">{formatIls(committedTotal)}</span>
-                            <span className="text-slate-400"> committed</span>
-                            <span className="block text-[11px] font-normal text-slate-500 mt-0.5">
-                              {formatIls(spent)} spent · {formatIls(plannedTotal)} planned
-                            </span>
-                          </>
-                        ) : (
-                          <span>{formatIls(spent)} spent</span>
-                        )}
-                      </span>
-                      <span className="shrink-0">{formatIls(cap)} budget</span>
-                    </div>
-                    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-900/50 ring-1 ring-inset ring-white/10">
+                    <dl className="space-y-2 text-[13px] font-medium text-slate-300 tabular-nums mb-3">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-slate-400 shrink-0">Total budget</dt>
+                        <dd className="text-white/90 font-semibold">{formatIls(cap)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-slate-400 shrink-0">Committed</dt>
+                        <dd className="text-white/90 font-semibold">{formatIls(committedTotal)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-slate-400 shrink-0">Spent</dt>
+                        <dd className="text-emerald-300/95 font-semibold">{formatIls(paidColumnTotal)}</dd>
+                      </div>
+                    </dl>
+                    <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-slate-900/50 ring-1 ring-inset ring-white/10 mt-1">
                       {spentBarPct > 0 && (
                         <div
                           className="relative h-full shrink-0 overflow-hidden bg-emerald-400 transition-[width] duration-1000 ease-out"
