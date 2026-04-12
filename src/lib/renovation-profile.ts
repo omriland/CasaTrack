@@ -46,7 +46,7 @@ export function timeOfDayGreeting(date = new Date()): { label: string; key: Time
 }
 
 /** First-name match (Latin, accent-stripped) for who may see vendor budget UI and project budget totals in Settings. */
-const BUDGET_ACCESS_FIRST_NAMES = new Set(['omri', 'tamar'])
+const BUDGET_ACCESS_FIRST_NAMES = new Set(['omri', 'tamar', 'rama'])
 
 /** Hebrew given name for Tamar — matches when the stored first token is exactly this. */
 const BUDGET_ACCESS_FIRST_NAMES_HEBREW = new Set(['תמר'])
@@ -64,7 +64,7 @@ export function profileUsesSpanishGreeting(fullName: string | null | undefined):
 }
 
 /**
- * Vendor budget page, overview budget widget, and **Budget Totals** in Settings (first name).
+ * Vendor budget page, overview budget widget, and **Budget Totals** in Settings (first name: Omri, Tamar, Rama / תמר).
  * **Budget by Category** (including room links) is visible to every profile with a project.
  */
 export function profileCanViewBudget(fullName: string | null | undefined): boolean {
