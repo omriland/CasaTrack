@@ -469,9 +469,9 @@ input[type=number] {
   }
 }
 
-/* Renovation calendar — Google Calendar–inspired shell */
+/* Renovation calendar — Google Calendar–inspired shell (typeface matches property hunt: Varela Round) */
 .reno-cal-gcal {
-  font-family: Roboto, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-family: var(--font-varela-round), 'Varela Round', ui-sans-serif, system-ui, sans-serif;
   --gcal-border: #dadce0;
   --gcal-text: #3c4043;
   --gcal-text-sec: #70757a;

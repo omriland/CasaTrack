@@ -12,7 +12,7 @@ import {
 } from '@/lib/calendar-datetime'
 import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
-import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
+import type { RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 
 const selectField =
   'box-border w-full min-w-0 max-w-full min-h-[48px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-[16px] font-semibold text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/20'
@@ -48,7 +48,6 @@ export function CalendarEventModal({
 }: Props) {
   const isMobile = useRenovationMobileMedia()
   const { activeProfile } = useRenovation()
-  const [eventType, setEventType] = useState<CalendarEventType>('general')
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
   const [body, setBody] = useState('')
@@ -66,11 +65,10 @@ export function CalendarEventModal({
     if (!open) return
     setError(null)
     if (editing) {
-      setEventType(editing.event_type)
       setTitle(editing.title)
       setAddress(editing.address?.trim() ? editing.address : '')
       setBody(editing.body || '')
-      setProviderId(editing.provider_id || '')
+      setProviderId(editing.provider_id ?? '')
       setIsAllDay(editing.is_all_day)
       if (editing.is_all_day) {
         setStartDate(editing.start_date || '')
@@ -82,7 +80,6 @@ export function CalendarEventModal({
         setEndLocal(editing.ends_at ? toDatetimeLocalValue(editing.ends_at) : '')
       }
     } else if (initialTimedRange) {
-      setEventType('general')
       setTitle('')
       setAddress('')
       setBody('')
@@ -93,7 +90,6 @@ export function CalendarEventModal({
       setStartLocal(toDatetimeLocalValue(initialTimedRange.start))
       setEndLocal(toDatetimeLocalValue(initialTimedRange.end))
     } else {
-      setEventType('general')
       setTitle('')
       setAddress('')
       setBody('')
@@ -123,12 +119,13 @@ export function CalendarEventModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+    const eventType = providerId.trim() ? ('provider_meeting' as const) : ('general' as const)
     const payload: CalendarEventPayload = {
       event_type: eventType,
       title: title.trim(),
       body: body.trim() || null,
       address: address.trim() || null,
-      provider_id: eventType === 'provider_meeting' ? providerId || null : null,
+      provider_id: providerId.trim() || null,
       is_all_day: isAllDay,
       start_date: isAllDay ? startDate || null : null,
       end_date: isAllDay && endDate.trim() ? endDate.trim() : null,
@@ -207,34 +204,20 @@ export function CalendarEventModal({
       )}
 
       <div>
-        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Type</label>
+        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Provider</label>
         <select
-          value={eventType}
-          onChange={(e) => {
-            const t = e.target.value as CalendarEventType
-            setEventType(t)
-            if (t === 'general') setProviderId('')
-          }}
+          value={providerId}
+          onChange={(e) => setProviderId(e.target.value)}
           className={`${selectField} mt-1`}
         >
-          <option value="general">General</option>
-          <option value="provider_meeting">Meeting with provider</option>
+          <option value="">None — general event</option>
+          {providers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
         </select>
       </div>
-
-      {eventType === 'provider_meeting' && (
-        <div>
-          <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Provider</label>
-          <select value={providerId} onChange={(e) => setProviderId(e.target.value)} className={`${selectField} mt-1`} required>
-            <option value="">Select…</option>
-            {providers.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       <div>
         <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Title</label>

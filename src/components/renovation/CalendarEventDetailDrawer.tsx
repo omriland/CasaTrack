@@ -12,23 +12,28 @@ import {
 import { deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
-import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
+import type { RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 import { format, parseISO } from 'date-fns'
 
-type DetailPicker = 'type' | 'provider' | null
+type DetailPicker = 'provider' | null
 
-const EVENT_TYPE_LABEL: Record<CalendarEventType, string> = {
+function derivedEventKind(event: RenovationCalendarEvent): 'general' | 'provider_meeting' {
+  return event.provider_id ? 'provider_meeting' : 'general'
+}
+
+const EVENT_KIND_LABEL: Record<'general' | 'provider_meeting', string> = {
   general: 'General',
   provider_meeting: 'Provider meeting',
 }
 
 function payloadFromEvent(e: RenovationCalendarEvent): CalendarEventPayload {
+  const event_type = e.provider_id ? 'provider_meeting' : 'general'
   return {
-    event_type: e.event_type,
+    event_type,
     title: e.title,
     body: e.body,
     address: e.address,
-    provider_id: e.event_type === 'provider_meeting' ? e.provider_id : null,
+    provider_id: e.provider_id,
     is_all_day: e.is_all_day,
     start_date: e.start_date,
     end_date: e.end_date && e.end_date !== e.start_date ? e.end_date : null,
@@ -60,7 +65,6 @@ export function CalendarEventDetailDrawer({
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const typePickerRef = useRef<HTMLDivElement>(null)
   const providerPickerRef = useRef<HTMLDivElement>(null)
 
   const sortedProviders = useMemo(
@@ -91,7 +95,6 @@ export function CalendarEventDetailDrawer({
     if (!detailPicker) return
     const onMouseDown = (e: MouseEvent) => {
       const n = e.target as Node
-      if (detailPicker === 'type' && typePickerRef.current?.contains(n)) return
       if (detailPicker === 'provider' && providerPickerRef.current?.contains(n)) return
       setDetailPicker(null)
     }
@@ -158,19 +161,11 @@ export function CalendarEventDetailDrawer({
     void persist({ address: a })
   }
 
-  const commitEventType = (eventType: CalendarEventType) => {
-    setDetailPicker(null)
-    if (eventType === event.event_type) return
-    void persist({
-      event_type: eventType,
-      provider_id: eventType === 'provider_meeting' ? event.provider_id : null,
-    })
-  }
-
   const commitProvider = (providerId: string | null) => {
     setDetailPicker(null)
-    if (providerId === event.provider_id) return
-    void persist({ provider_id: providerId })
+    const nextType = providerId ? 'provider_meeting' : 'general'
+    if (providerId === event.provider_id && event.event_type === nextType) return
+    void persist({ provider_id: providerId, event_type: nextType })
   }
 
   const commitAllDay = (isAllDay: boolean) => {
@@ -200,6 +195,8 @@ export function CalendarEventDetailDrawer({
 
   const providerResolved =
     event.provider ?? (event.provider_id ? sortedProviders.find((p) => p.id === event.provider_id) ?? null : null)
+
+  const kind = derivedEventKind(event)
 
   let lastEditedLabel = event.updated_at
   try {
@@ -246,56 +243,16 @@ export function CalendarEventDetailDrawer({
       <div className="fixed inset-y-0 right-0 z-[210] flex w-[100vw] md:w-[576px] lg:w-[720px] animate-slide-in-right flex-col bg-white shadow-[-8px_0_24px_-12px_rgba(9,30,66,0.15)]">
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-6 py-4">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="relative shrink-0" ref={typePickerRef}>
-              <button
-                type="button"
-                onClick={() => setDetailPicker((o) => (o === 'type' ? null : 'type'))}
-                className="group flex cursor-pointer items-center gap-1.5 rounded-md py-1 pl-1 pr-1.5 transition-colors hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
-                aria-haspopup="listbox"
-                aria-expanded={detailPicker === 'type'}
-              >
-                <span
-                  className={`rounded px-2 py-1 text-[12px] font-bold uppercase ${
-                    event.event_type === 'provider_meeting'
-                      ? 'bg-[#f3e8ff] text-[#6b21a8]'
-                      : 'bg-[#dfe1e6] text-[#42526e]'
-                  }`}
-                >
-                  {EVENT_TYPE_LABEL[event.event_type]}
-                </span>
-                <svg
-                  className="h-4 w-4 shrink-0 text-[#5e6c84] opacity-70 transition-opacity group-hover:opacity-100"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {detailPicker === 'type' && (
-                <div
-                  className="absolute left-0 top-full z-40 mt-1 w-[220px] overflow-hidden rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
-                  role="listbox"
-                >
-                  {(['general', 'provider_meeting'] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      role="option"
-                      aria-selected={event.event_type === t}
-                      onClick={() => commitEventType(t)}
-                      className={`mb-0.5 flex w-full items-center rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors last:mb-0 ${
-                        event.event_type === t
-                          ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
-                          : 'text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      {EVENT_TYPE_LABEL[t]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <span
+              className={`shrink-0 rounded px-2 py-1 text-[12px] font-bold uppercase ${
+                kind === 'provider_meeting'
+                  ? 'bg-[#f3e8ff] text-[#6b21a8]'
+                  : 'bg-[#dfe1e6] text-[#42526e]'
+              }`}
+              title="Set via provider in Details"
+            >
+              {EVENT_KIND_LABEL[kind]}
+            </span>
             <span className="truncate font-mono text-[13px] font-semibold uppercase tracking-widest text-slate-500">
               {event.id.slice(0, 8)}
             </span>
@@ -429,84 +386,97 @@ export function CalendarEventDetailDrawer({
             <div className="space-y-5">
               <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-[#5e6c84]">Details</h3>
               <div className="grid grid-cols-1 gap-4">
-                {event.event_type === 'provider_meeting' && (
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[13px] font-semibold text-[#5e6c84]">Provider</span>
-                    <div className="relative" ref={providerPickerRef}>
-                      <button
-                        type="button"
-                        onClick={() => setDetailPicker((o) => (o === 'provider' ? null : 'provider'))}
-                        className="group -mx-2 flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
-                      >
-                        {providerResolved ? (
-                          <>
-                            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
-                              <span className="leading-none">{providerResolved.name.charAt(0).toUpperCase()}</span>
-                            </div>
-                            <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]" dir="auto">
-                              {providerResolved.name}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
-                              <svg
-                                className="h-3.5 w-3.5 text-[#a5adba]"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                                />
-                              </svg>
-                            </div>
-                            <span className="text-[14px] font-medium italic text-slate-500">Select provider</span>
-                          </>
-                        )}
-                        <svg
-                          className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                      {detailPicker === 'provider' && (
-                        <div
-                          className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
-                          role="listbox"
-                        >
-                          {sortedProviders.map((pr) => (
-                            <button
-                              key={pr.id}
-                              type="button"
-                              role="option"
-                              aria-selected={event.provider_id === pr.id}
-                              onClick={() => commitProvider(pr.id)}
-                              className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
-                                event.provider_id === pr.id
-                                  ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
-                                  : 'font-medium text-slate-700 hover:bg-slate-100'
-                              }`}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[13px] font-semibold text-[#5e6c84]">Provider</span>
+                  <div className="relative" ref={providerPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() => setDetailPicker((o) => (o === 'provider' ? null : 'provider'))}
+                      className="group -mx-2 flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                      aria-haspopup="listbox"
+                      aria-expanded={detailPicker === 'provider'}
+                    >
+                      {providerResolved ? (
+                        <>
+                          <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
+                            <span className="leading-none">{providerResolved.name.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#172b4d]" dir="auto">
+                            {providerResolved.name}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                            <svg
+                              className="h-3.5 w-3.5 text-[#a5adba]"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
                             >
-                              <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
-                                <span className="leading-none">{pr.name.charAt(0).toUpperCase()}</span>
-                              </div>
-                              <span className="truncate" dir="auto">
-                                {pr.name}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                              />
+                            </svg>
+                          </div>
+                          <span className="text-[14px] font-medium italic text-slate-500">None — general event</span>
+                        </>
                       )}
-                    </div>
+                      <svg
+                        className="ml-auto h-4 w-4 shrink-0 text-[#5e6c84] opacity-0 transition-opacity group-hover:opacity-70"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {detailPicker === 'provider' && (
+                      <div
+                        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        role="listbox"
+                      >
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={!event.provider_id}
+                          onClick={() => commitProvider(null)}
+                          className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors ${
+                            !event.provider_id
+                              ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                              : 'font-medium text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="truncate text-slate-600">None — general event</span>
+                        </button>
+                        {sortedProviders.map((pr) => (
+                          <button
+                            key={pr.id}
+                            type="button"
+                            role="option"
+                            aria-selected={event.provider_id === pr.id}
+                            onClick={() => commitProvider(pr.id)}
+                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                              event.provider_id === pr.id
+                                ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                : 'font-medium text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
+                              <span className="leading-none">{pr.name.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <span className="truncate" dir="auto">
+                              {pr.name}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[13px] font-semibold text-[#5e6c84]">Address</span>

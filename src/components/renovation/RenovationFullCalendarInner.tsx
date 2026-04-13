@@ -11,6 +11,7 @@ import interactionPlugin from '@fullcalendar/interaction'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import { format } from 'date-fns'
 import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useCalendarEventHover } from '@/components/renovation/CalendarEventHoverCard'
 import FullCalendarReactSafe from '@/components/renovation/fullcalendar/FullCalendarReactSafe'
 import { isWeekendFriSat } from '@/components/renovation/calendar-shared'
 import {
@@ -64,6 +65,7 @@ export function RenovationFullCalendarInner({
   onEventUpdated,
 }: RenovationFullCalendarInnerProps) {
   const ref = useRef<FullCalendarReactSafe>(null)
+  const { eventMouseEnter, eventMouseLeave, hoverPortal } = useCalendarEventHover()
 
   const fcEvents = useMemo(
     () => buildFullCalendarEventInputs(events, tasks, showTasks),
@@ -209,6 +211,8 @@ export function RenovationFullCalendarInner({
         select={handleSelect}
         dateClick={handleDateClick}
         eventClick={handleEventClick}
+        eventMouseEnter={eventMouseEnter}
+        eventMouseLeave={eventMouseLeave}
         eventChange={handleEventChange}
         dayCellClassNames={arg => (isWeekendFriSat(arg.date) ? 'reno-cal-weekend' : '')}
         eventClassNames={() => ['reno-cal-event-root']}
@@ -257,6 +261,7 @@ export function RenovationFullCalendarInner({
           )
         }}
       />
+      {hoverPortal}
     </div>
   )
 }

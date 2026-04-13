@@ -111,9 +111,6 @@ export const CalendarEventPayloadSchema = z
     if (data.event_type === 'provider_meeting' && !data.provider_id) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Choose a provider', path: ['provider_id'] })
     }
-    if (data.event_type === 'general' && data.provider_id) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'General events cannot have a provider', path: ['provider_id'] })
-    }
     if (data.is_all_day) {
       if (!data.start_date) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Start date required', path: ['start_date'] })
