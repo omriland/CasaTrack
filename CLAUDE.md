@@ -110,7 +110,7 @@ The `Database` type in `supabase.ts` is **manually maintained** — update it wh
 - `10_calendar_events.sql` — `renovation_calendar_events` (general + provider meetings)
 - `11_calendar_address_created_by.sql` — `address`, `created_by_member_id` on calendar events
 
-Storage buckets: `properties-attachments`, `renovation-gallery`, `renovation-files`.
+Storage buckets: `properties-attachments`, `renovation-gallery`, `renovation-files`. Optional: renovation **Files** tab can use Dropbox instead (`NEXT_PUBLIC_RENOVATION_FILES_STORAGE=dropbox` + `DROPBOX_*` env); see `supabase/renovation/README.md`.
 
 ### Authentication
 

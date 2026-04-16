@@ -15,6 +15,7 @@ import { normalizeRoomIconKey, RoomIconGlyph, ROOM_ICON_TILE } from '@/component
 import { PRIORITY_ICONS, STATUSES, URGENCY, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
 import { format, parseISO } from 'date-fns'
 import { formatTaskDue } from '@/lib/renovation-format'
+import { DatePicker } from '@/components/renovation/DatePicker'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 
 const EMPTY_LABEL_IDS: string[] = []
@@ -225,6 +226,15 @@ export function TaskDetailDrawer({
     const updated = { ...task, provider_id: providerId, provider: p, updated_at: new Date().toISOString() }
     onTaskChange?.(updated)
     updateTask(task.id, { provider_id: providerId }).catch(() => onTaskChange?.(task))
+  }
+
+  const commitDueDate = (dayKey: string) => {
+    const normalized = dayKey.trim() || null
+    const current = task.due_date || null
+    if (normalized === current) return
+    const updated = { ...task, due_date: normalized, updated_at: new Date().toISOString() }
+    onTaskChange?.(updated)
+    updateTask(task.id, { due_date: normalized }).catch(() => onTaskChange?.(task))
   }
 
   const isDone = task.status === 'done'
@@ -681,17 +691,37 @@ export function TaskDetailDrawer({
                   </div>
                 </div>
 
-                {dueMeta && (
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[13px] font-semibold text-[#5e6c84]">Due Date</span>
-                    <span className={`text-[14px] font-bold ${
-                      dueMeta.tone === 'overdue' ? 'text-rose-600' : 
-                      dueMeta.tone === 'soon' ? 'text-amber-600' : 'text-[#172b4d]'
-                    }`}>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[13px] font-semibold text-[#5e6c84]">Due Date</span>
+                  <DatePicker
+                    value={task.due_date ?? ''}
+                    onChange={(v) => commitDueDate(v)}
+                    placeholder="No due date"
+                  />
+                  {dueMeta ? (
+                    <span
+                      className={`text-[13px] font-bold ${
+                        dueMeta.tone === 'overdue'
+                          ? 'text-rose-600'
+                          : dueMeta.tone === 'soon'
+                            ? 'text-amber-600'
+                            : 'text-[#172b4d]'
+                      }`}
+                      title={dueMeta.title}
+                    >
                       {dueMeta.label}
                     </span>
-                  </div>
-                )}
+                  ) : null}
+                  {task.due_date ? (
+                    <button
+                      type="button"
+                      onClick={() => commitDueDate('')}
+                      className="self-start text-[12px] font-semibold text-slate-500 underline-offset-2 hover:text-rose-600 hover:underline"
+                    >
+                      Clear due date
+                    </button>
+                  ) : null}
+                </div>
 
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[13px] font-semibold text-[#5e6c84]">Provider</span>

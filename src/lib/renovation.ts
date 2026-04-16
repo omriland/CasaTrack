@@ -35,6 +35,22 @@ export function renovationFilesPublicUrl(path: string): string {
   return `${base}/storage/v1/object/public/${FILES_BUCKET}/${path}`
 }
 
+/**
+ * When `true`, the renovation **Files** tab stores blobs in your Dropbox folder
+ * (`DROPBOX_*` server env) and keeps metadata in `renovation_files` as today.
+ * Expense attachments still use Supabase Storage.
+ */
+export function renovationFilesUseDropbox(): boolean {
+  return process.env.NEXT_PUBLIC_RENOVATION_FILES_STORAGE === 'dropbox'
+}
+
+function projectFilePublicUrl(f: RenovationFile): string {
+  if (renovationFilesUseDropbox()) {
+    return `/api/renovation/files/download?id=${encodeURIComponent(f.id)}`
+  }
+  return renovationFilesPublicUrl(f.storage_path)
+}
+
 /** Effective budget cap = total + contingency */
 export function effectiveBudget(project: RenovationProject): number {
   return Number(project.total_budget) + Number(project.contingency_amount)
@@ -1357,7 +1373,7 @@ export async function listProjectFiles(projectId: string): Promise<RenovationFil
   const roomMap = new Map(rooms.map((r) => [r.id, r]))
   return rows.map((f) => ({
     ...f,
-    public_url: renovationFilesPublicUrl(f.storage_path),
+    public_url: projectFilePublicUrl(f),
     room: f.room_id ? roomMap.get(f.room_id) ?? null : null,
   }))
 }
@@ -1369,6 +1385,52 @@ export async function uploadProjectFile(
 ): Promise<RenovationFile> {
   const safeName = file.name.replace(/[^\w.\-()\s\u0590-\u05FF]+/g, '_').trim() || 'file'
   const ext = safeName.includes('.') ? safeName.split('.').pop() || 'bin' : 'bin'
+
+  if (renovationFilesUseDropbox()) {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('projectId', projectId)
+    if (roomId) fd.append('roomId', roomId)
+    const res = await fetch('/api/renovation/files/upload', { method: 'POST', body: fd })
+    if (!res.ok) {
+      let msg = await res.text()
+      try {
+        const j = JSON.parse(msg) as { error?: string }
+        if (j.error) msg = j.error
+      } catch {
+        /* keep text */
+      }
+      throw new Error(msg || 'Upload failed')
+    }
+    const meta = (await res.json()) as {
+      storage_path: string
+      display_name: string
+      original_name: string
+      mime_type: string | null
+      file_size: number
+    }
+    const { data, error } = await supabase
+      .from('renovation_files')
+      .insert({
+        project_id: projectId,
+        storage_path: meta.storage_path,
+        display_name: meta.display_name,
+        original_name: meta.original_name,
+        mime_type: meta.mime_type,
+        file_size: meta.file_size,
+        room_id: roomId ?? null,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    const row = data as RenovationFile
+    return {
+      ...row,
+      public_url: projectFilePublicUrl(row),
+    }
+  }
+
   const path = `${projectId}/files/${crypto.randomUUID()}.${ext}`
   const { error: upErr } = await supabase.storage.from(FILES_BUCKET).upload(path, file, { upsert: false })
   if (upErr) throw upErr
@@ -1392,7 +1454,7 @@ export async function uploadProjectFile(
   const row = data as RenovationFile
   return {
     ...row,
-    public_url: renovationFilesPublicUrl(row.storage_path),
+    public_url: projectFilePublicUrl(row),
   }
 }
 
@@ -1405,6 +1467,25 @@ export async function updateProjectFile(
 }
 
 export async function deleteProjectFile(file: RenovationFile): Promise<void> {
+  if (renovationFilesUseDropbox()) {
+    const res = await fetch('/api/renovation/files/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: file.id }),
+    })
+    if (!res.ok) {
+      let msg = await res.text()
+      try {
+        const j = JSON.parse(msg) as { error?: string }
+        if (j.error) msg = j.error
+      } catch {
+        /* keep */
+      }
+      throw new Error(msg || 'Delete failed')
+    }
+    return
+  }
+
   await supabase.storage.from(FILES_BUCKET).remove([file.storage_path])
   const { error } = await supabase.from('renovation_files').delete().eq('id', file.id)
   if (error) throw error
