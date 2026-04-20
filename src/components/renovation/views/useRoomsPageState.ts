@@ -8,6 +8,7 @@ import {
   listNeeds,
   listRooms,
   listTasks,
+  listSubtasksByProject,
   listGalleryTags,
   updateNeed,
   updateRoom,
@@ -20,6 +21,7 @@ import type {
   RenovationGalleryTag,
   RenovationNeed,
   RenovationRoom,
+  RenovationSubtask,
   RenovationTask,
 } from '@/types/renovation'
 
@@ -27,6 +29,7 @@ export function useRoomsPageState() {
   const { project, activeProfile } = useRenovation()
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
+  const [subtasks, setSubtasks] = useState<(RenovationSubtask & { task_title?: string })[]>([])
   const [needs, setNeeds] = useState<RenovationNeed[]>([])
   const [gallery, setGallery] = useState<RenovationGalleryItem[]>([])
   const [tags, setTags] = useState<RenovationGalleryTag[]>([])
@@ -45,15 +48,17 @@ export function useRoomsPageState() {
     if (!project) return
     setLoading(true)
     try {
-      const [r, t, n, g, tagsData] = await Promise.all([
+      const [r, t, st, n, g, tagsData] = await Promise.all([
         listRooms(project.id),
         listTasks(project.id),
+        listSubtasksByProject(project.id),
         listNeeds(project.id),
         listGalleryItems(project.id),
         listGalleryTags(project.id),
       ])
       setRooms(r)
       setTasks(t)
+      setSubtasks(st)
       setNeeds(n)
       setGallery(g)
       setTags(tagsData)
@@ -124,6 +129,9 @@ export function useRoomsPageState() {
   const selectedRoom = selectedId ? rooms.find((r) => r.id === selectedId) : null
   const roomTasks = selectedId
     ? tasks.filter((t) => t.room_id === selectedId && t.status !== 'done')
+    : []
+  const roomSubtasks = selectedId
+    ? subtasks.filter((st) => st.room_id === selectedId)
     : []
   const roomNeeds = selectedId ? needs.filter((n) => n.room_id === selectedId) : []
   const roomPhotos = selectedId ? gallery.filter((p) => p.room_id === selectedId) : []
@@ -262,6 +270,7 @@ export function useRoomsPageState() {
     load,
     selectedRoom,
     roomTasks,
+    roomSubtasks,
     roomNeeds,
     roomPhotos,
     saveRoom,

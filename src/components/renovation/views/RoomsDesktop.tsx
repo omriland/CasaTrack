@@ -31,6 +31,7 @@ export function RoomsDesktop() {
     load,
     selectedRoom,
     roomTasks,
+    roomSubtasks,
     roomNeeds,
     roomPhotos,
     saveRoom,
@@ -190,7 +191,7 @@ export function RoomsDesktop() {
               </div>
 
               {/* Tasks & Needs side by side */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Tasks */}
                 <div>
                   <div className="mb-3 flex items-center justify-between">
@@ -227,6 +228,41 @@ export function RoomsDesktop() {
                       </ul>
                       <RoomInlineTaskAdd roomId={selectedId} onAdd={addTaskToRoom} />
                     </div>
+                  )}
+                </div>
+
+                {/* Subtasks */}
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-[12px] font-bold uppercase tracking-widest text-slate-400">Subtasks</p>
+                    <span className="text-[12px] font-semibold text-slate-400 tabular-nums">{roomSubtasks.length}</span>
+                  </div>
+                  {roomSubtasks.length === 0 ? (
+                    <div className="flex items-center justify-center py-8 text-center">
+                      <p className="text-[14px] text-slate-400">No subtasks linked to this room</p>
+                    </div>
+                  ) : (
+                    <ul className="space-y-1 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                      {roomSubtasks.map((st) => (
+                        <li
+                          key={st.id}
+                          className="group flex items-center gap-3 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[14px] text-slate-700"
+                          dir="auto"
+                        >
+                          <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                            st.is_done ? 'border-[#0052cc] bg-[#0052cc]' : 'border-slate-300 bg-white'
+                          }`}>
+                            {st.is_done && (
+                              <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                            )}
+                          </div>
+                          <span className={`truncate flex-1 ${st.is_done ? 'line-through decoration-slate-300 text-slate-400' : ''}`}>{st.title}</span>
+                          {st.task_title && (
+                            <span className="shrink-0 text-[11px] font-medium text-slate-400 truncate max-w-[140px]">{st.task_title}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </div>
 

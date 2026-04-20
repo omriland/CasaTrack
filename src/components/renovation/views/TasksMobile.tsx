@@ -5,7 +5,7 @@ import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
-import { createTask } from '@/lib/renovation'
+import { createTask, deleteTask } from '@/lib/renovation'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import type { RenovationTask, TaskStatus, TaskUrgency } from '@/types/renovation'
@@ -78,6 +78,30 @@ export function TasksMobile() {
     setQuickAddSaving(false)
   }
 
+  const [ctxMenu, setCtxMenu] = useState<{ taskId: string; x: number; y: number } | null>(null)
+  const [ctxConfirmDelete, setCtxConfirmDelete] = useState(false)
+  const [ctxDeleting, setCtxDeleting] = useState(false)
+  const ctxTask = ctxMenu ? tasks.find((t) => t.id === ctxMenu.taskId) : null
+
+  const handleCardContext = (e: React.MouseEvent | React.TouchEvent, taskId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCtxConfirmDelete(false)
+    const coords = 'clientX' in e ? { x: e.clientX, y: e.clientY } : { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    setCtxMenu({ taskId, ...coords })
+  }
+
+  const closeCtxMenu = () => { setCtxMenu(null); setCtxConfirmDelete(false) }
+  const handleCtxEdit = () => { if (ctxTask) { closeCtxMenu(); openEdit(ctxTask) } }
+  const handleCtxDelete = async () => {
+    if (!ctxTask || ctxDeleting) return
+    setCtxDeleting(true)
+    try { await deleteTask(ctxTask.id); setTasks((prev) => prev.filter((t) => t.id !== ctxTask.id)) } catch { /* ignore */ }
+    setCtxDeleting(false)
+    closeCtxMenu()
+  }
+  const handleCtxToggleDone = () => { if (ctxTask) { closeCtxMenu(); toggleTaskDone(ctxTask.id, ctxTask.status === 'done') } }
+
   const listTasksFiltered = filteredTasks.filter((t) => (statusTab === 'all' ? true : t.status === statusTab))
   const actionsActiveCount =
     (filterAssignee ? 1 : 0) +
@@ -144,6 +168,7 @@ export function TasksMobile() {
               task={t}
               onTap={() => openView(t)}
               onToggleDone={() => toggleTaskDone(t.id, t.status === 'done')}
+              onContextMenu={(e) => handleCardContext(e, t.id)}
             />
           ))}
           {quickAddColumn === 'list-bottom' ? (
@@ -209,6 +234,7 @@ export function TasksMobile() {
                 onQuickAddChange={setQuickAddValue}
                 onQuickAddSubmit={handleQuickAdd}
                 onQuickAddCancel={() => { setQuickAddColumn(null); setQuickAddValue('') }}
+                onCardContext={handleCardContext}
               />
             </div>
           ))}
@@ -370,6 +396,57 @@ export function TasksMobile() {
           }
         />
       )}
+
+      {ctxMenu && (
+        <>
+          <div className="fixed inset-0 z-[300]" onClick={closeCtxMenu} onContextMenu={(e) => { e.preventDefault(); closeCtxMenu() }} />
+          <div
+            className="fixed z-[310] min-w-[200px] rounded-2xl border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+            style={{ left: Math.min(ctxMenu.x, window.innerWidth - 220), top: Math.min(ctxMenu.y, window.innerHeight - 250) }}
+          >
+            <button type="button" onClick={handleCtxEdit} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-[15px] font-medium text-slate-700 active:bg-slate-100 transition-colors">
+              <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              Edit task
+            </button>
+            <button type="button" onClick={() => { if (ctxTask) { setCtxMenu(null); openView(ctxTask) } }} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-[15px] font-medium text-slate-700 active:bg-slate-100 transition-colors">
+              <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              View detail
+            </button>
+            <button type="button" onClick={handleCtxToggleDone} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-[15px] font-medium text-slate-700 active:bg-slate-100 transition-colors">
+              <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              {ctxTask?.status === 'done' ? 'Mark as open' : 'Mark as done'}
+            </button>
+            <div className="my-1 border-t border-slate-100" />
+            {ctxConfirmDelete ? (
+              <div className="flex flex-col gap-1.5 p-1.5">
+                <p className="px-2 py-1 text-[13px] font-semibold text-slate-500">Delete this task?</p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCtxDelete}
+                    disabled={ctxDeleting}
+                    className="flex-1 rounded-xl px-3 py-2.5 text-[15px] font-bold text-white bg-rose-600 active:bg-rose-700 transition-colors disabled:opacity-50"
+                  >
+                    {ctxDeleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCtxConfirmDelete(false)}
+                    className="flex-1 rounded-xl px-3 py-2.5 text-[15px] font-semibold text-slate-600 active:bg-slate-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setCtxConfirmDelete(true)} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-[15px] font-medium text-rose-600 active:bg-rose-50 transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                Delete task
+              </button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -390,6 +467,7 @@ function MobileEpicStatusRow({
   onQuickAddChange,
   onQuickAddSubmit,
   onQuickAddCancel,
+  onCardContext,
 }: {
   laneId: string
   laneLabelId?: string
@@ -406,6 +484,7 @@ function MobileEpicStatusRow({
   onQuickAddChange: (v: string) => void
   onQuickAddSubmit: (status: TaskStatus, key: string, labelIds?: string[]) => void
   onQuickAddCancel: () => void
+  onCardContext: (e: React.MouseEvent, taskId: string) => void
 }) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-hide -mx-1 px-1 items-stretch">
@@ -470,6 +549,7 @@ function MobileEpicStatusRow({
                   task={t}
                   onTap={() => openView(t)}
                   onToggleDone={() => toggleTaskDone(t.id, t.status === 'done')}
+                  onContextMenu={(e) => onCardContext(e, t.id)}
                 />
               ))}
               {paneTasks.length === 0 && (
@@ -520,13 +600,13 @@ function MobileEpicStatusRow({
   )
 }
 
-function TaskCard({ task: t, onTap, onToggleDone }: { task: RenovationTask; onTap: () => void; onToggleDone: () => void }) {
+function TaskCard({ task: t, onTap, onToggleDone, onContextMenu }: { task: RenovationTask; onTap: () => void; onToggleDone: () => void; onContextMenu?: (e: React.MouseEvent) => void }) {
   const isDone = t.status === 'done'
   const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
   const priorityLabel = PRIORITY_LABELS[t.urgency] || ''
 
   return (
-    <div className={`rounded-2xl bg-white border border-slate-200/60 shadow-sm overflow-hidden transition-opacity ${isDone ? 'opacity-60' : ''}`}>
+    <div className={`rounded-2xl bg-white border border-slate-200/60 shadow-sm overflow-hidden transition-opacity ${isDone ? 'opacity-60' : ''}`} onContextMenu={onContextMenu}>
       <div className="flex items-center gap-2.5 p-3.5">
         <button
           type="button"

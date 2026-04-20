@@ -921,6 +921,30 @@ async function loadSubtaskCounts(
   return map
 }
 
+export async function listSubtasksByProject(projectId: string): Promise<(RenovationSubtask & { task_title?: string })[]> {
+  const { data: taskIds, error: tErr } = await supabase
+    .from('renovation_tasks')
+    .select('id, title')
+    .eq('project_id', projectId)
+
+  if (tErr) throw tErr
+  if (!taskIds || taskIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('renovation_subtasks')
+    .select('*')
+    .in('task_id', taskIds.map((t) => t.id))
+    .order('sort_order')
+    .order('created_at')
+
+  if (error) throw error
+  const taskMap = new Map(taskIds.map((t) => [t.id, t.title]))
+  return ((data || []) as RenovationSubtask[]).map((st) => ({
+    ...st,
+    task_title: taskMap.get(st.task_id) ?? undefined,
+  }))
+}
+
 export async function listSubtasks(taskId: string): Promise<RenovationSubtask[]> {
   const { data, error } = await supabase
     .from('renovation_subtasks')
@@ -963,7 +987,7 @@ export async function createSubtask(
 
 export async function updateSubtask(
   id: string,
-  updates: Partial<Pick<RenovationSubtask, 'title' | 'is_done' | 'assignee_id' | 'sort_order'>>,
+  updates: Partial<Pick<RenovationSubtask, 'title' | 'is_done' | 'assignee_id' | 'room_id' | 'sort_order'>>,
 ): Promise<void> {
   const { error } = await supabase.from('renovation_subtasks').update(updates).eq('id', id)
   if (error) throw error

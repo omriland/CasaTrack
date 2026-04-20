@@ -69,6 +69,25 @@ export function TaskDetailDrawer({
   const subtaskAssigneeRef = useRef<HTMLDivElement>(null)
   const [dragSubtaskId, setDragSubtaskId] = useState<string | null>(null)
   const [dragOverSubtaskId, setDragOverSubtaskId] = useState<string | null>(null)
+  const [subtaskCtx, setSubtaskCtx] = useState<{ subtaskId: string; x: number; y: number } | null>(null)
+
+  const handleSubtaskContext = (e: React.MouseEvent, subtaskId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSubtaskCtx({ subtaskId, x: e.clientX, y: e.clientY })
+  }
+
+  const handleSubtaskRoom = async (subtask: RenovationSubtask, roomId: string | null) => {
+    setSubtaskCtx(null)
+    if (roomId === subtask.room_id) return
+    const rm = roomId ? rooms.find((r) => r.id === roomId) ?? null : null
+    setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, room_id: roomId, room: rm } : s)))
+    try {
+      await updateSubtask(subtask.id, { room_id: roomId })
+    } catch {
+      setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, room_id: subtask.room_id, room: subtask.room } : s)))
+    }
+  }
 
   const loadSubtasks = useCallback(async () => {
     try {
@@ -557,6 +576,7 @@ export function TaskDetailDrawer({
                       onDragStart={() => handleSubtaskDragStart(st.id)}
                       onDragOver={(e) => handleSubtaskDragOver(e, st.id)}
                       onDragEnd={handleSubtaskDragEnd}
+                      onContextMenu={(e) => handleSubtaskContext(e, st.id)}
                       className={`group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors ${isDragTarget ? 'bg-blue-50 border-t-2 border-[#4c9aff]' : 'hover:bg-slate-50'}`}
                     >
                       <svg
@@ -582,6 +602,11 @@ export function TaskDetailDrawer({
                           </svg>
                         )}
                       </button>
+                      {(st.room ?? (st.room_id ? rooms.find((r) => r.id === st.room_id) : null)) && (
+                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-[1px] rounded bg-slate-100 text-slate-500 truncate max-w-[80px]" dir="auto">
+                          {(st.room ?? rooms.find((r) => r.id === st.room_id))?.name}
+                        </span>
+                      )}
                       {isEditing ? (
                         <input
                           autoFocus
@@ -1287,6 +1312,83 @@ export function TaskDetailDrawer({
           </div>
         </div>
       </div>
+
+      {subtaskCtx && (() => {
+        const ctxSt = subtasks.find((s) => s.id === subtaskCtx.subtaskId)
+        if (!ctxSt) return null
+        const sortedRoomsForCtx = [...rooms].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+        return (
+          <>
+            <div className="fixed inset-0 z-[320]" onClick={() => setSubtaskCtx(null)} onContextMenu={(e) => { e.preventDefault(); setSubtaskCtx(null) }} />
+            <div
+              className="fixed z-[330] min-w-[200px] max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+              ref={(el) => {
+                if (!el) return
+                const rect = el.getBoundingClientRect()
+                const pad = 8
+                let x = subtaskCtx.x
+                let y = subtaskCtx.y
+                if (x + rect.width > window.innerWidth - pad) x = window.innerWidth - rect.width - pad
+                if (y + rect.height > window.innerHeight - pad) y = window.innerHeight - rect.height - pad
+                if (x < pad) x = pad
+                if (y < pad) y = pad
+                el.style.left = `${x}px`
+                el.style.top = `${y}px`
+              }}
+              style={{ left: subtaskCtx.x, top: subtaskCtx.y }}
+            >
+              {sortedRoomsForCtx.length > 0 && (
+                <>
+                  <div className="px-3 pt-2 pb-1 text-[11px] font-extrabold text-[#5e6c84] uppercase tracking-wider">Room</div>
+                  <div className="max-h-[40vh] overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleSubtaskRoom(ctxSt, null)}
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+                        !ctxSt.room_id ? 'bg-[#e9f2ff] text-[#0052cc]' : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      No room
+                    </button>
+                    {sortedRoomsForCtx.map((rm) => {
+                      const rk = normalizeRoomIconKey(rm.room_icon_key)
+                      return (
+                        <button
+                          key={rm.id}
+                          type="button"
+                          onClick={() => handleSubtaskRoom(ctxSt, rm.id)}
+                          className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-[13px] transition-colors ${
+                            ctxSt.room_id === rm.id ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]' : 'font-medium text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className={`grid h-5 w-5 shrink-0 place-items-center rounded ${ROOM_ICON_TILE[rk]}`}>
+                            <RoomIconGlyph roomKey={rk} className="h-3 w-3" />
+                          </div>
+                          <span className="truncate" dir="auto">{rm.name}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div className="my-1 border-t border-slate-100" />
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => { setSubtaskCtx(null); handleDeleteSubtask(ctxSt) }}
+                className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-[13px] font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete subtask
+              </button>
+            </div>
+          </>
+        )
+      })()}
     </>
   )
 }

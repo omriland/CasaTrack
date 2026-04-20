@@ -132,6 +132,8 @@ export interface RenovationSubtask {
   is_done: boolean
   assignee_id: string | null
   assignee?: RenovationTeamMember | null
+  room_id: string | null
+  room?: RenovationRoom | null
   sort_order: number
   created_at: string
   updated_at: string

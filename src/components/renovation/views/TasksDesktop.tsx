@@ -3,7 +3,7 @@
 import { useState, useRef, type CSSProperties } from 'react'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
-import { createTask } from '@/lib/renovation'
+import { createTask, deleteTask } from '@/lib/renovation'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import type { RenovationLabel, RenovationTask, TaskStatus } from '@/types/renovation'
@@ -56,6 +56,39 @@ export function TasksDesktop() {
   } = useTasksPageState({ defaultView: 'epic' })
 
   const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
+  const [ctxMenu, setCtxMenu] = useState<{ taskId: string; x: number; y: number } | null>(null)
+  const [ctxConfirmDelete, setCtxConfirmDelete] = useState(false)
+  const [ctxDeleting, setCtxDeleting] = useState(false)
+
+  const handleCardContext = (e: React.MouseEvent, taskId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setCtxConfirmDelete(false)
+    setCtxMenu({ taskId, x: e.clientX, y: e.clientY })
+  }
+
+  const closeCtxMenu = () => { setCtxMenu(null); setCtxConfirmDelete(false) }
+  const ctxTask = ctxMenu ? tasks.find((t) => t.id === ctxMenu.taskId) : null
+
+  const handleCtxEdit = () => { if (ctxTask) { closeCtxMenu(); openEdit(ctxTask) } }
+
+  const handleCtxDelete = async () => {
+    if (!ctxTask || ctxDeleting) return
+    setCtxDeleting(true)
+    try {
+      await deleteTask(ctxTask.id)
+      setTasks((prev) => prev.filter((t) => t.id !== ctxTask.id))
+    } catch { /* ignore */ }
+    setCtxDeleting(false)
+    closeCtxMenu()
+  }
+
+  const handleCtxToggleDone = () => {
+    if (!ctxTask) return
+    closeCtxMenu()
+    toggleTaskDone(ctxTask.id, ctxTask.status === 'done')
+  }
+
   const [quickAddColumn, setQuickAddColumn] = useState<string | null>(null)
   const [quickAddValue, setQuickAddValue] = useState('')
   const [quickAddSaving, setQuickAddSaving] = useState(false)
@@ -151,6 +184,7 @@ export function TasksDesktop() {
         key={t.id}
         draggable={draggable}
         onDragStart={draggable ? (e) => onDragStart(e, t.id) : undefined}
+        onContextMenu={(e) => handleCardContext(e, t.id)}
         className={`w-full text-left bg-white rounded-[5px] border border-[#dfe1e6] p-3 transition-colors hover:bg-slate-50 group relative ${isDone ? 'opacity-60 bg-slate-50' : ''} ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       >
         <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
@@ -592,6 +626,82 @@ export function TasksDesktop() {
             )
           }
         />
+      )}
+
+      {ctxMenu && (
+        <>
+          <div className="fixed inset-0 z-[300]" onClick={closeCtxMenu} onContextMenu={(e) => { e.preventDefault(); closeCtxMenu() }} />
+          <div
+            className="fixed z-[310] min-w-[180px] rounded-lg border border-slate-200/80 bg-white/98 p-1 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+            style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          >
+            <button
+              type="button"
+              onClick={handleCtxEdit}
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Edit task
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (ctxTask) { setCtxMenu(null); openView(ctxTask) } }}
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              View detail
+            </button>
+            <button
+              type="button"
+              onClick={handleCtxToggleDone}
+              className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {ctxTask?.status === 'done' ? 'Mark as open' : 'Mark as done'}
+            </button>
+            <div className="my-1 border-t border-slate-100" />
+            {ctxConfirmDelete ? (
+              <div className="flex flex-col gap-1 p-1">
+                <p className="px-2 py-1 text-[12px] font-semibold text-slate-500">Delete this task?</p>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleCtxDelete}
+                    disabled={ctxDeleting}
+                    className="flex-1 rounded-md px-3 py-1.5 text-[13px] font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors disabled:opacity-50"
+                  >
+                    {ctxDeleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCtxConfirmDelete(false)}
+                    className="flex-1 rounded-md px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setCtxConfirmDelete(true)}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete task
+              </button>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

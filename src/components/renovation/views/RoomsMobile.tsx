@@ -51,6 +51,7 @@ export function RoomsMobile() {
     load,
     selectedRoom,
     roomTasks,
+    roomSubtasks,
     roomNeeds,
     roomPhotos,
     saveRoom,
@@ -66,6 +67,7 @@ export function RoomsMobile() {
 
   const [openNotes, setOpenNotes] = useState(false)
   const [openTasks, setOpenTasks] = useState(true)
+  const [openSubtasks, setOpenSubtasks] = useState(true)
   const [openNeeds, setOpenNeeds] = useState(true)
   const [openGallery, setOpenGallery] = useState(false)
 
@@ -153,6 +155,7 @@ export function RoomsMobile() {
   const roomLightboxIndex = lightbox ? roomPhotos.findIndex((i) => i.id === lightbox.id) : -1
 
   const taskCount = selectedRoom ? roomTasks.length : 0
+  const subtaskCount = selectedRoom ? roomSubtasks.length : 0
   const needCount = selectedRoom ? roomNeeds.length : 0
   const photoCount = selectedRoom ? roomPhotos.length : 0
 
@@ -298,6 +301,7 @@ export function RoomsMobile() {
                 {(
                   [
                     { id: 'spaces-section-tasks', label: 'Tasks', count: taskCount },
+                    { id: 'spaces-section-subtasks', label: 'Subtasks', count: subtaskCount },
                     { id: 'spaces-section-needs', label: 'Needs', count: needCount },
                     { id: 'spaces-section-gallery', label: 'Gallery', count: photoCount },
                   ] as const
@@ -435,6 +439,70 @@ export function RoomsMobile() {
                         </ul>
                         <RoomInlineTaskAdd roomId={selectedId} onAdd={addTaskToRoom} variant="mobile" />
                       </>
+                    )}
+                  </div>
+                )}
+              </section>
+
+              <div className="h-px bg-slate-200" aria-hidden />
+
+              {/* Subtasks */}
+              <section id="spaces-section-subtasks" className={SECTION_SCROLL_MARGIN}>
+                <button
+                  type="button"
+                  onClick={() => setOpenSubtasks((o) => !o)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-start active:bg-[#fafbfc]"
+                >
+                  <span className="flex min-w-0 items-center gap-3">
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-50 text-sky-600">
+                      <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[14px] font-semibold text-slate-900">Subtasks</span>
+                      <span className="block text-[12px] font-medium text-slate-500">Sub-items linked to this room</span>
+                    </span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[13px] font-semibold tabular-nums text-slate-500">{roomSubtasks.length}</span>
+                    <AccordionChevron open={openSubtasks} />
+                  </div>
+                </button>
+                {openSubtasks && (
+                  <div className="border-t border-slate-200 bg-[#fafbfc]/80 px-2 pb-3 pt-2">
+                    {roomSubtasks.length === 0 ? (
+                      <p className="py-6 text-center text-[14px] font-medium text-slate-400">No subtasks linked yet.</p>
+                    ) : (
+                      <ul className="flex flex-col gap-2 max-h-[min(40vh,280px)] overflow-y-auto">
+                        {roomSubtasks.map((st) => (
+                          <li
+                            key={st.id}
+                            className="flex min-h-[48px] items-center gap-3 rounded-[6px] border border-slate-200 bg-white px-3 py-2.5"
+                            dir="auto"
+                          >
+                            <div className={cn(
+                              'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-colors',
+                              st.is_done
+                                ? 'border-[#0052cc] bg-[#0052cc]'
+                                : 'border-slate-300 bg-white',
+                            )}>
+                              {st.is_done && (
+                                <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <span className={cn(
+                              'min-w-0 flex-1 truncate text-[15px] font-medium leading-snug',
+                              st.is_done ? 'text-slate-400 line-through decoration-slate-300' : 'text-slate-900',
+                            )}>{st.title}</span>
+                            {st.task_title && (
+                              <span className="shrink-0 rounded-md bg-slate-50 px-2 py-0.5 text-[12px] font-bold text-slate-400 truncate max-w-[100px]">{st.task_title}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
                     )}
                   </div>
                 )}
