@@ -1,30 +1,8 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { getDropboxRenovationRootPath } from '@/lib/dropbox-renovation-files.server'
+import { getAccessToken, getDropboxRenovationRootPath } from '@/lib/dropbox-renovation-files.server'
 
 export const runtime = 'nodejs'
-
-async function fetchAccessToken(): Promise<string> {
-  const clientId = process.env.DROPBOX_APP_KEY
-  const clientSecret = process.env.DROPBOX_APP_SECRET
-  const refreshToken = process.env.DROPBOX_REFRESH_TOKEN
-  if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error('Dropbox env vars not configured.')
-  }
-  const res = await fetch('https://api.dropbox.com/oauth2/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: refreshToken,
-      client_id: clientId,
-      client_secret: clientSecret,
-    }),
-  })
-  const body = (await res.json()) as { access_token?: string; error?: string }
-  if (!res.ok || !body.access_token) throw new Error(body.error || `Token error ${res.status}`)
-  return body.access_token
-}
 
 export type DropboxFileEntry = {
   tag: 'file'
@@ -57,7 +35,7 @@ export async function GET(request: Request) {
   const folderPath = requestedPath ? requestedPath : root
 
   try {
-    const token = await fetchAccessToken()
+    const token = await getAccessToken()
 
     let raw: { entries?: unknown[]; cursor?: string; has_more?: boolean }
     if (cursor) {

@@ -13,7 +13,7 @@ import 'server-only'
 
 let cachedAccessToken: { token: string; expiresAtMs: number } | null = null
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const now = Date.now()
   if (cachedAccessToken && cachedAccessToken.expiresAtMs > now + 60_000) {
     return cachedAccessToken.token

@@ -71,6 +71,20 @@ function sortEntries(entries: DropboxEntry[], field: SortField, dir: SortDir): D
   return [...folders, ...files]
 }
 
+/** Extract the parent folder portion of a pathDisplay, relative to a scope path. */
+function parentPath(entry: DropboxEntry, scopePath: string): string {
+  const full = entry.pathDisplay || entry.pathLower
+  const idx = full.lastIndexOf('/')
+  if (idx <= 0) return ''
+  const parent = full.slice(0, idx)
+  const scopeNorm = scopePath.replace(/\/+$/, '')
+  if (parent.toLowerCase() === scopeNorm.toLowerCase()) return ''
+  if (parent.toLowerCase().startsWith(scopeNorm.toLowerCase() + '/')) {
+    return parent.slice(scopeNorm.length + 1)
+  }
+  return parent
+}
+
 /* ── Main component ─────────────────────────────────────────────── */
 
 export function FilesDropboxDesktop({ configured }: { configured: boolean }) {
@@ -83,8 +97,8 @@ export function FilesDropboxDesktop({ configured }: { configured: boolean }) {
 
   const state = useDropboxFilesPageState(configured)
   const {
-    loading, loadError, entries, breadcrumbs, uploading, uploadProgress,
-    dragOver, setDragOver, searchQuery, setSearchQuery,
+    loading, loadError, entries, breadcrumbs, uploading, uploadProgress, currentPath,
+    dragOver, setDragOver, searchQuery, setSearchQuery, isSearching,
     navigateTo, navigateToIndex, uploadFiles, deleteEntry, moveEntry, openFileUrl, reload,
   } = state
 
@@ -353,7 +367,13 @@ export function FilesDropboxDesktop({ configured }: { configured: boolean }) {
                         <span className="shrink-0 w-5 flex items-center justify-center">
                           {e.tag === 'folder' ? <IconFolderFilled /> : getFileIcon(e.name)}
                         </span>
-                        <span className="truncate font-medium text-slate-800" dir="auto">{e.name}</span>
+                        <div className="min-w-0">
+                          <span className="truncate font-medium text-slate-800 block" dir="auto">{e.name}</span>
+                          {isSearching && (() => {
+                            const p = parentPath(e, currentPath)
+                            return p ? <span className="text-[11px] text-slate-400 truncate block" dir="auto">{p}</span> : null
+                          })()}
+                        </div>
                       </div>
                     </td>
                     <td className="py-1.5 px-2 text-slate-400 tabular-nums">{e.tag === 'file' ? formatDate(e.modified) : '—'}</td>
@@ -403,6 +423,10 @@ export function FilesDropboxDesktop({ configured }: { configured: boolean }) {
                     {e.tag === 'folder' ? <IconFolderFilled size={40} /> : <span className="scale-[1.8]">{getFileIcon(e.name)}</span>}
                   </span>
                   <span className="text-[12px] font-medium text-slate-700 truncate w-full leading-tight" dir="auto">{e.name}</span>
+                  {isSearching && (() => {
+                    const p = parentPath(e, currentPath)
+                    return p ? <span className="text-[10px] text-slate-400 truncate w-full block" dir="auto">{p}</span> : null
+                  })()}
                   {e.tag === 'file' && <span className="text-[10px] text-slate-400">{formatBytes(e.size)}</span>}
                 </div>
               )

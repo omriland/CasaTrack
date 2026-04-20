@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DropboxEntry, ListResponse } from '@/app/api/renovation/files/list/route'
+import type { SearchResponse } from '@/app/api/renovation/files/search/route'
 
 export type { DropboxEntry }
 
@@ -171,16 +172,57 @@ export function useDropboxFilesPageState(configured: boolean) {
   const openFileUrl = (entry: DropboxEntry & { tag: 'file' }) =>
     `/api/renovation/files/open?path=${encodeURIComponent(entry.pathLower)}`
 
-  const filteredEntries =
-    searchQuery.trim()
-      ? entries.filter((e) => e.name.toLowerCase().includes(searchQuery.trim().toLowerCase()))
-      : entries
+  /* ── Recursive search via Dropbox search_v2 ──────────────────── */
+  const [searchResults, setSearchResults] = useState<DropboxEntry[] | null>(null)
+  const [searching, setSearching] = useState(false)
+  const searchIdRef = useRef(0)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    const q = searchQuery.trim()
+    if (!q || q.length < 2) {
+      setSearchResults(null)
+      setSearching(false)
+      return
+    }
+
+    setSearching(true)
+    debounceRef.current = setTimeout(async () => {
+      const id = ++searchIdRef.current
+      try {
+        const scopePath = currentPath === ROOT_SENTINEL ? '' : currentPath
+        const url = `/api/renovation/files/search?q=${encodeURIComponent(q)}${scopePath ? `&path=${encodeURIComponent(scopePath)}` : ''}`
+        const res = await fetch(url)
+        if (id !== searchIdRef.current) return
+        if (!res.ok) {
+          setSearchResults([])
+          return
+        }
+        const data = (await res.json()) as SearchResponse
+        if (id !== searchIdRef.current) return
+        setSearchResults(data.entries)
+      } catch {
+        if (id !== searchIdRef.current) return
+        setSearchResults([])
+      } finally {
+        if (id === searchIdRef.current) setSearching(false)
+      }
+    }, 350)
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [searchQuery, currentPath])
+
+  const isSearching = searchQuery.trim().length >= 2
+  const displayEntries = isSearching ? (searchResults ?? []) : entries
 
   return {
-    loading,
+    loading: loading || (searching && searchResults === null),
     loadError,
-    entries: filteredEntries,
+    entries: displayEntries,
     allEntries: entries,
+    isSearching,
     currentPath,
     breadcrumbs,
     uploading,

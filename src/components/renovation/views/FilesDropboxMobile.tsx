@@ -26,8 +26,8 @@ const IconSearch = () => (
 
 export function FilesDropboxMobile({ configured }: { configured: boolean }) {
   const {
-    loading, loadError, entries, breadcrumbs, uploading, uploadProgress,
-    searchQuery, setSearchQuery, navigateTo, navigateToIndex,
+    loading, loadError, entries, breadcrumbs, uploading, uploadProgress, currentPath,
+    searchQuery, setSearchQuery, isSearching, navigateTo, navigateToIndex,
     uploadFiles, deleteEntry, openFileUrl, reload,
   } = useDropboxFilesPageState(configured)
 
@@ -139,6 +139,8 @@ export function FilesDropboxMobile({ configured }: { configured: boolean }) {
               confirmAction={confirmAction}
               deleteEntry={deleteEntry}
               navigateTo={navigateTo}
+              isSearching={isSearching}
+              currentPath={currentPath}
               openFileUrl={openFileUrl}
             />
           ))}
@@ -155,18 +157,35 @@ export function FilesDropboxMobile({ configured }: { configured: boolean }) {
   )
 }
 
+function parentPath(entry: DropboxEntry, scopePath: string): string {
+  const full = entry.pathDisplay || entry.pathLower
+  const idx = full.lastIndexOf('/')
+  if (idx <= 0) return ''
+  const parent = full.slice(0, idx)
+  const scopeNorm = scopePath.replace(/\/+$/, '')
+  if (parent.toLowerCase() === scopeNorm.toLowerCase()) return ''
+  if (parent.toLowerCase().startsWith(scopeNorm.toLowerCase() + '/')) {
+    return parent.slice(scopeNorm.length + 1)
+  }
+  return parent
+}
+
 function MobileRow({
   entry: e,
   confirmAction,
   deleteEntry,
   navigateTo,
   openFileUrl,
+  isSearching,
+  currentPath,
 }: {
   entry: DropboxEntry
   confirmAction: (msg: string) => Promise<boolean>
   deleteEntry: (e: DropboxEntry) => Promise<void>
   navigateTo: (e: DropboxEntry & { tag: 'folder' }) => void
   openFileUrl: (e: DropboxEntry & { tag: 'file' }) => string
+  isSearching: boolean
+  currentPath: string
 }) {
   const [swiped, setSwiped] = useState(false)
   const [touchStartX, setTouchStartX] = useState(0)
@@ -226,6 +245,10 @@ function MobileRow({
         </span>
         <div className="flex-1 min-w-0">
           <p className="text-[15px] font-medium text-slate-900 truncate" dir="auto">{e.name}</p>
+          {isSearching && (() => {
+            const p = parentPath(e, currentPath)
+            return p ? <p className="text-[11px] text-blue-400 truncate" dir="auto">{p}</p> : null
+          })()}
           <p className="text-[12px] text-slate-400 mt-0.5">
             {e.tag === 'file' ? `${formatBytes(e.size)} · ${formatDate(e.modified)}` : 'Folder'}
           </p>
