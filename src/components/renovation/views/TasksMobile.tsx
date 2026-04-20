@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { MobileFilterButton } from '@/components/renovation/mobile/MobileFilterButton'
+import { createTask } from '@/lib/renovation'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import type { RenovationTask, TaskStatus, TaskUrgency } from '@/types/renovation'
@@ -53,6 +54,29 @@ export function TasksMobile() {
   const [layoutMode, setLayoutMode] = useState<TasksLayoutMode>('epic')
   const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [quickAddColumn, setQuickAddColumn] = useState<string | null>(null)
+  const [quickAddValue, setQuickAddValue] = useState('')
+  const [quickAddSaving, setQuickAddSaving] = useState(false)
+  const quickAddInputRef = useRef<HTMLInputElement>(null)
+
+  const handleQuickAdd = async (status: TaskStatus, _columnKey: string, labelIds?: string[]) => {
+    const title = quickAddValue.trim()
+    if (!title || !project || quickAddSaving) return
+    setQuickAddSaving(true)
+    try {
+      const created = await createTask(project.id, { title, status, label_ids: labelIds })
+      const newTask: RenovationTask = {
+        ...created,
+        label_ids: labelIds ?? [],
+        subtask_total: 0,
+        subtask_done: 0,
+      }
+      setTasks((prev) => [newTask, ...prev])
+      setQuickAddValue('')
+      setQuickAddColumn(null)
+    } catch { /* ignore */ }
+    setQuickAddSaving(false)
+  }
 
   const listTasksFiltered = filteredTasks.filter((t) => (statusTab === 'all' ? true : t.status === statusTab))
   const actionsActiveCount =
@@ -122,6 +146,37 @@ export function TasksMobile() {
               onToggleDone={() => toggleTaskDone(t.id, t.status === 'done')}
             />
           ))}
+          {quickAddColumn === 'list-bottom' ? (
+            <div className="rounded-2xl border-2 border-indigo-400 bg-white p-2 shadow-sm animate-fade-in">
+              <input
+                ref={quickAddInputRef}
+                autoFocus
+                dir="auto"
+                type="text"
+                value={quickAddValue}
+                onChange={(e) => setQuickAddValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') { e.preventDefault(); handleQuickAdd('open', 'list-bottom') }
+                  if (e.key === 'Escape') { setQuickAddColumn(null); setQuickAddValue('') }
+                }}
+                onBlur={() => { if (!quickAddValue.trim()) setQuickAddColumn(null) }}
+                placeholder="Task title…"
+                disabled={quickAddSaving}
+                className="w-full rounded-lg px-3 py-2.5 text-[16px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setQuickAddColumn('list-bottom'); setQuickAddValue(''); setTimeout(() => quickAddInputRef.current?.focus(), 0) }}
+              className="flex w-full items-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-white/60 px-4 py-3 text-[14px] font-semibold text-slate-400 active:bg-slate-50 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add task
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-5 pb-2">
@@ -140,11 +195,20 @@ export function TasksMobile() {
               </h2>
               <MobileEpicStatusRow
                 laneId={lane.id}
+                laneLabelId={lane.id !== 'none' ? lane.id : undefined}
                 taskPool={lane.tasks}
                 openView={openView}
                 toggleTaskDone={toggleTaskDone}
                 doneLaneCollapsed={doneLaneCollapsed}
                 setDoneLaneCollapsed={setDoneLaneCollapsed}
+                quickAddColumn={quickAddColumn}
+                quickAddValue={quickAddValue}
+                quickAddSaving={quickAddSaving}
+                quickAddInputRef={quickAddInputRef}
+                onQuickAddOpen={(key) => { setQuickAddColumn(key); setQuickAddValue(''); setTimeout(() => quickAddInputRef.current?.focus(), 0) }}
+                onQuickAddChange={setQuickAddValue}
+                onQuickAddSubmit={handleQuickAdd}
+                onQuickAddCancel={() => { setQuickAddColumn(null); setQuickAddValue('') }}
               />
             </div>
           ))}
@@ -312,18 +376,36 @@ export function TasksMobile() {
 
 function MobileEpicStatusRow({
   laneId,
+  laneLabelId,
   taskPool,
   openView,
   toggleTaskDone,
   doneLaneCollapsed,
   setDoneLaneCollapsed,
+  quickAddColumn,
+  quickAddValue,
+  quickAddSaving,
+  quickAddInputRef,
+  onQuickAddOpen,
+  onQuickAddChange,
+  onQuickAddSubmit,
+  onQuickAddCancel,
 }: {
   laneId: string
+  laneLabelId?: string
   taskPool: RenovationTask[]
   openView: (t: RenovationTask) => void
   toggleTaskDone: (id: string, isDone: boolean) => void
   doneLaneCollapsed: boolean
   setDoneLaneCollapsed: (v: boolean) => void
+  quickAddColumn: string | null
+  quickAddValue: string
+  quickAddSaving: boolean
+  quickAddInputRef: React.RefObject<HTMLInputElement | null>
+  onQuickAddOpen: (key: string) => void
+  onQuickAddChange: (v: string) => void
+  onQuickAddSubmit: (status: TaskStatus, key: string, labelIds?: string[]) => void
+  onQuickAddCancel: () => void
 }) {
   return (
     <div className="flex gap-3 overflow-x-auto pb-1 pt-0.5 scrollbar-hide -mx-1 px-1 items-stretch">
@@ -393,6 +475,43 @@ function MobileEpicStatusRow({
               {paneTasks.length === 0 && (
                 <p className="py-6 text-center text-[13px] font-semibold text-slate-400">Empty</p>
               )}
+              {(() => {
+                const colKey = `${laneId}-${s}`
+                if (quickAddColumn === colKey) {
+                  return (
+                    <div className="rounded-xl border-2 border-indigo-400 bg-white p-1.5 shadow-sm animate-fade-in">
+                      <input
+                        ref={quickAddInputRef}
+                        autoFocus
+                        dir="auto"
+                        type="text"
+                        value={quickAddValue}
+                        onChange={(e) => onQuickAddChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') { e.preventDefault(); onQuickAddSubmit(s, colKey, laneLabelId ? [laneLabelId] : undefined) }
+                          if (e.key === 'Escape') onQuickAddCancel()
+                        }}
+                        onBlur={() => { if (!quickAddValue.trim()) onQuickAddCancel() }}
+                        placeholder="Task title…"
+                        disabled={quickAddSaving}
+                        className="w-full rounded-lg px-2.5 py-2 text-[15px] font-medium text-slate-900 outline-none placeholder:text-slate-400"
+                      />
+                    </div>
+                  )
+                }
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onQuickAddOpen(colKey)}
+                    className="flex w-full items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold text-slate-400 active:bg-white/80 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add task
+                  </button>
+                )
+              })()}
             </div>
           </div>
         )
@@ -440,6 +559,18 @@ function TaskCard({ task: t, onTap, onToggleDone }: { task: RenovationTask; onTa
             )}
             {t.room && (
               <span className="text-[13px] font-medium text-slate-500 truncate max-w-[120px]">{t.room.name}</span>
+            )}
+            {(t.subtask_total ?? 0) > 0 && (
+              <span
+                className={`flex items-center gap-0.5 text-[13px] font-semibold tabular-nums ${
+                  t.subtask_done === t.subtask_total ? 'text-emerald-600' : 'text-slate-500'
+                }`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                {t.subtask_done ?? 0}/{t.subtask_total}
+              </span>
             )}
           </div>
         </button>

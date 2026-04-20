@@ -235,6 +235,18 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
         </div>
       </form>
 
+      {editingRow && (editingRow.subtask_total ?? 0) > 0 && (
+        <div className="flex items-center gap-2 mx-4 mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <svg className="w-4 h-4 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span className={`text-[14px] font-semibold tabular-nums ${editingRow.subtask_done === editingRow.subtask_total ? 'text-emerald-600' : 'text-slate-600'}`}>
+            Subtasks: {editingRow.subtask_done ?? 0}/{editingRow.subtask_total}
+          </span>
+          <span className="text-[12px] text-slate-400 ml-auto">Open detail to manage</span>
+        </div>
+      )}
+
       <div className="box-border flex w-full min-w-0 max-w-full shrink-0 gap-3 border-t border-slate-100 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_24px_rgba(0,0,0,0.06)]">
         {editingRow && (
           <button

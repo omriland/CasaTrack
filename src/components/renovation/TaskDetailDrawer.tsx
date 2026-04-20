@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { createLabel, setTaskLabels, updateTask } from '@/lib/renovation'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { createLabel, setTaskLabels, updateTask, listSubtasks, createSubtask, updateSubtask, deleteSubtask, reorderSubtasks } from '@/lib/renovation'
 import type {
   RenovationTask,
+  RenovationSubtask,
   RenovationLabel,
   RenovationRoom,
   RenovationProvider,
@@ -59,6 +60,114 @@ export function TaskDetailDrawer({
   const providerPickerRef = useRef<HTMLDivElement>(null)
   const labelPickerRef = useRef<HTMLDivElement>(null)
   const labelSearchInputRef = useRef<HTMLInputElement>(null)
+
+  const [subtasks, setSubtasks] = useState<RenovationSubtask[]>([])
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
+  const [editingSubtaskId, setEditingSubtaskId] = useState<string | null>(null)
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = useState('')
+  const [subtaskAssigneePickerOpen, setSubtaskAssigneePickerOpen] = useState<string | null>(null)
+  const subtaskAssigneeRef = useRef<HTMLDivElement>(null)
+  const [dragSubtaskId, setDragSubtaskId] = useState<string | null>(null)
+  const [dragOverSubtaskId, setDragOverSubtaskId] = useState<string | null>(null)
+
+  const loadSubtasks = useCallback(async () => {
+    try {
+      const items = await listSubtasks(task.id)
+      setSubtasks(items)
+    } catch { /* ignore */ }
+  }, [task.id])
+
+  useEffect(() => { void loadSubtasks() }, [loadSubtasks])
+
+  const subtaskDone = subtasks.filter((s) => s.is_done).length
+  const subtaskTotal = subtasks.length
+
+  const handleAddSubtask = async () => {
+    const title = newSubtaskTitle.trim()
+    if (!title) return
+    setNewSubtaskTitle('')
+    try {
+      const created = await createSubtask(task.id, { title })
+      setSubtasks((prev) => [...prev, created])
+      onTaskChange?.({ ...task, subtask_total: subtaskTotal + 1, subtask_done: subtaskDone })
+    } catch { /* ignore */ }
+  }
+
+  const handleToggleSubtask = async (subtask: RenovationSubtask) => {
+    const next = !subtask.is_done
+    setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, is_done: next } : s)))
+    const newDone = subtaskDone + (next ? 1 : -1)
+    onTaskChange?.({ ...task, subtask_total: subtaskTotal, subtask_done: newDone })
+    try {
+      await updateSubtask(subtask.id, { is_done: next })
+    } catch {
+      setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, is_done: !next } : s)))
+      onTaskChange?.({ ...task, subtask_total: subtaskTotal, subtask_done: subtaskDone })
+    }
+  }
+
+  const handleDeleteSubtask = async (subtask: RenovationSubtask) => {
+    setSubtasks((prev) => prev.filter((s) => s.id !== subtask.id))
+    const newTotal = subtaskTotal - 1
+    const newDone = subtaskDone - (subtask.is_done ? 1 : 0)
+    onTaskChange?.({ ...task, subtask_total: newTotal, subtask_done: newDone })
+    try {
+      await deleteSubtask(subtask.id)
+    } catch {
+      setSubtasks((prev) => [...prev, subtask].sort((a, b) => a.sort_order - b.sort_order))
+      onTaskChange?.({ ...task, subtask_total: subtaskTotal, subtask_done: subtaskDone })
+    }
+  }
+
+  const commitSubtaskTitle = async (subtask: RenovationSubtask) => {
+    setEditingSubtaskId(null)
+    const t = editingSubtaskTitle.trim()
+    if (!t || t === subtask.title) return
+    setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, title: t } : s)))
+    try {
+      await updateSubtask(subtask.id, { title: t })
+    } catch {
+      setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, title: subtask.title } : s)))
+    }
+  }
+
+  const handleSubtaskAssignee = async (subtask: RenovationSubtask, memberId: string | null) => {
+    setSubtaskAssigneePickerOpen(null)
+    if (memberId === subtask.assignee_id) return
+    const member = memberId ? members.find((m) => m.id === memberId) ?? null : null
+    setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, assignee_id: memberId, assignee: member } : s)))
+    try {
+      await updateSubtask(subtask.id, { assignee_id: memberId })
+    } catch {
+      setSubtasks((prev) => prev.map((s) => (s.id === subtask.id ? { ...s, assignee_id: subtask.assignee_id, assignee: subtask.assignee } : s)))
+    }
+  }
+
+  const handleSubtaskDragStart = (id: string) => setDragSubtaskId(id)
+  const handleSubtaskDragOver = (e: React.DragEvent, id: string) => { e.preventDefault(); setDragOverSubtaskId(id) }
+  const handleSubtaskDragEnd = async () => {
+    if (!dragSubtaskId || !dragOverSubtaskId || dragSubtaskId === dragOverSubtaskId) {
+      setDragSubtaskId(null)
+      setDragOverSubtaskId(null)
+      return
+    }
+    const oldList = [...subtasks]
+    const fromIdx = oldList.findIndex((s) => s.id === dragSubtaskId)
+    const toIdx = oldList.findIndex((s) => s.id === dragOverSubtaskId)
+    if (fromIdx < 0 || toIdx < 0) { setDragSubtaskId(null); setDragOverSubtaskId(null); return }
+    const reordered = [...oldList]
+    const [moved] = reordered.splice(fromIdx, 1)
+    reordered.splice(toIdx, 0, moved)
+    const updated = reordered.map((s, i) => ({ ...s, sort_order: i }))
+    setSubtasks(updated)
+    setDragSubtaskId(null)
+    setDragOverSubtaskId(null)
+    try {
+      await reorderSubtasks(task.id, updated.map((s) => s.id))
+    } catch {
+      setSubtasks(oldList)
+    }
+  }
 
   const sortedMembers = useMemo(
     () => [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
@@ -132,6 +241,16 @@ export function TaskDetailDrawer({
     const t = window.setTimeout(() => labelSearchInputRef.current?.focus(), 0)
     return () => window.clearTimeout(t)
   }, [detailPickerOpen])
+
+  useEffect(() => {
+    if (!subtaskAssigneePickerOpen) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (subtaskAssigneeRef.current?.contains(e.target as Node)) return
+      setSubtaskAssigneePickerOpen(null)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [subtaskAssigneePickerOpen])
 
   const commitLabelIds = (nextIds: string[]) => {
     const prev = task.label_ids ?? []
@@ -406,6 +525,164 @@ export function TaskDetailDrawer({
                   Add a description...
                 </div>
               )}
+            </div>
+
+            {/* Subtasks */}
+            <div>
+              <div className="flex items-center gap-2 mb-3 px-2">
+                <h2 className="text-[14px] font-bold text-[#172b4d]">Subtasks</h2>
+                {subtaskTotal > 0 && (
+                  <span className={`text-[12px] font-bold tabular-nums ${subtaskDone === subtaskTotal ? 'text-emerald-600' : 'text-[#5e6c84]'}`}>
+                    {subtaskDone}/{subtaskTotal}
+                  </span>
+                )}
+              </div>
+              {subtaskTotal > 0 && (
+                <div className="mx-2 mb-3 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${subtaskDone === subtaskTotal ? 'bg-emerald-500' : 'bg-[#0052cc]'}`}
+                    style={{ width: `${subtaskTotal > 0 ? (subtaskDone / subtaskTotal) * 100 : 0}%` }}
+                  />
+                </div>
+              )}
+              <div className="space-y-0.5">
+                {subtasks.map((st) => {
+                  const stAssignee = st.assignee ?? (st.assignee_id ? members.find((m) => m.id === st.assignee_id) ?? null : null)
+                  const isEditing = editingSubtaskId === st.id
+                  const isDragTarget = dragOverSubtaskId === st.id && dragSubtaskId !== st.id
+                  return (
+                    <div
+                      key={st.id}
+                      draggable
+                      onDragStart={() => handleSubtaskDragStart(st.id)}
+                      onDragOver={(e) => handleSubtaskDragOver(e, st.id)}
+                      onDragEnd={handleSubtaskDragEnd}
+                      className={`group flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors ${isDragTarget ? 'bg-blue-50 border-t-2 border-[#4c9aff]' : 'hover:bg-slate-50'}`}
+                    >
+                      <svg
+                        className="w-4 h-4 shrink-0 text-slate-300 opacity-0 group-hover:opacity-100 cursor-grab transition-opacity"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" />
+                      </svg>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSubtask(st)}
+                        className={`flex shrink-0 items-center justify-center w-[18px] h-[18px] rounded border-2 transition-colors ${
+                          st.is_done
+                            ? 'bg-[#0052cc] border-[#0052cc]'
+                            : 'border-slate-300 hover:border-[#0052cc] bg-white'
+                        }`}
+                      >
+                        {st.is_done && (
+                          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                      {isEditing ? (
+                        <input
+                          autoFocus
+                          dir="auto"
+                          className="flex-1 min-w-0 text-[13px] font-medium text-[#172b4d] bg-slate-100 rounded px-1.5 py-0.5 outline-none shadow-inner"
+                          value={editingSubtaskTitle}
+                          onChange={(e) => setEditingSubtaskTitle(e.target.value)}
+                          onBlur={() => commitSubtaskTitle(st)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); commitSubtaskTitle(st) }
+                            if (e.key === 'Escape') setEditingSubtaskId(null)
+                          }}
+                        />
+                      ) : (
+                        <span
+                          className={`flex-1 min-w-0 text-[13px] font-medium cursor-text truncate ${
+                            st.is_done ? 'line-through text-slate-400' : 'text-[#172b4d]'
+                          }`}
+                          dir="auto"
+                          onClick={() => { setEditingSubtaskId(st.id); setEditingSubtaskTitle(st.title) }}
+                        >
+                          {st.title}
+                        </span>
+                      )}
+                      <div className="relative shrink-0" ref={subtaskAssigneePickerOpen === st.id ? subtaskAssigneeRef : undefined}>
+                        <button
+                          type="button"
+                          onClick={() => setSubtaskAssigneePickerOpen((o) => (o === st.id ? null : st.id))}
+                          className="flex items-center justify-center transition-colors"
+                          title={stAssignee ? stAssignee.name : 'Assign'}
+                        >
+                          {stAssignee ? (
+                            <MemberAvatarChip
+                              name={stAssignee.name}
+                              className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold shadow-sm"
+                            />
+                          ) : (
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 bg-white opacity-0 group-hover:opacity-100 transition-opacity">
+                              <svg className="h-3 w-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                          )}
+                        </button>
+                        {subtaskAssigneePickerOpen === st.id && (
+                          <div className="absolute right-0 top-full z-40 mt-1 w-48 max-h-48 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in">
+                            <button
+                              type="button"
+                              onClick={() => handleSubtaskAssignee(st, null)}
+                              className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] font-medium transition-colors ${
+                                !st.assignee_id ? 'bg-[#e9f2ff] text-[#0052cc]' : 'text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              None
+                            </button>
+                            {sortedMembers.map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => handleSubtaskAssignee(st, m.id)}
+                                className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[13px] transition-colors ${
+                                  st.assignee_id === m.id ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]' : 'font-medium text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                <MemberAvatarChip name={m.name} className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[9px] font-bold" />
+                                <span className="truncate">{m.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSubtask(st)}
+                        className="shrink-0 p-0.5 text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 transition-all"
+                        title="Delete subtask"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex items-center gap-2 mt-1 px-2">
+                <svg className="w-4 h-4 shrink-0 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <input
+                  type="text"
+                  dir="auto"
+                  value={newSubtaskTitle}
+                  onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); handleAddSubtask() }
+                  }}
+                  placeholder="Add a subtask..."
+                  className="flex-1 min-w-0 text-[13px] font-medium text-[#172b4d] bg-transparent outline-none placeholder:text-slate-400 py-1.5"
+                />
+              </div>
             </div>
 
           </div>

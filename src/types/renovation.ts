@@ -125,6 +125,18 @@ export interface RenovationLabel {
 export type TaskStatus = 'open' | 'in_progress' | 'blocked' | 'done'
 export type TaskUrgency = 'low' | 'medium' | 'high' | 'critical'
 
+export interface RenovationSubtask {
+  id: string
+  task_id: string
+  title: string
+  is_done: boolean
+  assignee_id: string | null
+  assignee?: RenovationTeamMember | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface RenovationTask {
   id: string
   project_id: string
@@ -147,6 +159,9 @@ export interface RenovationTask {
   created_by?: RenovationTeamMember | null
   room?: RenovationRoom | null
   provider?: RenovationProvider | null
+  subtasks?: RenovationSubtask[]
+  subtask_total?: number
+  subtask_done?: number
 }
 
 export interface RenovationRoom {

@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useState, useRef, type CSSProperties } from 'react'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
+import { createTask } from '@/lib/renovation'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
-import type { RenovationLabel, RenovationTask } from '@/types/renovation'
+import type { RenovationLabel, RenovationTask, TaskStatus } from '@/types/renovation'
 import { useTasksPageState } from './useTasksPageState'
 import { STATUSES, buildEpicSwimlanes, sortTasks } from './tasks-page-shared'
 
@@ -55,6 +56,73 @@ export function TasksDesktop() {
   } = useTasksPageState({ defaultView: 'epic' })
 
   const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
+  const [quickAddColumn, setQuickAddColumn] = useState<string | null>(null)
+  const [quickAddValue, setQuickAddValue] = useState('')
+  const [quickAddSaving, setQuickAddSaving] = useState(false)
+  const quickAddInputRef = useRef<HTMLInputElement>(null)
+
+  const handleQuickAdd = async (status: TaskStatus, _columnKey: string, extra?: { assigneeId?: string | null; labelIds?: string[] }) => {
+    const title = quickAddValue.trim()
+    if (!title || !project || quickAddSaving) return
+    setQuickAddSaving(true)
+    try {
+      const created = await createTask(project.id, {
+        title,
+        status,
+        assignee_id: extra?.assigneeId ?? null,
+        label_ids: extra?.labelIds,
+      })
+      const newTask: RenovationTask = {
+        ...created,
+        label_ids: extra?.labelIds ?? [],
+        assignee: extra?.assigneeId ? members.find((m) => m.id === extra.assigneeId) ?? null : null,
+        subtask_total: 0,
+        subtask_done: 0,
+      }
+      setTasks((prev) => [newTask, ...prev])
+      setQuickAddValue('')
+      setQuickAddColumn(null)
+    } catch { /* ignore */ }
+    setQuickAddSaving(false)
+  }
+
+  const renderQuickAdd = (status: TaskStatus, columnKey: string, extra?: { assigneeId?: string | null; labelIds?: string[] }) => {
+    const isOpen = quickAddColumn === columnKey
+    if (!isOpen) {
+      return (
+        <button
+          type="button"
+          onClick={() => { setQuickAddColumn(columnKey); setQuickAddValue(''); setTimeout(() => quickAddInputRef.current?.focus(), 0) }}
+          className="flex w-full items-center gap-1.5 rounded-[5px] px-3 py-2 text-[13px] font-semibold text-slate-400 opacity-0 group-hover/col:opacity-100 hover:!opacity-100 hover:bg-white/80 hover:text-slate-600 transition-all focus:opacity-100"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add task
+        </button>
+      )
+    }
+    return (
+      <div className="rounded-[5px] border border-[#4c9aff] bg-white p-1.5 shadow-sm animate-fade-in">
+        <input
+          ref={quickAddInputRef}
+          autoFocus
+          dir="auto"
+          type="text"
+          value={quickAddValue}
+          onChange={(e) => setQuickAddValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); handleQuickAdd(status, columnKey, extra) }
+            if (e.key === 'Escape') { setQuickAddColumn(null); setQuickAddValue('') }
+          }}
+          onBlur={() => { if (!quickAddValue.trim()) { setQuickAddColumn(null) } }}
+          placeholder="Task title…"
+          disabled={quickAddSaving}
+          className="w-full rounded px-2 py-1.5 text-[14px] font-medium text-[#172b4d] outline-none placeholder:text-slate-400"
+        />
+      </div>
+    )
+  }
 
   const renderCard = (t: RenovationTask, opts?: { draggable?: boolean }) => {
     const draggable = opts?.draggable !== false
@@ -137,6 +205,20 @@ export function TasksDesktop() {
                 </div>
               )}
 
+              {(t.subtask_total ?? 0) > 0 && (
+                <div
+                  title={`${t.subtask_done ?? 0} of ${t.subtask_total} subtasks done`}
+                  className={`flex items-center gap-0.5 text-[12px] font-semibold tabular-nums ${
+                    t.subtask_done === t.subtask_total ? 'text-emerald-600' : 'text-[#5e6c84]'
+                  }`}
+                >
+                  <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  {t.subtask_done ?? 0}/{t.subtask_total}
+                </div>
+              )}
+
               {dueMeta && (
                 <div
                   title={dueMeta.title}
@@ -198,7 +280,7 @@ export function TasksDesktop() {
   }
 
   /** Status columns (open → done); `keyPrefix` keeps React keys unique per epic swimlane row. */
-  const renderStatusBoardColumns = (taskPool: RenovationTask[], keyPrefix: string, colMinHeight: string) =>
+  const renderStatusBoardColumns = (taskPool: RenovationTask[], keyPrefix: string, colMinHeight: string, laneLabel?: { id: string }) =>
     STATUSES.map((s) => {
       const paneTasks = taskPool.filter((t) => t.status === s).sort(sortTasks)
       const isDraggingOver = dragOverStatus === s
@@ -255,7 +337,7 @@ export function TasksDesktop() {
           }}
           onDragLeave={() => setDragOverStatus(null)}
           onDrop={(e) => onDrop(e, s)}
-          className={`w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors ${colMinHeight} ${
+          className={`group/col w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors ${colMinHeight} ${
             isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
           }`}
         >
@@ -292,6 +374,7 @@ export function TasksDesktop() {
               <div className="py-6 text-center text-[14px] text-slate-400 font-bold">Drop tasks here</div>
             )}
           </div>
+          {renderQuickAdd(s, `${keyPrefix}-${s}`, laneLabel ? { labelIds: [laneLabel.id] } : undefined)}
         </div>
       )
     })
@@ -414,7 +497,10 @@ export function TasksDesktop() {
       ) : (
         <div className="mt-6">
           {view === 'list' && (
-            <div className="space-y-2">{[...filteredTasks].sort(sortTasks).map((t) => renderCard(t))}</div>
+            <div className="group/col space-y-2">
+              {[...filteredTasks].sort(sortTasks).map((t) => renderCard(t))}
+              {renderQuickAdd('open', 'list-bottom')}
+            </div>
           )}
 
           {view === 'status' && (
@@ -431,12 +517,13 @@ export function TasksDesktop() {
                   .sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="flex w-[282px] shrink-0 flex-col gap-2 rounded-sm bg-[#f4f5f7] p-2 min-h-[50vh]">
+                  <div key={m.id} className="group/col flex w-[282px] shrink-0 flex-col gap-2 rounded-sm bg-[#f4f5f7] p-2 min-h-[50vh]">
                     <h3 className="flex items-center gap-2 px-2 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-wider text-[#5e6c84]">
                       <span>{m.name}</span>
                       <span className="font-semibold text-[#172b4d]">{paneTasks.length}</span>
                     </h3>
                     <div className="flex min-h-0 flex-1 flex-col gap-2">{paneTasks.map((t) => renderCard(t))}</div>
+                    {renderQuickAdd('open', `assignee-${m.id}`, { assigneeId: m.id === 'unassigned' ? null : m.id })}
                   </div>
                 )
               })}
@@ -459,7 +546,7 @@ export function TasksDesktop() {
                     <span className="font-semibold text-[#172b4d]">{lane.tasks.length}</span>
                   </h3>
                   <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide items-stretch">
-                    {renderStatusBoardColumns(lane.tasks, lane.id, 'min-h-[200px]')}
+                    {renderStatusBoardColumns(lane.tasks, lane.id, 'min-h-[200px]', lane.id !== 'none' ? { id: lane.id } : undefined)}
                   </div>
                 </div>
               ))}

@@ -8,6 +8,7 @@ import type {
   RenovationExpenseAttachment,
   RenovationLabel,
   RenovationTask,
+  RenovationSubtask,
   TaskStatus,
   TaskUrgency,
   RenovationRoom,
@@ -805,16 +806,24 @@ export async function listTasks(projectId: string): Promise<RenovationTask[]> {
   }
   const providerMap = new Map(providers.map((p) => [p.id, p]))
 
-  return tasks.map((t) => ({
-    ...t,
-    created_by_member_id: t.created_by_member_id ?? null,
-    provider_id: t.provider_id ?? null,
-    assignee: t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null,
-    created_by: t.created_by_member_id ? memberMap.get(t.created_by_member_id) ?? null : null,
-    room: t.room_id ? roomMap.get(t.room_id) ?? null : null,
-    provider: t.provider_id ? providerMap.get(t.provider_id) ?? null : null,
-    label_ids: labelMap.get(t.id) || [],
-  }))
+  const taskIds = tasks.map((t) => t.id)
+  const subtaskCounts = await loadSubtaskCounts(taskIds)
+
+  return tasks.map((t) => {
+    const counts = subtaskCounts.get(t.id)
+    return {
+      ...t,
+      created_by_member_id: t.created_by_member_id ?? null,
+      provider_id: t.provider_id ?? null,
+      assignee: t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null,
+      created_by: t.created_by_member_id ? memberMap.get(t.created_by_member_id) ?? null : null,
+      room: t.room_id ? roomMap.get(t.room_id) ?? null : null,
+      provider: t.provider_id ? providerMap.get(t.provider_id) ?? null : null,
+      label_ids: labelMap.get(t.id) || [],
+      subtask_total: counts?.total ?? 0,
+      subtask_done: counts?.done ?? 0,
+    }
+  })
 }
 
 export async function createTask(
@@ -886,6 +895,90 @@ export async function setTaskLabels(taskId: string, labelIds: string[]): Promise
 export async function deleteTask(id: string): Promise<void> {
   const { error } = await supabase.from('renovation_tasks').delete().eq('id', id)
   if (error) throw error
+}
+
+// --- Subtasks ---
+
+async function loadSubtaskCounts(
+  taskIds: string[],
+): Promise<Map<string, { total: number; done: number }>> {
+  const map = new Map<string, { total: number; done: number }>()
+  if (taskIds.length === 0) return map
+
+  const { data, error } = await supabase
+    .from('renovation_subtasks')
+    .select('task_id, is_done')
+    .in('task_id', taskIds)
+
+  if (error) throw error
+  for (const row of data || []) {
+    const tid = row.task_id as string
+    const entry = map.get(tid) || { total: 0, done: 0 }
+    entry.total++
+    if (row.is_done) entry.done++
+    map.set(tid, entry)
+  }
+  return map
+}
+
+export async function listSubtasks(taskId: string): Promise<RenovationSubtask[]> {
+  const { data, error } = await supabase
+    .from('renovation_subtasks')
+    .select('*')
+    .eq('task_id', taskId)
+    .order('sort_order')
+    .order('created_at')
+
+  if (error) throw error
+  return (data || []) as RenovationSubtask[]
+}
+
+export async function createSubtask(
+  taskId: string,
+  row: { title: string; assignee_id?: string | null },
+): Promise<RenovationSubtask> {
+  const { data: existing } = await supabase
+    .from('renovation_subtasks')
+    .select('sort_order')
+    .eq('task_id', taskId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+
+  const nextOrder = existing?.length ? (existing[0].sort_order as number) + 1 : 0
+
+  const { data, error } = await supabase
+    .from('renovation_subtasks')
+    .insert({
+      task_id: taskId,
+      title: row.title,
+      assignee_id: row.assignee_id ?? null,
+      sort_order: nextOrder,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as RenovationSubtask
+}
+
+export async function updateSubtask(
+  id: string,
+  updates: Partial<Pick<RenovationSubtask, 'title' | 'is_done' | 'assignee_id' | 'sort_order'>>,
+): Promise<void> {
+  const { error } = await supabase.from('renovation_subtasks').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteSubtask(id: string): Promise<void> {
+  const { error } = await supabase.from('renovation_subtasks').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function reorderSubtasks(taskId: string, orderedIds: string[]): Promise<void> {
+  const updates = orderedIds.map((id, i) =>
+    supabase.from('renovation_subtasks').update({ sort_order: i }).eq('id', id).eq('task_id', taskId),
+  )
+  await Promise.all(updates)
 }
 
 // --- Rooms ---
