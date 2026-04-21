@@ -621,9 +621,16 @@ function TaskCard({ task: t, onTap, onToggleDone, onContextMenu }: { task: Renov
 
         {/* Card content - tap to open */}
         <button type="button" onClick={onTap} className="flex-1 min-w-0 text-left">
-          <p className={`text-[16px] font-semibold leading-snug text-slate-900 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
-            {t.title}
-          </p>
+          <div className="flex items-start gap-2 min-w-0">
+            <p className={`flex-1 min-w-0 text-[16px] font-semibold leading-snug text-slate-900 ${isDone ? 'line-through text-slate-500' : ''}`} dir="auto">
+              {t.title}
+            </p>
+            {t.room && (
+              <span className="shrink-0 mt-0.5 text-[12px] font-bold px-1.5 py-[3px] rounded-md bg-slate-200/80 text-slate-600 truncate max-w-[100px]">
+                {t.room.name}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             {dueMeta && (
               <span className={`text-[13px] font-semibold tabular-nums ${
@@ -636,9 +643,6 @@ function TaskCard({ task: t, onTap, onToggleDone, onContextMenu }: { task: Renov
               <span className={`text-[13px] font-semibold ${t.urgency === 'critical' ? 'text-rose-600' : t.urgency === 'high' ? 'text-amber-600' : 'text-slate-400'}`}>
                 {priorityLabel}
               </span>
-            )}
-            {t.room && (
-              <span className="text-[13px] font-medium text-slate-500 truncate max-w-[120px]">{t.room.name}</span>
             )}
             {(t.subtask_total ?? 0) > 0 && (
               <span

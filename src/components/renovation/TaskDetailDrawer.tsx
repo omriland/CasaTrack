@@ -18,6 +18,8 @@ import { format, parseISO } from 'date-fns'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
+import { useRenovation } from '@/components/renovation/RenovationContext'
+import { sortTeamMembersForAssigneePicker } from '@/lib/renovation-team-sort'
 
 const EMPTY_LABEL_IDS: string[] = []
 
@@ -47,6 +49,7 @@ export function TaskDetailDrawer({
   onTaskChange,
   onLabelCreated,
 }: TaskDetailDrawerProps) {
+  const { activeProfile } = useRenovation()
   const [editingTitle, setEditingTitle] = useState(false)
   const [editingBody, setEditingBody] = useState(false)
   const [titleDraft, setTitleDraft] = useState(task.title)
@@ -189,8 +192,8 @@ export function TaskDetailDrawer({
   }
 
   const sortedMembers = useMemo(
-    () => [...members].sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)),
-    [members],
+    () => sortTeamMembersForAssigneePicker(members, activeProfile),
+    [members, activeProfile],
   )
 
   const sortedProviders = useMemo(

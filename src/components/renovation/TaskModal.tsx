@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
+import { useRenovation } from '@/components/renovation/RenovationContext'
+import { sortTeamMembersForAssigneePicker } from '@/lib/renovation-team-sort'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { useTaskForm } from '@/components/renovation/useTaskForm'
@@ -29,6 +31,12 @@ interface TaskModalProps {
 
 /** Desktop-only task form (centered modal). Mobile uses `TaskModalMobile`. */
 export function TaskModal({ editing, members, labels, rooms, providers, onClose, onSave }: TaskModalProps) {
+  const { activeProfile } = useRenovation()
+  const assigneeDropdownOptions = useMemo(() => {
+    const ordered = sortTeamMembersForAssigneePicker(members, activeProfile)
+    return [{ value: '', label: 'Unassigned' }, ...ordered.map((m) => ({ value: m.id, label: m.name }))]
+  }, [members, activeProfile])
+
   const {
     title,
     setTitle,
@@ -166,7 +174,7 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
               <Dropdown
                 value={assigneeId}
                 onChange={(val) => setAssigneeId(val)}
-                options={[{ value: '', label: 'Unassigned' }, ...members.map((m) => ({ value: m.id, label: m.name }))]}
+                options={assigneeDropdownOptions}
                 className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 shadow-sm outline-none transition-all focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20"
               />
             </div>

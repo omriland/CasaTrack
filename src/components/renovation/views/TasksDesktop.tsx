@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useRef, type CSSProperties } from 'react'
+import { useState, useRef, useMemo, useEffect, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
-import { createTask, deleteTask } from '@/lib/renovation'
+import { useRenovation } from '@/components/renovation/RenovationContext'
+import { createTask, deleteTask, updateTask } from '@/lib/renovation'
+import { sortTeamMembersForAssigneePicker } from '@/lib/renovation-team-sort'
 import { formatTaskDue } from '@/lib/renovation-format'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import type { RenovationLabel, RenovationTask, TaskStatus } from '@/types/renovation'
@@ -21,7 +24,12 @@ const FILTER_SELECT_STYLE: CSSProperties = {
 const FILTER_SELECT_CLASS =
   'h-10 rounded-xl border border-slate-200 bg-white pl-3 pr-10 text-[14px] font-semibold text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none appearance-none'
 
+/** Desktop board columns (status / assignee / epic swimlanes). */
+const TASK_BOARD_COL_CLASS = 'w-[360px]'
+
 export function TasksDesktop() {
+  const { activeProfile } = useRenovation()
+
   const {
     project,
     setTaskModalOpen,
@@ -55,6 +63,48 @@ export function TasksDesktop() {
     toggleTaskDone,
   } = useTasksPageState({ defaultView: 'epic' })
 
+  const membersForAssigneePickers = useMemo(
+    () => sortTeamMembersForAssigneePicker(members, activeProfile),
+    [members, activeProfile],
+  )
+
+  const [assigneePicker, setAssigneePicker] = useState<{ taskId: string; rect: DOMRect } | null>(null)
+
+  useEffect(() => {
+    if (!assigneePicker) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAssigneePicker(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [assigneePicker])
+
+  useEffect(() => {
+    if (!assigneePicker) return
+    if (!tasks.some((t) => t.id === assigneePicker.taskId)) setAssigneePicker(null)
+  }, [assigneePicker, tasks])
+
+  const commitAssigneeFromBoard = async (taskId: string, assigneeId: string | null) => {
+    const task = tasks.find((x) => x.id === taskId)
+    if (!task) {
+      setAssigneePicker(null)
+      return
+    }
+    if (task.assignee_id === assigneeId) {
+      setAssigneePicker(null)
+      return
+    }
+    const member = assigneeId ? members.find((m) => m.id === assigneeId) ?? null : null
+    setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, assignee_id: assigneeId, assignee: member } : x)))
+    setViewing((v) => (v?.id === taskId ? { ...v, assignee_id: assigneeId, assignee: member } : v))
+    setAssigneePicker(null)
+    try {
+      await updateTask(taskId, { assignee_id: assigneeId })
+    } catch {
+      await load()
+    }
+  }
+
   const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
   const [ctxMenu, setCtxMenu] = useState<{ taskId: string; x: number; y: number } | null>(null)
   const [ctxConfirmDelete, setCtxConfirmDelete] = useState(false)
@@ -63,6 +113,7 @@ export function TasksDesktop() {
   const handleCardContext = (e: React.MouseEvent, taskId: string) => {
     e.preventDefault()
     e.stopPropagation()
+    setAssigneePicker(null)
     setCtxConfirmDelete(false)
     setCtxMenu({ taskId, x: e.clientX, y: e.clientY })
   }
@@ -188,19 +239,19 @@ export function TasksDesktop() {
         className={`w-full text-left bg-white rounded-[5px] border border-[#dfe1e6] p-3 transition-colors hover:bg-slate-50 group relative ${isDone ? 'opacity-60 bg-slate-50' : ''} ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
       >
         <div onClick={() => openView(t)} role="button" tabIndex={0} title={createdByTitle} className="flex flex-col gap-2 cursor-pointer focus:outline-none">
-          <p className={`text-[14px] text-right font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`} dir="rtl">
-            {t.title}
-          </p>
+          <div className="flex items-center gap-2" dir="rtl">
+            <p className={`flex-1 min-w-0 text-[14px] text-right font-medium leading-snug text-[#172b4d] ${isDone ? 'line-through text-slate-500' : ''}`}>
+              {t.title}
+            </p>
+            {t.room && (
+              <span className="shrink-0 text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-[#dfe1e6] text-[#42526e] truncate max-w-[120px]">
+                {t.room.name}
+              </span>
+            )}
+          </div>
 
-          {(t.room || labelsOnOwnRow) && (
-            <div className="flex flex-wrap gap-1 mt-0.5">
-              {t.room && (
-                <span className="text-[11px] font-bold px-1.5 py-[2px] rounded-[3px] bg-[#dfe1e6] text-[#42526e] truncate max-w-[120px]">
-                  {t.room.name}
-                </span>
-              )}
-              {labelsOnOwnRow ? labelChipEls : null}
-            </div>
+          {labelsOnOwnRow && (
+            <div className="flex flex-wrap gap-1 mt-0.5">{labelChipEls}</div>
           )}
 
           <div className="flex items-center justify-between mt-1 h-6">
@@ -292,20 +343,30 @@ export function TasksDesktop() {
                   })}
                 </div>
               )}
-              {t.assignee ? (
-                <div className="shrink-0" title={t.assignee.name}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  setAssigneePicker((prev) => (prev?.taskId === t.id ? null : { taskId: t.id, rect }))
+                }}
+                className="shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                title={t.assignee ? t.assignee.name : 'Assign'}
+                aria-label={t.assignee ? `Assignee: ${t.assignee.name}. Change assignee` : 'Assign someone'}
+              >
+                {t.assignee ? (
                   <MemberAvatarChip
                     name={t.assignee.name}
                     className="grid h-6 w-6 place-items-center rounded-full text-[10px] font-bold shadow-sm"
                   />
-                </div>
-              ) : (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-[#f4f5f7]" title="Unassigned">
-                  <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-              )}
+                ) : (
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-[#f4f5f7]">
+                    <svg className="w-3.5 h-3.5 text-[#a5adba]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -371,7 +432,7 @@ export function TasksDesktop() {
           }}
           onDragLeave={() => setDragOverStatus(null)}
           onDrop={(e) => onDrop(e, s)}
-          className={`group/col w-[282px] shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors ${colMinHeight} ${
+          className={`group/col ${TASK_BOARD_COL_CLASS} shrink-0 p-2 rounded-sm flex flex-col gap-2 transition-colors ${colMinHeight} ${
             isDraggingOver ? 'bg-[#ebf3ff]' : 'bg-[#f4f5f7]'
           }`}
         >
@@ -481,7 +542,7 @@ export function TasksDesktop() {
             style={FILTER_SELECT_STYLE}
           >
             <option value="">All Assignees</option>
-            {members.map((m) => (
+            {membersForAssigneePickers.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
               </option>
@@ -551,7 +612,7 @@ export function TasksDesktop() {
                   .sort(sortTasks)
                 if (paneTasks.length === 0) return null
                 return (
-                  <div key={m.id} className="group/col flex w-[282px] shrink-0 flex-col gap-2 rounded-sm bg-[#f4f5f7] p-2 min-h-[50vh]">
+                  <div key={m.id} className={`group/col flex ${TASK_BOARD_COL_CLASS} shrink-0 flex-col gap-2 rounded-sm bg-[#f4f5f7] p-2 min-h-[50vh]`}>
                     <h3 className="flex items-center gap-2 px-2 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-wider text-[#5e6c84]">
                       <span>{m.name}</span>
                       <span className="font-semibold text-[#172b4d]">{paneTasks.length}</span>
@@ -627,6 +688,81 @@ export function TasksDesktop() {
           }
         />
       )}
+
+      {assigneePicker &&
+        tasks.some((t) => t.id === assigneePicker.taskId) &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-[285]" aria-hidden onClick={() => setAssigneePicker(null)} />
+            <div
+              role="listbox"
+              aria-label="Assign task"
+              className="fixed z-[290] w-[min(260px,calc(100vw-16px))] max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+              style={{
+                left: (() => {
+                  const menuW = 260
+                  const vw = window.innerWidth
+                  return Math.max(8, Math.min(assigneePicker.rect.right - menuW, vw - menuW - 8))
+                })(),
+                top: assigneePicker.rect.bottom + 6,
+              }}
+            >
+              {(() => {
+                const taskForPicker = tasks.find((x) => x.id === assigneePicker.taskId)
+                if (!taskForPicker) return null
+                return (
+                  <>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={!taskForPicker.assignee_id}
+                      onClick={() => commitAssigneeFromBoard(assigneePicker.taskId, null)}
+                      className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors last:mb-0 ${
+                        !taskForPicker.assignee_id
+                          ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-[#dfe1e6] bg-white">
+                        <svg
+                          className="h-3.5 w-3.5 text-[#a5adba]"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      Unassigned
+                    </button>
+                    {membersForAssigneePickers.map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        role="option"
+                        aria-selected={taskForPicker.assignee_id === m.id}
+                        onClick={() => commitAssigneeFromBoard(assigneePicker.taskId, m.id)}
+                        className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                          taskForPicker.assignee_id === m.id
+                            ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                            : 'font-medium text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <MemberAvatarChip
+                          name={m.name}
+                          className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold"
+                        />
+                        <span className="truncate">{m.name}</span>
+                      </button>
+                    ))}
+                  </>
+                )
+              })()}
+            </div>
+          </>,
+          document.body,
+        )}
 
       {ctxMenu && (
         <>
