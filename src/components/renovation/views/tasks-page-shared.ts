@@ -13,10 +13,6 @@ export function sortTasks(a: RenovationTask, b: RenovationTask) {
   if (a.status === 'done' && b.status !== 'done') return 1
   if (a.status !== 'done' && b.status === 'done') return -1
 
-  const aw = URGENCY_WEIGHT[a.urgency] || 0
-  const bw = URGENCY_WEIGHT[b.urgency] || 0
-  if (aw !== bw) return bw - aw
-
   if (a.due_date && b.due_date) {
     if (a.due_date < b.due_date) return -1
     if (a.due_date > b.due_date) return 1
@@ -24,7 +20,12 @@ export function sortTasks(a: RenovationTask, b: RenovationTask) {
   if (a.due_date && !b.due_date) return -1
   if (!a.due_date && b.due_date) return 1
 
-  return 0
+  // Same date (or both without date) => severity first.
+  const aw = URGENCY_WEIGHT[a.urgency] || 0
+  const bw = URGENCY_WEIGHT[b.urgency] || 0
+  if (aw !== bw) return bw - aw
+
+  return a.title.localeCompare(b.title)
 }
 
 /** Swimlanes for Epic view: labels act as epics; first lane is unlabeled tasks. Label lanes with only `done` tasks are omitted. */

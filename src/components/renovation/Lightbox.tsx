@@ -234,28 +234,26 @@ export function Lightbox({ images, initialIndex, rooms, tags, onClose, onChanged
               </svg>
             </button>,
             ...(isMobile ? [] : ['zoom']),
-            'close',
+            isMobile ? (
+              <button
+                key="close"
+                type="button"
+                aria-label="Close"
+                className="yarl__button yarl__button_close"
+                {...stopNavigationEventsPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onClose()
+                }}
+              >
+                <CloseIcon />
+              </button>
+            ) : (
+              'close'
+            ),
           ],
         }}
         render={{
-          ...(isMobile
-            ? {
-                buttonClose: () => (
-                  <button
-                    type="button"
-                    aria-label="Close"
-                    className="yarl__button yarl__button_close"
-                    {...stopNavigationEventsPropagation()}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onClose()
-                    }}
-                  >
-                    <CloseIcon />
-                  </button>
-                ),
-              }
-            : {}),
           buttonPrev: images.length <= 1 ? () => null : undefined,
           buttonNext: images.length <= 1 ? () => null : undefined,
           slideHeader: () => null,

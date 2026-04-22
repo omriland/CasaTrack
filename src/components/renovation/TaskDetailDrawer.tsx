@@ -378,6 +378,21 @@ export function TaskDetailDrawer({
     updateTask(task.id, { due_date: normalized }).catch(() => onTaskChange?.(task))
   }
 
+  const dueQuickPicks = useMemo(() => {
+    const today = new Date()
+    const toYmd = (d: Date) => format(d, 'yyyy-MM-dd')
+    const tomorrow = new Date(today)
+    tomorrow.setDate(today.getDate() + 1)
+    const daysUntilNextSunday = ((7 - today.getDay()) % 7) || 7
+    const nextSunday = new Date(today)
+    nextSunday.setDate(today.getDate() + daysUntilNextSunday)
+    return [
+      { label: 'Today', value: toYmd(today) },
+      { label: 'Tomorrow', value: toYmd(tomorrow) },
+      { label: 'Next Sun', value: toYmd(nextSunday) },
+    ]
+  }, [])
+
   const isDone = task.status === 'done'
   const dueMeta = task.due_date ? formatTaskDue(task.due_date, { isDone }) : null
   const room =
@@ -1003,6 +1018,25 @@ export function TaskDetailDrawer({
                     onChange={(v) => commitDueDate(v)}
                     placeholder="No due date"
                   />
+                  <div className="flex gap-1.5 pt-1">
+                    {dueQuickPicks.map((preset) => {
+                      const active = task.due_date === preset.value
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => commitDueDate(preset.value)}
+                          className={`rounded px-2 py-1 text-[11px] font-bold transition-all ${
+                            active
+                              ? 'bg-indigo-100 text-indigo-700 shadow-sm'
+                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                   {dueMeta ? (
                     <span
                       className={`text-[13px] font-bold ${

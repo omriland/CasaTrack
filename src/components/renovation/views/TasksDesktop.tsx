@@ -27,6 +27,13 @@ const FILTER_SELECT_CLASS =
 /** Desktop board columns (status / assignee / epic swimlanes). */
 const TASK_BOARD_COL_CLASS = 'w-[360px]'
 
+const toDayKey = (d: Date): string => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function TasksDesktop() {
   const { activeProfile } = useRenovation()
 
@@ -108,6 +115,7 @@ export function TasksDesktop() {
   const [doneLaneCollapsed, setDoneLaneCollapsed] = useState(true)
   const [ctxMenu, setCtxMenu] = useState<{ taskId: string; x: number; y: number } | null>(null)
   const [ctxConfirmDelete, setCtxConfirmDelete] = useState(false)
+  const [ctxSubmenu, setCtxSubmenu] = useState<'due' | null>(null)
   const [ctxDeleting, setCtxDeleting] = useState(false)
 
   const handleCardContext = (e: React.MouseEvent, taskId: string) => {
@@ -115,10 +123,15 @@ export function TasksDesktop() {
     e.stopPropagation()
     setAssigneePicker(null)
     setCtxConfirmDelete(false)
+    setCtxSubmenu(null)
     setCtxMenu({ taskId, x: e.clientX, y: e.clientY })
   }
 
-  const closeCtxMenu = () => { setCtxMenu(null); setCtxConfirmDelete(false) }
+  const closeCtxMenu = () => {
+    setCtxMenu(null)
+    setCtxConfirmDelete(false)
+    setCtxSubmenu(null)
+  }
   const ctxTask = ctxMenu ? tasks.find((t) => t.id === ctxMenu.taskId) : null
 
   const handleCtxEdit = () => { if (ctxTask) { closeCtxMenu(); openEdit(ctxTask) } }
@@ -138,6 +151,24 @@ export function TasksDesktop() {
     if (!ctxTask) return
     closeCtxMenu()
     toggleTaskDone(ctxTask.id, ctxTask.status === 'done')
+  }
+
+  const handleCtxSetDueDate = async (dueDate: string) => {
+    if (!ctxTask) return
+    const normalized = dueDate.trim() || null
+    if (ctxTask.due_date === normalized) {
+      closeCtxMenu()
+      return
+    }
+    const taskId = ctxTask.id
+    closeCtxMenu()
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, due_date: normalized } : t)))
+    setViewing((v) => (v?.id === taskId ? { ...v, due_date: normalized } : v))
+    try {
+      await updateTask(taskId, { due_date: normalized })
+    } catch {
+      await load()
+    }
   }
 
   const [quickAddColumn, setQuickAddColumn] = useState<string | null>(null)
@@ -770,6 +801,7 @@ export function TasksDesktop() {
           <div
             className="fixed z-[310] min-w-[180px] rounded-lg border border-slate-200/80 bg-white/98 p-1 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
             style={{ left: ctxMenu.x, top: ctxMenu.y }}
+            onMouseLeave={() => setCtxSubmenu(null)}
           >
             <button
               type="button"
@@ -802,6 +834,49 @@ export function TasksDesktop() {
               </svg>
               {ctxTask?.status === 'done' ? 'Mark as open' : 'Mark as done'}
             </button>
+            <div className="relative">
+              <button
+                type="button"
+                onMouseEnter={() => setCtxSubmenu('due')}
+                onClick={() => setCtxSubmenu((v) => (v === 'due' ? null : 'due'))}
+                className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Due date
+                <svg className="ml-auto h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              {ctxSubmenu === 'due' && (
+                <div className="absolute left-full top-0 ml-1 min-w-[140px] rounded-lg border border-slate-200/80 bg-white/98 p-1 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in">
+                  {(() => {
+                    const today = new Date()
+                    const tomorrow = new Date(today)
+                    tomorrow.setDate(today.getDate() + 1)
+                    const daysUntilNextSunday = ((7 - today.getDay()) % 7) || 7
+                    const nextSunday = new Date(today)
+                    nextSunday.setDate(today.getDate() + daysUntilNextSunday)
+                    const presets = [
+                      { label: 'Today', value: toDayKey(today) },
+                      { label: 'Tomorrow', value: toDayKey(tomorrow) },
+                      { label: 'Next Sun', value: toDayKey(nextSunday) },
+                    ]
+                    return presets.map((preset) => (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => handleCtxSetDueDate(preset.value)}
+                        className="mb-0.5 flex w-full items-center rounded-md px-3 py-2 text-left text-[13px] font-medium text-slate-700 hover:bg-slate-100 transition-colors last:mb-0"
+                      >
+                        {preset.label}
+                      </button>
+                    ))
+                  })()}
+                </div>
+              )}
+            </div>
             <div className="my-1 border-t border-slate-100" />
             {ctxConfirmDelete ? (
               <div className="flex flex-col gap-1 p-1">

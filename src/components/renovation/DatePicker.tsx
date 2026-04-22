@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { DayPicker } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
 import { format, parseISO } from 'date-fns'
@@ -15,17 +16,58 @@ interface DatePickerProps {
 export function DatePicker({ value, onChange, placeholder = 'Select date' }: DatePickerProps) {
   const isMobile = useRenovationMobileMedia()
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
+  const [panelStyle, setPanelStyle] = useState<{ left: number; top: number; openUp: boolean } | null>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false)
-      }
+      const target = event.target as Node
+      if (rootRef.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (!open || isMobile) return
+
+    const updatePosition = () => {
+      const trigger = rootRef.current?.getBoundingClientRect()
+      if (!trigger) return
+      const panelWidth = Math.min(320, window.innerWidth - 16)
+      const panelHeight = 360
+      const nextLeft = Math.max(8, Math.min(trigger.left, window.innerWidth - panelWidth - 8))
+      const openUp = trigger.bottom + panelHeight > window.innerHeight - 8 && trigger.top > panelHeight
+      const nextTop = openUp ? trigger.top - 6 : trigger.bottom + 6
+      setPanelStyle({ left: nextLeft, top: nextTop, openUp })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, isMobile])
+
+  useEffect(() => {
+    if (!open) {
+      setPanelStyle(null)
+    }
+  }, [open])
+
+  useEffect(() => {
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    if (!open) return
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [open])
 
   const selectedDate = value ? parseISO(value) : undefined
   const display = selectedDate ? format(selectedDate, 'MMM d, yyyy') : placeholder
@@ -96,48 +138,61 @@ export function DatePicker({ value, onChange, placeholder = 'Select date' }: Dat
     )
   }
 
+  const panel =
+    open && panelStyle && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[260] w-[min(320px,calc(100vw-16px))] p-0 animate-fade-in-up origin-top"
+            style={{
+              left: panelStyle.left,
+              top: panelStyle.top,
+              transform: panelStyle.openUp ? 'translateY(-100%)' : undefined,
+            }}
+          >
+            <style suppressHydrationWarning>{`
+              .rdp-root {
+                --rdp-accent-color: #4f46e5;
+                --rdp-background-color: #e0e7ff;
+                --rdp-accent-color-dark: #4338ca;
+                --rdp-background-color-dark: #c7d2fe;
+                --rdp-outline: 2px solid var(--rdp-accent-color);
+                --rdp-outline-offset: 2px;
+                --rdp-margin: 0;
+              }
+              .rdp-root * {
+                font-family: inherit;
+              }
+            `}</style>
+            <div className="bg-white rounded-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden">
+              <DayPicker
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => {
+                  if (d) {
+                    onChange(format(d, 'yyyy-MM-dd'))
+                    setOpen(false)
+                  }
+                }}
+                showOutsideDays
+                className="m-0 p-4"
+              />
+            </div>
+          </div>,
+          document.body,
+        )
+      : null
+
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={rootRef}>
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="w-full h-11 pl-10 pr-3 rounded border border-slate-200 bg-slate-50 text-[14px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm focus:bg-white text-left flex items-center justify-between"
       >
-         <span className={`${!value ? 'text-slate-400 font-normal' : ''}`}>{display}</span>
+        <span className={`${!value ? 'text-slate-400 font-normal' : ''}`}>{display}</span>
       </button>
-
-      {open && (
-        <div className="absolute z-[100] mt-1 p-0 animate-fade-in-up origin-top">
-           <style suppressHydrationWarning>{`
-             .rdp-root {
-               --rdp-accent-color: #4f46e5;
-               --rdp-background-color: #e0e7ff;
-               --rdp-accent-color-dark: #4338ca;
-               --rdp-background-color-dark: #c7d2fe;
-               --rdp-outline: 2px solid var(--rdp-accent-color);
-               --rdp-outline-offset: 2px;
-               --rdp-margin: 0;
-             }
-             .rdp-root * {
-               font-family: inherit;
-             }
-           `}</style>
-          <div className="bg-white rounded-md shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden">
-            <DayPicker
-              mode="single"
-              selected={selectedDate}
-              onSelect={(d) => {
-                if (d) {
-                  onChange(format(d, 'yyyy-MM-dd'))
-                  setOpen(false)
-                }
-              }}
-              showOutsideDays
-              className="m-0 p-4"
-            />
-          </div>
-        </div>
-      )}
+      {panel}
     </div>
   )
 }

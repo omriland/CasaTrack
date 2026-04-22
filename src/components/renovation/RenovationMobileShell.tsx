@@ -35,8 +35,13 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="reno-app flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#f5f6f8] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      {/* Fixed shell bar: safe area + row (min 48px) + pb-2.5; main uses matching pt so content clears it on every tab */}
-      <header className="fixed top-0 inset-x-0 z-50 border-b border-slate-200/60 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur-xl pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
+      {/*
+        Header and bottom nav are real flex children (NOT position:fixed). This guarantees
+        `main` sits exactly between them and content can never render behind the nav on any
+        page, regardless of the page's own bottom padding. It also keeps the nav a distinct
+        tap region so taps are not captured by the scrolling `main` container.
+      */}
+      <header className="relative z-50 shrink-0 border-b border-slate-200/60 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.06)] backdrop-blur-xl pt-[max(0.5rem,env(safe-area-inset-top))] pb-2.5">
         <div className="mx-auto flex max-w-lg items-center gap-3 px-4 min-h-[48px]">
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-[18px] font-bold leading-tight text-slate-900">{project?.name || 'Renovation'}</h1>
@@ -57,15 +62,27 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="reno-mobile-main relative z-0 min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[calc(max(0.5rem,env(safe-area-inset-top))+3rem+0.625rem+1rem)]">
+      {/*
+        No `z-index` on main: any explicit z-index on a positioned element creates a new
+        stacking context that traps descendants' own z-indexes (e.g. `z-[210]` on the
+        task/expense/vendor drawers) beneath its own level, which meant fixed drawers were
+        painted BEHIND the shell header/nav. Leaving main without a stacking context lets
+        those drawers paint correctly above header/nav when opened.
+      */}
+      <main className="reno-mobile-main min-h-0 flex-1 w-full max-w-lg mx-auto overflow-y-auto overscroll-y-contain px-4 pt-4">
         {children}
       </main>
 
+      {/*
+        Solid bottom tab bar. Opaque background + clear top border + shrink-0 flex child
+        means `main` always ends exactly at the top edge of this bar — content can never
+        render behind or under it, on any page or at any scroll position.
+      */}
       <nav
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(0.35rem,env(safe-area-inset-bottom))] px-3 pt-1"
+        className="relative z-40 shrink-0 border-t border-slate-200 bg-white shadow-[0_-2px_16px_-10px_rgba(15,23,42,0.12)] pb-[env(safe-area-inset-bottom,0px)]"
         aria-label="Main navigation"
       >
-        <div className="pointer-events-auto mx-auto flex max-w-lg items-stretch justify-between rounded-2xl border border-slate-200/90 bg-white/95 py-1 px-1 shadow-[0_4px_24px_rgba(15,23,42,0.10)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-lg items-stretch">
           {primaryNav
             .filter(
               (item) =>
@@ -78,11 +95,19 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex min-h-[52px] flex-1 flex-col items-center justify-center gap-1 rounded-xl transition-colors ${active ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 active:bg-slate-50'
+                prefetch
+                aria-current={active ? 'page' : undefined}
+                className={`relative flex min-h-[60px] flex-1 flex-col items-center justify-center gap-0.5 transition-colors touch-manipulation select-none [-webkit-tap-highlight-color:transparent] ${active ? 'text-indigo-600' : 'text-slate-500 active:text-slate-700 active:bg-slate-50'
                   }`}
               >
-                <Icon className="h-6 w-6" active={active} />
-                <span className="text-[14px] font-semibold leading-tight text-center max-w-[4.25rem]">{item.label}</span>
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-0 h-[3px] w-8 rounded-b-full bg-indigo-600"
+                  />
+                )}
+                <Icon className="h-[22px] w-[22px]" active={active} />
+                <span className="text-[11px] font-semibold leading-tight tracking-tight">{item.label}</span>
               </Link>
             )
           })}
