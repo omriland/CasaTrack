@@ -14,8 +14,8 @@ import { useTasksPageState } from './useTasksPageState'
 import { STATUSES, buildEpicSwimlanes, sortTasks } from './tasks-page-shared'
 
 /** Desktop board columns (status / assignee / epic swimlanes). */
-const TASK_BOARD_COL_CLASS = 'w-[340px]'
-const TASK_BOARD_COL_COMPACT_CLASS = 'w-[300px]'
+const TASK_BOARD_COL_CLASS = 'w-[380px]'
+const TASK_BOARD_COL_COMPACT_CLASS = 'w-[340px]'
 
 const PRIORITY_BORDER: Record<RenovationTask['urgency'], string> = {
   critical: 'oklch(0.55 0.22 15)',
