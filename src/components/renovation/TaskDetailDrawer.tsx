@@ -56,6 +56,7 @@ export function TaskDetailDrawer({
   const [bodyDraft, setBodyDraft] = useState(task.body || '')
   const [detailPickerOpen, setDetailPickerOpen] = useState<DetailPickerOpen>(null)
   const [labelSearch, setLabelSearch] = useState('')
+  const [providerSearch, setProviderSearch] = useState('')
   const statusPickerRef = useRef<HTMLDivElement>(null)
   const assigneePickerRef = useRef<HTMLDivElement>(null)
   const roomPickerRef = useRef<HTMLDivElement>(null)
@@ -63,6 +64,7 @@ export function TaskDetailDrawer({
   const providerPickerRef = useRef<HTMLDivElement>(null)
   const labelPickerRef = useRef<HTMLDivElement>(null)
   const labelSearchInputRef = useRef<HTMLInputElement>(null)
+  const providerSearchInputRef = useRef<HTMLInputElement>(null)
 
   const [subtasks, setSubtasks] = useState<RenovationSubtask[]>([])
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
@@ -217,6 +219,12 @@ export function TaskDetailDrawer({
     return sortedLabels.filter((l) => l.name.toLowerCase().includes(q))
   }, [sortedLabels, labelSearch])
 
+  const filteredProviders = useMemo(() => {
+    const q = providerSearch.trim().toLowerCase()
+    if (!q) return sortedProviders
+    return sortedProviders.filter((p) => p.name.toLowerCase().includes(q))
+  }, [sortedProviders, providerSearch])
+
   const labelCreateNameTrimmed = labelSearch.trim()
   const canCreateLabel =
     labelCreateNameTrimmed.length > 0 &&
@@ -259,9 +267,18 @@ export function TaskDetailDrawer({
   }, [detailPickerOpen])
 
   useEffect(() => {
-    if (detailPickerOpen !== 'labels') return
-    const t = window.setTimeout(() => labelSearchInputRef.current?.focus(), 0)
-    return () => window.clearTimeout(t)
+    if (detailPickerOpen === 'labels') {
+      const t = window.setTimeout(() => labelSearchInputRef.current?.focus(), 0)
+      return () => window.clearTimeout(t)
+    }
+    if (detailPickerOpen === 'provider') {
+      const t = window.setTimeout(() => providerSearchInputRef.current?.focus(), 0)
+      return () => window.clearTimeout(t)
+    }
+  }, [detailPickerOpen])
+
+  useEffect(() => {
+    if (detailPickerOpen !== 'provider') setProviderSearch('')
   }, [detailPickerOpen])
 
   useEffect(() => {
@@ -1068,7 +1085,11 @@ export function TaskDetailDrawer({
                     <button
                       type="button"
                       onClick={() =>
-                        setDetailPickerOpen((o) => (o === 'provider' ? null : 'provider'))
+                        setDetailPickerOpen((o) => {
+                          if (o === 'provider') return null
+                          setProviderSearch('')
+                          return 'provider'
+                        })
                       }
                       className="group flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left -mx-2 transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
                     >
@@ -1114,56 +1135,76 @@ export function TaskDetailDrawer({
                     </button>
                     {detailPickerOpen === 'provider' && (
                       <div
-                        className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-lg border border-slate-200/80 bg-white/98 p-1.5 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
+                        className="absolute left-0 right-0 top-full z-30 mt-1 flex max-h-72 flex-col overflow-hidden rounded-lg border border-slate-200/80 bg-white/98 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.2)] ring-1 ring-black/[0.04] backdrop-blur-xl animate-fade-in"
                         role="listbox"
                       >
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={!task.provider_id}
-                          onClick={() => commitProvider(null)}
-                          className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors last:mb-0 ${
-                            !task.provider_id
-                              ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
-                              : 'text-slate-700 hover:bg-slate-100'
-                          }`}
-                        >
-                          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
-                            <svg
-                              className="h-3.5 w-3.5 text-[#a5adba]"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </div>
-                          {sortedProviders.length ? 'No provider' : 'Add providers in Providers tab'}
-                        </button>
-                        {sortedProviders.map((pr) => (
+                        <div className="shrink-0 border-b border-slate-100 p-2">
+                          <input
+                            ref={providerSearchInputRef}
+                            type="search"
+                            value={providerSearch}
+                            onChange={(e) => setProviderSearch(e.target.value)}
+                            placeholder="Search providers…"
+                            className="w-full rounded-md border border-slate-200 bg-slate-50 px-2.5 py-2 text-[13px] font-medium text-[#172b4d] outline-none placeholder:text-slate-400 focus:border-[#4c9aff] focus:bg-white focus:ring-1 focus:ring-[#4c9aff]"
+                            dir="auto"
+                            aria-label="Filter providers"
+                          />
+                        </div>
+                        <div className="max-h-48 overflow-y-auto p-1.5">
                           <button
-                            key={pr.id}
                             type="button"
                             role="option"
-                            aria-selected={task.provider_id === pr.id}
-                            onClick={() => commitProvider(pr.id)}
-                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
-                              task.provider_id === pr.id
+                            aria-selected={!task.provider_id}
+                            onClick={() => commitProvider(null)}
+                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] font-medium transition-colors ${
+                              !task.provider_id
                                 ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
-                                : 'font-medium text-slate-700 hover:bg-slate-100'
+                                : 'text-slate-700 hover:bg-slate-100'
                             }`}
                           >
-                            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
-                              <span className="leading-none">{pr.name.charAt(0).toUpperCase()}</span>
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-dashed border-[#dfe1e6] bg-white">
+                              <svg
+                                className="h-3.5 w-3.5 text-[#a5adba]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
                             </div>
-                            <span className="truncate">{pr.name}</span>
+                            {sortedProviders.length ? 'No provider' : 'Add providers in Providers tab'}
                           </button>
-                        ))}
+                          {filteredProviders.length === 0 && sortedProviders.length > 0 && providerSearch.trim() ? (
+                            <p className="px-3 py-3 text-center text-[13px] text-slate-500">No matching providers</p>
+                          ) : (
+                            filteredProviders.map((pr) => (
+                              <button
+                                key={pr.id}
+                                type="button"
+                                role="option"
+                                aria-selected={task.provider_id === pr.id}
+                                onClick={() => commitProvider(pr.id)}
+                                className={`mb-0.5 flex w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-[14px] transition-colors last:mb-0 ${
+                                  task.provider_id === pr.id
+                                    ? 'bg-[#e9f2ff] font-semibold text-[#0052cc]'
+                                    : 'font-medium text-slate-700 hover:bg-slate-100'
+                                }`}
+                              >
+                                <div className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-slate-200 text-[10px] font-bold text-slate-700">
+                                  <span className="leading-none">{pr.name.charAt(0).toUpperCase()}</span>
+                                </div>
+                                <span className="truncate" dir="auto">
+                                  {pr.name}
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

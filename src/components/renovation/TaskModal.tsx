@@ -196,6 +196,8 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
               <Dropdown
                 value={providerId}
                 onChange={(val) => setProviderId(val)}
+                searchable
+                searchPlaceholder="Search providers…"
                 options={[
                   { value: '', label: providers.length ? 'No provider' : 'Add providers in Providers tab' },
                   ...providers.map((p) => ({ value: p.id, label: p.name })),
