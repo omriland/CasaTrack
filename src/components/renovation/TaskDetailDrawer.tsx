@@ -275,6 +275,7 @@ export function TaskDetailDrawer({
       const t = window.setTimeout(() => providerSearchInputRef.current?.focus(), 0)
       return () => window.clearTimeout(t)
     }
+    return undefined
   }, [detailPickerOpen])
 
   useEffect(() => {
