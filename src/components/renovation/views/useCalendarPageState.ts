@@ -10,7 +10,7 @@ export type CalendarViewMode = 'month' | 'week' | 'day'
 export function useCalendarPageState() {
   const { project } = useRenovation()
   const [cursor, setCursor] = useState(() => new Date())
-  const [calendarView, setCalendarView] = useState<CalendarViewMode>('month')
+  const [calendarView, setCalendarView] = useState<CalendarViewMode>('week')
   const [events, setEvents] = useState<RenovationCalendarEvent[]>([])
   const [tasks, setTasks] = useState<RenovationTask[]>([])
   const [providers, setProviders] = useState<RenovationProvider[]>([])

@@ -125,87 +125,56 @@ export function CalendarDesktop() {
 
   return (
     <div className="flex flex-col gap-0 bg-white pb-8 animate-fade-in-up">
-      <h1 className="text-[32px] font-bold tracking-tight text-slate-900 pb-2">Calendar</h1>
-      {/* Top Controls Header (Google Style) */}
-      <header className="flex flex-col items-start gap-4 border-[#dadce0] pb-4 pt-1 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1">
+      <header className="px-4 py-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <h1 className="shrink-0 text-[18px] leading-none tracking-[-0.02em] text-[oklch(0.13_0_0)] font-[family-name:var(--font-varela-round)]">
+              Calendar
+            </h1>
             <button
               type="button"
-              onClick={() => openNewEvent(null)}
-              className="mr-3 inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#dadce0] bg-white px-4 shadow-sm transition-all hover:bg-[#f8f9fa] hover:shadow-md"
-              style={{
-                boxShadow: '0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15)'
-              }}
+              onClick={() =>
+                setCursor(
+                  calendarView === 'month'
+                    ? subMonths(cursor, 1)
+                    : calendarView === 'week'
+                      ? subWeeks(cursor, 1)
+                      : subDays(cursor, 1),
+                )
+              }
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] border border-black/10 text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
+              aria-label={calendarView === 'month' ? 'Previous month' : calendarView === 'week' ? 'Previous week' : 'Previous day'}
             >
-              <svg
-                className="h-5 w-5 shrink-0 block"
-                viewBox="0 0 24 24"
-                aria-hidden
-              >
-                <path
-                  fill="#34A853"
-                  d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"
-                />
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
               </svg>
-              <span className="text-[14px] font-medium leading-none text-[#3c4043] tracking-wide">
-                Create
-              </span>
             </button>
             <button
               type="button"
               onClick={() => setCursor(new Date())}
-              className="h-10 rounded-md border border-[#dadce0] px-4 text-[14px] font-medium text-[#3c4043] hover:bg-[#f1f3f4] transition-colors"
+              className="h-8 shrink-0 rounded-[6px] border border-black/10 px-[10px] text-[12px] text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
             >
               Today
             </button>
-            <div className="flex items-center gap-1 ml-1 h-10">
-              <button
-                type="button"
-                onClick={() =>
-                  setCursor(
-                    calendarView === 'month'
-                      ? subMonths(cursor, 1)
-                      : calendarView === 'week'
-                        ? subWeeks(cursor, 1)
-                        : subDays(cursor, 1)
-                  )
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4] transition-colors"
-                aria-label={
+            <button
+              type="button"
+              onClick={() =>
+                setCursor(
                   calendarView === 'month'
-                    ? 'Previous month'
+                    ? addMonths(cursor, 1)
                     : calendarView === 'week'
-                      ? 'Previous week'
-                      : 'Previous day'
-                }
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setCursor(
-                    calendarView === 'month'
-                      ? addMonths(cursor, 1)
-                      : calendarView === 'week'
-                        ? addWeeks(cursor, 1)
-                        : addDays(cursor, 1)
-                  )
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-full text-[#5f6368] hover:bg-[#f1f3f4] transition-colors"
-                aria-label={
-                  calendarView === 'month'
-                    ? 'Next month'
-                    : calendarView === 'week'
-                      ? 'Next week'
-                      : 'Next day'
-                }
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
-              </button>
-            </div>
-            <h2 className="ml-2 mt-1 text-[22px] font-normal leading-none text-[#3c4043]">
+                      ? addWeeks(cursor, 1)
+                      : addDays(cursor, 1),
+                )
+              }
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] border border-black/10 text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
+              aria-label={calendarView === 'month' ? 'Next month' : calendarView === 'week' ? 'Next week' : 'Next day'}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+            <h2 className="truncate pl-1 text-[16px] leading-none tracking-[-0.01em] text-[oklch(0.13_0_0)]">
               {calendarView === 'month'
                 ? format(cursor, 'MMMM yyyy')
                 : calendarView === 'week'
@@ -213,113 +182,105 @@ export function CalendarDesktop() {
                   : format(cursor, 'EEEE, MMMM d, yyyy')}
             </h2>
           </div>
-        </div>
-        
-        <div className="flex w-full flex-wrap items-center gap-3 md:w-auto md:justify-end">
-          {/* Scroll only the filter pills — the Month/Week menu must stay outside overflow-x-auto or the dropdown is clipped and clicks fail */}
-          <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-1 py-1 scrollbar-hide md:min-w-0 md:flex-none md:overflow-visible md:pb-0">
+
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setShowTasks(!showTasks)}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] font-semibold transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full border px-[11px] py-[5px] text-[12px] transition-colors ${
                 showTasks
-                  ? 'border-[#ceead6] bg-[#e6f4ea] text-[#137333]'
-                  : 'border-[#dadce0] bg-white text-[#5f6368] hover:bg-[#f8f9fa]'
+                  ? 'border-[oklch(0.65_0.18_163)] bg-[oklch(0.95_0.06_163)] text-[oklch(0.45_0.18_163)]'
+                  : 'border-black/10 text-[oklch(0.60_0_0)] hover:border-black/20 hover:text-[oklch(0.40_0_0)]'
               }`}
             >
               {showTasks && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
                 </svg>
               )}
               Tasks
             </button>
-
             <button
               type="button"
               onClick={() => setShowCompletedTasks(!showCompletedTasks)}
               disabled={!showTasks}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-[14px] font-semibold transition-colors ${
+              className={`inline-flex items-center gap-1 rounded-full border px-[11px] py-[5px] text-[12px] transition-colors ${
                 !showTasks
-                  ? 'cursor-not-allowed border-[#dadce0] bg-white text-[#9aa0a6] opacity-50'
+                  ? 'cursor-not-allowed border-black/10 text-[oklch(0.75_0_0)] opacity-70'
                   : showCompletedTasks
-                    ? 'border-[#ceead6] bg-[#e6f4ea] text-[#137333]'
-                    : 'border-[#dadce0] bg-white text-[#5f6368] hover:bg-[#f8f9fa]'
+                    ? 'border-black/15 bg-[oklch(0.94_0_0)] text-[oklch(0.40_0_0)]'
+                    : 'border-black/10 text-[oklch(0.60_0_0)] hover:border-black/20 hover:text-[oklch(0.40_0_0)]'
               }`}
             >
               {showCompletedTasks && showTasks && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
                 </svg>
               )}
               Completed
             </button>
-          </div>
 
-          <div className="relative shrink-0">
+            <div className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setViewMenuOpen((o) => !o)}
+                className="inline-flex h-8 items-center gap-1 rounded-[6px] border border-black/10 px-[10px] text-[12px] text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
+              >
+                {calendarView === 'month' ? 'Month' : calendarView === 'week' ? 'Week' : 'Day'}
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+              {viewMenuOpen && (
+                <>
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-40 h-full w-full cursor-default bg-transparent"
+                    onClick={() => setViewMenuOpen(false)}
+                    aria-label="Close menu"
+                    tabIndex={-1}
+                  />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-[8px] border border-black/[0.09] bg-white py-1 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.5)] animate-fade-in">
+                    {(['month', 'week', 'day'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setCalendarView(mode)
+                          setViewMenuOpen(false)
+                        }}
+                        className={`block w-full px-3 py-2 text-left text-[13px] transition-colors ${
+                          calendarView === mode
+                            ? 'bg-[oklch(0.97_0_0)] text-[oklch(0.13_0_0)]'
+                            : 'text-[oklch(0.40_0_0)] hover:bg-[oklch(0.98_0_0)]'
+                        }`}
+                      >
+                        {mode === 'month' ? 'Month' : mode === 'week' ? 'Week' : 'Day'}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <button
               type="button"
-              onClick={() => setViewMenuOpen((o) => !o)}
-              className="flex h-10 items-center gap-2 rounded-md border border-[#dadce0] px-3 text-[14px] font-semibold text-[#3c4043] transition-colors hover:bg-[#f1f3f4] focus:outline-none"
+              onClick={() => openNewEvent(null)}
+              className="inline-flex items-center gap-[5px] rounded-[8px] bg-[oklch(0.13_0_0)] px-[14px] py-[7px] text-[13px] text-white transition-[filter] hover:brightness-110"
             >
-              {calendarView === 'month' ? 'Month' : calendarView === 'week' ? 'Week' : 'Day'}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" className="text-[#5f6368]">
-                <path d="M7 10l5 5 5-5z" />
+              <svg className="h-[13px] w-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
               </svg>
+              Create
             </button>
-            {viewMenuOpen && (
-              <>
-                <button
-                  type="button"
-                  className="fixed inset-0 z-40 h-full w-full cursor-default bg-transparent"
-                  onClick={() => setViewMenuOpen(false)}
-                  aria-label="Close menu"
-                  tabIndex={-1}
-                />
-                <div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-[#dadce0] bg-white py-1.5 shadow-lg animate-fade-in">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCalendarView('month')
-                      setViewMenuOpen(false)
-                    }}
-                    className={`block w-full px-4 py-2 text-left text-[14px] font-semibold hover:bg-[#f1f3f4] ${calendarView === 'month' ? 'bg-[#f8f9fa] text-[#1a73e8]' : 'text-[#3c4043]'}`}
-                  >
-                    Month
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCalendarView('week')
-                      setViewMenuOpen(false)
-                    }}
-                    className={`block w-full px-4 py-2 text-left text-[14px] font-semibold hover:bg-[#f1f3f4] ${calendarView === 'week' ? 'bg-[#f8f9fa] text-[#1a73e8]' : 'text-[#3c4043]'}`}
-                  >
-                    Week
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setCalendarView('day')
-                      setViewMenuOpen(false)
-                    }}
-                    className={`block w-full px-4 py-2 text-left text-[14px] font-semibold hover:bg-[#f1f3f4] ${calendarView === 'day' ? 'bg-[#f8f9fa] text-[#1a73e8]' : 'text-[#3c4043]'}`}
-                  >
-                    Day
-                  </button>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </header>
 
-      <div className="mt-2 w-full">
+      <div className="mt-3 w-full">
         {loading ? (
-          <div className="reno-cal reno-cal-gcal min-h-[600px] animate-pulse rounded-lg border border-[#dadce0] bg-[#f8f9fa]" />
+          <div className="reno-cal reno-cal-gcal min-h-[620px] animate-pulse rounded-[8px] border border-black/[0.07] bg-[oklch(0.97_0_0)]" />
         ) : (
           <RenovationFullCalendar
             view={calendarView}

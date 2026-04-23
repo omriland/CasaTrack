@@ -128,13 +128,13 @@ export function RenovationFullCalendarInner({
     }
   }
 
-  const titleSize = compact ? 'text-[11px] font-medium' : 'text-[12px] font-medium'
-  const addressSize = compact ? 'text-[10px] font-normal' : 'text-[11px] font-normal text-[#5f6368]'
+  const titleSize = compact ? 'text-[10px] font-medium' : 'text-[11px] font-medium'
+  const addressSize = compact ? 'text-[9px] font-normal' : 'text-[10px] font-normal text-[#5f6368]'
 
   const monthOpts =
     view === 'month'
       ? { aspectRatio: compact ? 0.92 : 1.42, dayMaxEvents: true as const }
-      : { contentHeight: compact ? (view === 'day' ? 560 : 520) : 720 }
+      : { contentHeight: compact ? (view === 'day' ? 644 : 598) : 828 }
 
   return (
     <div
@@ -180,13 +180,21 @@ export function RenovationFullCalendarInner({
           if (compact) {
             return (
               <div className="flex flex-col items-center gap-0.5 py-1.5">
-                <span className="text-[10px] font-medium tracking-wide text-[#70757a]">{dow}</span>
+                <span
+                  className={
+                    arg.isToday
+                      ? 'text-[10px] font-medium tracking-wide text-[#1a73e8]'
+                      : 'text-[10px] font-medium tracking-wide text-[#70757a]'
+                  }
+                >
+                  {dow}
+                </span>
                 {arg.isToday ? (
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a73e8] text-[15px] font-medium leading-none text-white">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e8f0fe] text-[13px] font-medium leading-none text-[#1a73e8]">
                     {d}
                   </span>
                 ) : (
-                  <span className="py-0.5 text-[15px] font-normal leading-none text-[#3c4043]">
+                  <span className="py-0.5 text-[13px] font-normal leading-none text-[#3c4043]">
                     {d}
                   </span>
                 )}
@@ -195,13 +203,21 @@ export function RenovationFullCalendarInner({
           }
           return (
             <div className="flex flex-col items-center gap-0.5 py-2">
-              <span className="text-[11px] font-medium tracking-wide text-[#70757a]">{dow}</span>
+              <span
+                className={
+                  arg.isToday
+                    ? 'text-[11px] font-medium tracking-wide text-[#1a73e8]'
+                    : 'text-[11px] font-medium tracking-wide text-[#70757a]'
+                }
+              >
+                {dow}
+              </span>
               {arg.isToday ? (
-                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1a73e8] text-[22px] font-normal leading-none text-white">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e8f0fe] text-[18px] font-normal leading-none text-[#1a73e8]">
                   {d}
                 </span>
               ) : (
-                <span className="py-0.5 text-[22px] font-normal leading-none text-[#3c4043]">
+                <span className="py-0.5 text-[18px] font-normal leading-none text-[#3c4043]">
                   {d}
                 </span>
               )}
@@ -215,7 +231,11 @@ export function RenovationFullCalendarInner({
         eventMouseLeave={eventMouseLeave}
         eventChange={handleEventChange}
         dayCellClassNames={arg => (isWeekendFriSat(arg.date) ? 'reno-cal-weekend' : '')}
-        eventClassNames={() => ['reno-cal-event-root']}
+        eventClassNames={arg => {
+          const classes = ['reno-cal-event-root']
+          if (arg.isPast) classes.push('reno-cal-event--past')
+          return classes
+        }}
         dayHeaderClassNames={arg =>
           arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay'
             ? ['reno-cal-gcal-day-header']
@@ -226,7 +246,7 @@ export function RenovationFullCalendarInner({
           if (!ep || typeof ep !== 'object' || (ep.kind !== 'task' && ep.kind !== 'calendar'))
             return true
 
-          const timePrefix = !arg.event.allDay && arg.timeText ? `${arg.timeText} ` : ''
+          const timeText = !arg.event.allDay && arg.timeText ? arg.timeText : ''
           const isWeekTimed =
             (arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay') &&
             !arg.event.allDay &&
@@ -239,9 +259,9 @@ export function RenovationFullCalendarInner({
             return (
               <div
                 dir="auto"
-                className={`flex w-full flex-col items-end justify-start px-1.5 py-0.5 text-right text-white leading-snug ${titleSize}`}
+                className={`flex w-full flex-col items-end justify-start px-1.5 py-0.5 text-right leading-snug ${titleSize}`}
               >
-                <div className="truncate w-full text-right block text-white">{arg.event.title}</div>
+                <div className="truncate w-full text-right block text-current">{arg.event.title}</div>
               </div>
             )
           }
@@ -251,12 +271,16 @@ export function RenovationFullCalendarInner({
           const addr = ev.address?.trim()
 
           return (
-            <div dir="auto" className="flex w-full flex-col items-end justify-start px-1.5 py-0.5 text-right text-white">
-              <div className={`w-full text-right text-white ${titleClass}`}>
-                {timePrefix}
-                {ev.title || arg.event.title}
-              </div>
-              {addr ? <div className={`mt-0.5 w-full text-right text-white opacity-95 truncate ${addressSize}`}>{addr}</div> : null}
+            <div dir="auto" className="flex w-full flex-col items-end justify-start px-1.5 py-0.5 text-right text-current">
+              <div className={`w-full text-right text-current ${titleClass}`}>{ev.title || arg.event.title}</div>
+              {timeText ? (
+                <div
+                  className={`reno-cal-event-time mt-0.5 w-full text-left text-current opacity-90 ${compact ? 'text-[9px]' : 'text-[10px]'}`}
+                >
+                  {timeText}
+                </div>
+              ) : null}
+              {addr ? <div className={`mt-0.5 w-full text-right text-current opacity-90 truncate ${addressSize}`}>{addr}</div> : null}
             </div>
           )
         }}

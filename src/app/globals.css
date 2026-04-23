@@ -483,11 +483,10 @@ input[type=number] {
 }
 
 .reno-cal-gcal.reno-cal {
-  border-radius: 12px;
+  border-radius: 0;
   background: var(--gcal-surface);
-  /* Use a much lighter, modern border and shadow, dropping the chunky one */
-  border: 1px solid var(--gcal-border);
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.05);
+  border: none;
+  box-shadow: none;
 }
 
 .reno-cal-gcal .fc {
@@ -555,9 +554,11 @@ input[type=number] {
 
 /* Time slots axis labels */
 .reno-cal-gcal .fc-timegrid-slot-label {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 0.6875rem;
-  font-weight: 400;
-  color: var(--gcal-text-sec);
+  font-weight: 500;
+  color: #707070;
   vertical-align: top;
   padding-right: 8px;
   border: none !important;
@@ -565,16 +566,18 @@ input[type=number] {
 
 .reno-cal-gcal .fc-timegrid-slot-label-cushion {
   position: relative;
-  top: -12px; /* Pull text up to align with the line exactly */
+  top: 10px; /* Place label toward first half-hour region */
+  font-family: inherit;
+  font-variant-numeric: inherit;
 }
 
 /* Very subtle inner border lines */
 .reno-cal-gcal .fc-timegrid-slot {
-  border-color: #f1f3f4;
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .reno-cal-gcal .fc-timegrid-slot-minor {
-  border-color: transparent;
+  border-color: rgba(0, 0, 0, 0.03);
 }
 
 .reno-cal-gcal .fc-timegrid-divider {
@@ -610,7 +613,7 @@ input[type=number] {
 
 /* Google-Calendar perfectly round day numbers */
 .reno-cal-gcal .fc-daygrid-day-number {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--gcal-text);
   width: 24px;
@@ -630,12 +633,12 @@ input[type=number] {
 }
 
 .reno-cal-gcal .fc-day-today .fc-daygrid-day-number {
-  background-color: var(--gcal-blue);
-  color: #fff;
+  background-color: #e8f0fe;
+  color: var(--gcal-blue);
 }
 
 .reno-cal-gcal .fc-day-today .fc-daygrid-day-number:hover {
-  background-color: var(--gcal-blue-hover);
+  background-color: #dce7fb;
 }
 
 .reno-cal-gcal .fc-day-other .fc-daygrid-day-number {
@@ -662,14 +665,15 @@ input[type=number] {
 /* Events */
 .reno-cal-gcal .fc-event {
   border-radius: 4px;
-  border-width: 0;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   margin: 1px 2px; /* Small gap between events */
-  transition: filter 0.2s, box-shadow 0.2s;
+  transition: background-color 0.12s, transform 0.1s;
+  overflow: hidden;
 }
 
 .reno-cal-gcal .fc-event:hover {
-  filter: brightness(0.95);
-  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.3);
+  filter: brightness(0.97);
+  transform: scale(1.01);
   cursor: pointer;
 }
 
@@ -677,36 +681,50 @@ input[type=number] {
   overflow: hidden;
 }
 
-/* Event color blocks without the left accent in month view, just nice filled blocks like Google Calendar */
+/* Fully passed events appear slightly faded */
+.reno-cal-gcal .fc-event.reno-cal-event--past {
+  opacity: 0.62;
+  filter: saturate(0.85);
+}
+
+/* Event color system (exact design from calendar folder) */
 .reno-cal-gcal .fc-event.reno-cal-event--general {
-  background-color: var(--gcal-blue) !important;
-  color: #ffffff !important;
+  --reno-ev-color: oklch(0.55 0.22 250);
+}
+
+.reno-cal-gcal .fc-event.reno-cal-event--general {
+  background-color: color-mix(in oklch, var(--reno-ev-color) 13%, white) !important;
+  border-color: color-mix(in oklch, var(--reno-ev-color) 35%, white) !important;
+  border-right: 3px solid var(--reno-ev-color) !important;
+  color: color-mix(in oklch, var(--reno-ev-color) 90%, black) !important;
 }
 
 .reno-cal-gcal .fc-event.reno-cal-event--provider {
-  background-color: #9333ea !important;
-  color: #ffffff !important;
+  --reno-ev-color: oklch(0.55 0.20 293);
+  background-color: color-mix(in oklch, var(--reno-ev-color) 13%, white) !important;
+  border-color: color-mix(in oklch, var(--reno-ev-color) 35%, white) !important;
+  border-right: 3px solid var(--reno-ev-color) !important;
+  color: color-mix(in oklch, var(--reno-ev-color) 90%, black) !important;
 }
 
 .reno-cal-gcal .fc-event.reno-cal-event--task {
-  background-color: #137333 !important;
-  color: #ffffff !important;
+  --reno-ev-color: oklch(0.45 0.18 163);
+  background-color: color-mix(in oklch, var(--reno-ev-color) 18%, white) !important;
+  border-color: color-mix(in oklch, var(--reno-ev-color) 30%, white) !important;
+  color: color-mix(in oklch, var(--reno-ev-color) 90%, black) !important;
 }
 
-/* When the event is a timed block (TimeGrid Week view block) */
+/* Timed blocks keep same palette with right color edge */
 .reno-cal-gcal .fc-timegrid-event.reno-cal-event--general {
-  background-color: #4285f4 !important;
-  border: 1px solid white !important; /* Separator lines */
+  border-right: 3px solid oklch(0.55 0.22 250) !important;
 }
 
 .reno-cal-gcal .fc-timegrid-event.reno-cal-event--provider {
-  background-color: #a855f7 !important;
-  border: 1px solid white !important;
+  border-right: 3px solid oklch(0.55 0.20 293) !important;
 }
 
 .reno-cal-gcal .fc-timegrid-event.reno-cal-event--task {
-  background-color: #1e8e3e !important;
-  border: 1px solid white !important;
+  border-right: 3px solid oklch(0.45 0.18 163) !important;
 }
 
 /* The actual text styling inside events */
@@ -718,7 +736,16 @@ input[type=number] {
 
 .reno-cal-gcal .fc-event.reno-cal-event--task .fc-event-main,
 .reno-cal-gcal .fc-event.reno-cal-event--task .fc-event-title {
-  color: #ffffff !important;
+  color: color-mix(in oklch, oklch(0.45 0.18 163) 90%, black) !important;
+}
+
+/* Times: mono stack (matches side axis + event times) */
+.reno-cal-gcal .fc-timegrid-event .fc-event-time,
+.reno-cal-gcal .fc-daygrid-event .fc-event-time,
+.reno-cal-gcal .reno-cal-event-time {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
 
 /* Israeli holidays */
@@ -748,13 +775,33 @@ input[type=number] {
 .reno-cal-gcal .fc-timegrid-now-indicator-line {
   border-color: var(--gcal-now);
   border-width: 2px 0 0;
+  position: relative;
+  z-index: 999;
+  overflow: visible;
+}
+
+.reno-cal-gcal .fc-timegrid-now-indicator-line::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  /* Top border is above the padding edge; nudge up by half border (2px here) to center. */
+  top: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: var(--gcal-now);
+  transform: translateY(calc(-50% - 1px));
+  z-index: 1000;
+  pointer-events: none;
 }
 
 .reno-cal-gcal .fc-timegrid-now-indicator-arrow {
-  border-color: var(--gcal-now);
-  border-width: 5px 0 5px 6px;
-  border-top-color: transparent;
-  border-bottom-color: transparent;
+  display: none;
+}
+
+.reno-cal-gcal .fc-timegrid-now-indicator-container {
+  z-index: 999;
+  overflow: visible;
 }
 
 /* Renovation room notes — TipTap / ProseMirror */
