@@ -756,6 +756,21 @@ export async function createLabel(
   return data as RenovationLabel
 }
 
+export async function updateLabel(
+  id: string,
+  patch: { name?: string; color?: string }
+): Promise<RenovationLabel> {
+  const { data, error } = await supabase
+    .from('renovation_labels')
+    .update(patch)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as RenovationLabel
+}
+
 export async function deleteLabel(id: string): Promise<void> {
   const { error } = await supabase.from('renovation_labels').delete().eq('id', id)
   if (error) throw error

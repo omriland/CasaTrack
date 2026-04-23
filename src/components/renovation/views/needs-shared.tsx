@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useToast } from '@/components/ui/Toast'
 import type { RenovationNeed, RenovationRoom } from '@/types/renovation'
 import { formatNeedsAsCopyList } from './needs-page-shared'
@@ -56,21 +57,29 @@ export function NeedsCopyListButton({
   disabled,
   label,
   className,
+  copiedLabel = 'Copied!',
+  showToast = true,
 }: {
   items: RenovationNeed[]
   rooms: RenovationRoom[]
   disabled: boolean
   label: string
   className?: string
+  copiedLabel?: string
+  /** If false, only inline “Copied!” feedback (for compact headers). */
+  showToast?: boolean
 }) {
   const toast = useToast()
+  const [copied, setCopied] = useState(false)
 
   const copy = async () => {
     const text = formatNeedsAsCopyList(items, rooms)
     if (!text) return
     try {
       await navigator.clipboard.writeText(text)
-      toast.success('List copied')
+      if (showToast) toast.success('List copied')
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
     } catch (e) {
       console.error(e)
       toast.error('Could not copy')
@@ -82,17 +91,29 @@ export function NeedsCopyListButton({
       type="button"
       onClick={() => void copy()}
       disabled={disabled}
-      className={className}
+      className={[
+        className ??
+          'inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px] font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50',
+        copied ? '!border-[oklch(0.13_0_0)] !bg-[oklch(0.13_0_0)] !text-white hover:!bg-[oklch(0.13_0_0)]' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
-      <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-        />
-      </svg>
-      <span>{label}</span>
+      {copied ? (
+        <svg className="h-[13px] w-[13px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 6L9 17l-5-5" />
+        </svg>
+      ) : (
+        <svg className="h-[13px] w-[13px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+      )}
+      <span>{copied ? copiedLabel : label}</span>
     </button>
   )
 }

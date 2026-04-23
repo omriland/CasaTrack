@@ -259,14 +259,16 @@ export function TasksDesktop() {
     )
   }
 
-  const renderCard = (t: RenovationTask, opts?: { draggable?: boolean }) => {
+  const renderCard = (t: RenovationTask, opts?: { draggable?: boolean; hideEpicLabelId?: string }) => {
     const draggable = opts?.draggable !== false
+    const hideLabelId = opts?.hideEpicLabelId
     const isDone = t.status === 'done'
     const dueMeta = t.due_date ? formatTaskDue(t.due_date, { isDone }) : null
     const createdByTitle = t.created_by ? `Created by ${t.created_by.name}` : undefined
     const urgencyBorder = PRIORITY_BORDER[t.urgency] || PRIORITY_BORDER.medium
 
-    const labelChipEls = (t.label_ids || []).map((lid) => {
+    const labelIdsForChips = (t.label_ids || []).filter((lid) => (hideLabelId ? lid !== hideLabelId : true))
+    const labelChipEls = labelIdsForChips.map((lid) => {
       const lb = labels.find((l: RenovationLabel) => l.id === lid)
       return lb ? (
         <span
@@ -528,7 +530,11 @@ export function TasksDesktop() {
             )}
           </h3>
           <div className="flex min-h-0 flex-1 flex-col gap-2">
-            {paneTasks.map((t) => renderCard(t))}
+            {paneTasks.map((t) =>
+              renderCard(t, {
+                hideEpicLabelId: laneLabel?.id,
+              }),
+            )}
             {paneTasks.length === 0 && (
               <div className="rounded-[8px] border border-dashed border-black/10 py-6 text-center text-[12px] text-[oklch(0.60_0_0)]">
                 Drop tasks here

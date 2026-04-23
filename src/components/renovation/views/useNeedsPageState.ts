@@ -32,8 +32,8 @@ export function useNeedsPageState() {
     load()
   }, [load])
 
-  const addItem = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const addItem = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (!project || !newTitle.trim()) return
     setAdding(true)
     try {
