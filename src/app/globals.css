@@ -3,6 +3,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* Tailwind v4 wraps hover: utilities in @media (hover: hover), which checks only the
+   primary input device. On iPadOS the primary device is touch (hover: none) even when
+   a Magic Mouse or trackpad is connected. Overriding the variant to also match
+   any-hover: hover fixes this for all hybrid pointer/touch devices. */
+@custom-variant hover {
+  @media (hover: hover), (any-hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+}
+
 :root {
   /* Apple SF Colors - System Colors */
   --background: oklch(1 0 0); /* Pure white */

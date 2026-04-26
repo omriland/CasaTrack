@@ -9,6 +9,7 @@ import {
   listRooms,
   uploadGalleryPhoto,
   deleteGalleryItems,
+  deleteGalleryTag,
   bulkAddTagToGalleryItems,
   bulkUpdateGalleryItemsRoom,
   createGalleryTag
@@ -43,6 +44,12 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   /** Touch-friendly multi-select (no Cmd/Ctrl on phones). */
   const [mobileSelectMode, setMobileSelectMode] = useState(false)
+  const [createAlbumOpen, setCreateAlbumOpen] = useState(false)
+  const [createAlbumName, setCreateAlbumName] = useState('')
+  const [createAlbumLoading, setCreateAlbumLoading] = useState(false)
+  const [albumCtxMenu, setAlbumCtxMenu] = useState<{ tagId: string; name: string; x: number; y: number } | null>(null)
+  const [albumCtxConfirmDelete, setAlbumCtxConfirmDelete] = useState(false)
+  const [albumCtxDeleting, setAlbumCtxDeleting] = useState(false)
   const confirmAction = useConfirm()
 
   useEffect(() => {
@@ -426,6 +433,51 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     }
   }
 
+  const handleCreateAlbum = async () => {
+    if (!createAlbumName.trim() || !project) return
+    setCreateAlbumLoading(true)
+    try {
+      const created = await createGalleryTag(project.id, createAlbumName.trim())
+      setTags(prev => [...prev, created])
+      setCreateAlbumName('')
+      setCreateAlbumOpen(false)
+      setSelectedAlbumId(created.id)
+    } catch (e) {
+      console.error(e)
+      alert('Failed to create album')
+    } finally {
+      setCreateAlbumLoading(false)
+    }
+  }
+
+  const closeAlbumCtxMenu = () => {
+    setAlbumCtxMenu(null)
+    setAlbumCtxConfirmDelete(false)
+  }
+
+  const handleAlbumContext = (e: React.MouseEvent, tagId: string, name: string, isEmpty: boolean) => {
+    if (!isEmpty) return
+    e.preventDefault()
+    e.stopPropagation()
+    setAlbumCtxConfirmDelete(false)
+    setAlbumCtxMenu({ tagId, name, x: e.clientX, y: e.clientY })
+  }
+
+  const handleAlbumCtxDelete = async () => {
+    if (!albumCtxMenu) return
+    setAlbumCtxDeleting(true)
+    try {
+      await deleteGalleryTag(albumCtxMenu.tagId)
+      setTags(prev => prev.filter(t => t.id !== albumCtxMenu.tagId))
+      closeAlbumCtxMenu()
+    } catch (e) {
+      console.error(e)
+      alert('Failed to delete album')
+    } finally {
+      setAlbumCtxDeleting(false)
+    }
+  }
+
   if (!project) {
     return (
       <p className="text-center text-black/45 py-16">
@@ -751,10 +803,12 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {groupedItems.map(group => {
                 const cover = group.items[0]
+                const isEmpty = group.items.length === 0
                 return (
                   <div
                     key={group.tagId || 'untagged'}
                     onClick={() => setSelectedAlbumId(group.tagId || 'untagged')}
+                    onContextMenu={group.tagId ? (e) => handleAlbumContext(e, group.tagId!, group.name, isEmpty) : undefined}
                     className="cursor-pointer group relative aspect-square rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-slate-100 shadow-sm border border-slate-200/50 hover:shadow-md transition-all active:scale-[0.98]"
                   >
                     {cover ? (
@@ -775,6 +829,17 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
               {groupedItems.length === 0 && (
                 <p className="text-slate-400 py-4 col-span-full">No albums match your filters.</p>
               )}
+              <div
+                onClick={() => setCreateAlbumOpen(true)}
+                className="cursor-pointer group relative aspect-square rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-white border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 transition-all active:scale-[0.98] flex flex-col items-center justify-center gap-3"
+              >
+                <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-indigo-100 flex items-center justify-center transition-colors">
+                  <svg className="w-6 h-6 text-slate-400 group-hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <span className="text-[13px] font-bold text-slate-400 group-hover:text-indigo-500 transition-colors">New Album</span>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -911,6 +976,106 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             </svg>
           </button>
         </div>
+      )}
+
+      {/* Create Album Modal */}
+      {createAlbumOpen && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
+          onClick={() => !createAlbumLoading && setCreateAlbumOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-white rounded-2xl shadow-xl flex flex-col p-6 animate-zoom-in"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-900">New Album</h3>
+            <p className="text-[13px] text-slate-500 mt-1 mb-5">Albums are photo labels — photos tagged with this label will appear here.</p>
+            <input
+              type="text"
+              placeholder="Album name..."
+              value={createAlbumName}
+              onChange={e => setCreateAlbumName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && createAlbumName.trim() && !createAlbumLoading) {
+                  e.preventDefault()
+                  handleCreateAlbum()
+                }
+              }}
+              autoFocus
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-[15px] outline-none focus:border-indigo-500 transition-colors mb-5"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setCreateAlbumOpen(false)}
+                disabled={createAlbumLoading}
+                className="px-4 py-2 rounded-xl font-bold text-slate-400 hover:text-slate-700 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateAlbum}
+                disabled={!createAlbumName.trim() || createAlbumLoading}
+                className="px-5 py-2 bg-indigo-600 text-white text-[14px] font-bold rounded-xl disabled:opacity-50 hover:bg-indigo-700 transition-colors active:scale-95"
+              >
+                {createAlbumLoading ? 'Creating…' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Album Context Menu */}
+      {albumCtxMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-[300]"
+            onClick={closeAlbumCtxMenu}
+            onContextMenu={(e) => { e.preventDefault(); closeAlbumCtxMenu() }}
+          />
+          <div
+            className={`fixed z-[310] animate-fade-in border border-slate-200/80 bg-white/98 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl ${mobile ? 'min-w-[200px] rounded-2xl p-1.5' : 'min-w-[180px] rounded-lg p-1'}`}
+            style={mobile
+              ? { left: Math.min(albumCtxMenu.x, window.innerWidth - 220), top: Math.min(albumCtxMenu.y, window.innerHeight - 150) }
+              : { left: albumCtxMenu.x, top: albumCtxMenu.y }
+            }
+          >
+            {albumCtxConfirmDelete ? (
+              <div className={`flex flex-col gap-1 ${mobile ? 'p-1.5 gap-1.5' : 'p-1'}`}>
+                <p className={`px-2 py-1 font-semibold text-slate-500 ${mobile ? 'text-[13px]' : 'text-[12px]'}`}>
+                  Delete &ldquo;{albumCtxMenu.name}&rdquo;?
+                </p>
+                <div className={`flex ${mobile ? 'gap-2' : 'gap-1.5'}`}>
+                  <button
+                    type="button"
+                    onClick={handleAlbumCtxDelete}
+                    disabled={albumCtxDeleting}
+                    className={`flex-1 font-bold text-white bg-rose-600 transition-colors disabled:opacity-50 ${mobile ? 'rounded-xl px-3 py-2.5 text-[15px] active:bg-rose-700' : 'rounded-md px-3 py-1.5 text-[13px] hover:bg-rose-700'}`}
+                  >
+                    {albumCtxDeleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAlbumCtxConfirmDelete(false)}
+                    className={`flex-1 font-semibold text-slate-600 transition-colors ${mobile ? 'rounded-xl px-3 py-2.5 text-[15px] active:bg-slate-100' : 'rounded-md px-3 py-1.5 text-[13px] hover:bg-slate-100'}`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAlbumCtxConfirmDelete(true)}
+                className={`flex w-full items-center text-left font-medium text-rose-600 transition-colors ${mobile ? 'gap-3 rounded-xl px-3.5 py-3 text-[15px] active:bg-rose-50' : 'gap-2.5 rounded-md px-3 py-2 text-[13px] hover:bg-rose-50'}`}
+              >
+                <svg className={mobile ? 'h-5 w-5' : 'w-4 h-4'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete album
+              </button>
+            )}
+          </div>
+        </>
       )}
 
       {/* Bulk Tag Modal */}
