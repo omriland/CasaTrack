@@ -9,6 +9,7 @@ import {
   listRooms,
   uploadGalleryPhoto,
   deleteGalleryItems,
+  deleteGalleryTag,
   bulkAddTagToGalleryItems,
   bulkUpdateGalleryItemsRoom,
   createGalleryTag
@@ -46,6 +47,9 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
   const [createAlbumOpen, setCreateAlbumOpen] = useState(false)
   const [createAlbumName, setCreateAlbumName] = useState('')
   const [createAlbumLoading, setCreateAlbumLoading] = useState(false)
+  const [albumCtxMenu, setAlbumCtxMenu] = useState<{ tagId: string; name: string; x: number; y: number } | null>(null)
+  const [albumCtxConfirmDelete, setAlbumCtxConfirmDelete] = useState(false)
+  const [albumCtxDeleting, setAlbumCtxDeleting] = useState(false)
   const confirmAction = useConfirm()
 
   useEffect(() => {
@@ -446,6 +450,34 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
     }
   }
 
+  const closeAlbumCtxMenu = () => {
+    setAlbumCtxMenu(null)
+    setAlbumCtxConfirmDelete(false)
+  }
+
+  const handleAlbumContext = (e: React.MouseEvent, tagId: string, name: string, isEmpty: boolean) => {
+    if (!isEmpty) return
+    e.preventDefault()
+    e.stopPropagation()
+    setAlbumCtxConfirmDelete(false)
+    setAlbumCtxMenu({ tagId, name, x: e.clientX, y: e.clientY })
+  }
+
+  const handleAlbumCtxDelete = async () => {
+    if (!albumCtxMenu) return
+    setAlbumCtxDeleting(true)
+    try {
+      await deleteGalleryTag(albumCtxMenu.tagId)
+      setTags(prev => prev.filter(t => t.id !== albumCtxMenu.tagId))
+      closeAlbumCtxMenu()
+    } catch (e) {
+      console.error(e)
+      alert('Failed to delete album')
+    } finally {
+      setAlbumCtxDeleting(false)
+    }
+  }
+
   if (!project) {
     return (
       <p className="text-center text-black/45 py-16">
@@ -771,10 +803,12 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {groupedItems.map(group => {
                 const cover = group.items[0]
+                const isEmpty = group.items.length === 0
                 return (
                   <div
                     key={group.tagId || 'untagged'}
                     onClick={() => setSelectedAlbumId(group.tagId || 'untagged')}
+                    onContextMenu={group.tagId ? (e) => handleAlbumContext(e, group.tagId!, group.name, isEmpty) : undefined}
                     className="cursor-pointer group relative aspect-square rounded-[1.5rem] md:rounded-[2rem] overflow-hidden bg-slate-100 shadow-sm border border-slate-200/50 hover:shadow-md transition-all active:scale-[0.98]"
                   >
                     {cover ? (
@@ -988,6 +1022,60 @@ export function GalleryBody({ mobile }: { mobile: boolean }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Album Context Menu */}
+      {albumCtxMenu && (
+        <>
+          <div
+            className="fixed inset-0 z-[300]"
+            onClick={closeAlbumCtxMenu}
+            onContextMenu={(e) => { e.preventDefault(); closeAlbumCtxMenu() }}
+          />
+          <div
+            className={`fixed z-[310] animate-fade-in border border-slate-200/80 bg-white/98 shadow-[0_10px_40px_-10px_rgba(9,30,66,0.25)] ring-1 ring-black/[0.04] backdrop-blur-xl ${mobile ? 'min-w-[200px] rounded-2xl p-1.5' : 'min-w-[180px] rounded-lg p-1'}`}
+            style={mobile
+              ? { left: Math.min(albumCtxMenu.x, window.innerWidth - 220), top: Math.min(albumCtxMenu.y, window.innerHeight - 150) }
+              : { left: albumCtxMenu.x, top: albumCtxMenu.y }
+            }
+          >
+            {albumCtxConfirmDelete ? (
+              <div className={`flex flex-col gap-1 ${mobile ? 'p-1.5 gap-1.5' : 'p-1'}`}>
+                <p className={`px-2 py-1 font-semibold text-slate-500 ${mobile ? 'text-[13px]' : 'text-[12px]'}`}>
+                  Delete &ldquo;{albumCtxMenu.name}&rdquo;?
+                </p>
+                <div className={`flex ${mobile ? 'gap-2' : 'gap-1.5'}`}>
+                  <button
+                    type="button"
+                    onClick={handleAlbumCtxDelete}
+                    disabled={albumCtxDeleting}
+                    className={`flex-1 font-bold text-white bg-rose-600 transition-colors disabled:opacity-50 ${mobile ? 'rounded-xl px-3 py-2.5 text-[15px] active:bg-rose-700' : 'rounded-md px-3 py-1.5 text-[13px] hover:bg-rose-700'}`}
+                  >
+                    {albumCtxDeleting ? 'Deleting…' : 'Delete'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAlbumCtxConfirmDelete(false)}
+                    className={`flex-1 font-semibold text-slate-600 transition-colors ${mobile ? 'rounded-xl px-3 py-2.5 text-[15px] active:bg-slate-100' : 'rounded-md px-3 py-1.5 text-[13px] hover:bg-slate-100'}`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAlbumCtxConfirmDelete(true)}
+                className={`flex w-full items-center text-left font-medium text-rose-600 transition-colors ${mobile ? 'gap-3 rounded-xl px-3.5 py-3 text-[15px] active:bg-rose-50' : 'gap-2.5 rounded-md px-3 py-2 text-[13px] hover:bg-rose-50'}`}
+              >
+                <svg className={mobile ? 'h-5 w-5' : 'w-4 h-4'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete album
+              </button>
+            )}
+          </div>
+        </>
       )}
 
       {/* Bulk Tag Modal */}
