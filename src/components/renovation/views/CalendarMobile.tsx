@@ -1,7 +1,7 @@
 'use client'
 
 import { addDays, addMonths, format, subDays, subMonths } from 'date-fns'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
 import { RenovationFullCalendar } from '@/components/renovation/RenovationFullCalendar'
@@ -9,7 +9,13 @@ import { calendarEventOnLocalDay, taskDueOnLocalDay } from '@/components/renovat
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
 import { listLabels, listRooms, listTeamMembers } from '@/lib/renovation'
-import type { RenovationLabel, RenovationRoom, RenovationTeamMember } from '@/types/renovation'
+import type {
+  RenovationCalendarEvent,
+  RenovationLabel,
+  RenovationRoom,
+  RenovationTask,
+  RenovationTeamMember,
+} from '@/types/renovation'
 import { useCalendarPageState } from './useCalendarPageState'
 
 export function CalendarMobile() {
@@ -47,6 +53,28 @@ export function CalendarMobile() {
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  /** Avoid opening the day sheet when a calendar `eventClick` also triggers `dateClick`. */
+  const suppressNextDateClickRef = useRef(false)
+
+  const handleCalendarEditEvent = (ev: RenovationCalendarEvent) => {
+    suppressNextDateClickRef.current = true
+    openEditEvent(ev)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        suppressNextDateClickRef.current = false
+      })
+    })
+  }
+
+  const handleCalendarEditTask = (t: RenovationTask) => {
+    suppressNextDateClickRef.current = true
+    openEditTask(t)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        suppressNextDateClickRef.current = false
+      })
+    })
+  }
 
   /** Week view is desktop-only; fall back to month on mobile. */
   useEffect(() => {
@@ -203,12 +231,13 @@ export function CalendarMobile() {
             tasks={tasks}
             showTasks={showTasks}
             compact
-            onDateClick={k => {
+            onDateClick={(k) => {
+              if (suppressNextDateClickRef.current) return
               setSheetKey(k)
               setSheetOpen(true)
             }}
-            onEditEvent={openEditEvent}
-            onEditTask={openEditTask}
+            onEditEvent={handleCalendarEditEvent}
+            onEditTask={handleCalendarEditTask}
             onCreateTimedRange={openNewEventTimed}
             onCreateForDay={dayKey => openNewEvent(dayKey)}
             onEventUpdated={() => load()}

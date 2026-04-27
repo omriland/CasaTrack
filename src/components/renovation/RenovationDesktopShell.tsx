@@ -69,6 +69,10 @@ export function RenovationDesktopShell({ children }: { children: ReactNode }) {
 
   const sidebarW = collapsed ? SIDEBAR_W_COLLAPSED : SIDEBAR_W
 
+  if (pathname === '/renovation/tasks/print') {
+    return <div className="reno-app min-h-screen bg-white text-slate-900">{children}</div>
+  }
+
   return (
     <div
       className="reno-app min-h-screen bg-[oklch(0.995_0_0)] text-slate-900 flex transition-[padding-left] duration-[220ms] ease-[cubic-bezier(0.16,1,0.3,1)]"

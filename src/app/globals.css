@@ -787,12 +787,21 @@ input[type=number] {
   margin-top: 0px !important;
 }
 
-/* Time marker (the red line of current time) */
+/*
+ * Now indicator: FullCalendar stacks .fc-timegrid-col-events at z-index 3.
+ * Raising .fc-timegrid-now-indicator-container above that (as we did before)
+ * made the full-column overlay steal every click/hover from timed events.
+ * Keep default stacking and never intercept pointer events on this layer.
+ */
+.reno-cal-gcal .fc-timegrid-now-indicator-container {
+  pointer-events: none;
+  overflow: visible;
+}
+
 .reno-cal-gcal .fc-timegrid-now-indicator-line {
   border-color: var(--gcal-now);
   border-width: 2px 0 0;
-  position: relative;
-  z-index: 999;
+  pointer-events: none;
   overflow: visible;
 }
 
@@ -807,17 +816,11 @@ input[type=number] {
   border-radius: 9999px;
   background: var(--gcal-now);
   transform: translateY(calc(-50% - 1px));
-  z-index: 1000;
   pointer-events: none;
 }
 
 .reno-cal-gcal .fc-timegrid-now-indicator-arrow {
   display: none;
-}
-
-.reno-cal-gcal .fc-timegrid-now-indicator-container {
-  z-index: 999;
-  overflow: visible;
 }
 
 /* Renovation room notes — TipTap / ProseMirror */

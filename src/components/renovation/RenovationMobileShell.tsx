@@ -33,6 +33,14 @@ export function RenovationMobileShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { project, activeProfile, teamMembers, openProfilePicker } = useRenovation()
 
+  if (pathname === '/renovation/tasks/print') {
+    return (
+      <div className="reno-app min-h-dvh min-h-0 w-full overflow-y-auto bg-white text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
+        {children}
+      </div>
+    )
+  }
+
   return (
     <div className="reno-app flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-[#f5f6f8] text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
       {/*

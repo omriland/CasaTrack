@@ -1,7 +1,7 @@
 'use client'
 
 import { addDays, addMonths, addWeeks, format, startOfWeek, subDays, subMonths, subWeeks } from 'date-fns'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarEventDetailDrawer } from '@/components/renovation/CalendarEventDetailDrawer'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
@@ -59,6 +59,18 @@ export function CalendarDesktop() {
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  /** FullCalendar can fire `dateClick` after `eventClick`; skip selecting that day when opening an event. */
+  const suppressNextDateClickRef = useRef(false)
+
+  const handleCalendarEditEvent = (ev: RenovationCalendarEvent) => {
+    suppressNextDateClickRef.current = true
+    openEditEvent(ev)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        suppressNextDateClickRef.current = false
+      })
+    })
+  }
 
   const loadMeta = useCallback(async () => {
     if (!project) return
@@ -288,9 +300,20 @@ export function CalendarDesktop() {
             events={events}
             tasks={tasks}
             showTasks={showTasks}
-            onDateClick={k => setSelectedKey(k)}
-            onEditEvent={openEditEvent}
-            onEditTask={openEditTask}
+            onDateClick={(k) => {
+              if (suppressNextDateClickRef.current) return
+              setSelectedKey(k)
+            }}
+            onEditEvent={handleCalendarEditEvent}
+            onEditTask={(t) => {
+              suppressNextDateClickRef.current = true
+              openEditTask(t)
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  suppressNextDateClickRef.current = false
+                })
+              })
+            }}
             onCreateTimedRange={openNewEventTimed}
             onCreateForDay={dayKey => openNewEvent(dayKey)}
             onEventUpdated={() => load()}

@@ -1,0 +1,25 @@
+/* Screen: toolbar; print: hidden */
+.reno-tasks-print-toolbar {
+  display: flex;
+}
+
+@media print {
+  .reno-tasks-print-toolbar {
+    display: none !important;
+  }
+
+  .reno-tasks-print-root {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .reno-tasks-print-task {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* First page = unassigned only when that section has content */
+  .reno-tasks-print-section-unassigned:not(:empty) {
+    page-break-after: always;
+  }
+}

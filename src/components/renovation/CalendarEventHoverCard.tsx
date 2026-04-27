@@ -1,7 +1,6 @@
 'use client'
 
-import type { EventApi } from '@fullcalendar/core'
-import type { EventClickArg } from '@fullcalendar/core'
+import type { EventApi, EventMountArg } from '@fullcalendar/core'
 import { addDays, format, isSameDay } from 'date-fns'
 import { AlignLeft, CalendarDays, Clock, MapPin, User } from 'lucide-react'
 import {
@@ -56,26 +55,38 @@ function formatWhenFromApi(event: EventApi): string {
   return `${format(start, `${dayPart} · HH:mm`)} – ${format(end, `${dayPart} · HH:mm`)}`
 }
 
-function buildHoverModel(event: EventApi): CalendarHoverModel | null {
+function buildHoverModel(
+  event: EventApi,
+  eventRows: RenovationCalendarEvent[],
+  taskRows: RenovationTask[],
+): CalendarHoverModel | null {
   const ep = event.extendedProps as Record<string, unknown>
+  const rawId = String(event.id ?? '')
+
   if (!ep || typeof ep !== 'object') return null
+
   if (ep.kind === 'holiday') {
     return { kind: 'holiday', title: event.title || 'Holiday', when: formatWhenFromApi(event) }
   }
-  if (ep.kind === 'task' && ep.task && typeof ep.task === 'object') {
-    return {
-      kind: 'task',
-      task: ep.task as RenovationTask,
-      when: formatWhenFromApi(event),
-    }
+
+  if (ep.kind === 'task') {
+    const task =
+      ep.task && typeof ep.task === 'object'
+        ? (ep.task as RenovationTask)
+        : taskRows.find((t) => `task-${t.id}` === rawId || t.id === rawId)
+    if (!task) return null
+    return { kind: 'task', task, when: formatWhenFromApi(event) }
   }
-  if (ep.kind === 'calendar' && ep.event && typeof ep.event === 'object') {
-    return {
-      kind: 'calendar',
-      ev: ep.event as RenovationCalendarEvent,
-      when: formatWhenFromApi(event),
-    }
+
+  if (ep.kind === 'calendar') {
+    const ev =
+      ep.event && typeof ep.event === 'object'
+        ? (ep.event as RenovationCalendarEvent)
+        : eventRows.find((e) => e.id === rawId)
+    if (!ev) return null
+    return { kind: 'calendar', ev, when: formatWhenFromApi(event) }
   }
+
   return null
 }
 
@@ -99,7 +110,7 @@ function computeHoverStyle(rect: DOMRect): CSSProperties {
   const gap = 6
   const left = Math.max(
     margin,
-    Math.min(rect.left + rect.width / 2 - CARD_W / 2, window.innerWidth - CARD_W - margin)
+    Math.min(rect.left + rect.width / 2 - CARD_W / 2, window.innerWidth - CARD_W - margin),
   )
   const spaceBelow = window.innerHeight - margin - rect.bottom
   const spaceAbove = rect.top - margin
@@ -181,14 +192,14 @@ function HoverCardBody({ model }: { model: CalendarHoverModel }) {
         'overflow-hidden rounded-xl border border-[#dadce0] bg-white shadow-lg',
         'animate-in fade-in zoom-in-95 duration-150',
         'border-l-4 pl-3 pr-3.5 py-3',
-        accentClass(model)
+        accentClass(model),
       )}
     >
       <div className="mb-2 flex items-center gap-2">
         <span
           className={cn(
             'inline-flex max-w-full items-center rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide',
-            badge.className
+            badge.className,
           )}
         >
           {badge.label}
@@ -232,13 +243,27 @@ function HoverCardBody({ model }: { model: CalendarHoverModel }) {
 
 type HoverState = { rect: DOMRect; model: CalendarHoverModel }
 
-export function useCalendarEventHover(): {
-  eventMouseEnter: (info: EventClickArg) => void
-  eventMouseLeave: (info: EventClickArg) => void
+/**
+ * FullCalendar's `eventMouseEnter` / `eventMouseLeave` do not reliably run when `eventContent`
+ * uses the React custom-rendering path (portals). We attach native listeners on `eventDidMount`
+ * to the real `.fc-event` root instead.
+ */
+export function useCalendarEventHover(
+  events: RenovationCalendarEvent[],
+  tasks: RenovationTask[],
+): {
+  eventDidMount: (info: EventMountArg) => void
+  eventWillUnmount: (info: EventMountArg) => void
   hoverPortal: ReactNode
 } {
   const [state, setState] = useState<HoverState | null>(null)
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const eventsRef = useRef(events)
+  const tasksRef = useRef(tasks)
+  const listenerCleanupRef = useRef(new WeakMap<HTMLElement, () => void>())
+
+  eventsRef.current = events
+  tasksRef.current = tasks
 
   const clearHide = useCallback(() => {
     if (hideTimer.current) {
@@ -252,19 +277,32 @@ export function useCalendarEventHover(): {
     hideTimer.current = setTimeout(() => setState(null), HIDE_DELAY_MS)
   }, [clearHide])
 
-  const eventMouseEnter = useCallback(
-    (info: EventClickArg) => {
-      clearHide()
-      const model = buildHoverModel(info.event)
-      if (!model) return
-      setState({ rect: getEventAnchorRect(info.el as HTMLElement), model })
+  const eventDidMount = useCallback(
+    (info: EventMountArg) => {
+      const el = info.el
+      const onEnter = () => {
+        clearHide()
+        const model = buildHoverModel(info.event, eventsRef.current, tasksRef.current)
+        if (!model) return
+        setState({ rect: getEventAnchorRect(el), model })
+      }
+      const onLeave = () => scheduleHide()
+      el.addEventListener('mouseenter', onEnter)
+      el.addEventListener('mouseleave', onLeave)
+      const cleanup = () => {
+        el.removeEventListener('mouseenter', onEnter)
+        el.removeEventListener('mouseleave', onLeave)
+      }
+      listenerCleanupRef.current.set(el, cleanup)
     },
-    [clearHide]
+    [clearHide, scheduleHide],
   )
 
-  const eventMouseLeave = useCallback(() => {
-    scheduleHide()
-  }, [scheduleHide])
+  const eventWillUnmount = useCallback((info: EventMountArg) => {
+    const c = listenerCleanupRef.current.get(info.el)
+    c?.()
+    listenerCleanupRef.current.delete(info.el)
+  }, [])
 
   useEffect(() => () => clearHide(), [clearHide])
 
@@ -294,9 +332,9 @@ export function useCalendarEventHover(): {
           >
             <HoverCardBody model={state.model} />
           </div>,
-          document.body
+          document.body,
         )
       : null
 
-  return { eventMouseEnter, eventMouseLeave, hoverPortal }
+  return { eventDidMount, eventWillUnmount, hoverPortal }
 }

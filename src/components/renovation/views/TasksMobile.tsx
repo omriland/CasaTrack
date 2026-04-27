@@ -1,6 +1,8 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
+import { Printer } from 'lucide-react'
 import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
@@ -183,6 +185,13 @@ export function TasksMobile() {
                 </svg>
               </button>
             )}
+            <Link
+              href="/renovation/tasks/print"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors active:bg-slate-100"
+              aria-label="Export PDF"
+            >
+              <Printer className="h-4 w-4" strokeWidth={2} />
+            </Link>
             {/* Add button */}
             <button
               type="button"

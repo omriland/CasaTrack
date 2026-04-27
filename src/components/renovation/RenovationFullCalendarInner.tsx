@@ -65,7 +65,7 @@ export function RenovationFullCalendarInner({
   onEventUpdated,
 }: RenovationFullCalendarInnerProps) {
   const ref = useRef<FullCalendarReactSafe>(null)
-  const { eventMouseEnter, eventMouseLeave, hoverPortal } = useCalendarEventHover()
+  const { eventDidMount, eventWillUnmount, hoverPortal } = useCalendarEventHover(events, tasks)
 
   const fcEvents = useMemo(
     () => buildFullCalendarEventInputs(events, tasks, showTasks),
@@ -85,6 +85,11 @@ export function RenovationFullCalendarInner({
   }, [cursor, view])
 
   const handleSelect = (info: DateSelectArg) => {
+    const t = info.jsEvent?.target
+    if (t instanceof Element && t.closest?.('.fc-event')) {
+      ref.current?.getApi().unselect()
+      return
+    }
     ref.current?.getApi().unselect()
     if (!info.allDay && String(info.view.type).includes('timeGrid')) {
       onCreateTimedRange(info.start.toISOString(), info.end.toISOString())
@@ -99,13 +104,35 @@ export function RenovationFullCalendarInner({
 
   const handleEventClick = (info: EventClickArg) => {
     const ep = info.event.extendedProps as Record<string, unknown>
-    if (!ep || typeof ep !== 'object' || (ep.kind !== 'task' && ep.kind !== 'calendar')) return
-    if (ep.kind === 'task' && ep.task && typeof ep.task === 'object') {
-      onEditTask(ep.task as RenovationTask)
+    const rawId = String(info.event.id ?? '')
+
+    if (ep && typeof ep === 'object' && ep.kind === 'holiday') return
+
+    if (ep && typeof ep === 'object' && ep.kind === 'task') {
+      const embedded =
+        ep.task && typeof ep.task === 'object' ? (ep.task as RenovationTask) : undefined
+      const resolved =
+        embedded ??
+        tasks.find((t) => `task-${t.id}` === rawId || t.id === rawId)
+      if (resolved) {
+        info.jsEvent.preventDefault()
+        info.jsEvent.stopPropagation()
+        onEditTask(resolved)
+      }
       return
     }
-    if (ep.kind === 'calendar' && ep.event && typeof ep.event === 'object') {
-      onEditEvent(ep.event as RenovationCalendarEvent)
+
+    if (ep && typeof ep === 'object' && ep.kind === 'calendar') {
+      const embedded =
+        ep.event && typeof ep.event === 'object'
+          ? (ep.event as RenovationCalendarEvent)
+          : undefined
+      const resolved = embedded ?? events.find((e) => e.id === rawId)
+      if (resolved) {
+        info.jsEvent.preventDefault()
+        info.jsEvent.stopPropagation()
+        onEditEvent(resolved)
+      }
     }
   }
 
@@ -227,8 +254,8 @@ export function RenovationFullCalendarInner({
         select={handleSelect}
         dateClick={handleDateClick}
         eventClick={handleEventClick}
-        eventMouseEnter={eventMouseEnter}
-        eventMouseLeave={eventMouseLeave}
+        eventDidMount={eventDidMount}
+        eventWillUnmount={eventWillUnmount}
         eventChange={handleEventChange}
         dayCellClassNames={arg => (isWeekendFriSat(arg.date) ? 'reno-cal-weekend' : '')}
         eventClassNames={arg => {

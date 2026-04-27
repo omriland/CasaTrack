@@ -1,7 +1,9 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useRef, useMemo, useEffect, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { Printer } from 'lucide-react'
 import { TaskModal, PRIORITY_ICONS } from '@/components/renovation/TaskModal'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { useRenovation } from '@/components/renovation/RenovationContext'
@@ -563,16 +565,25 @@ export function TasksDesktop() {
           <h1 className="text-[22px] tracking-[-0.02em] text-[oklch(0.13_0_0)] font-[family-name:var(--font-varela-round)]">
             Tasks
           </h1>
-          <button
-            type="button"
-            onClick={() => setTaskModalOpen(true)}
-            className="inline-flex items-center gap-1 rounded-[8px] bg-[oklch(0.13_0_0)] px-[14px] py-[7px] text-[13px] tracking-[-0.01em] text-white transition-[filter] duration-150 hover:brightness-110"
-          >
-            <svg className="h-[13px] w-[13px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add task
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/renovation/tasks/print"
+              className="inline-flex items-center gap-1.5 rounded-[8px] border border-black/10 bg-white px-[12px] py-[7px] text-[13px] tracking-[-0.01em] text-[oklch(0.40_0_0)] transition-[filter,background] duration-150 hover:bg-[oklch(0.98_0_0)]"
+            >
+              <Printer className="h-3.5 w-3.5" strokeWidth={2} />
+              Export PDF
+            </Link>
+            <button
+              type="button"
+              onClick={() => setTaskModalOpen(true)}
+              className="inline-flex items-center gap-1 rounded-[8px] bg-[oklch(0.13_0_0)] px-[14px] py-[7px] text-[13px] tracking-[-0.01em] text-white transition-[filter] duration-150 hover:brightness-110"
+            >
+              <svg className="h-[13px] w-[13px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add task
+            </button>
+          </div>
         </div>
 
         <div className="flex items-end justify-between gap-3">
