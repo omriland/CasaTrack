@@ -108,17 +108,17 @@ function renderEventContent(arg: EventContentArg) {
   if (isMonth) {
     if (isAllDay) {
       return (
-        <div className="reno-ev-chip reno-ev-chip--month-allday" dir="auto" title={title}>
-          <span className="reno-ev-chip__title">{title}</span>
+        <div className="reno-ev-chip reno-ev-chip--month-allday" title={title}>
+          <span className="reno-ev-chip__title" dir="auto">{title}</span>
         </div>
       )
     }
     const timeStr = start ? format(start, 'HH:mm') : ''
     return (
-      <div className="reno-ev-chip reno-ev-chip--month" dir="auto" title={title}>
+      <div className="reno-ev-chip reno-ev-chip--month" title={title}>
         <span className="reno-ev-chip__dot" aria-hidden />
         {timeStr && <span className="reno-ev-chip__time">{timeStr}</span>}
-        <span className="reno-ev-chip__title">{title}</span>
+        <span className="reno-ev-chip__title" dir="auto">{title}</span>
       </div>
     )
   }

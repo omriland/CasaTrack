@@ -720,6 +720,12 @@ input[type=number] {
 }
 .reno-cal .reno-ev-chip {
   font-family: inherit;
+  /* Lock chip direction to LTR so `align-items: flex-end`,
+   * `text-align: right`, and `flex-direction: row-reverse` always render
+   * to the **physical** right edge regardless of the title's language.
+   * Per-leaf `dir="auto"` is applied to the title and address text nodes
+   * so Hebrew strings still read right-to-left within their span. */
+  direction: ltr;
 }
 .reno-cal .reno-ev-chip--time {
   position: relative;
@@ -769,6 +775,8 @@ input[type=number] {
   white-space: nowrap;
   unicode-bidi: plaintext;
   letter-spacing: -0.005em;
+  width: 100%;
+  text-align: right;
 }
 .reno-cal .reno-ev-chip__time {
   font-size: 11px;
@@ -776,13 +784,16 @@ input[type=number] {
   font-variant-numeric: tabular-nums;
   opacity: 0.92;
   letter-spacing: 0.01em;
+  width: 100%;
+  text-align: right;
 }
 .reno-cal .reno-ev-chip__loc {
   font-size: 11px;
   opacity: 0.92;
-  max-width: 100%;
+  width: 100%;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   flex-direction: row-reverse;
   gap: 4px;
   unicode-bidi: plaintext;
