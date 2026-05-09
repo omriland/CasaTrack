@@ -485,343 +485,568 @@ input[type=number] {
   }
 }
 
-/* Renovation calendar — Google Calendar–inspired shell (typeface matches property hunt: Varela Round) */
-.reno-cal-gcal {
+/* ─────────────────────────────────────────────────────────────────────────
+ * Renovation calendar — FullCalendar v6 with Google-Calendar styling.
+ * Variables, day-headers, time grid, events, weekend tint, RTL.
+ * ───────────────────────────────────────────────────────────────────────── */
+.reno-cal {
   font-family: var(--font-varela-round), 'Varela Round', ui-sans-serif, system-ui, sans-serif;
-  --gcal-border: #dadce0;
-  --gcal-text: #3c4043;
-  --gcal-text-sec: #70757a;
-  --gcal-blue: #1a73e8;
-  --gcal-blue-hover: #1557b0;
-  --gcal-surface: #ffffff;
-  --gcal-surface-muted: #f8f9fa;
-  --gcal-now: #ea4335;
+  --reno-border: #e3e5e8;
+  --reno-text: #202124;
+  --reno-text-sec: #5f6368;
+  --reno-text-mute: #80868b;
+  --reno-primary: #4f46e5;
+  --reno-primary-hover: #4338ca;
+  --reno-surface: #ffffff;
+  --reno-surface-muted: #f8f9fa;
+  --reno-surface-hover: #f1f3f4;
+  --reno-now: #ea4335;
+  --reno-radius: 10px;
+
+  /* Per-kind palette — bumped to brighter, more saturated hues so chips pop
+   * against the white grid while still passing AA on white text. */
+  --reno-color-general: #6366f1;       /* indigo-500 */
+  --reno-color-provider: #a855f7;      /* purple-500 */
+  --reno-color-task: #f59e0b;          /* amber-500 */
+  --reno-color-holiday: #22c55e;       /* emerald-500 */
+
+  border: 1px solid var(--reno-border);
+  border-radius: var(--reno-radius);
+  overflow: hidden;
+  background: var(--reno-surface);
+  color: var(--reno-text);
 }
 
-.reno-cal-gcal.reno-cal {
-  border-radius: 0;
-  background: var(--gcal-surface);
-  border: none;
-  box-shadow: none;
-}
+/* ── FullCalendar variable overrides ────────────────────────────────────── */
+.reno-cal .fc {
+  /* Surface */
+  --fc-page-bg-color: var(--reno-surface);
+  --fc-neutral-bg-color: var(--reno-surface-muted);
+  --fc-neutral-text-color: var(--reno-text-sec);
+  --fc-border-color: var(--reno-border);
+  --fc-today-bg-color: rgba(79, 70, 229, 0.04);
+  --fc-now-indicator-color: var(--reno-now);
+  --fc-event-border-color: transparent;
+  --fc-list-event-hover-bg-color: var(--reno-surface-hover);
+  --fc-highlight-color: rgba(79, 70, 229, 0.10);
 
-.reno-cal-gcal .fc {
-  --fc-border-color: var(--gcal-border);
-  --fc-page-bg-color: var(--gcal-surface);
-  --fc-neutral-bg-color: var(--gcal-surface-muted);
-  --fc-today-bg-color: rgba(26, 115, 232, 0.04);
-  --fc-now-indicator-color: var(--gcal-now);
-  --fc-highlight-color: rgba(26, 115, 232, 0.1);
-  --fc-button-bg-color: #fff;
-  --fc-button-border-color: #dadce0;
-  --fc-button-text-color: #3c4043;
-  --fc-button-hover-bg-color: #f1f3f4;
-  --fc-button-hover-border-color: #dadce0;
-  --fc-button-active-bg-color: #e8eaed;
-  --fc-button-active-border-color: #dadce0;
-  font-size: 0.8125rem;
-}
-
-/* Remove thick dark borders around the scroll table */
-.reno-cal-gcal .fc-scrollgrid {
-  border-top: none;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
-}
-
-/* Internal cells should have the light grey border */
-.reno-cal-gcal .fc-theme-standard td, 
-.reno-cal-gcal .fc-theme-standard th {
-  border-color: var(--gcal-border);
-}
-
-.reno-cal-gcal .fc-col-header-cell {
-  padding: 0;
-  vertical-align: middle;
-  background: var(--gcal-surface);
-  border-top: none;
-  border-left: none;
-  border-right: none;
-  border-bottom: 1px solid var(--gcal-border);
-}
-
-/* Make day column headers uppercase, subtle, matching Google */
-.reno-cal-gcal .fc-col-header-cell-cushion {
-  color: var(--gcal-text-sec);
-  text-transform: uppercase;
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  padding: 8px 4px;
-}
-
-.reno-cal-gcal .reno-cal-gcal-day-header .fc-scrollgrid-sync-inner {
-  min-height: 4.5rem;
-}
-
-.reno-cal--compact .reno-cal-gcal-day-header .fc-scrollgrid-sync-inner {
-  min-height: 3.25rem;
-}
-
-.reno-cal-gcal .fc-timegrid-axis {
-  background: var(--gcal-surface);
-}
-
-/* Time slots axis labels */
-.reno-cal-gcal .fc-timegrid-slot-label {
-  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: #707070;
-  vertical-align: top;
-  padding-right: 8px;
-  border: none !important;
-}
-
-.reno-cal-gcal .fc-timegrid-slot-label-cushion {
-  position: relative;
-  top: 10px; /* Place label toward first half-hour region */
   font-family: inherit;
-  font-variant-numeric: inherit;
+  color: var(--reno-text);
+  background: transparent;
 }
 
-/* Very subtle inner border lines */
-.reno-cal-gcal .fc-timegrid-slot {
-  border-color: rgba(0, 0, 0, 0.08);
+/* Strip FullCalendar's outer border — we use our card chrome. */
+.reno-cal .fc .fc-scrollgrid {
+  border-color: var(--reno-border);
+}
+.reno-cal .fc .fc-scrollgrid,
+.reno-cal .fc .fc-scrollgrid-section > * {
+  border-left: 0;
+  border-right: 0;
+}
+.reno-cal .fc .fc-scrollgrid-liquid {
+  border-top: 0;
 }
 
-.reno-cal-gcal .fc-timegrid-slot-minor {
-  border-color: rgba(0, 0, 0, 0.03);
+/* ── Day header (column header in week / day; row header in month) ──────── */
+.reno-cal .fc-col-header-cell {
+  background: var(--reno-surface);
+  border-color: var(--reno-border);
+  padding: 6px 8px;
 }
-
-.reno-cal-gcal .fc-timegrid-divider {
+.reno-cal .fc-col-header-cell-cushion {
+  text-decoration: none;
+  color: inherit;
   padding: 0;
-  border-color: var(--gcal-border);
+  display: block;
 }
-
-.reno-cal-gcal .fc-timegrid-body {
-  background: var(--gcal-surface);
-}
-
-/* All-day row strip */
-.reno-cal-gcal .fc-timegrid .fc-daygrid-body {
-  background: var(--gcal-surface);
-  border-bottom: 1px solid var(--gcal-border);
-}
-
-.reno-cal-gcal .fc-timegrid .fc-scrollgrid-sync-table .fc-daygrid-day {
-  background: var(--gcal-surface);
-}
-
-/* Weekends subtly shaded */
-.reno-cal-weekend:not(.fc-day-today) {
-  background-color: #f8f9fa !important;
-}
-
-.reno-cal-gcal .fc-daygrid-day-top {
-  flex-direction: row;
-  justify-content: center;
-  padding-top: 6px;
-  padding-bottom: 2px;
-}
-
-/* Google-Calendar perfectly round day numbers */
-.reno-cal-gcal .fc-daygrid-day-number {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--gcal-text);
-  width: 24px;
-  height: 24px;
+.reno-cal .reno-dh {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  text-decoration: none !important;
-  margin: 0;
-  padding: 0;
-  transition: background-color 0.2s ease;
+  gap: 2px;
+  padding: 4px 0 2px;
 }
-
-.reno-cal-gcal .fc-daygrid-day-number:hover {
-  background-color: #f1f3f4;
+.reno-cal .reno-dh--month {
+  padding: 6px 0 4px;
 }
-
-.reno-cal-gcal .fc-day-today .fc-daygrid-day-number {
-  background-color: #e8f0fe;
-  color: var(--gcal-blue);
+.reno-cal .reno-dh__name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--reno-text-sec);
 }
-
-.reno-cal-gcal .fc-day-today .fc-daygrid-day-number:hover {
-  background-color: #dce7fb;
-}
-
-.reno-cal-gcal .fc-day-other .fc-daygrid-day-number {
-  color: #9aa0a6;
-}
-
-.reno-cal-gcal .fc-more-link {
-  font-size: 0.6875rem;
+.reno-cal .reno-dh__num {
+  font-size: 22px;
   font-weight: 500;
-  color: var(--gcal-text-sec);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-top: 2px;
-  display: inline-block;
-  transition: background-color 0.15s;
+  line-height: 1;
+  color: var(--reno-text);
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+}
+.reno-cal .reno-dh__num--today {
+  background: var(--reno-primary);
+  color: #fff;
+  font-weight: 600;
 }
 
-.reno-cal-gcal .fc-more-link:hover {
-  background: #f1f3f4;
+/* Month grid: today's date number gets the indigo bubble. */
+.reno-cal .fc-daygrid-day-top {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 4px 6px 0;
+}
+.reno-cal .fc-daygrid-day-number {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--reno-text);
   text-decoration: none;
-  color: var(--gcal-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 999px;
+}
+.reno-cal .fc-day-today .fc-daygrid-day-number {
+  background: var(--reno-primary);
+  color: #fff;
+}
+.reno-cal .fc-day-other .fc-daygrid-day-number {
+  color: var(--reno-text-mute);
 }
 
-/* Events */
-.reno-cal-gcal .fc-event {
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  margin: 1px 2px; /* Small gap between events */
-  transition: background-color 0.12s, transform 0.1s;
-  overflow: hidden;
+/* ── Time grid ──────────────────────────────────────────────────────────── */
+.reno-cal .fc-timegrid-slot {
+  height: 34px;
+  border-color: var(--reno-border);
 }
-
-.reno-cal-gcal .fc-event:hover {
-  filter: brightness(0.97);
-  transform: scale(1.01);
-  cursor: pointer;
+.reno-cal .fc-timegrid-slot-minor {
+  border-top-style: dotted;
+  border-top-color: color-mix(in oklab, var(--reno-border) 60%, white);
 }
-
-.reno-cal-event-root {
-  overflow: hidden;
+.reno-cal .fc-timegrid-slot-label {
+  border: 0;
 }
-
-/* Fully passed events appear slightly faded */
-.reno-cal-gcal .fc-event.reno-cal-event--past {
-  opacity: 0.62;
-  filter: saturate(0.85);
-}
-
-/* Event color system (exact design from calendar folder) */
-.reno-cal-gcal .fc-event.reno-cal-event--general {
-  --reno-ev-color: oklch(0.55 0.22 250);
-}
-
-.reno-cal-gcal .fc-event.reno-cal-event--general {
-  background-color: color-mix(in oklch, var(--reno-ev-color) 13%, white) !important;
-  border-color: color-mix(in oklch, var(--reno-ev-color) 35%, white) !important;
-  border-right: 3px solid var(--reno-ev-color) !important;
-  color: color-mix(in oklch, var(--reno-ev-color) 90%, black) !important;
-}
-
-.reno-cal-gcal .fc-event.reno-cal-event--provider {
-  --reno-ev-color: oklch(0.55 0.20 293);
-  background-color: color-mix(in oklch, var(--reno-ev-color) 13%, white) !important;
-  border-color: color-mix(in oklch, var(--reno-ev-color) 35%, white) !important;
-  border-right: 3px solid var(--reno-ev-color) !important;
-  color: color-mix(in oklch, var(--reno-ev-color) 90%, black) !important;
-}
-
-.reno-cal-gcal .fc-event.reno-cal-event--task {
-  --reno-ev-color: oklch(0.45 0.18 163);
-  background-color: color-mix(in oklch, var(--reno-ev-color) 18%, white) !important;
-  border-color: color-mix(in oklch, var(--reno-ev-color) 30%, white) !important;
-  color: color-mix(in oklch, var(--reno-ev-color) 90%, black) !important;
-}
-
-/* Timed blocks keep same palette with right color edge */
-.reno-cal-gcal .fc-timegrid-event.reno-cal-event--general {
-  border-right: 3px solid oklch(0.55 0.22 250) !important;
-}
-
-.reno-cal-gcal .fc-timegrid-event.reno-cal-event--provider {
-  border-right: 3px solid oklch(0.55 0.20 293) !important;
-}
-
-.reno-cal-gcal .fc-timegrid-event.reno-cal-event--task {
-  border-right: 3px solid oklch(0.45 0.18 163) !important;
-}
-
-/* The actual text styling inside events */
-.reno-cal-gcal .fc-event-main {
-  padding: 1px 4px;
-  text-align: right;
-  width: 100%;
-}
-
-.reno-cal-gcal .fc-event.reno-cal-event--task .fc-event-main,
-.reno-cal-gcal .fc-event.reno-cal-event--task .fc-event-title {
-  color: color-mix(in oklch, oklch(0.45 0.18 163) 90%, black) !important;
-}
-
-/* Times: mono stack (matches side axis + event times) */
-.reno-cal-gcal .fc-timegrid-event .fc-event-time,
-.reno-cal-gcal .fc-daygrid-event .fc-event-time,
-.reno-cal-gcal .reno-cal-event-time {
+.reno-cal .fc-timegrid-slot-label-cushion {
   font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  font-weight: 500;
+  font-size: 11px;
+  color: var(--reno-text-mute);
+  padding: 0 8px;
+}
+.reno-cal .fc-timegrid-axis {
+  border: 0;
 }
 
-/* Israeli holidays */
-.reno-cal-gcal .fc-event.reno-cal-il-holiday {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+/* Now-indicator */
+.reno-cal .fc-timegrid-now-indicator-line {
+  border-color: var(--reno-now);
+  border-top-width: 2px;
+}
+.reno-cal .fc-timegrid-now-indicator-arrow {
+  border-color: var(--reno-now);
+  background: var(--reno-now);
+  border-radius: 999px;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  margin-left: -5px;
 }
 
-.reno-cal-gcal .fc-event.reno-cal-il-holiday .fc-event-title,
-.reno-cal-gcal .fc-event.reno-cal-il-holiday .fc-event-main {
-  color: #188038 !important; /* A calm green text for holidays, Google style */
-  font-weight: 500;
-  padding-left: 2px;
+/* Friday / Saturday tint (added via dayCellClassNames). */
+.reno-cal .reno-fri-sat,
+.reno-cal .fc-day.reno-fri-sat,
+.reno-cal th.reno-fri-sat .fc-col-header-cell-cushion {
+  background-color: #fafbfc;
 }
 
-.reno-cal-gcal.reno-cal--compact .fc-event {
-  border-radius: 4px;
+/* Past day fade in month view. */
+.reno-cal .fc-day-past .fc-daygrid-day-number {
+  opacity: 0.78;
 }
 
-/* Hide line inside cells from DayGrid container */
-.reno-cal-gcal .fc-daygrid-event-harness {
-  margin-top: 0px !important;
+/* ── Events ─────────────────────────────────────────────────────────────── */
+.reno-cal .fc-event {
+  border: 0;
+  background: transparent;
+  cursor: grab;
+}
+.reno-cal .fc-event.fc-event-dragging,
+.reno-cal .fc-event.fc-event-resizing,
+.reno-cal .fc-event:active {
+  cursor: grabbing;
+}
+.reno-cal .fc-event:focus,
+.reno-cal .fc-event:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 50%, transparent);
 }
 
-/*
- * Now indicator: FullCalendar stacks .fc-timegrid-col-events at z-index 3.
- * Raising .fc-timegrid-now-indicator-container above that (as we did before)
- * made the full-column overlay steal every click/hover from timed events.
- * Keep default stacking and never intercept pointer events on this layer.
- */
-.reno-cal-gcal .fc-timegrid-now-indicator-container {
-  pointer-events: none;
-  overflow: visible;
+/* Per-kind / type accent colors → exposed via `--reno-ev-color`. */
+.reno-cal .reno-ev-type--general,
+.reno-cal .reno-ev-kind--calendar.reno-ev-type--general {
+  --reno-ev-color: var(--reno-color-general);
+}
+.reno-cal .reno-ev-type--provider_meeting {
+  --reno-ev-color: var(--reno-color-provider);
+}
+.reno-cal .reno-ev-kind--task {
+  --reno-ev-color: var(--reno-color-task);
+}
+.reno-cal .reno-ev-kind--holiday {
+  --reno-ev-color: var(--reno-color-holiday);
 }
 
-.reno-cal-gcal .fc-timegrid-now-indicator-line {
-  border-color: var(--gcal-now);
-  border-width: 2px 0 0;
-  pointer-events: none;
-  overflow: visible;
+/* Time-grid event card (week / day) — Google-Calendar-style filled chip:
+ * solid brand-coloured background, white type, slight gradient + 1px inner
+ * ring for depth, soft shadow that lifts on hover. */
+.reno-cal .fc-timegrid-event-harness > .fc-event {
+  margin: 0 3px;
+}
+.reno-cal .fc-timegrid-event {
+  box-shadow: none;
+  border-radius: 5px;
+  background: transparent;
+  padding: 0;
+}
+.reno-cal .reno-ev-chip {
+  font-family: inherit;
+}
+.reno-cal .reno-ev-chip--time {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 5px 9px 7px;
+  border-radius: 5px;
+  text-align: right;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 100%, white) 0%,
+      color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 92%, black) 100%
+    );
+  color: #ffffff;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.20) inset,
+    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 80%, black) inset,
+    0 1px 2px rgba(15, 23, 42, 0.18);
+  transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.12s ease;
+}
+.reno-cal .fc-timegrid-event:hover .reno-ev-chip--time {
+  filter: brightness(1.04);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.20) inset,
+    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 80%, black) inset,
+    0 6px 14px -4px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 60%, transparent);
+}
+.reno-cal .fc-timegrid-event.fc-event-dragging .reno-ev-chip--time,
+.reno-cal .fc-timegrid-event.fc-event-resizing .reno-ev-chip--time {
+  transform: scale(1.02);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.25) inset,
+    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 80%, black) inset,
+    0 12px 24px -6px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 70%, transparent);
+}
+.reno-cal .reno-ev-chip__title {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  unicode-bidi: plaintext;
+  letter-spacing: -0.005em;
+}
+.reno-cal .reno-ev-chip__time {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.92;
+  letter-spacing: 0.01em;
+}
+.reno-cal .reno-ev-chip__loc {
+  font-size: 11px;
+  opacity: 0.92;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  gap: 4px;
+  unicode-bidi: plaintext;
+}
+.reno-cal .reno-ev-chip__loc-icon {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  opacity: 0.95;
+}
+.reno-cal .reno-ev-chip__loc-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
-.reno-cal-gcal .fc-timegrid-now-indicator-line::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  /* Top border is above the padding edge; nudge up by half border (2px here) to center. */
-  top: 0;
-  width: 12px;
-  height: 12px;
-  border-radius: 9999px;
-  background: var(--gcal-now);
-  transform: translateY(calc(-50% - 1px));
-  pointer-events: none;
+/* Resize handle (bottom edge in week/day) — soft pill, visible only on hover. */
+.reno-cal .fc-timegrid-event .fc-event-resizer {
+  height: 6px;
+  bottom: 0;
+  left: 8px;
+  right: 8px;
+  cursor: ns-resize;
+  background: transparent;
+  border-radius: 999px;
+  transition: background-color 0.12s ease;
+}
+.reno-cal .fc-timegrid-event:hover .fc-event-resizer {
+  background: rgba(255, 255, 255, 0.45);
+}
+.reno-cal .fc-event.fc-event-resizing .fc-event-resizer {
+  background: rgba(255, 255, 255, 0.7);
 }
 
-.reno-cal-gcal .fc-timegrid-now-indicator-arrow {
+/* Short events (< ~30 min) — collapse to a single line. */
+.reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip--time {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+}
+.reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip__loc {
   display: none;
 }
+
+/* All-day chips (week/day all-day row + month grid spans). Soft tinted look
+ * so they don't compete with the filled time-grid chips above. */
+.reno-cal .fc-daygrid-event,
+.reno-cal .fc-timegrid-event.fc-event-allday {
+  border-radius: 4px;
+  background: transparent;
+  padding: 0;
+  margin: 1px 4px;
+}
+.reno-cal .reno-ev-chip--allday {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  gap: 6px;
+  padding: 3px 8px;
+  height: 100%;
+  min-height: 22px;
+  border-radius: 4px;
+  border-right: 3px solid var(--reno-ev-color, var(--reno-primary));
+  background: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 12%, white);
+  color: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 78%, black);
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  text-align: right;
+  transition: background 0.12s ease;
+}
+.reno-cal .fc-daygrid-event:hover .reno-ev-chip--allday {
+  background: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 20%, white);
+}
+
+/* Holiday chip — minimal, just a coloured dot + emerald text. */
+.reno-cal .reno-ev-kind--holiday .reno-ev-chip--allday,
+.reno-cal .reno-ev-chip--holiday {
+  background: transparent;
+  border-right: none;
+  border-left: none;
+  color: color-mix(in oklab, var(--reno-color-holiday) 75%, black);
+  font-weight: 600;
+  padding: 1px 14px 1px 6px;
+  position: relative;
+  text-align: right;
+}
+.reno-cal .reno-ev-kind--holiday .reno-ev-chip--allday::before,
+.reno-cal .reno-ev-chip--holiday::before {
+  content: '';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--reno-color-holiday);
+  transform: translateY(-50%);
+}
+.reno-cal .fc-daygrid-event:hover .reno-ev-kind--holiday .reno-ev-chip--allday,
+.reno-cal .fc-daygrid-event:hover .reno-ev-chip--holiday {
+  background: color-mix(in oklab, var(--reno-color-holiday) 8%, white);
+}
+
+/* Month-view chips — small, single-line, title + time + dot (right-aligned). */
+.reno-cal .reno-ev-chip--month {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+  gap: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--reno-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  transition: background-color 0.12s ease;
+}
+.reno-cal .reno-ev-kind--calendar .reno-ev-chip--month {
+  font-weight: 600;
+  color: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 70%, black);
+}
+.reno-cal .reno-ev-kind--task .reno-ev-chip--month {
+  color: color-mix(in oklab, var(--reno-color-task) 70%, black);
+}
+.reno-cal .fc-daygrid-event:hover .reno-ev-chip--month {
+  background: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 10%, white);
+}
+.reno-cal .reno-ev-chip--month .reno-ev-chip__dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--reno-ev-color, var(--reno-primary));
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 18%, white);
+}
+.reno-cal .reno-ev-chip--month .reno-ev-chip__time {
+  font-size: 11px;
+  color: var(--reno-text-mute);
+  font-weight: 500;
+  margin-left: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.reno-cal .reno-ev-chip--month .reno-ev-chip__title {
+  font-weight: inherit;
+  color: inherit;
+}
+.reno-cal .reno-ev-chip--month-allday {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--reno-ev-color, var(--reno-primary));
+  color: #ffffff;
+  overflow: hidden;
+  text-align: right;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.18) inset,
+    0 1px 2px rgba(15, 23, 42, 0.10);
+  transition: filter 0.12s ease;
+}
+.reno-cal .reno-ev-chip--month-allday .reno-ev-chip__title {
+  color: inherit;
+  font-weight: 600;
+}
+.reno-cal .fc-daygrid-event:hover .reno-ev-chip--month-allday {
+  filter: brightness(1.06);
+}
+
+/* Past events fade — saturation drop reads as "happened" without screaming. */
+.reno-cal .reno-ev--past .reno-ev-chip--time,
+.reno-cal .reno-ev--past .reno-ev-chip--allday,
+.reno-cal .reno-ev--past .reno-ev-chip--month,
+.reno-cal .reno-ev--past .reno-ev-chip--month-allday {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+.reno-cal .reno-ev--past .reno-ev-chip--time {
+  background: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 35%, white);
+  color: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 70%, black);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 30%, white) inset;
+}
+
+/* "More" overflow link in month view. */
+.reno-cal .fc-daygrid-more-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--reno-primary);
+  text-decoration: none;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+.reno-cal .fc-daygrid-more-link:hover {
+  background: var(--reno-surface-hover);
+}
+
+/* Tasks / holidays / past-locked: pointer cursor, no resize handle. */
+.reno-cal .reno-ev-kind--task,
+.reno-cal .reno-ev-kind--holiday,
+.reno-cal .reno-ev--locked {
+  cursor: pointer;
+}
+.reno-cal .reno-ev-kind--task .fc-event-resizer,
+.reno-cal .reno-ev-kind--holiday .fc-event-resizer,
+.reno-cal .reno-ev--locked .fc-event-resizer {
+  display: none;
+}
+
+/* Selection / mirror highlight while drag-creating. */
+.reno-cal .fc-highlight {
+  background: var(--fc-highlight-color);
+}
+
+/* ── Compact (mobile) tweaks ────────────────────────────────────────────── */
+.reno-cal--compact .fc-timegrid-slot {
+  height: 30px;
+}
+.reno-cal--compact .reno-dh__num {
+  font-size: 18px;
+  width: 30px;
+  height: 30px;
+}
+.reno-cal--compact .reno-ev-chip__title {
+  font-size: 12px;
+}
+.reno-cal--compact .reno-ev-chip--month {
+  font-size: 11px;
+}
+.reno-cal--compact .reno-ev-chip__loc {
+  display: none;
+}
+
+/* ── (legacy Schedule-X CSS removed — replaced above by FullCalendar block) ── */
+
+/* (legacy Schedule-X styles deleted — see FullCalendar block above) */
+
+
+/* ── Quick-create popover (Outlook/GCal style) ─────────────────────────── */
+.reno-quickcreate {
+  position: fixed;
+  z-index: 280;
+  width: 360px;
+  max-width: calc(100vw - 16px);
+  background: #fff;
+  border: 1px solid var(--reno-border, #e3e5e8);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px -12px rgba(60, 64, 67, 0.28), 0 4px 12px -4px rgba(60, 64, 67, 0.14);
+  overflow: hidden;
+  animation: renoQuickCreateIn 0.14s ease-out;
+}
+@keyframes renoQuickCreateIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 
 /* Renovation room notes — TipTap / ProseMirror */
 /* Varela Round is single-weight (400); global body uses font-synthesis: none, so re-enable
@@ -851,6 +1076,16 @@ input[type=number] {
 
 .room-notes-editor .ProseMirror p:last-child {
   margin-bottom: 0;
+}
+
+/* Blank lines: Enter creates a new paragraph; empty blocks keep visible row height. */
+.room-notes-editor .ProseMirror p:empty,
+.room-notes-editor .ProseMirror p:has(> br:only-child) {
+  min-height: 1.35em;
+}
+.room-notes-editor .ProseMirror li p:empty,
+.room-notes-editor .ProseMirror li p:has(> br:only-child) {
+  min-height: 1.35em;
 }
 
 .room-notes-editor .ProseMirror ul,
@@ -887,4 +1122,52 @@ input[type=number] {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Renovation task description — read-only sanitized HTML (same allowlist as room notes) */
+.reno-task-body-html {
+  font-synthesis: weight;
+}
+.reno-task-body-html p {
+  margin: 0.25em 0;
+}
+.reno-task-body-html p:first-child {
+  margin-top: 0;
+}
+.reno-task-body-html p:last-child {
+  margin-bottom: 0;
+}
+.reno-task-body-html p:empty,
+.reno-task-body-html p:has(> br:only-child) {
+  min-height: 1.35em;
+}
+.reno-task-body-html li p:empty,
+.reno-task-body-html li p:has(> br:only-child) {
+  min-height: 1.35em;
+}
+.reno-task-body-html strong,
+.reno-task-body-html b {
+  font-weight: 700;
+  font-synthesis: weight;
+}
+.reno-task-body-html ul,
+.reno-task-body-html ol {
+  margin: 0.35em 0;
+  margin-inline-start: 0.35rem;
+  padding-left: 2rem;
+  padding-right: 0.5rem;
+}
+.reno-task-body-html:dir(rtl) ul,
+.reno-task-body-html:dir(rtl) ol {
+  padding-right: 2.5rem;
+  padding-left: 0.75rem;
+}
+.reno-task-body-html ul {
+  list-style-type: disc;
+}
+.reno-task-body-html ol {
+  list-style-type: decimal;
+}
+.reno-task-body-html li p {
+  margin: 0;
 }

@@ -7,7 +7,7 @@
 - **Authentication**: Modern login with glassmorphism design
 - **Core CRUD**: Full property management implemented
 - **Database**: Supabase PostgreSQL with proper schema including attachments and ratings
-- **UI**: Modern design system with Outfit typography and cohesive color palette
+- **UI**: Modern design system: **property hunt** uses **Varela Round** + JetBrains Mono; **renovation** uses Assistant (Hebrew subset) via `font-assistant` in the renovation layout
 - **UX**: Smooth animations, hover effects, and micro-interactions
 - **Environment**: Development server running on localhost:3000
 
@@ -23,7 +23,7 @@
 ### Renovation Management (New Module)
 1. **Interactive Dashboard**: Modular overview of tasks, expenses, and photos.
 2. **Expense & Budget Tracking**: Logs outlays against project budgets with line-item attachments.
-3. **Tasks Kanban**: Robust drag-and-drop task tracking featuring assignments, due dates, labels, and specialized custom providers.
+3. **Tasks Kanban**: Robust drag-and-drop task tracking featuring assignments, due dates, labels, and specialized custom providers. **Print / Save as PDF** at [`/renovation/tasks/print`](src/app/renovation/tasks/print/page.tsx): open & in-progress tasks only, incomplete subtasks nested, optional **filter by provider** (incl. “No provider”), grouping **no room** then by room; model built in [`renovation-tasks-export.ts`](src/lib/renovation-tasks-export.ts). Linked from Tasks desktop/mobile toolbars; renovation shells hide the normal nav chrome on this route.
 4. **Gallery Integration**: Advanced photo grouping into albums, inline tag creation, lightbox annotations, and bulk actions.
 5. **Provider & File Management**: Seamlessly manage vendors and documentation with drag-and-drop multi-file upload progress parsing.
 6. **Multi-profile Support**: Easily switch active users (`activeProfile`) within teams for isolated action tracking.
@@ -132,9 +132,6 @@
 - Password visibility toggle in login form
 
 ## Recent Additions (Latest Session)
-- **Renovation Module Expansion**: Added Providers management, drag-and-drop multi-file uploads with progress tracking, responsive sidebar nav adjustments, and refined task cards (badges + context tags).
-- **Gallery Enhancements**: Split photos into `gallery/albums` view and `all` view; supported inline tag production across modals and lightboxes space.
-- **WhatsApp Integration**: Phone numbers now have WhatsApp buttons with Israeli number formatting
-- **Click-to-call**: Phone numbers are clickable tel: links
-- **Map Attachment Indicators**: Hover tooltips show attachment indicators
-- **Phone Utilities**: New phone formatting library for WhatsApp and tel links
+- **Renovation tasks print view** (May 2026): Dedicated print/PDF page for active tasks; provider filter; shared export logic in `src/lib/renovation-tasks-export.ts`.
+- **Vendor budget** (April 2026): TanStack Table desktop + mobile list; incremental save UX; stable row order; CSV export — see progress log.
+- **Renovation module** (ongoing): Providers, planned vs spent expenses, **FullCalendar v6** calendar with built-in drag/resize (migration history: react-big-calendar → FullCalendar v6 → Schedule-X v4 → back to FullCalendar v6 in May 2026), mobile/desktop shell split at `md`, profile gate, and related features documented in `02-progress-log.md`.

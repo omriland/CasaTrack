@@ -3,126 +3,256 @@ import type { EventInput } from '@fullcalendar/core'
 import { updateCalendarEvent } from '@/lib/renovation'
 import type { RenovationCalendarEvent, RenovationTask } from '@/types/renovation'
 
-function parseDayKey(key: string): Date {
-  const [y, m, d] = key.split('-').map(Number)
-  return new Date(y, (m || 1) - 1, d || 1)
+/**
+ * Renovation calendar event-mapping helpers for FullCalendar v6.
+ *
+ * The DB shape (`RenovationCalendarEvent`) stores either a timed range
+ * (`starts_at` / `ends_at` ISO) or an inclusive day range
+ * (`start_date` / `end_date` YYYY-MM-DD). FullCalendar uses an
+ * **exclusive** end for all-day events, so we add one day on the way in
+ * and subtract on the way out.
+ *
+ * Tasks contribute read-only all-day chips on their `due_date`.
+ *
+ * No timezone math — FullCalendar consumes plain JS Dates / ISO strings
+ * in the local timezone, which is exactly what the rest of the app
+ * speaks.
+ */
+
+export type FcEventKind = 'calendar' | 'task' | 'holiday'
+
+/**
+ * Lightweight in-app event shape consumed by the hover card and any
+ * callers that want to reason about an event without depending on
+ * FullCalendar internal types.  Round-tripped via `extendedProps.app`.
+ */
+export type FcAppEvent = {
+  id: string
+  title: string
+  start: Date
+  end: Date
+  allDay: boolean
+  kind: FcEventKind
+  isDraggable: boolean
+  isResizable: boolean
+  isPast: boolean
+  eventType?: 'general' | 'provider_meeting'
+  renovationEvent?: RenovationCalendarEvent
+  task?: RenovationTask
 }
 
-/** FullCalendar all-day `end` is exclusive; DB stores inclusive `end_date`. */
-function toExclusiveEnd(inclusiveEnd: string): string {
-  return format(addDays(parseDayKey(inclusiveEnd), 1), 'yyyy-MM-dd')
+/** Anchor info for the inline quick-create popover. */
+export type QuickCreateAnchor = {
+  rect: DOMRect
+  isAllDay: boolean
+  startIso: string
+  endIso: string
+  whenLabel: string
 }
 
-export function calendarEventToEventInput(e: RenovationCalendarEvent): EventInput {
-  const base = {
-    id: e.id,
-    extendedProps: { kind: 'calendar' as const, event: e },
-  }
+const COLOR = {
+  general: '#4f46e5',
+  provider_meeting: '#7c3aed',
+  task: '#059669',
+  holiday: '#16a34a',
+} as const
+
+function dayKey(d: Date): string {
+  return format(d, 'yyyy-MM-dd')
+}
+
+/** Convert a YYYY-MM-DD string to a JS Date at local midnight. */
+function dateFromKey(key: string): Date {
+  const [y, m, d] = key.split('-').map((s) => Number.parseInt(s, 10))
+  return new Date(y, (m ?? 1) - 1, d ?? 1)
+}
+
+// ---------------------------------------------------------------------------
+// RenovationCalendarEvent → FullCalendar EventInput
+// ---------------------------------------------------------------------------
+
+export function calendarEventToFc(e: RenovationCalendarEvent): EventInput {
+  const now = new Date()
+  const eventType = e.event_type
+  const color = COLOR[eventType] ?? COLOR.general
+
   if (e.is_all_day && e.start_date) {
-    const endInc = e.end_date && e.end_date >= e.start_date ? e.end_date : e.start_date
-    return {
-      ...base,
+    const startKey = e.start_date
+    const endInclusiveKey =
+      e.end_date && e.end_date >= e.start_date ? e.end_date : e.start_date
+    const startDate = dateFromKey(startKey)
+    const endDateExclusive = addDays(dateFromKey(endInclusiveKey), 1)
+    const app: FcAppEvent = {
+      id: e.id,
       title: e.title,
+      start: startDate,
+      end: endDateExclusive,
       allDay: true,
-      start: e.start_date,
-      end: toExclusiveEnd(endInc),
-      editable: true,
-      startEditable: true,
-      durationEditable: true,
+      kind: 'calendar',
+      isDraggable: true,
+      isResizable: true,
+      isPast: endDateExclusive < now,
+      eventType,
+      renovationEvent: e,
+    }
+    return {
+      id: e.id,
+      title: e.title,
+      start: startKey,
+      end: format(endDateExclusive, 'yyyy-MM-dd'),
+      allDay: true,
+      backgroundColor: color,
+      borderColor: color,
       classNames: [
-        'reno-cal-event',
-        e.event_type === 'provider_meeting'
-          ? 'reno-cal-event--provider'
-          : 'reno-cal-event--general',
+        'reno-ev',
+        'reno-ev-kind--calendar',
+        `reno-ev-type--${eventType}`,
+        ...(app.isPast ? ['reno-ev--past'] : []),
       ],
-      textColor: e.event_type === 'provider_meeting' ? '#4c1d95' : '#001d35',
+      extendedProps: { kind: 'calendar', app, renovationEvent: e },
     }
   }
+
+  // Timed (or malformed) event.
   if (!e.starts_at) {
-    return {
-      ...base,
+    // Defensive: render as a one-day all-day chip on today.
+    const todayKey = format(now, 'yyyy-MM-dd')
+    const startDate = dateFromKey(todayKey)
+    const endDateExclusive = addDays(startDate, 1)
+    const app: FcAppEvent = {
+      id: e.id,
       title: e.title,
+      start: startDate,
+      end: endDateExclusive,
       allDay: true,
-      start: format(new Date(), 'yyyy-MM-dd'),
-      end: format(addDays(new Date(), 1), 'yyyy-MM-dd'),
+      kind: 'calendar',
+      isDraggable: false,
+      isResizable: false,
+      isPast: false,
+      eventType,
+      renovationEvent: e,
+    }
+    return {
+      id: e.id,
+      title: e.title,
+      start: todayKey,
+      end: format(endDateExclusive, 'yyyy-MM-dd'),
+      allDay: true,
       editable: false,
-      classNames: ['reno-cal-event', 'reno-cal-event--general'],
-      textColor: '#001d35',
+      startEditable: false,
+      durationEditable: false,
+      backgroundColor: color,
+      borderColor: color,
+      classNames: [
+        'reno-ev',
+        'reno-ev-kind--calendar',
+        `reno-ev-type--${eventType}`,
+        'reno-ev--locked',
+      ],
+      extendedProps: { kind: 'calendar', app, renovationEvent: e },
     }
   }
-  const endMs = e.ends_at
-    ? new Date(e.ends_at).getTime()
-    : new Date(e.starts_at).getTime() + 3600000
-  return {
-    ...base,
+
+  const startDate = new Date(e.starts_at)
+  const endDate = e.ends_at ? new Date(e.ends_at) : new Date(startDate.getTime() + 3600000)
+  const app: FcAppEvent = {
+    id: e.id,
     title: e.title,
+    start: startDate,
+    end: endDate,
     allDay: false,
-    start: e.starts_at,
-    end: new Date(endMs).toISOString(),
-    editable: true,
-    startEditable: true,
-    durationEditable: true,
+    kind: 'calendar',
+    isDraggable: true,
+    isResizable: true,
+    isPast: endDate < now,
+    eventType,
+    renovationEvent: e,
+  }
+  return {
+    id: e.id,
+    title: e.title,
+    start: startDate,
+    end: endDate,
+    allDay: false,
+    backgroundColor: color,
+    borderColor: color,
     classNames: [
-      'reno-cal-event',
-      e.event_type === 'provider_meeting' ? 'reno-cal-event--provider' : 'reno-cal-event--general',
+      'reno-ev',
+      'reno-ev-kind--calendar',
+      `reno-ev-type--${eventType}`,
+      ...(app.isPast ? ['reno-ev--past'] : []),
     ],
-    textColor: e.event_type === 'provider_meeting' ? '#4c1d95' : '#001d35',
+    extendedProps: { kind: 'calendar', app, renovationEvent: e },
   }
 }
 
-export function taskToEventInput(t: RenovationTask & { due_date: string }): EventInput {
+// ---------------------------------------------------------------------------
+// RenovationTask → FullCalendar EventInput (read-only chip on due_date)
+// ---------------------------------------------------------------------------
+
+export function taskToFc(t: RenovationTask & { due_date: string }): EventInput {
+  const startDate = dateFromKey(t.due_date)
+  const endDateExclusive = addDays(startDate, 1)
+  const app: FcAppEvent = {
+    id: `task-${t.id}`,
+    title: t.title,
+    start: startDate,
+    end: endDateExclusive,
+    allDay: true,
+    kind: 'task',
+    isDraggable: false,
+    isResizable: false,
+    isPast: endDateExclusive < new Date(),
+    task: t,
+  }
   return {
     id: `task-${t.id}`,
-    title: `Task · ${t.title}`,
-    allDay: true,
+    title: t.title,
     start: t.due_date,
-    end: format(addDays(parseDayKey(t.due_date), 1), 'yyyy-MM-dd'),
+    end: format(endDateExclusive, 'yyyy-MM-dd'),
+    allDay: true,
     editable: false,
     startEditable: false,
     durationEditable: false,
-    display: 'block',
-    extendedProps: { kind: 'task' as const, task: t },
-    classNames: ['reno-cal-event', 'reno-cal-event--task'],
-    /** FullCalendar sets --fc-event-text-color from this; avoids default light-on-green contrast. */
-    textColor: '#14532d',
+    backgroundColor: COLOR.task,
+    borderColor: COLOR.task,
+    classNames: ['reno-ev', 'reno-ev-kind--task', ...(app.isPast ? ['reno-ev--past'] : [])],
+    extendedProps: { kind: 'task', app, task: t },
   }
 }
 
-export function buildFullCalendarEventInputs(
+export function buildFcEvents(
   events: RenovationCalendarEvent[],
   tasks: RenovationTask[],
-  showTasks: boolean
+  showTasks: boolean,
 ): EventInput[] {
-  const evs = events.map(calendarEventToEventInput)
+  const evs = events.map(calendarEventToFc)
   const tks = showTasks
     ? tasks
         .filter((t): t is RenovationTask & { due_date: string } => Boolean(t.due_date))
-        .map(taskToEventInput)
+        .map(taskToFc)
     : []
   return [...evs, ...tks]
 }
 
-export async function persistCalendarEventFromFullCalendar(
+// ---------------------------------------------------------------------------
+// Persistence — translate a FullCalendar drag/resize back to the DB row.
+// ---------------------------------------------------------------------------
+
+export async function persistCalendarChange(
   prev: RenovationCalendarEvent,
+  start: Date,
+  end: Date | null,
   allDay: boolean,
-  start: Date | null,
-  end: Date | null
 ): Promise<void> {
-  if (!start) return
   const addressVal = prev.address?.trim() || null
+
   if (allDay) {
-    const start_date = format(
-      new Date(start.getFullYear(), start.getMonth(), start.getDate()),
-      'yyyy-MM-dd'
-    )
-    let endExclusiveDay: Date
-    if (end) {
-      endExclusiveDay = new Date(end.getFullYear(), end.getMonth(), end.getDate())
-    } else {
-      endExclusiveDay = addDays(parseDayKey(start_date), 1)
-    }
-    const endInclusive = format(addDays(endExclusiveDay, -1), 'yyyy-MM-dd')
-    const end_date = endInclusive < start_date ? start_date : endInclusive
+    // FullCalendar exclusive end → subtract a day for our inclusive `end_date`.
+    const endExclusive = end ?? addDays(start, 1)
+    const lastDay = addDays(endExclusive, -1)
+    const startKey = dayKey(start)
+    const endKey = dayKey(lastDay < start ? start : lastDay)
     await updateCalendarEvent(prev.id, {
       event_type: prev.event_type,
       title: prev.title,
@@ -130,11 +260,11 @@ export async function persistCalendarEventFromFullCalendar(
       address: addressVal,
       provider_id: prev.provider_id,
       is_all_day: true,
-      start_date,
-      end_date,
+      start_date: startKey,
+      end_date: endKey,
     })
   } else {
-    const endAt = end ?? new Date(start.getTime() + 3600000)
+    const endAt = end && end.getTime() > start.getTime() ? end : new Date(start.getTime() + 3600000)
     await updateCalendarEvent(prev.id, {
       event_type: prev.event_type,
       title: prev.title,

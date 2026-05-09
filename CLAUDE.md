@@ -31,7 +31,7 @@ There are no automated tests in this project.
 - **Google Maps API** — map view, Places autocomplete, geocoding; OpenStreetMap Nominatim as fallback
 - **FFmpeg.wasm + browser-image-compression** — client-side media processing before upload
 - **Zod** — runtime validation; **date-fns** — date utilities
-- **FullCalendar** (`@fullcalendar/react` + daygrid, timegrid, interaction) — renovation `/renovation/calendar` (dynamic import, `ssr: false`)
+- **FullCalendar v6** (MIT, free) — `@fullcalendar/core`, `react`, `daygrid`, `timegrid`, `interaction` — renovation `/renovation/calendar` (dynamic import, `ssr: false`). Drag-to-create, drag/move, and resize are all built-in via `@fullcalendar/interaction`. Migration history: `react-big-calendar` → FullCalendar v6 (Mar 2026) → Schedule-X v4 (May 2026, premature) → **back to FullCalendar v6 (May 2026)** because Schedule-X's premium plugins kept biting and Temporal round-trips mis-placed events on the time grid.
 - **@hebcal/core** — Israeli holiday schedule (`il: true`) as background events on the renovation calendar (GPL-2.0)
 
 ### Two Independent Modules
@@ -46,7 +46,7 @@ There are no automated tests in this project.
 - `/api/extract-property` — extracts property fields from Yad2 URLs (OpenAI); `/api/fetch-html` — fetches HTML for extraction
 
 **Renovation Hub** (`/renovation` routes):
-- Sub-pages: dashboard, expenses, tasks, calendar (FullCalendar month + week: select to create timed, drag/resize to update), gallery, providers, files, needs, rooms, settings
+- Sub-pages: dashboard, expenses, tasks, calendar (FullCalendar v6 month / week / day: click empty slot → inline quick-create popover, click event → drawer/modal, drag/move/resize built-in; tasks shown as read-only all-day chips, Israeli holidays via `@hebcal/core`), gallery, providers, files, needs, rooms, settings
 - Budget route `/renovation/budget` is a client redirect → `/renovation/settings#budget`
 - Only **one project can be active** at a time (enforced at app level, not DB constraint)
 

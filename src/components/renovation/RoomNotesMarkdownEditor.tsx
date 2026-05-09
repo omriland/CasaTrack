@@ -11,9 +11,13 @@ import { notesToEditorHtml, sanitizeNotesHtml } from '@/lib/room-notes-html'
 const VARELA_STACK = 'var(--font-varela-round), "Varela Round", sans-serif'
 
 function serializeEditorHtml(editor: Editor): string {
-  const text = editor.getText().trim()
-  if (!text) return ''
-  return sanitizeNotesHtml(editor.getHTML())
+  const html = sanitizeNotesHtml(editor.getHTML())
+  const textOnly = html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!textOnly) return ''
+  return html
 }
 
 export type RoomNotesMarkdownEditorProps = {

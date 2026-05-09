@@ -2,6 +2,10 @@
 
 This document describes the current organization structure and migration notes.
 
+## Renovation hub (`/renovation`)
+
+Renovation is **not** switched to `src/services/`; it uses **`src/lib/renovation.ts`** (and helpers such as **`renovation-tasks-export.ts`** for the tasks print page). Routes live under **`src/app/renovation/`** with desktop/mobile view splits per page.
+
 ## Current Structure
 
 ```
@@ -9,6 +13,7 @@ src/
 ├── app/                    # Next.js app router
 │   ├── api/               # API routes
 │   ├── layout.tsx         # Root layout
+│   ├── renovation/        # Renovation app (nested layout, tasks print at tasks/print)
 │   └── page.tsx           # Home page
 ├── components/            # React components
 │   ├── ui/                # Shared UI components (Button, Input, Modal, Select, Toast)
@@ -30,17 +35,18 @@ src/
 │   ├── noteService.ts
 │   ├── attachmentService.ts
 │   └── index.ts           # Barrel export
-├── lib/                   # Legacy utilities and helpers
+├── lib/                   # Utilities, Supabase, domain logic
 │   ├── auth.ts            # Authentication utilities
-│   ├── phone.ts           # Phone formatting utilities
-│   ├── fetchRenderedHtml.ts # HTML fetching utility
-│   ├── supabase.ts        # Supabase client
-│   ├── errors.ts           # Error handling utilities
-│   ├── validation.ts       # Zod validation schemas
-│   ├── properties.ts       # ⚠️ LEGACY - Use services/propertyService.ts
-│   └── attachments.ts      # ⚠️ LEGACY - Use services/attachmentService.ts
+│   ├── properties.ts       # Property CRUD (property hunt — see migration note below)
+│   ├── renovation.ts       # Renovation DB API (primary for /renovation)
+│   ├── renovation-tasks-export.ts  # Tasks print/PDF grouping + provider filter helpers
+│   ├── attachments.ts      # Attachments — see migration note below
+│   ├── supabase.ts        # Database client & types
+│   ├── validation.ts       # Zod schemas
+│   └── …                  # phone.ts, renovation-*, format helpers, etc.
 ├── types/                 # TypeScript types
 │   ├── property.ts
+│   ├── renovation.ts
 │   └── api.ts
 ├── utils/                 # Pure utility functions
 │   ├── common.ts          # Common utilities (formatting, dates, etc.)

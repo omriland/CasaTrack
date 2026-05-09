@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { createTask, updateTask, setTaskLabels, deleteTask } from '@/lib/renovation'
+import { notesHasVisibleContent, notesToEditorHtml } from '@/lib/room-notes-html'
 import type { RenovationTask, TaskStatus, TaskUrgency } from '@/types/renovation'
 
 export function useTaskForm({
@@ -58,10 +59,11 @@ export function useTaskForm({
     if (!project || !title.trim()) return
     setSaving(true)
     try {
+      const bodyStored = notesHasVisibleContent(body) ? notesToEditorHtml(body) : null
       if (editing) {
         await updateTask(editing.id, {
           title: title.trim(),
-          body: body || null,
+          body: bodyStored,
           status,
           urgency,
           assignee_id: assigneeId || null,
@@ -73,7 +75,7 @@ export function useTaskForm({
       } else {
         await createTask(project.id, {
           title: title.trim(),
-          body: body || null,
+          body: bodyStored,
           status,
           urgency,
           assignee_id: assigneeId || null,

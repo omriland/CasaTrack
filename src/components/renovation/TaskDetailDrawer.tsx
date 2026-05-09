@@ -20,6 +20,8 @@ import { DatePicker } from '@/components/renovation/DatePicker'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { sortTeamMembersForAssigneePicker } from '@/lib/renovation-team-sort'
+import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
+import { notesContentEqual, notesHasVisibleContent, notesToEditorHtml } from '@/lib/room-notes-html'
 
 const EMPTY_LABEL_IDS: string[] = []
 
@@ -334,8 +336,8 @@ export function TaskDetailDrawer({
 
   const commitBody = async () => {
     setEditingBody(false)
-    const b = bodyDraft.trim() || null
-    if (b === task.body) {
+    const b = notesHasVisibleContent(bodyDraft) ? notesToEditorHtml(bodyDraft) : null
+    if (notesContentEqual(b, task.body)) {
       setBodyDraft(task.body || '')
       return
     }
@@ -540,34 +542,46 @@ export function TaskDetailDrawer({
               <h2 className="text-[14px] font-bold text-[#172b4d] mb-2 px-2">Description</h2>
               {editingBody ? (
                 <div className="px-2">
-                  <textarea
-                    autoFocus
-                    dir="rtl"
-                    className="w-full text-right text-[14px] leading-relaxed text-[#172b4d] bg-slate-100 rounded-md outline-none p-3 resize-y min-h-[160px] shadow-inner"
+                  <RoomNotesMarkdownEditor
+                    instanceKey={`${task.id}-desc`}
                     value={bodyDraft}
-                    onChange={(e) => setBodyDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Escape') { setEditingBody(false); setBodyDraft(task.body || '') }
-                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commitBody() }
-                    }}
+                    onChange={setBodyDraft}
+                    placeholder="Add a description..."
+                    variant="compact"
                   />
                   <div className="flex items-center justify-between mt-2 flex-row-reverse">
-                    <span className="text-[11px] text-slate-400 font-medium px-1" dir="rtl">טיפ: לחץ Cmd/Ctrl + Enter לשמירה</span>
+                    <span className="text-[11px] text-slate-400 font-medium px-1" dir="rtl">
+                      מודגש, קו תחתון ורשימות — דרך הסרגל למעלה
+                    </span>
                     <div className="flex justify-start gap-2 flex-row-reverse">
-                      <button onClick={commitBody} className="px-3 py-1.5 rounded-md bg-[#0052cc] hover:bg-[#0047b3] text-white font-semibold text-[13px] transition-colors shadow-sm">Save</button>
-                      <button onClick={() => { setEditingBody(false); setBodyDraft(task.body || '') }} className="px-3 py-1.5 rounded-md hover:bg-slate-100 font-semibold text-slate-600 text-[13px] transition-colors">Cancel</button>
+                      <button
+                        type="button"
+                        onClick={commitBody}
+                        className="px-3 py-1.5 rounded-md bg-[#0052cc] hover:bg-[#0047b3] text-white font-semibold text-[13px] transition-colors shadow-sm"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingBody(false)
+                          setBodyDraft(task.body || '')
+                        }}
+                        className="px-3 py-1.5 rounded-md hover:bg-slate-100 font-semibold text-slate-600 text-[13px] transition-colors"
+                      >
+                        Cancel
+                      </button>
                     </div>
                   </div>
                 </div>
-               ) : task.body ? (
-                 <div 
-                   className="text-[14px] text-right leading-relaxed text-[#172b4d] whitespace-pre-wrap hover:bg-slate-50 p-2 rounded-md cursor-text transition-colors" 
-                   dir="rtl"
-                   onDoubleClick={() => setEditingBody(true)}
-                   title="Double click to edit"
-                 >
-                   {task.body}
-                 </div>
+              ) : notesHasVisibleContent(task.body) ? (
+                <div
+                  className="reno-task-body-html text-[14px] text-right leading-relaxed text-[#172b4d] hover:bg-slate-50 p-2 rounded-md cursor-text transition-colors"
+                  dir="auto"
+                  onDoubleClick={() => setEditingBody(true)}
+                  title="Double click to edit"
+                  dangerouslySetInnerHTML={{ __html: notesToEditorHtml(task.body) }}
+                />
               ) : (
                 <div 
                   className="text-[14px] text-right text-slate-500 hover:bg-slate-50 cursor-pointer p-3 mx-2 rounded-md border border-dashed border-slate-300 transition-colors flex items-center gap-2 font-medium"

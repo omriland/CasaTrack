@@ -43,6 +43,21 @@ export type OpenTasksPrintModel = {
   byRoom: { room: RenovationRoom; tasks: TaskWithOpenSubtasks[] }[]
 }
 
+/** Use in provider multi-select; tasks with `provider_id == null` match this key. */
+export const PRINT_NO_PROVIDER_KEY = '__no_provider__'
+
+/**
+ * When `selectedKeys` is empty, all tasks pass through.
+ * When non-empty, only tasks whose provider is included: real `provider_id` or `PRINT_NO_PROVIDER_KEY` for unassigned.
+ */
+export function filterTasksByProviderKeys(tasks: RenovationTask[], selectedKeys: ReadonlySet<string>): RenovationTask[] {
+  if (selectedKeys.size === 0) return tasks
+  return tasks.filter((t) => {
+    if (t.provider_id) return selectedKeys.has(t.provider_id)
+    return selectedKeys.has(PRINT_NO_PROVIDER_KEY)
+  })
+}
+
 /**
  * Shapes open / in_progress tasks for print: unassigned (no room) first, then per room by task.room_id.
  * Incomplete subtasks only, nested under parent. Subtask.room_id is ignored for grouping.

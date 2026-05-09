@@ -5,6 +5,7 @@ import { useRenovation } from '@/components/renovation/RenovationContext'
 import { sortTeamMembersForAssigneePicker } from '@/lib/renovation-team-sort'
 import { Dropdown } from '@/components/renovation/Dropdown'
 import { DatePicker } from '@/components/renovation/DatePicker'
+import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
 import { useTaskForm } from '@/components/renovation/useTaskForm'
 import { STATUSES, URGENCY, PRIORITY_ICONS, addDaysToIso, formatStatusLabel, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
 import type {
@@ -62,6 +63,8 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
     handleDeleteClick,
     editing: editingRow,
   } = useTaskForm({ editing, onSave })
+
+  const taskFormInstanceKey = editingRow?.id ?? 'new'
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -235,20 +238,12 @@ export function TaskModal({ editing, members, labels, rooms, providers, onClose,
 
           <div className="space-y-1.5">
             <label className="px-1 text-[10px] font-semibold uppercase tracking-[0.07em] text-[oklch(0.60_0_0)]">Description</label>
-            <div className="relative">
-              <div className="absolute left-3.5 top-3.5 text-[oklch(0.60_0_0)]">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-                </svg>
-              </div>
-              <textarea
-                dir="auto"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                placeholder="Add context, measurements, or specs..."
-                className="min-h-[24vh] w-full resize-none rounded-[8px] border border-black/10 bg-white py-2 pl-10 pr-3 text-[14px] font-medium text-[oklch(0.13_0_0)] transition-all placeholder:text-[oklch(0.60_0_0)] focus:border-black/25 focus:bg-white focus:outline-none focus:ring-0"
-              />
-            </div>
+            <RoomNotesMarkdownEditor
+              instanceKey={taskFormInstanceKey}
+              value={body}
+              onChange={setBody}
+              placeholder="Add context, measurements, or specs..."
+            />
           </div>
 
           {editingRow && (editingRow.subtask_total ?? 0) > 0 && (

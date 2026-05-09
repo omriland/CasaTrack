@@ -16,7 +16,9 @@ src/
 │   ├── renovation/          # Complete Renovation Sub-Application
 │   │   ├── layout.tsx       # RenovationShell and RenovationProvider
 │   │   ├── page.tsx         # Renovation Dashboard
-│   │   └── ...              # Tabs: expenses, tasks, gallery, providers, files, needs, rooms, settings
+│   │   ├── tasks/
+│   │   │   └── print/       # Tasks print / Save as PDF (minimal chrome; print.css)
+│   │   └── ...              # Tabs: expenses, tasks, gallery, providers, files, needs, rooms, settings, calendar
 │   └── api/
 │       ├── extract-property/ # Yad2 URL extraction endpoint
 │       └── fetch-html/       # HTML fetching endpoint
@@ -38,6 +40,7 @@ src/
 │   ├── properties.ts        # Supabase CRUD operations
 │   ├── attachments.ts       # Attachment management
 │   ├── renovation.ts        # Fully comprehensive typed API for Renovation data
+│   ├── renovation-tasks-export.ts  # Open/in-progress tasks model for print/PDF (grouping, provider filter helpers)
 │   ├── phone.ts             # Phone number formatting utilities
 │   ├── supabase.ts          # Database client & types
 │   └── utils.ts             # Utility functions (cn helper)
@@ -50,7 +53,7 @@ src/
 
 ## Data Flow
 1. **Authentication**: Cookie-based session → Environment variable validation
-2. **State Management**: React useState → Local component state only
+2. **State Management**: **Property hunt** — React Query (TanStack v5) via `src/hooks/queries/`; **Renovation** — local state + direct `renovation.ts` calls (no React Query)
 3. **Database Operations**: Supabase client → Direct SQL operations
 4. **File Storage**: Supabase Storage → Attachment file management
 5. **UI Updates**: Optimistic updates → Real-time sync available
@@ -72,16 +75,16 @@ src/
 - **Performance**: Indexes on status, created_at, property_id, coordinates
 
 ### State Management
-- **Choice**: Local React state only
-- **Rationale**: Simple CRUD operations, no complex global state
-- **Pattern**: Lift state up to main page component
+- **Property hunt**: React Query (TanStack v5) in `src/hooks/queries/` for server state
+- **Renovation**: Local component state + `RenovationContext` (active project, modals, profile); Supabase via `renovation.ts` directly
+- **Pattern**: Lift page state in view hooks (e.g. `useTasksPageState`) where needed
 - **Real-time**: Available but not currently utilized
 
 ### UI Framework
 - **Choice**: Tailwind CSS 4 with custom components
 - **Pattern**: Mobile-first responsive design
 - **Components**: Modular, reusable with clear prop interfaces
-- **Typography**: Outfit font family
+- **Typography (root / property hunt)**: Varela Round + JetBrains Mono (`src/app/layout.tsx`); **renovation layout**: Assistant (`font-assistant`)
 - **Theme**: Custom CSS variables with oklch color space
 
 ### Maps Integration

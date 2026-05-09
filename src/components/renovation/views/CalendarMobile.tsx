@@ -4,7 +4,7 @@ import { addDays, addMonths, format, subDays, subMonths } from 'date-fns'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
-import { RenovationFullCalendar } from '@/components/renovation/RenovationFullCalendar'
+import { RenovationCalendar } from '@/components/renovation/RenovationCalendar'
 import { calendarEventOnLocalDay, taskDueOnLocalDay } from '@/components/renovation/calendar-shared'
 import { MobileBottomSheet } from '@/components/renovation/mobile/MobileBottomSheet'
 import { TaskModalMobile } from '@/components/renovation/TaskModalMobile'
@@ -38,6 +38,7 @@ export function CalendarMobile() {
     viewingEvent,
     initialDayKey,
     initialTimedRange,
+    initialTitle,
     openNewEvent,
     openNewEventTimed,
     openEditEvent,
@@ -224,7 +225,7 @@ export function CalendarMobile() {
         {loading ? (
           <div className="reno-cal reno-cal-gcal min-h-[400px] animate-pulse rounded-lg border-0 bg-[#f8f9fa]" />
         ) : (
-          <RenovationFullCalendar
+          <RenovationCalendar
             view={calendarView}
             cursor={cursor}
             events={events}
@@ -360,6 +361,7 @@ export function CalendarMobile() {
           editing={viewingEvent}
           initialDayKey={viewingEvent ? null : initialDayKey}
           initialTimedRange={viewingEvent ? null : initialTimedRange}
+          initialTitle={viewingEvent ? '' : initialTitle}
           onClose={() => {
             closeEventModal()
             closeEventView()

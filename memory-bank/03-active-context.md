@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation module stable; **Budget** at `/renovation/budget` includes vendor-level **partial payments** (`renovation_vendor_payments`, migration `17_vendor_payments.sql`) with proportional row fill.
-**Status**: Run new SQL in Supabase if not applied. Calendar unchanged: FullCalendar; `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`.
+**Priority**: Renovation module stable; **vendor budget** uses TanStack Table (`VendorBudgetView`) with incremental save + stable row order; **tasks print** at [`/renovation/tasks/print`](src/app/renovation/tasks/print/page.tsx) for open/in-progress work with optional provider filter (`renovation-tasks-export.ts`).
+**Status**: Apply any pending Supabase SQL from `supabase/renovation/` as needed. Calendar: **FullCalendar v6** (MIT — `@fullcalendar/core`, `react`, `daygrid`, `timegrid`, `interaction`); migrated react-big-calendar → FullCalendar v6 (Mar 2026) → Schedule-X v4 (May 2026, briefly) → **back to FullCalendar v6 (May 2026)** after Schedule-X's premium drag/resize and Temporal round-trips proved unworkable. Drag-to-create, move, and resize are all native FullCalendar; quick-create popover unchanged. Migrations `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`.
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session
@@ -12,8 +12,8 @@
 - **Frontend**: Next.js 15 + TypeScript + Tailwind CSS 4 + Turbopack
 - **Backend**: Supabase PostgreSQL with real-time capabilities + Storage
 - **Authentication**: Simple cookie-based password protection
-- **State Management**: React useState (local component state)
-- **UI Framework**: Tailwind CSS with Outfit typography and custom design system
+- **State Management**: React Query (TanStack v5) for **property hunt** only; **renovation** uses local state + `RenovationContext` and direct `lib/renovation.ts` calls
+- **UI Framework**: Tailwind CSS 4 + design tokens; root fonts **Varela Round** + JetBrains Mono; renovation subtree **Assistant**
 - **Maps**: Google Maps API with Places integration
 
 ### Implemented Features Analysis
@@ -21,10 +21,10 @@
 #### Renovation App (New Module)
 1. ✅ **Dashboard & Profiles**: Multi-user profile switching, quick overview of budget, upcoming tasks, and recent photos.
 2. ✅ **Expenses**: Financial tracking, categorization, receipt attachments, **planned vs spent** (`is_planned`), filters, and spent-only budget rollups.
-3. ✅ **Tasks**: Drag-and-drop Kanban board (view by status or assignee), detailed task cards (room, labels, provider, due date).
+3. ✅ **Tasks**: Drag-and-drop Kanban (status / assignee / epic by label), detail drawer, **Print / Save as PDF** from [`/renovation/tasks/print`](src/app/renovation/tasks/print/page.tsx) with provider filter.
 4. ✅ **Gallery**: Grouped by albums/tags with album covers, multi-photo uploads with progress, Lightbox viewing, and inline label creation.
 5. ✅ **Providers**: Centralized contact database for contractors and service providers.
-6. ✅ **Calendar**: Month view with general events, provider meetings, and task due dates (Sun–Thu work week emphasis, Fri–Sat weekend styling).
+6. ✅ **Calendar**: **FullCalendar v6** (MIT — `@fullcalendar/core`, `@fullcalendar/react`, `@fullcalendar/daygrid`, `@fullcalendar/timegrid`, `@fullcalendar/interaction`) with **month / week / day** views. Inner [`RenovationCalendarInner.tsx`](src/components/renovation/RenovationCalendarInner.tsx) wraps `<FullCalendar>` with our header-less config and Google-Calendar-style chrome (custom `dayHeaderContent` two-line headers, Fri–Sat tint via `dayCellClassNames`, `eventContent` chips with RTL-safe `dir="auto"`, indigo today bubble, red now-line). Mapper [`renovation-fullcalendar-map.ts`](src/components/renovation/renovation-fullcalendar-map.ts) emits plain `EventInput`s (no Temporal). Drag-to-create on empty slots opens the inline quick-create popover ([`CalendarQuickCreatePopover.tsx`](src/components/renovation/CalendarQuickCreatePopover.tsx)); event drag/move/resize are FullCalendar-native and persist via `persistCalendarChange`. Tasks render read-only on `due_date`; Israeli holidays via **`@hebcal/core`** ([`israeli-holiday-events.ts`](src/lib/israeli-holiday-events.ts)) emitted as FullCalendar `EventInput[]`.y **not** used.
 7. ✅ **Files**: Documentation hub with multi-file upload, drag-and-drop, and progress tracking.
 8. ✅ **Rooms & Needs**: Space management and items purchasing list.
 9. ✅ **Settings**: Project preferences, labels, and team management.
@@ -103,7 +103,7 @@
 - **Drag & Drop**: Professional implementation with @dnd-kit
 - **Maps Integration**: Robust Google Maps API integration with fallbacks
 - **Address Handling**: Smart coordinate extraction with OpenStreetMap fallback
-- **Design System**: Custom CSS variables, modern color palette, Outfit font
+- **Design System**: CSS variables (oklch), Varela Round + JetBrains Mono on property hunt; glassmorphism on modals
 - **Animations**: Smooth transitions and micro-interactions
 - **File Storage**: Supabase Storage with proper RLS policies
 - **Phone Utilities**: Israeli number formatting for WhatsApp and tel links
@@ -127,20 +127,16 @@
 - **Database**: Supabase connected with all tables (properties, notes, attachments)
 - **Storage**: Supabase Storage configured for attachments
 - **Build**: Clean build with no errors or warnings
-- **Dependencies**: All modern versions (Next.js 15, React 19, Tailwind 4)
-- **Google Maps**: Fully integrated with Places API and fallback geocoding
-- **Theme**: shadcn/ui theme with Outfit typography
+- **Dependencies**: Next.js 15, React 19, Tailwind 4; renovation data via `renovation.ts` (no React Query there)
 
-## Recent Additions (Latest Session)
-- **WhatsApp Integration**: Phone numbers now have WhatsApp buttons
-- **Click-to-Call**: Phone numbers are clickable tel: links
-- **Map Attachment Indicators**: Hover tooltips show attachment indicators
-- **Phone Utilities**: New phone formatting library
+## Recent Additions (tracked in progress log)
+- **May 2026**: Renovation **tasks print / PDF** page and `renovation-tasks-export` helpers (open & in-progress, subtasks, room grouping, provider filter).
+- **April 2026**: Vendor budget **TanStack Table** redesign, incremental save UX, rooms on budget lines/settings, visibility by profile, room notes TipTap/HTML, calendar day view, hydration fixes, preset avatars, and related entries in [`02-progress-log.md`](memory-bank/02-progress-log.md).
 
 ## Next Development Priorities
 1. **Search & Filters**: Property search and filtering system
 2. **Real-time Updates**: Leverage Supabase real-time subscriptions
-3. **Export Features**: PDF reports or data export functionality
+3. **Further export / reporting**: Vendor CSV exists; extend if needed beyond tasks print PDF
 4. **Performance**: Loading skeletons and error boundaries
 5. **Testing**: Unit tests and integration tests
 

@@ -5,7 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarEventDetailDrawer } from '@/components/renovation/CalendarEventDetailDrawer'
 import { CalendarEventModal } from '@/components/renovation/CalendarEventModal'
 import { CalendarEventTitleAddress } from '@/components/renovation/CalendarEventText'
-import { RenovationFullCalendar } from '@/components/renovation/RenovationFullCalendar'
+import { CalendarQuickCreatePopover } from '@/components/renovation/CalendarQuickCreatePopover'
+import { RenovationCalendar } from '@/components/renovation/RenovationCalendar'
+import type { QuickCreateAnchor } from '@/components/renovation/renovation-fullcalendar-map'
 import { calendarEventOnLocalDay, taskDueOnLocalDay } from '@/components/renovation/calendar-shared'
 import { TaskDetailDrawer } from '@/components/renovation/TaskDetailDrawer'
 import { TaskModal } from '@/components/renovation/TaskModal'
@@ -39,6 +41,7 @@ export function CalendarDesktop() {
     viewingEvent,
     initialDayKey,
     initialTimedRange,
+    initialTitle,
     openNewEvent,
     openNewEventTimed,
     openEditEvent,
@@ -55,10 +58,10 @@ export function CalendarDesktop() {
   } = useCalendarPageState()
 
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
-  const [viewMenuOpen, setViewMenuOpen] = useState(false)
   const [members, setMembers] = useState<RenovationTeamMember[]>([])
   const [labels, setLabels] = useState<RenovationLabel[]>([])
   const [rooms, setRooms] = useState<RenovationRoom[]>([])
+  const [quickAnchor, setQuickAnchor] = useState<QuickCreateAnchor | null>(null)
   /** FullCalendar can fire `dateClick` after `eventClick`; skip selecting that day when opening an event. */
   const suppressNextDateClickRef = useRef(false)
 
@@ -135,153 +138,156 @@ export function CalendarDesktop() {
     ? itemsForDay(selectedDate!)
     : { events: [] as RenovationCalendarEvent[], tasks: [] as RenovationTask[] }
 
+  const isToday = (() => {
+    const today = new Date()
+    if (calendarView === 'month') {
+      return cursor.getFullYear() === today.getFullYear() && cursor.getMonth() === today.getMonth()
+    }
+    if (calendarView === 'day') {
+      return (
+        cursor.getFullYear() === today.getFullYear() &&
+        cursor.getMonth() === today.getMonth() &&
+        cursor.getDate() === today.getDate()
+      )
+    }
+    const ws = startOfWeek(today, { weekStartsOn: 0 })
+    const cs = startOfWeek(cursor, { weekStartsOn: 0 })
+    return ws.getTime() === cs.getTime()
+  })()
+
   return (
     <div className="flex flex-col gap-0 bg-white pb-8 animate-fade-in-up">
-      <header className="px-4 py-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <h1 className="shrink-0 text-[18px] leading-none tracking-[-0.02em] text-[oklch(0.13_0_0)] font-[family-name:var(--font-varela-round)]">
+      <header className="px-4 pt-3 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <h1 className="shrink-0 text-[20px] font-bold leading-none tracking-[-0.02em] text-slate-900 font-[family-name:var(--font-varela-round)]">
               Calendar
             </h1>
-            <button
-              type="button"
-              onClick={() =>
-                setCursor(
-                  calendarView === 'month'
-                    ? subMonths(cursor, 1)
-                    : calendarView === 'week'
-                      ? subWeeks(cursor, 1)
-                      : subDays(cursor, 1),
-                )
-              }
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] border border-black/10 text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
-              aria-label={calendarView === 'month' ? 'Previous month' : calendarView === 'week' ? 'Previous week' : 'Previous day'}
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCursor(new Date())}
-              className="h-8 shrink-0 rounded-[6px] border border-black/10 px-[10px] text-[12px] text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setCursor(
-                  calendarView === 'month'
-                    ? addMonths(cursor, 1)
-                    : calendarView === 'week'
-                      ? addWeeks(cursor, 1)
-                      : addDays(cursor, 1),
-                )
-              }
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-[6px] border border-black/10 text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
-              aria-label={calendarView === 'month' ? 'Next month' : calendarView === 'week' ? 'Next week' : 'Next day'}
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
-              </svg>
-            </button>
-            <h2 className="truncate pl-1 text-[16px] leading-none tracking-[-0.01em] text-[oklch(0.13_0_0)]">
+
+            <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white p-0.5">
+              <button
+                type="button"
+                onClick={() =>
+                  setCursor(
+                    calendarView === 'month'
+                      ? subMonths(cursor, 1)
+                      : calendarView === 'week'
+                        ? subWeeks(cursor, 1)
+                        : subDays(cursor, 1),
+                  )
+                }
+                className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                aria-label={calendarView === 'month' ? 'Previous month' : calendarView === 'week' ? 'Previous week' : 'Previous day'}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCursor(new Date())}
+                disabled={isToday}
+                className={`h-8 rounded-lg px-3 text-[13px] font-semibold transition-colors ${
+                  isToday
+                    ? 'cursor-default text-slate-400'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setCursor(
+                    calendarView === 'month'
+                      ? addMonths(cursor, 1)
+                      : calendarView === 'week'
+                        ? addWeeks(cursor, 1)
+                        : addDays(cursor, 1),
+                  )
+                }
+                className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                aria-label={calendarView === 'month' ? 'Next month' : calendarView === 'week' ? 'Next week' : 'Next day'}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            </div>
+
+            <h2 className="truncate text-[18px] font-semibold leading-none tracking-[-0.015em] text-slate-900">
               {calendarView === 'month'
                 ? format(cursor, 'MMMM yyyy')
                 : calendarView === 'week'
                   ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
-                  : format(cursor, 'EEEE, MMMM d, yyyy')}
+                  : format(cursor, 'EEEE, MMM d, yyyy')}
             </h2>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setShowTasks(!showTasks)}
-              className={`inline-flex items-center gap-1 rounded-full border px-[11px] py-[5px] text-[12px] transition-colors ${
-                showTasks
-                  ? 'border-[oklch(0.65_0.18_163)] bg-[oklch(0.95_0.06_163)] text-[oklch(0.45_0.18_163)]'
-                  : 'border-black/10 text-[oklch(0.60_0_0)] hover:border-black/20 hover:text-[oklch(0.40_0_0)]'
-              }`}
-            >
-              {showTasks && (
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
-                </svg>
-              )}
-              Tasks
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowCompletedTasks(!showCompletedTasks)}
-              disabled={!showTasks}
-              className={`inline-flex items-center gap-1 rounded-full border px-[11px] py-[5px] text-[12px] transition-colors ${
-                !showTasks
-                  ? 'cursor-not-allowed border-black/10 text-[oklch(0.75_0_0)] opacity-70'
-                  : showCompletedTasks
-                    ? 'border-black/15 bg-[oklch(0.94_0_0)] text-[oklch(0.40_0_0)]'
-                    : 'border-black/10 text-[oklch(0.60_0_0)] hover:border-black/20 hover:text-[oklch(0.40_0_0)]'
-              }`}
-            >
-              {showCompletedTasks && showTasks && (
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
-                </svg>
-              )}
-              Completed
-            </button>
-
-            <div className="relative shrink-0">
+            {/* Filters */}
+            <div className="flex items-center gap-1 rounded-full bg-slate-100 p-1">
               <button
                 type="button"
-                onClick={() => setViewMenuOpen((o) => !o)}
-                className="inline-flex h-8 items-center gap-1 rounded-[6px] border border-black/10 px-[10px] text-[12px] text-[oklch(0.40_0_0)] transition-colors hover:border-black/20 hover:text-[oklch(0.13_0_0)]"
+                onClick={() => setShowTasks(!showTasks)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-all ${
+                  showTasks
+                    ? 'bg-white text-emerald-700 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
-                {calendarView === 'month' ? 'Month' : calendarView === 'week' ? 'Week' : 'Day'}
-                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-                </svg>
+                {showTasks && (
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
+                  </svg>
+                )}
+                Tasks
               </button>
-              {viewMenuOpen && (
-                <>
-                  <button
-                    type="button"
-                    className="fixed inset-0 z-40 h-full w-full cursor-default bg-transparent"
-                    onClick={() => setViewMenuOpen(false)}
-                    aria-label="Close menu"
-                    tabIndex={-1}
-                  />
-                  <div className="absolute right-0 top-full z-50 mt-1 w-40 overflow-hidden rounded-[8px] border border-black/[0.09] bg-white py-1 shadow-[0_12px_28px_-18px_rgba(0,0,0,0.5)] animate-fade-in">
-                    {(['month', 'week', 'day'] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setCalendarView(mode)
-                          setViewMenuOpen(false)
-                        }}
-                        className={`block w-full px-3 py-2 text-left text-[13px] transition-colors ${
-                          calendarView === mode
-                            ? 'bg-[oklch(0.97_0_0)] text-[oklch(0.13_0_0)]'
-                            : 'text-[oklch(0.40_0_0)] hover:bg-[oklch(0.98_0_0)]'
-                        }`}
-                      >
-                        {mode === 'month' ? 'Month' : mode === 'week' ? 'Week' : 'Day'}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowCompletedTasks(!showCompletedTasks)}
+                disabled={!showTasks}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[12px] font-semibold transition-all ${
+                  !showTasks
+                    ? 'cursor-not-allowed text-slate-300'
+                    : showCompletedTasks
+                      ? 'bg-white text-slate-700 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {showCompletedTasks && showTasks && (
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5" />
+                  </svg>
+                )}
+                Completed
+              </button>
+            </div>
+
+            {/* View switcher — segmented control */}
+            <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white p-0.5">
+              {(['month', 'week', 'day'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setCalendarView(mode)}
+                  className={`h-8 rounded-lg px-3 text-[13px] font-semibold transition-all ${
+                    calendarView === mode
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  {mode === 'month' ? 'Month' : mode === 'week' ? 'Week' : 'Day'}
+                </button>
+              ))}
             </div>
 
             <button
               type="button"
               onClick={() => openNewEvent(null)}
-              className="inline-flex items-center gap-[5px] rounded-[8px] bg-[oklch(0.13_0_0)] px-[14px] py-[7px] text-[13px] text-white transition-[filter] hover:brightness-110"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-bold text-white shadow-[0_2px_8px_-2px_rgba(79,70,229,0.55)] transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
             >
-              <svg className="h-[13px] w-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-[14px] w-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
               </svg>
               Create
@@ -294,7 +300,7 @@ export function CalendarDesktop() {
         {loading ? (
           <div className="reno-cal reno-cal-gcal min-h-[620px] animate-pulse rounded-[8px] border border-black/[0.07] bg-[oklch(0.97_0_0)]" />
         ) : (
-          <RenovationFullCalendar
+          <RenovationCalendar
             view={calendarView}
             cursor={cursor}
             events={events}
@@ -315,8 +321,18 @@ export function CalendarDesktop() {
               })
             }}
             onCreateTimedRange={openNewEventTimed}
-            onCreateForDay={dayKey => openNewEvent(dayKey)}
+            onCreateForDay={(dayKey) => openNewEvent(dayKey)}
             onEventUpdated={() => load()}
+            onCursorChange={(d) => setCursor(d)}
+            onQuickCreate={(anchor) => {
+              suppressNextDateClickRef.current = true
+              setQuickAnchor(anchor)
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  suppressNextDateClickRef.current = false
+                })
+              })
+            }}
           />
         )}
       </div>
@@ -400,6 +416,25 @@ export function CalendarDesktop() {
         </div>
       )}
 
+      {quickAnchor && (
+        <CalendarQuickCreatePopover
+          anchor={quickAnchor}
+          projectId={project.id}
+          providers={providers}
+          onClose={() => setQuickAnchor(null)}
+          onCreated={() => load()}
+          onMoreOptions={(initialTitle) => {
+            const anchor = quickAnchor
+            setQuickAnchor(null)
+            if (anchor.isAllDay) {
+              openNewEvent(anchor.startIso.slice(0, 10), initialTitle)
+            } else {
+              openNewEventTimed(anchor.startIso, anchor.endIso, initialTitle)
+            }
+          }}
+        />
+      )}
+
       {eventModalOpen && (
         <CalendarEventModal
           open={eventModalOpen}
@@ -408,6 +443,7 @@ export function CalendarDesktop() {
           editing={null}
           initialDayKey={initialDayKey}
           initialTimedRange={initialTimedRange}
+          initialTitle={initialTitle}
           onClose={closeEventModal}
           onSaved={() => load()}
         />

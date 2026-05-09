@@ -22,6 +22,7 @@ export function useCalendarPageState() {
   const [viewingEvent, setViewingEvent] = useState<RenovationCalendarEvent | null>(null)
   const [initialDayKey, setInitialDayKey] = useState<string | null>(null)
   const [initialTimedRange, setInitialTimedRange] = useState<{ start: string; end: string } | null>(null)
+  const [initialTitle, setInitialTitle] = useState<string>('')
   /** Desktop: TaskDetailDrawer. Mobile: TaskModalMobile. */
   const [viewingTask, setViewingTask] = useState<RenovationTask | null>(null)
   /** Desktop only: centered TaskModal opened from drawer "Edit". */
@@ -58,17 +59,19 @@ export function useCalendarPageState() {
     [tasks, showCompletedTasks]
   )
 
-  const openNewEvent = (dayKey?: string | null) => {
+  const openNewEvent = (dayKey?: string | null, title: string = '') => {
     setViewingEvent(null)
     setInitialTimedRange(null)
     setInitialDayKey(dayKey ?? null)
+    setInitialTitle(title)
     setEventModalOpen(true)
   }
 
-  const openNewEventTimed = (startIso: string, endIso: string) => {
+  const openNewEventTimed = (startIso: string, endIso: string, title: string = '') => {
     setViewingEvent(null)
     setInitialDayKey(null)
     setInitialTimedRange({ start: startIso, end: endIso })
+    setInitialTitle(title)
     setEventModalOpen(true)
   }
 
@@ -76,6 +79,7 @@ export function useCalendarPageState() {
     setEventModalOpen(false)
     setInitialDayKey(null)
     setInitialTimedRange(null)
+    setInitialTitle('')
     setViewingEvent(ev)
   }
 
@@ -83,6 +87,7 @@ export function useCalendarPageState() {
     setEventModalOpen(false)
     setInitialDayKey(null)
     setInitialTimedRange(null)
+    setInitialTitle('')
   }
 
   const closeEventView = () => setViewingEvent(null)
@@ -124,6 +129,7 @@ export function useCalendarPageState() {
     viewingEvent,
     initialDayKey,
     initialTimedRange,
+    initialTitle,
     openNewEvent,
     openNewEventTimed,
     openEditEvent,

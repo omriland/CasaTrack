@@ -1,6 +1,7 @@
-import type { EventInput } from '@fullcalendar/core'
-import { Event, flags, HebrewCalendar } from '@hebcal/core'
 import { addDays, addMonths, endOfMonth, format, startOfMonth } from 'date-fns'
+import { type Event, flags, HebrewCalendar } from '@hebcal/core'
+import type { EventInput } from '@fullcalendar/core'
+import type { FcAppEvent } from '@/components/renovation/renovation-fullcalendar-map'
 
 const NOISE_FLAGS =
   flags.PARSHA_HASHAVUA |
@@ -18,7 +19,6 @@ function hasTimedComponent(ev: Event): boolean {
   return 'eventTime' in ev && Boolean((ev as { eventTime?: unknown }).eventTime)
 }
 
-/** Keep calendar rows that are observed in Israel and look like holidays (not parsha/omer/etc.). */
 function shouldIncludeHebcalEvent(ev: Event): boolean {
   if (!ev.observedInIsrael()) return false
   const m = ev.getFlags()
@@ -30,14 +30,11 @@ function shouldIncludeHebcalEvent(ev: Event): boolean {
 }
 
 function slug(s: string): string {
-  return s.replace(/[^\w\u0590-\u05FF]+/g, '-').slice(0, 48)
+  return s.replace(/[^\w֐-׿]+/g, '-').slice(0, 48)
 }
 
-/**
- * All-day Israeli holiday events (@hebcal/core, il=true). Shown only in the all-day strip in week view;
- * the timed grid stays clear.
- */
-export function buildIsraelHolidayEventInputs(rangeCenter: Date): EventInput[] {
+/** Build read-only Israeli holiday chips for a ±1-month window around `rangeCenter`. */
+export function buildIsraelHolidayEvents(rangeCenter: Date): EventInput[] {
   const rangeStart = startOfMonth(addMonths(rangeCenter, -1))
   const rangeEnd = endOfMonth(addMonths(rangeCenter, 1))
   const raw = HebrewCalendar.calendar({
@@ -51,19 +48,33 @@ export function buildIsraelHolidayEventInputs(rangeCenter: Date): EventInput[] {
   for (const ev of raw) {
     if (!shouldIncludeHebcalEvent(ev)) continue
     const gd = ev.greg()
-    const day = format(gd, 'yyyy-MM-dd')
+    const start = new Date(gd.getFullYear(), gd.getMonth(), gd.getDate())
+    const endExclusive = addDays(start, 1)
+    const dayKey = format(start, 'yyyy-MM-dd')
     const title = ev.render('en')
-    out.push({
-      id: `il-holiday-${day}-${slug(ev.getDesc())}`,
+    const id = `il-holiday-${dayKey}-${slug(ev.getDesc())}`
+    const app: FcAppEvent = {
+      id,
       title,
+      start,
+      end: endExclusive,
       allDay: true,
-      start: day,
-      end: format(addDays(gd, 1), 'yyyy-MM-dd'),
-      classNames: ['reno-cal-event', 'reno-cal-il-holiday'],
+      kind: 'holiday',
+      isDraggable: false,
+      isResizable: false,
+      isPast: endExclusive < new Date(),
+    }
+    out.push({
+      id,
+      title,
+      start: dayKey,
+      end: format(endExclusive, 'yyyy-MM-dd'),
+      allDay: true,
       editable: false,
       startEditable: false,
       durationEditable: false,
-      extendedProps: { kind: 'holiday' as const },
+      classNames: ['reno-ev', 'reno-ev-kind--holiday'],
+      extendedProps: { kind: 'holiday', app },
     })
   }
   return out

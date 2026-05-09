@@ -1,6 +1,7 @@
-/* Screen: toolbar; print: hidden */
+/* Screen: toolbar column; print: hidden */
 .reno-tasks-print-toolbar {
   display: flex;
+  flex-direction: column;
 }
 
 @media print {

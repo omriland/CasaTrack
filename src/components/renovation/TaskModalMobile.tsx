@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { RoomNotesMarkdownEditor } from '@/components/renovation/RoomNotesMarkdownEditor'
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { useTaskForm } from '@/components/renovation/useTaskForm'
 import { STATUSES, URGENCY, addDaysToIso, formatStatusLabel, formatUrgencyLabel } from '@/components/renovation/task-form-shared'
@@ -46,6 +47,8 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
     handleDeleteClick,
     editing: editingRow,
   } = useTaskForm({ editing, onSave })
+
+  const taskFormInstanceKey = editingRow?.id ?? 'new'
 
   return (
     <div
@@ -223,13 +226,13 @@ export function TaskModalMobile({ editing, members, labels, rooms, providers, on
 
           <div className="min-w-0 max-w-full space-y-1.5">
             <label className="text-[13px] font-bold uppercase tracking-wider text-slate-500">Description</label>
-            <textarea
-              dir="auto"
+            <RoomNotesMarkdownEditor
+              instanceKey={taskFormInstanceKey}
               value={body}
-              onChange={(e) => setBody(e.target.value)}
+              onChange={setBody}
               placeholder="Context, measurements, links…"
-              rows={5}
-              className="box-border min-h-[140px] w-full min-w-0 max-w-full resize-none rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-[16px] font-medium text-slate-900 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/20"
+              variant="compact"
+              className="min-w-0 max-w-full"
             />
           </div>
         </div>

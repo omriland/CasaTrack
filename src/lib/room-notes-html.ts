@@ -14,10 +14,19 @@ const SANITIZE = {
 }
 
 /**
+ * Empty TipTap/ProseMirror paragraphs (`<p></p>` or `<p><br></p>`) become consistent `<p><br></p>`
+ * so blank lines stay visible as real row breaks between text blocks.
+ */
+function normalizeEmptyParagraphs(html: string): string {
+  return html.replace(/<p>(?:\s|&nbsp;|<br\s[^>]*\/?>)*<\/p>/gi, '<p><br></p>')
+}
+
+/**
  * Sanitize HTML before saving to DB or feeding TipTap.
  */
 export function sanitizeNotesHtml(html: string): string {
-  return DOMPurify.sanitize(html, SANITIZE) as string
+  const normalized = normalizeEmptyParagraphs(html)
+  return DOMPurify.sanitize(normalized, SANITIZE) as string
 }
 
 function looksLikeStoredHtml(s: string): boolean {
@@ -41,4 +50,14 @@ export function notesToEditorHtml(raw: string | null | undefined): string {
 /** True if two DB / editor values represent the same notes (handles legacy markdown vs stored HTML). */
 export function notesContentEqual(a: string | null | undefined, b: string | null | undefined): boolean {
   return notesToEditorHtml(a ?? '').trim() === notesToEditorHtml(b ?? '').trim()
+}
+
+/** True if notes contain visible text after parsing legacy markdown / HTML (for icons & empty states). */
+export function notesHasVisibleContent(raw: string | null | undefined): boolean {
+  const html = notesToEditorHtml(raw ?? '')
+  const text = html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return text.length > 0
 }
