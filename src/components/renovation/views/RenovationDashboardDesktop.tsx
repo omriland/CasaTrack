@@ -395,7 +395,11 @@ export function RenovationDashboardDesktop() {
                       <div className="flex min-w-0 flex-1 items-start gap-3">
                         <div
                           className={`mt-1.5 h-2.5 w-2.5 flex-shrink-0 rounded-full ${
-                            ev.event_type === 'provider_meeting' ? 'bg-[#9333ea]' : 'bg-[#1a73e8]'
+                            ev.event_type === 'provider_meeting'
+                              ? 'bg-[#0070d3]'
+                              : ev.event_type === 'supervision'
+                                ? 'bg-[#69b625]'
+                                : 'bg-[#009eeb]'
                           }`}
                         />
                         <div className="min-w-0">

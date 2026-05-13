@@ -33,11 +33,14 @@ export type CalendarHoverModel =
 type CalendarHoverContextValue = {
   onMouseEnter: (event: FcEvent, el: HTMLElement) => void
   onMouseLeave: () => void
+  /** Clears the hover card immediately (e.g. before opening a context menu). */
+  dismissHoverNow: () => void
 }
 
 export const CalendarHoverContext = createContext<CalendarHoverContextValue>({
   onMouseEnter: () => {},
   onMouseLeave: () => {},
+  dismissHoverNow: () => {},
 })
 
 export function useCalendarHover() {
@@ -144,6 +147,8 @@ function typeBadge(model: CalendarHoverModel): { label: string; className: strin
   if (model.kind === 'task') return { label: 'Task', className: 'bg-emerald-50 text-emerald-800' }
   if (model.kind === 'calendar' && model.ev.event_type === 'provider_meeting')
     return { label: 'Provider meeting', className: 'bg-violet-50 text-violet-900' }
+  if (model.kind === 'calendar' && model.ev.event_type === 'supervision')
+    return { label: 'Supervision', className: 'bg-lime-50 text-lime-900' }
   return { label: 'Event', className: 'bg-sky-50 text-sky-950' }
 }
 
@@ -151,6 +156,7 @@ function accentClass(model: CalendarHoverModel): string {
   if (model.kind === 'holiday') return 'border-r-slate-400'
   if (model.kind === 'task') return 'border-r-emerald-600'
   if (model.kind === 'calendar' && model.ev.event_type === 'provider_meeting') return 'border-r-violet-600'
+  if (model.kind === 'calendar' && model.ev.event_type === 'supervision') return 'border-r-lime-600'
   return 'border-r-sky-600'
 }
 
@@ -246,9 +252,14 @@ export function useCalendarEventHover(): {
     setState({ rect: getAnchorRect(el), model })
   }, [clearHide])
 
+  const dismissHoverNow = useCallback(() => {
+    clearHide()
+    setState(null)
+  }, [clearHide])
+
   const hoverContextValue = useMemo(
-    () => ({ onMouseEnter, onMouseLeave: scheduleHide }),
-    [onMouseEnter, scheduleHide],
+    () => ({ onMouseEnter, onMouseLeave: scheduleHide, dismissHoverNow }),
+    [onMouseEnter, scheduleHide, dismissHoverNow],
   )
 
   useEffect(() => () => clearHide(), [clearHide])

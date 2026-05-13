@@ -29,9 +29,14 @@ export function useCalendarPageState() {
   const [taskFormModalOpen, setTaskFormModalOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<RenovationTask | null>(null)
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
     if (!project) return
-    setLoading(true)
+    const silent = opts?.silent ?? false
+    let toggledLoading = false
+    if (!silent) {
+      setLoading(true)
+      toggledLoading = true
+    }
     try {
       const evP = listCalendarEvents(project.id)
       const provP = listProviders(project.id)
@@ -46,7 +51,7 @@ export function useCalendarPageState() {
       setTasks([])
       setProviders([])
     } finally {
-      setLoading(false)
+      if (toggledLoading) setLoading(false)
     }
   }, [project, showTasks])
 

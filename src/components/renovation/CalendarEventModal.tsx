@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { AlignLeft, Calendar as CalendarIcon, Clock, MapPin, Users, X } from 'lucide-react'
+import { AlignLeft, Calendar as CalendarIcon, ClipboardList, Clock, MapPin, Users, X } from 'lucide-react'
 import { DatePicker } from '@/components/renovation/DatePicker'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { useRenovationMobileMedia } from '@/components/renovation/use-renovation-mobile'
@@ -13,7 +13,7 @@ import {
 } from '@/lib/calendar-datetime'
 import { createCalendarEvent, deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
-import type { RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
+import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 
 function defaultDayStartIso(dayKey: string): string {
   const [y, m, d] = dayKey.split('-').map(Number)
@@ -71,6 +71,7 @@ export function CalendarEventModal({
   const [address, setAddress] = useState('')
   const [body, setBody] = useState('')
   const [providerId, setProviderId] = useState('')
+  const [isSupervision, setIsSupervision] = useState(false)
   const [isAllDay, setIsAllDay] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -89,6 +90,7 @@ export function CalendarEventModal({
       setAddress(editing.address?.trim() ? editing.address : '')
       setBody(editing.body || '')
       setProviderId(editing.provider_id ?? '')
+      setIsSupervision(editing.event_type === 'supervision')
       setIsAllDay(editing.is_all_day)
       if (editing.is_all_day) {
         setStartDate(editing.start_date || '')
@@ -104,6 +106,7 @@ export function CalendarEventModal({
       setAddress('')
       setBody('')
       setProviderId('')
+      setIsSupervision(false)
       setIsAllDay(false)
       setStartDate('')
       setEndDate('')
@@ -114,6 +117,7 @@ export function CalendarEventModal({
       setAddress('')
       setBody('')
       setProviderId('')
+      setIsSupervision(false)
       const day = initialDayKey || ''
       if (day) {
         setIsAllDay(true)
@@ -143,13 +147,17 @@ export function CalendarEventModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    const eventType = providerId.trim() ? ('provider_meeting' as const) : ('general' as const)
+    const eventType: CalendarEventType = isSupervision
+      ? 'supervision'
+      : providerId.trim()
+        ? 'provider_meeting'
+        : 'general'
     const payload: CalendarEventPayload = {
       event_type: eventType,
       title: title.trim(),
       body: body.trim() || null,
       address: address.trim() || null,
-      provider_id: providerId.trim() || null,
+      provider_id: eventType === 'provider_meeting' ? providerId.trim() || null : null,
       is_all_day: isAllDay,
       start_date: isAllDay ? startDate || null : null,
       end_date: isAllDay && endDate.trim() ? endDate.trim() : null,
@@ -322,13 +330,34 @@ export function CalendarEventModal({
         </FieldRow>
       )}
 
+      {/* Supervision (mutually exclusive with provider meeting) */}
+      <FieldRow icon={<ClipboardList className="h-4 w-4" />}>
+        <label className="flex cursor-pointer items-center gap-3">
+          <input
+            type="checkbox"
+            checked={isSupervision}
+            onChange={(e) => {
+              const on = e.target.checked
+              setIsSupervision(on)
+              if (on) setProviderId('')
+            }}
+            className="h-4 w-4 rounded border-slate-300 text-lime-600 focus:ring-indigo-500"
+          />
+          <span className="text-[14px] font-semibold text-slate-700">Supervision</span>
+        </label>
+      </FieldRow>
+
       {/* Provider */}
       {sortedProviders.length > 0 && (
         <FieldRow icon={<Users className="h-4 w-4" />}>
           <select
             value={providerId}
-            onChange={(e) => setProviderId(e.target.value)}
-            className={`${inputBase} appearance-none bg-[url("data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20fill='none'%20stroke='%2364748b'%20stroke-width='2'%20viewBox='0%200%2024%2024'%3e%3cpath%20stroke-linecap='round'%20stroke-linejoin='round'%20d='m6%209%206%206%206-6'/%3e%3c/svg%3e")] bg-[length:12px_12px] bg-[right_0.85rem_center] bg-no-repeat pr-9`}
+            disabled={isSupervision}
+            onChange={(e) => {
+              setProviderId(e.target.value)
+              if (e.target.value) setIsSupervision(false)
+            }}
+            className={`${inputBase} appearance-none bg-[url("data:image/svg+xml;charset=UTF-8,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20fill='none'%20stroke='%2364748b'%20stroke-width='2'%20viewBox='0%200%2024%2024'%3e%3cpath%20stroke-linecap='round'%20stroke-linejoin='round'%20d='m6%209%206%206%206-6'/%3e%3c/svg%3e")] bg-[length:12px_12px] bg-[right_0.85rem_center] bg-no-repeat pr-9 disabled:cursor-not-allowed disabled:opacity-50`}
           >
             <option value="">No provider — general event</option>
             {sortedProviders.map((p) => (

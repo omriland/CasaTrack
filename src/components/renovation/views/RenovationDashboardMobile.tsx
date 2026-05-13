@@ -207,7 +207,11 @@ export function RenovationDashboardMobile() {
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
                           className={`w-2 h-2 rounded-full shrink-0 ${
-                            ev.event_type === 'provider_meeting' ? 'bg-purple-500' : 'bg-sky-500'
+                            ev.event_type === 'provider_meeting'
+                              ? 'bg-[#0070d3]'
+                              : ev.event_type === 'supervision'
+                                ? 'bg-[#69b625]'
+                                : 'bg-[#009eeb]'
                           }`}
                         />
                         <span className="text-[16px] font-medium text-slate-800 truncate">{ev.title}</span>

@@ -241,7 +241,7 @@ export function CalendarMobile() {
             onEditTask={handleCalendarEditTask}
             onCreateTimedRange={openNewEventTimed}
             onCreateForDay={dayKey => openNewEvent(dayKey)}
-            onEventUpdated={() => load()}
+            onEventUpdated={() => void load({ silent: true })}
           />
         )}
       </div>
@@ -303,7 +303,15 @@ export function CalendarMobile() {
                     dir="auto"
                   >
                     <div className="mt-1.5 flex-shrink-0">
-                      <div className={`h-3 w-3 rounded-full ${e.event_type === 'provider_meeting' ? 'bg-purple-500' : 'bg-indigo-500'}`} />
+                      <div
+                        className={`h-3 w-3 rounded-full ${
+                          e.event_type === 'provider_meeting'
+                            ? 'bg-[#0070d3]'
+                            : e.event_type === 'supervision'
+                              ? 'bg-[#69b625]'
+                              : 'bg-[#009eeb]'
+                        }`}
+                      />
                     </div>
                     <div className="flex-1 border-b border-slate-100 pb-3">
                       <CalendarEventTitleAddress
@@ -366,7 +374,7 @@ export function CalendarMobile() {
             closeEventModal()
             closeEventView()
           }}
-          onSaved={() => load()}
+          onSaved={() => void load({ silent: true })}
         />
       )}
 

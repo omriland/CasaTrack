@@ -1,6 +1,6 @@
 import { addDays, format } from 'date-fns'
 import type { EventInput } from '@fullcalendar/core'
-import { updateCalendarEvent } from '@/lib/renovation'
+import { updateCalendarEvent, coerceCalendarEventType } from '@/lib/renovation'
 import type { RenovationCalendarEvent, RenovationTask } from '@/types/renovation'
 
 /**
@@ -36,7 +36,7 @@ export type FcAppEvent = {
   isDraggable: boolean
   isResizable: boolean
   isPast: boolean
-  eventType?: 'general' | 'provider_meeting'
+  eventType?: 'general' | 'provider_meeting' | 'supervision'
   renovationEvent?: RenovationCalendarEvent
   task?: RenovationTask
 }
@@ -51,11 +51,22 @@ export type QuickCreateAnchor = {
 }
 
 const COLOR = {
-  general: '#4f46e5',
-  provider_meeting: '#7c3aed',
-  task: '#059669',
-  holiday: '#16a34a',
+  general: '#009eeb',
+  provider_meeting: '#0070d3',
+  supervision: '#69b625',
+  task: '#606060',
+  holiday: '#22c55e',
 } as const
+
+/** Timed events ≤30 minutes: week/day chip shows title only (no inline time/address rows). */
+export function isShortTimedCalendarMinutes(start: Date, end: Date | null | undefined): boolean {
+  if (!end) return false
+  return end.getTime() - start.getTime() <= 30 * 60 * 1000
+}
+
+function calendarAccentColor(e: RenovationCalendarEvent): string {
+  return COLOR[e.event_type] ?? COLOR.general
+}
 
 function dayKey(d: Date): string {
   return format(d, 'yyyy-MM-dd')
@@ -74,7 +85,7 @@ function dateFromKey(key: string): Date {
 export function calendarEventToFc(e: RenovationCalendarEvent): EventInput {
   const now = new Date()
   const eventType = e.event_type
-  const color = COLOR[eventType] ?? COLOR.general
+  const color = calendarAccentColor(e)
 
   if (e.is_all_day && e.start_date) {
     const startKey = e.start_date
@@ -246,6 +257,7 @@ export async function persistCalendarChange(
   allDay: boolean,
 ): Promise<void> {
   const addressVal = prev.address?.trim() || null
+  const eventType = coerceCalendarEventType(prev.event_type)
 
   if (allDay) {
     // FullCalendar exclusive end → subtract a day for our inclusive `end_date`.
@@ -254,7 +266,7 @@ export async function persistCalendarChange(
     const startKey = dayKey(start)
     const endKey = dayKey(lastDay < start ? start : lastDay)
     await updateCalendarEvent(prev.id, {
-      event_type: prev.event_type,
+      event_type: eventType,
       title: prev.title,
       body: prev.body,
       address: addressVal,
@@ -266,7 +278,7 @@ export async function persistCalendarChange(
   } else {
     const endAt = end && end.getTime() > start.getTime() ? end : new Date(start.getTime() + 3600000)
     await updateCalendarEvent(prev.id, {
-      event_type: prev.event_type,
+      event_type: eventType,
       title: prev.title,
       body: prev.body,
       address: addressVal,

@@ -322,7 +322,7 @@ export function CalendarDesktop() {
             }}
             onCreateTimedRange={openNewEventTimed}
             onCreateForDay={(dayKey) => openNewEvent(dayKey)}
-            onEventUpdated={() => load()}
+            onEventUpdated={() => void load({ silent: true })}
             onCursorChange={(d) => setCursor(d)}
             onQuickCreate={(anchor) => {
               suppressNextDateClickRef.current = true
@@ -369,7 +369,15 @@ export function CalendarDesktop() {
                     className="group relative flex w-full items-center gap-3 rounded-lg border border-transparent hover:border-[#dadce0] p-2 text-left transition-colors hover:bg-[#f8f9fa]"
                     dir="auto"
                   >
-                    <div className={`h-3 w-3 rounded-full ${e.event_type === 'provider_meeting' ? 'bg-[#9333ea]' : 'bg-[#1a73e8]'}`} />
+                    <div
+                      className={`h-3 w-3 rounded-full ${
+                        e.event_type === 'provider_meeting'
+                          ? 'bg-[#0070d3]'
+                          : e.event_type === 'supervision'
+                            ? 'bg-[#69b625]'
+                            : 'bg-[#009eeb]'
+                      }`}
+                    />
                     <div className="flex-1">
                       <CalendarEventTitleAddress
                         title={e.title}
@@ -422,7 +430,7 @@ export function CalendarDesktop() {
           projectId={project.id}
           providers={providers}
           onClose={() => setQuickAnchor(null)}
-          onCreated={() => load()}
+          onCreated={() => void load({ silent: true })}
           onMoreOptions={(initialTitle) => {
             const anchor = quickAnchor
             setQuickAnchor(null)
@@ -445,7 +453,7 @@ export function CalendarDesktop() {
           initialTimedRange={initialTimedRange}
           initialTitle={initialTitle}
           onClose={closeEventModal}
-          onSaved={() => load()}
+          onSaved={() => void load({ silent: true })}
         />
       )}
 
@@ -454,7 +462,7 @@ export function CalendarDesktop() {
           event={viewingEventLive}
           providers={providers}
           onClose={closeEventView}
-          onUpdated={() => load()}
+          onUpdated={() => void load({ silent: true })}
         />
       )}
 

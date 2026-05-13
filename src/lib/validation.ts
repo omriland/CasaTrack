@@ -96,7 +96,7 @@ const isoDateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 /** Payload for creating/updating renovation calendar events (client → API). */
 export const CalendarEventPayloadSchema = z
   .object({
-    event_type: z.enum(['general', 'provider_meeting']),
+    event_type: z.enum(['general', 'provider_meeting', 'supervision']),
     title: z.string().min(1, 'Title is required'),
     body: z.string().nullable().optional(),
     address: z.string().max(4000).nullable().optional(),
@@ -110,6 +110,13 @@ export const CalendarEventPayloadSchema = z
   .superRefine((data, ctx) => {
     if (data.event_type === 'provider_meeting' && !data.provider_id) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Choose a provider', path: ['provider_id'] })
+    }
+    if (data.event_type !== 'provider_meeting' && data.provider_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Remove the provider or switch to a provider meeting',
+        path: ['provider_id'],
+      })
     }
     if (data.is_all_day) {
       if (!data.start_date) {

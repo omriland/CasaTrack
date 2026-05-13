@@ -12,22 +12,30 @@ import {
 import { deleteCalendarEvent, updateCalendarEvent } from '@/lib/renovation'
 import { CalendarEventPayloadSchema, type CalendarEventPayload } from '@/lib/validation'
 import { MemberAvatarChip } from '@/components/renovation/MemberAvatar'
-import type { RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
+import type { CalendarEventType, RenovationCalendarEvent, RenovationProvider } from '@/types/renovation'
 import { format, parseISO } from 'date-fns'
 
 type DetailPicker = 'provider' | null
 
-function derivedEventKind(event: RenovationCalendarEvent): 'general' | 'provider_meeting' {
-  return event.provider_id ? 'provider_meeting' : 'general'
+function derivedEventKind(event: RenovationCalendarEvent): CalendarEventType {
+  if (event.event_type === 'supervision') return 'supervision'
+  if (event.event_type === 'provider_meeting') return 'provider_meeting'
+  return 'general'
 }
 
-const EVENT_KIND_LABEL: Record<'general' | 'provider_meeting', string> = {
+const EVENT_KIND_LABEL: Record<CalendarEventType, string> = {
   general: 'General',
   provider_meeting: 'Provider meeting',
+  supervision: 'Supervision',
 }
 
 function payloadFromEvent(e: RenovationCalendarEvent): CalendarEventPayload {
-  const event_type = e.provider_id ? 'provider_meeting' : 'general'
+  const event_type: CalendarEventType =
+    e.event_type === 'supervision' || e.event_type === 'provider_meeting' || e.event_type === 'general'
+      ? e.event_type
+      : e.provider_id
+        ? 'provider_meeting'
+        : 'general'
   return {
     event_type,
     title: e.title,
@@ -163,9 +171,21 @@ export function CalendarEventDetailDrawer({
 
   const commitProvider = (providerId: string | null) => {
     setDetailPicker(null)
-    const nextType = providerId ? 'provider_meeting' : 'general'
-    if (providerId === event.provider_id && event.event_type === nextType) return
-    void persist({ provider_id: providerId, event_type: nextType })
+    if (providerId) {
+      void persist({ provider_id: providerId, event_type: 'provider_meeting' })
+      return
+    }
+    const nextType: CalendarEventType = event.event_type === 'supervision' ? 'supervision' : 'general'
+    if (event.provider_id === null && event.event_type === nextType) return
+    void persist({ provider_id: null, event_type: nextType })
+  }
+
+  const commitSupervision = (on: boolean) => {
+    if (on) {
+      void persist({ event_type: 'supervision', provider_id: null })
+    } else if (event.event_type === 'supervision') {
+      void persist({ event_type: 'general', provider_id: null })
+    }
   }
 
   const commitAllDay = (isAllDay: boolean) => {
@@ -247,9 +267,11 @@ export function CalendarEventDetailDrawer({
               className={`shrink-0 rounded px-2 py-1 text-[12px] font-bold uppercase ${
                 kind === 'provider_meeting'
                   ? 'bg-[#f3e8ff] text-[#6b21a8]'
-                  : 'bg-[#dfe1e6] text-[#42526e]'
+                  : kind === 'supervision'
+                    ? 'bg-[#dcfce7] text-[#166534]'
+                    : 'bg-[#dfe1e6] text-[#42526e]'
               }`}
-              title="Set via provider in Details"
+              title="Event type"
             >
               {EVENT_KIND_LABEL[kind]}
             </span>
@@ -387,12 +409,27 @@ export function CalendarEventDetailDrawer({
               <h3 className="text-[12px] font-extrabold uppercase tracking-wider text-[#5e6c84]">Details</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex flex-col gap-1.5">
+                  <span className="text-[13px] font-semibold text-[#5e6c84]">Supervision</span>
+                  <label className="flex cursor-pointer items-center gap-2 px-0.5">
+                    <input
+                      type="checkbox"
+                      checked={event.event_type === 'supervision'}
+                      onChange={(e) => commitSupervision(e.target.checked)}
+                      disabled={saving}
+                      className="rounded border-slate-300 text-lime-600 focus:ring-[#4c9aff] disabled:opacity-50"
+                    />
+                    <span className="text-[14px] font-medium text-[#172b4d]">Supervision visit</span>
+                  </label>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
                   <span className="text-[13px] font-semibold text-[#5e6c84]">Provider</span>
                   <div className="relative" ref={providerPickerRef}>
                     <button
                       type="button"
+                      disabled={event.event_type === 'supervision' || saving}
                       onClick={() => setDetailPicker((o) => (o === 'provider' ? null : 'provider'))}
-                      className="group -mx-2 flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0"
+                      className="group -mx-2 flex w-full max-w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-[#dfe1e6]/80 focus:outline-none focus-visible:bg-[#dfe1e6]/80 focus-visible:ring-2 focus-visible:ring-[#4c9aff] focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-haspopup="listbox"
                       aria-expanded={detailPicker === 'provider'}
                     >
@@ -422,7 +459,9 @@ export function CalendarEventDetailDrawer({
                               />
                             </svg>
                           </div>
-                          <span className="text-[14px] font-medium italic text-slate-500">None — general event</span>
+                          <span className="text-[14px] font-medium italic text-slate-500">
+                            {event.event_type === 'supervision' ? 'Supervision (no provider)' : 'None — general event'}
+                          </span>
                         </>
                       )}
                       <svg

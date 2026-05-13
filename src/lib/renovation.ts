@@ -1266,6 +1266,29 @@ export async function createCalendarEvent(
   return data as RenovationCalendarEvent
 }
 
+/** Canonical lowercase `event_type` for DB + CHECK constraints. */
+export function coerceCalendarEventType(raw: unknown): CalendarEventType {
+  const t = typeof raw === 'string' ? raw.trim().toLowerCase() : ''
+  if (t === 'supervision' || t === 'provider_meeting' || t === 'general') return t
+  return 'general'
+}
+
+function normalizeCalendarBody(raw: string | null | undefined): string | null {
+  if (raw == null) return null
+  if (typeof raw !== 'string') return null
+  return raw.trim() || null
+}
+
+function normalizeTimedEndsAt(
+  startsAt: string | null | undefined,
+  endsAt: string | null | undefined,
+): string {
+  const start =
+    typeof startsAt === 'string' && startsAt.trim() ? startsAt.trim() : new Date().toISOString()
+  if (typeof endsAt === 'string' && endsAt.trim()) return endsAt.trim()
+  return defaultTimedEnd(start)
+}
+
 export async function updateCalendarEvent(
   id: string,
   row: {
@@ -1281,11 +1304,11 @@ export async function updateCalendarEvent(
     ends_at?: string | null
   }
 ): Promise<void> {
-  const title = row.title.trim()
-  const body = row.body?.trim() || null
+  const title = typeof row.title === 'string' ? row.title.trim() : String(row.title ?? '').trim()
+  const body = normalizeCalendarBody(row.body)
   const address = row.address !== undefined ? (row.address?.trim() || null) : undefined
   const isAllDay = row.is_all_day
-  const eventType = row.event_type
+  const eventType = coerceCalendarEventType(row.event_type)
   const providerId = eventType === 'provider_meeting' ? row.provider_id ?? null : null
 
   const baseAllDay = {
@@ -1299,6 +1322,15 @@ export async function updateCalendarEvent(
     starts_at: null,
     ends_at: null,
   }
+  const startsAtIso =
+    typeof row.starts_at === 'string' && row.starts_at.trim()
+      ? row.starts_at.trim()
+      : row.starts_at
+        ? String(row.starts_at)
+        : null
+  if (!isAllDay && !startsAtIso) {
+    throw new Error('Timed calendar events require starts_at')
+  }
   const baseTimed = {
     event_type: eventType,
     title,
@@ -1307,8 +1339,8 @@ export async function updateCalendarEvent(
     is_all_day: false,
     start_date: null,
     end_date: null,
-    starts_at: row.starts_at!,
-    ends_at: row.ends_at?.trim() ? row.ends_at : defaultTimedEnd(row.starts_at!),
+    starts_at: startsAtIso!,
+    ends_at: normalizeTimedEndsAt(startsAtIso, row.ends_at),
   }
   const updates = {
     ...(isAllDay ? baseAllDay : baseTimed),

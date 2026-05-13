@@ -39,7 +39,7 @@ export interface RenovationProvider {
   updated_at: string
 }
 
-export type CalendarEventType = 'general' | 'provider_meeting'
+export type CalendarEventType = 'general' | 'provider_meeting' | 'supervision'
 
 export interface RenovationCalendarEvent {
   id: string

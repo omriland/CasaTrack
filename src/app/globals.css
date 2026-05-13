@@ -505,10 +505,10 @@ input[type=number] {
 
   /* Per-kind palette — bumped to brighter, more saturated hues so chips pop
    * against the white grid while still passing AA on white text. */
-  --reno-color-general: #6366f1;       /* indigo-500 */
-  --reno-color-provider: #a855f7;      /* purple-500 */
-  --reno-color-task: #f59e0b;          /* amber-500 */
-  --reno-color-holiday: #22c55e;       /* emerald-500 */
+  --reno-color-general: #009eeb;
+  --reno-color-provider: #0070d3;
+  --reno-color-task: #606060;
+  --reno-color-holiday: #22c55e;
 
   border: 1px solid var(--reno-border);
   border-radius: var(--reno-radius);
@@ -679,6 +679,8 @@ input[type=number] {
   border: 0;
   background: transparent;
   cursor: grab;
+  user-select: none;
+  touch-action: none;
 }
 .reno-cal .fc-event.fc-event-dragging,
 .reno-cal .fc-event.fc-event-resizing,
@@ -688,7 +690,7 @@ input[type=number] {
 .reno-cal .fc-event:focus,
 .reno-cal .fc-event:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 50%, transparent);
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 /* Per-kind / type accent colors → exposed via `--reno-ev-color`. */
@@ -698,6 +700,9 @@ input[type=number] {
 }
 .reno-cal .reno-ev-type--provider_meeting {
   --reno-ev-color: var(--reno-color-provider);
+}
+.reno-cal .reno-ev-type--supervision {
+  --reno-ev-color: #69b625;
 }
 .reno-cal .reno-ev-kind--task {
   --reno-ev-color: var(--reno-color-task);
@@ -720,6 +725,7 @@ input[type=number] {
 }
 .reno-cal .reno-ev-chip {
   font-family: inherit;
+  pointer-events: none;
   /* Lock chip direction to LTR so `align-items: flex-end`,
    * `text-align: right`, and `flex-direction: row-reverse` always render
    * to the **physical** right edge regardless of the title's language.
@@ -746,25 +752,28 @@ input[type=number] {
   color: #ffffff;
   overflow: hidden;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.20) inset,
-    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 80%, black) inset,
-    0 1px 2px rgba(15, 23, 42, 0.18);
+    0 0 0 1px #ffffff,
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.28) inset,
+    0 1px 2px rgba(15, 23, 42, 0.12);
   transition: transform 0.12s ease, box-shadow 0.16s ease, filter 0.12s ease;
 }
 .reno-cal .fc-timegrid-event:hover .reno-ev-chip--time {
   filter: brightness(1.04);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.20) inset,
-    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 80%, black) inset,
-    0 6px 14px -4px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 60%, transparent);
+    0 0 0 1px #ffffff,
+    0 1px 0 rgba(255, 255, 255, 0.22) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.28) inset,
+    0 6px 14px -4px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 45%, transparent);
 }
 .reno-cal .fc-timegrid-event.fc-event-dragging .reno-ev-chip--time,
 .reno-cal .fc-timegrid-event.fc-event-resizing .reno-ev-chip--time {
   transform: scale(1.02);
   box-shadow:
+    0 0 0 1px #ffffff,
     0 1px 0 rgba(255, 255, 255, 0.25) inset,
-    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 80%, black) inset,
-    0 12px 24px -6px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 70%, transparent);
+    0 0 0 1px rgba(255, 255, 255, 0.32) inset,
+    0 12px 24px -6px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 50%, transparent);
 }
 .reno-cal .reno-ev-chip__title {
   font-size: 12.5px;
@@ -792,11 +801,13 @@ input[type=number] {
   opacity: 0.92;
   width: 100%;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: flex-end;
-  flex-direction: row-reverse;
   gap: 4px;
-  unicode-bidi: plaintext;
+  /* `dir="ltr"` in markup + row + flex-end keeps the cluster on the physical right
+   * even when the renovation shell or FullCalendar sets RTL on an ancestor. */
+  direction: ltr;
 }
 .reno-cal .reno-ev-chip__loc-icon {
   width: 11px;
@@ -829,15 +840,25 @@ input[type=number] {
   background: rgba(255, 255, 255, 0.7);
 }
 
-/* Short events (< ~30 min) — collapse to a single line. */
-.reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip--time {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-}
+/* Short events (FC: height < eventShortHeight, default 30px): title only — hide time
+ * and address rows; keep a single tight title line (FC also flattens its own frame). */
+.reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip__time,
 .reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip__loc {
   display: none;
+}
+.reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip--time {
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0;
+  padding: 2px 8px;
+}
+.reno-cal .fc-timegrid-event.fc-timegrid-event-short .reno-ev-chip__title {
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 11.5px;
 }
 
 /* All-day chips (week/day all-day row + month grid spans). Soft tinted look
@@ -865,6 +886,7 @@ input[type=number] {
   font-weight: 600;
   overflow: hidden;
   text-align: right;
+  box-shadow: 0 0 0 1px #ffffff;
   transition: background 0.12s ease;
 }
 .reno-cal .fc-daygrid-event:hover .reno-ev-chip--allday {
@@ -882,6 +904,7 @@ input[type=number] {
   padding: 1px 14px 1px 6px;
   position: relative;
   text-align: right;
+  box-shadow: 0 0 0 1px #ffffff;
 }
 .reno-cal .reno-ev-kind--holiday .reno-ev-chip--allday::before,
 .reno-cal .reno-ev-chip--holiday::before {
@@ -915,6 +938,7 @@ input[type=number] {
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;
+  box-shadow: 0 0 0 1px #ffffff;
   transition: background-color 0.12s ease;
 }
 .reno-cal .reno-ev-kind--calendar .reno-ev-chip--month {
@@ -959,6 +983,7 @@ input[type=number] {
   overflow: hidden;
   text-align: right;
   box-shadow:
+    0 0 0 1px #ffffff,
     0 1px 0 rgba(255, 255, 255, 0.18) inset,
     0 1px 2px rgba(15, 23, 42, 0.10);
   transition: filter 0.12s ease;
@@ -971,19 +996,9 @@ input[type=number] {
   filter: brightness(1.06);
 }
 
-/* Past events fade — saturation drop reads as "happened" without screaming. */
-.reno-cal .reno-ev--past .reno-ev-chip--time,
-.reno-cal .reno-ev--past .reno-ev-chip--allday,
-.reno-cal .reno-ev--past .reno-ev-chip--month,
-.reno-cal .reno-ev--past .reno-ev-chip--month-allday {
-  opacity: 0.55;
-  filter: saturate(0.7);
-}
-.reno-cal .reno-ev--past .reno-ev-chip--time {
-  background: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 35%, white);
-  color: color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 70%, black);
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--reno-ev-color, var(--reno-primary)) 30%, white) inset;
+/* Past calendar events + tasks — whole chip at 50% opacity (class on `.fc-event`). */
+.reno-cal .fc-event.reno-ev--past {
+  opacity: 0.5;
 }
 
 /* "More" overflow link in month view. */

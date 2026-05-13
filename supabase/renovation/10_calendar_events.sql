@@ -6,7 +6,7 @@
 CREATE TABLE public.renovation_calendar_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES public.renovation_projects (id) ON DELETE CASCADE,
-  event_type TEXT NOT NULL CHECK (event_type IN ('general', 'provider_meeting')),
+  event_type TEXT NOT NULL CHECK (event_type IN ('general', 'provider_meeting', 'supervision')),
   title TEXT NOT NULL,
   body TEXT,
   provider_id UUID REFERENCES public.renovation_providers (id) ON DELETE SET NULL,
@@ -20,6 +20,7 @@ CREATE TABLE public.renovation_calendar_events (
   CONSTRAINT renovation_calendar_events_provider_type CHECK (
     (event_type = 'provider_meeting' AND provider_id IS NOT NULL)
     OR (event_type = 'general' AND provider_id IS NULL)
+    OR (event_type = 'supervision' AND provider_id IS NULL)
   ),
   CONSTRAINT renovation_calendar_events_schedule_mode CHECK (
     (

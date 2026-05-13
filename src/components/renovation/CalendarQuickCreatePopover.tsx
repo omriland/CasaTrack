@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import { Calendar, ChevronDown, MapPin, Users, X } from 'lucide-react'
+import { Calendar, ChevronDown, ClipboardList, MapPin, Users, X } from 'lucide-react'
 import { useRenovation } from '@/components/renovation/RenovationContext'
 import { createCalendarEvent } from '@/lib/renovation'
 import type { QuickCreateAnchor } from '@/components/renovation/renovation-fullcalendar-map'
-import type { RenovationProvider } from '@/types/renovation'
+import type { CalendarEventType, RenovationProvider } from '@/types/renovation'
 
 const CARD_W = 360
 const MARGIN = 12
@@ -51,6 +51,7 @@ export function CalendarQuickCreatePopover({
   const { activeProfile } = useRenovation()
   const [title, setTitle] = useState('')
   const [providerId, setProviderId] = useState<string>('')
+  const [isSupervision, setIsSupervision] = useState(false)
   const [providerOpen, setProviderOpen] = useState(false)
   const [providerQuery, setProviderQuery] = useState('')
   const [providerHighlight, setProviderHighlight] = useState(0)
@@ -132,12 +133,17 @@ export function CalendarQuickCreatePopover({
     setSaving(true)
     setError(null)
     try {
+      const event_type: CalendarEventType = isSupervision
+        ? 'supervision'
+        : providerId
+          ? 'provider_meeting'
+          : 'general'
       await createCalendarEvent(projectId, {
-        event_type: providerId ? 'provider_meeting' : 'general',
+        event_type,
         title: t,
         body: null,
         address: address.trim() || null,
-        provider_id: providerId || null,
+        provider_id: event_type === 'provider_meeting' ? providerId || null : null,
         created_by_member_id: activeProfile?.id ?? null,
         is_all_day: anchor.isAllDay,
         start_date: anchor.isAllDay ? anchor.startIso.slice(0, 10) : null,
@@ -171,6 +177,7 @@ export function CalendarQuickCreatePopover({
   }
 
   const commitProviderSelection = (id: string) => {
+    setIsSupervision(false)
     setProviderId(id)
     setProviderOpen(false)
     setProviderQuery('')
@@ -253,7 +260,26 @@ export function CalendarQuickCreatePopover({
       </div>
 
       <div className="space-y-2 px-4 py-3">
-        {sortedProviders.length > 0 && (
+        <label className="flex flex-row-reverse cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 transition-colors hover:bg-slate-50">
+          <ClipboardList className="h-4 w-4 shrink-0 text-slate-500" />
+          <span className="flex-1 text-right text-[13px] font-semibold text-slate-800">Supervision</span>
+          <input
+            type="checkbox"
+            checked={isSupervision}
+            onChange={(e) => {
+              const on = e.target.checked
+              setIsSupervision(on)
+              if (on) {
+                setProviderId('')
+                setProviderQuery('')
+                setProviderOpen(false)
+              }
+            }}
+            className="h-4 w-4 shrink-0 rounded border-slate-300 text-lime-600 focus:ring-indigo-500"
+          />
+        </label>
+
+        {!isSupervision && sortedProviders.length > 0 && (
           <div className="relative" ref={providerRef}>
             <div
               role="combobox"

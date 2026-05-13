@@ -1,7 +1,7 @@
 'use client'
 
 import { format, isSameDay } from 'date-fns'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -24,11 +24,13 @@ import {
 } from '@/components/renovation/CalendarEventHoverCard'
 import {
   buildFcEvents,
+  isShortTimedCalendarMinutes,
   persistCalendarChange,
   type FcAppEvent,
   type QuickCreateAnchor,
 } from '@/components/renovation/renovation-fullcalendar-map'
 import { buildIsraelHolidayEvents } from '@/lib/israeli-holiday-events'
+import { deleteCalendarEvent } from '@/lib/renovation'
 import type { CalendarViewMode } from '@/components/renovation/views/useCalendarPageState'
 import type { RenovationCalendarEvent, RenovationTask } from '@/types/renovation'
 
@@ -134,18 +136,25 @@ function renderEventContent(arg: EventContentArg) {
     )
   }
 
-  const range = start && end ? `${format(start, 'HH:mm')} – ${format(end, 'HH:mm')}` : ''
-  const address = app?.renovationEvent?.address?.trim() || null
+  const compactTimed =
+    Boolean(start && end && isShortTimedCalendarMinutes(start, end))
+  const range =
+    !compactTimed && start && end
+      ? `${format(start, 'HH:mm')} – ${format(end, 'HH:mm')}`
+      : ''
+  const address: string | null = compactTimed
+    ? null
+    : (app?.renovationEvent?.address?.trim() || null)
   return (
     <div className="reno-ev-chip reno-ev-chip--time">
       <div className="reno-ev-chip__title" dir="auto">{title}</div>
-      {range && <div className="reno-ev-chip__time">{range}</div>}
-      {address && (
-        <div className="reno-ev-chip__loc">
-          <MapPin className="reno-ev-chip__loc-icon" aria-hidden />
+      {range ? <div className="reno-ev-chip__time">{range}</div> : null}
+      {address ? (
+        <div className="reno-ev-chip__loc" dir="ltr">
           <span className="reno-ev-chip__loc-text" dir="auto">{address}</span>
+          <MapPin className="reno-ev-chip__loc-icon" aria-hidden />
         </div>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -170,7 +179,15 @@ export function RenovationCalendarInner({
 }: RenovationCalendarInnerProps) {
   void _onCreateForDay // kept on the public API; quick-create owns new-event creation
   const { hoverContextValue, hoverPortal } = useCalendarEventHover()
+  const [eventMenu, setEventMenu] = useState<{
+    x: number
+    y: number
+    ev: RenovationCalendarEvent
+  } | null>(null)
   const calendarRef = useRef<FullCalendar | null>(null)
+  /** Latest renovation calendar rows — used when FC's `extendedProps` are incomplete during drag/resize. */
+  const eventsRef = useRef(events)
+  eventsRef.current = events
 
   // Latest callbacks captured in refs so the FullCalendar option closures
   // always see the freshest values without forcing a re-mount.
@@ -202,6 +219,20 @@ export function RenovationCalendarInner({
     onCursorChange,
     onEventUpdated,
   ])
+
+  useEffect(() => {
+    if (!eventMenu) return
+    const close = (e: MouseEvent) => {
+      const el = e.target as HTMLElement
+      if (el.closest('[data-reno-cal-event-menu="1"]')) return
+      setEventMenu(null)
+    }
+    const t = setTimeout(() => window.addEventListener('mousedown', close), 0)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('mousedown', close)
+    }
+  }, [eventMenu])
 
   // Memoise the merged event array so FullCalendar doesn't see a new
   // identity on unrelated re-renders.
@@ -277,15 +308,20 @@ export function RenovationCalendarInner({
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const c = cb.current
-    const app = (arg.event.extendedProps?.app ?? null) as FcAppEvent | null
+    const ext = arg.event.extendedProps as {
+      app?: FcAppEvent
+      renovationEvent?: RenovationCalendarEvent
+    }
+    const app = ext.app ?? null
+    const renovationEvent = ext.renovationEvent ?? app?.renovationEvent ?? null
     if (!app) return
     if (app.kind === 'holiday') return
     if (app.kind === 'task' && app.task) {
       c.onEditTask(app.task)
       return
     }
-    if (app.kind === 'calendar' && app.renovationEvent) {
-      c.onEditEvent(app.renovationEvent)
+    if (app.kind === 'calendar' && renovationEvent) {
+      c.onEditEvent(renovationEvent)
     }
   }, [])
 
@@ -306,11 +342,28 @@ export function RenovationCalendarInner({
       info: EventDropArg | EventResizeDoneArg,
     ) => {
       const c = cb.current
-      const app = (info.event.extendedProps?.app ?? null) as FcAppEvent | null
-      if (!app || app.kind !== 'calendar' || !app.renovationEvent) {
+      const eventId = String(info.event.id)
+      if (eventId.startsWith('task-') || eventId.startsWith('il-holiday-')) {
         info.revert()
         return
       }
+
+      const ext = info.event.extendedProps as {
+        app?: FcAppEvent
+        renovationEvent?: RenovationCalendarEvent
+        kind?: string
+      }
+      const renovationEvent =
+        ext.renovationEvent ??
+        ext.app?.renovationEvent ??
+        eventsRef.current.find((e) => e.id === eventId) ??
+        null
+
+      if (!renovationEvent) {
+        info.revert()
+        return
+      }
+
       const start = info.event.start
       const end = info.event.end
       if (!start) {
@@ -318,8 +371,12 @@ export function RenovationCalendarInner({
         return
       }
       try {
-        await persistCalendarChange(app.renovationEvent, start, end ?? null, info.event.allDay)
-        c.onEventUpdated()
+        await persistCalendarChange(renovationEvent, start, end ?? null, info.event.allDay)
+        // Defer parent refetch so FullCalendar can finish its drop/resize bookkeeping before
+        // we replace `events` (avoids snap-back when the grid stays mounted — silent reload).
+        window.setTimeout(() => {
+          c.onEventUpdated()
+        }, 0)
       } catch (err) {
         console.error('[reno-cal] persist failed', err)
         info.revert()
@@ -328,29 +385,43 @@ export function RenovationCalendarInner({
     [],
   )
 
-  // Hover wiring — bind / unbind on every mount so the anchor is the live DOM node.
+  // Hover + context menu — bind / unbind on every mount so the anchor is the live DOM node.
   const handleEventDidMount = useCallback(
     (arg: EventMountArg) => {
       const app = (arg.event.extendedProps?.app ?? null) as FcAppEvent | null
       if (!app) return
       const enter = () => hoverContextValue.onMouseEnter(app, arg.el)
       const leave = () => hoverContextValue.onMouseLeave()
+      const onCtxMenu = (e: MouseEvent) => {
+        const ext = arg.event.extendedProps as {
+          app?: FcAppEvent
+          renovationEvent?: RenovationCalendarEvent
+        }
+        const liveApp = ext.app ?? null
+        const liveEv = ext.renovationEvent ?? liveApp?.renovationEvent ?? null
+        if (!liveApp || liveApp.kind !== 'calendar' || !liveEv) return
+        e.preventDefault()
+        hoverContextValue.dismissHoverNow()
+        setEventMenu({ x: e.clientX, y: e.clientY, ev: liveEv })
+      }
       arg.el.addEventListener('mouseenter', enter)
       arg.el.addEventListener('mouseleave', leave)
+      arg.el.addEventListener('contextmenu', onCtxMenu)
       // Stash so we can clean up on unmount.
-      ;(arg.el as HTMLElement & { __renoHover?: { enter: () => void; leave: () => void } }).__renoHover = {
-        enter,
-        leave,
-      }
+      ;(arg.el as HTMLElement & {
+        __renoCalDom?: { enter: () => void; leave: () => void; onCtxMenu: (e: MouseEvent) => void }
+      }).__renoCalDom = { enter, leave, onCtxMenu }
     },
     [hoverContextValue],
   )
   const handleEventWillUnmount = useCallback((arg: EventMountArg) => {
-    const wired = (arg.el as HTMLElement & { __renoHover?: { enter: () => void; leave: () => void } })
-      .__renoHover
+    const wired = (arg.el as HTMLElement & {
+      __renoCalDom?: { enter: () => void; leave: () => void; onCtxMenu: (e: MouseEvent) => void }
+    }).__renoCalDom
     if (!wired) return
     arg.el.removeEventListener('mouseenter', wired.enter)
     arg.el.removeEventListener('mouseleave', wired.leave)
+    arg.el.removeEventListener('contextmenu', wired.onCtxMenu)
   }, [])
 
   // Tag Fri/Sat day cells so we can shade them.
@@ -396,6 +467,8 @@ export function RenovationCalendarInner({
           dateClick={handleDateClick}
           eventClick={handleEventClick}
           datesSet={handleDatesSet}
+          eventDragStart={() => hoverContextValue.dismissHoverNow()}
+          eventResizeStart={() => hoverContextValue.dismissHoverNow()}
           eventDrop={persistDropOrResize}
           eventResize={persistDropOrResize}
           eventDidMount={handleEventDidMount}
@@ -403,6 +476,46 @@ export function RenovationCalendarInner({
         />
       </div>
       {hoverPortal}
+      {eventMenu && (
+        <div
+          data-reno-cal-event-menu="1"
+          role="menu"
+          dir="ltr"
+          className="fixed z-[270] min-w-[200px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl text-start"
+          style={{
+            left: Math.min(
+              eventMenu.x,
+              typeof window !== 'undefined' ? window.innerWidth - 220 : eventMenu.x,
+            ),
+            top: Math.min(
+              eventMenu.y,
+              typeof window !== 'undefined' ? window.innerHeight - 120 : eventMenu.y,
+            ),
+          }}
+        >
+          <button
+            type="button"
+            role="menuitem"
+            className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-rose-600 hover:bg-slate-50"
+            onClick={() => {
+              const ev = eventMenu.ev
+              if (!window.confirm('Delete this event?')) return
+              setEventMenu(null)
+              void (async () => {
+                try {
+                  await deleteCalendarEvent(ev.id)
+                  cb.current.onEventUpdated()
+                } catch (err) {
+                  console.error(err)
+                  alert('Could not delete.')
+                }
+              })()
+            }}
+          >
+            Delete event
+          </button>
+        </div>
+      )}
     </CalendarHoverContext.Provider>
   )
 }
