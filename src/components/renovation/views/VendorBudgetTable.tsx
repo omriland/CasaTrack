@@ -11,6 +11,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import type { RenovationRoom } from '@/types/renovation'
+import type { VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
 import type { TableRow } from './vendor-budget-types'
 import { formatIls } from '@/lib/renovation-format'
 import { cn } from '@/utils/common'
@@ -57,6 +58,17 @@ function paidColorClass(pct: number): string {
   if (pct >= 60) return 'text-blue-600'
   if (pct >= 30) return 'text-amber-600'
   return 'text-rose-600'
+}
+
+/** Same basis as Actual / Paid columns: spent if logged, else planned budget. */
+function effectiveActualForRow(m: VendorBudgetRowModel): number {
+  return m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
+}
+
+function isVendorPaidInFull(m: VendorBudgetRowModel, paidSum: number): boolean {
+  const actual = effectiveActualForRow(m)
+  if (actual <= 0) return false
+  return paidSum >= actual - 0.005
 }
 
 /* ─── Internal components ────────────────────────────────────────────────────── */
@@ -276,6 +288,9 @@ function buildColumns(
           const val =
             r.kind === 'data' ? r.model.displayVendor : r.draft.vendorInput || ''
           const isDraft = r.kind === 'draft'
+          const paidInFull =
+            r.kind === 'data' &&
+            isVendorPaidInFull(r.model, meta.paidSumForVendor(r.model.key))
           return (
             <EditableCell
               value={val}
@@ -285,15 +300,27 @@ function buildColumns(
                   ? undefined
                   : (
                       <span
-                        className={cn(
-                          'block truncate',
-                          isDraft
-                            ? 'italic text-slate-500'
-                            : 'font-semibold text-slate-900'
-                        )}
+                        className="flex min-w-0 flex-row items-center gap-1.5"
                         dir="auto"
                       >
-                        {val}
+                        {paidInFull && (
+                          <span
+                            role="img"
+                            aria-label="Paid in full"
+                            title="Paid in full"
+                            className="size-[5px] shrink-0 rounded-full bg-emerald-500/85 shadow-[0_0_0_0.5px_rgba(16,185,129,0.35)]"
+                          />
+                        )}
+                        <span
+                          className={cn(
+                            'min-w-0 flex-1 truncate',
+                            isDraft
+                              ? 'italic text-slate-500'
+                              : 'font-semibold text-slate-900'
+                          )}
+                        >
+                          {val}
+                        </span>
                       </span>
                     )
               }
