@@ -30,6 +30,7 @@ import {
   type VendorBudgetRowModel,
 } from '@/lib/renovation-vendor-budget'
 import { formatIls } from '@/lib/renovation-format'
+import { matchesLayoutFlexibleSearch } from '@/lib/keyboard-layout-flip'
 import type { RenovationExpense, RenovationRoom, RenovationVendorPayment } from '@/types/renovation'
 import type { DraftRow, TableRow } from './vendor-budget-types'
 import { VendorBudgetToolbar } from './VendorBudgetToolbar'
@@ -405,11 +406,11 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
   }, [mergedTableRows, filterSet])
 
   const tableRows: TableRow[] = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
+    const q = searchQuery.trim()
     if (!q) return roomFiltered
     return roomFiltered.filter((r) => {
       const name = r.kind === 'data' ? r.model.displayVendor : r.draft.vendorInput
-      return name.toLowerCase().includes(q)
+      return matchesLayoutFlexibleSearch(name, q)
     })
   }, [roomFiltered, searchQuery])
 
