@@ -27,6 +27,7 @@ export function RenovationDashboardMobile() {
     spentBarPct,
     plannedBarPct,
     remainingBalance,
+    remainingAfterPayments,
     budgetOverAmount,
     upcomingCalendarEventsTwoWeeks,
   } = useRenovationDashboardPage()
@@ -149,6 +150,14 @@ export function RenovationDashboardMobile() {
                   <span className="text-[16px] font-semibold text-slate-400 ml-2">remaining</span>
                 </p>
               </div>
+              {(paidColumnTotal > 0 || committedTotal > 0) && (
+                <div className="mt-2 w-full max-w-full space-y-0.5" dir="ltr">
+                  <p className="text-[12px] font-medium text-slate-500">Left to be paid</p>
+                  <p className="w-fit max-w-full text-[15px] font-semibold tabular-nums text-slate-700">
+                    {formatIls(remainingAfterPayments)}
+                  </p>
+                </div>
+              )}
               {over && (
                 <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(budgetOverAmount)}</p>
               )}

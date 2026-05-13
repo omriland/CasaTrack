@@ -1,5 +1,8 @@
 # Development Progress Log
 
+## May 2026 — mobile renovation overview: "Left to be paid"
+- [`RenovationDashboardMobile.tsx`](src/components/renovation/views/RenovationDashboardMobile.tsx) shows **Left to be paid** (`remainingAfterPayments` from `useRenovationDashboardPage`) when there is committed spend or recorded payments, aligned with the desktop home budget card.
+
 ## May 2026 — renovation calendar: rewrite back on FullCalendar v6 (Google-Calendar styling)
 - **Why we reverted:** the Schedule-X v4 experiment kept biting — premium drag/resize plugins forced the in-house `useScheduleXDragResize.ts` pointer hook, the `Temporal` round-trips mis-placed events on the time grid (an event labelled `16:30 – 15:30` rendered at 12:30; another labelled `11:30 – 10:30` at 07:30), and the visual polish never reached parity with Google Calendar. We rewrote the engine on **FullCalendar v6** (MIT, free), which ships drag/resize/drag-to-create natively and consumes plain JS `Date`s.
 - **Engine swap:** Reinstalled `@fullcalendar/core@^6.1.20`, `@fullcalendar/react`, `@fullcalendar/daygrid`, `@fullcalendar/timegrid`, `@fullcalendar/interaction`. Removed `@schedule-x/calendar`, `@schedule-x/react`, `@schedule-x/events-service`, `@schedule-x/calendar-controls`, `@schedule-x/event-modal`, `@schedule-x/current-time`, `@schedule-x/theme-default`, `temporal-polyfill`, `@preact/signals`, and `preact`.
