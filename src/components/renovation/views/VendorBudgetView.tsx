@@ -727,6 +727,7 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           rooms={rooms}
           roomNameById={roomNameById}
           paidSumForVendor={paidSumForVendor}
+          paymentsByVendor={paymentsByVendor}
           onCommitEdit={handleCommitEdit}
           onToggleRoom={toggleVendorRoom}
           onContextMenu={onContextMenu}

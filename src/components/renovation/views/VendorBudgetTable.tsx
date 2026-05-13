@@ -10,7 +10,7 @@ import {
   flexRender,
   type SortingState,
 } from '@tanstack/react-table'
-import type { RenovationRoom } from '@/types/renovation'
+import type { RenovationRoom, RenovationVendorPayment } from '@/types/renovation'
 import type { VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
 import type { TableRow } from './vendor-budget-types'
 import { formatIls } from '@/lib/renovation-format'
@@ -23,6 +23,9 @@ type VendorTableMeta = {
   rooms: RenovationRoom[]
   roomNameById: Map<string, string>
   paidSumForVendor: (key: string) => number
+  paymentsByVendor: Map<string, RenovationVendorPayment[]>
+  showPaymentsHover: (info: PaymentsHoverState) => void
+  hidePaymentsHover: () => void
   onCommitEdit: (row: TableRow, field: 'vendor' | 'category' | 'budget' | 'actual', value: string) => Promise<void>
   onToggleRoom: (vendorKey: string, roomId: string, checked: boolean) => void
   openRoomsDropdown: (info: RoomsDropdownState) => void
@@ -38,11 +41,18 @@ type RoomsDropdownState = {
   rect: DOMRect
 }
 
+type PaymentsHoverState = {
+  vendorName: string
+  payments: RenovationVendorPayment[]
+  rect: DOMRect
+}
+
 type Props = {
   tableRows: TableRow[]
   rooms: RenovationRoom[]
   roomNameById: Map<string, string>
   paidSumForVendor: (key: string) => number
+  paymentsByVendor: Map<string, RenovationVendorPayment[]>
   onCommitEdit: (row: TableRow, field: 'vendor' | 'category' | 'budget' | 'actual', value: string) => Promise<void>
   onToggleRoom: (vendorKey: string, roomId: string, checked: boolean) => void
   onContextMenu: (row: TableRow, x: number, y: number) => void
@@ -69,6 +79,14 @@ function isVendorPaidInFull(m: VendorBudgetRowModel, paidSum: number): boolean {
   const actual = effectiveActualForRow(m)
   if (actual <= 0) return false
   return paidSum >= actual - 0.005
+}
+
+function formatPaymentDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('he-IL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: '2-digit',
+  })
 }
 
 /* ─── Internal components ────────────────────────────────────────────────────── */
@@ -255,6 +273,72 @@ function RoomsDropdownPanel({
           </label>
         ))
       )}
+    </div>,
+    document.body
+  )
+}
+
+function PaymentsHoverCard({ state }: { state: PaymentsHoverState }) {
+  const CARD_W = 340
+  const margin = 10
+  const estimatedH = Math.min(360, 112 + state.payments.length * 44)
+  const left = Math.max(
+    margin,
+    Math.min(state.rect.right - CARD_W, window.innerWidth - CARD_W - margin)
+  )
+  const spaceBelow = window.innerHeight - state.rect.bottom - margin
+  const top =
+    spaceBelow >= estimatedH
+      ? state.rect.bottom + 8
+      : Math.max(margin, state.rect.top - estimatedH - 8)
+  const totalPaid = state.payments.reduce((s, p) => s + Number(p.amount), 0)
+
+  return createPortal(
+    <div
+      className="pointer-events-none fixed z-[280] w-[340px] rounded-2xl border border-slate-200 bg-white p-3.5 text-start shadow-xl"
+      style={{ left, top }}
+      dir="ltr"
+      role="status"
+    >
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Payments</p>
+          <p className="truncate text-[14px] font-bold text-slate-900" dir="auto">
+            {state.vendorName}
+          </p>
+        </div>
+        <span dir="ltr" className="shrink-0 text-[14px] font-bold tabular-nums text-emerald-700">
+          {formatIls(totalPaid)}
+        </span>
+      </div>
+
+      <div className="max-h-[260px] overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/80">
+        {state.payments.map((p, index) => {
+          const note = p.note?.trim()
+          return (
+            <div
+              key={p.id}
+              className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 border-b border-slate-100 px-3 py-2.5 last:border-b-0"
+            >
+              <div className="min-w-0">
+                <p dir="ltr" className="text-[14px] font-bold tabular-nums text-slate-900">
+                  {index + 1}. {formatIls(Number(p.amount))}
+                </p>
+                <p className="truncate text-[12px] font-medium text-slate-600" dir="auto">
+                  {note || 'No note'}
+                </p>
+              </div>
+              <time
+                dateTime={p.created_at}
+                className="pt-0.5 text-[11px] font-semibold tabular-nums text-slate-400"
+                dir="ltr"
+              >
+                {formatPaymentDate(p.created_at)}
+              </time>
+            </div>
+          )
+        })}
+      </div>
     </div>,
     document.body
   )
@@ -596,8 +680,25 @@ function buildColumns(
           return (
             <span
               dir="ltr"
+              tabIndex={0}
+              onMouseEnter={(e) =>
+                meta.showPaymentsHover({
+                  vendorName: r.model.displayVendor,
+                  payments: meta.paymentsByVendor.get(r.model.key) ?? [],
+                  rect: e.currentTarget.getBoundingClientRect(),
+                })
+              }
+              onMouseLeave={meta.hidePaymentsHover}
+              onFocus={(e) =>
+                meta.showPaymentsHover({
+                  vendorName: r.model.displayVendor,
+                  payments: meta.paymentsByVendor.get(r.model.key) ?? [],
+                  rect: e.currentTarget.getBoundingClientRect(),
+                })
+              }
+              onBlur={meta.hidePaymentsHover}
               className={cn(
-                'inline-block w-full text-end tabular-nums font-semibold',
+                'inline-block w-full cursor-help rounded-sm text-end tabular-nums font-semibold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30',
                 paidColorClass(pct)
               )}
             >
@@ -685,6 +786,7 @@ export function VendorBudgetTable({
   rooms,
   roomNameById,
   paidSumForVendor,
+  paymentsByVendor,
   onCommitEdit,
   onToggleRoom,
   onContextMenu,
@@ -696,6 +798,7 @@ export function VendorBudgetTable({
     { id: 'vendor', desc: false },
   ])
   const [roomsDD, setRoomsDD] = useState<RoomsDropdownState | null>(null)
+  const [paymentsHover, setPaymentsHover] = useState<PaymentsHoverState | null>(null)
 
   const roomNameByIdRef = useRef(roomNameById)
   roomNameByIdRef.current = roomNameById
@@ -704,7 +807,6 @@ export function VendorBudgetTable({
 
   const columns = useMemo(
     () => buildColumns(roomNameByIdRef, paidSumRef),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
 
@@ -713,6 +815,9 @@ export function VendorBudgetTable({
       rooms,
       roomNameById,
       paidSumForVendor,
+      paymentsByVendor,
+      showPaymentsHover: setPaymentsHover,
+      hidePaymentsHover: () => setPaymentsHover(null),
       onCommitEdit,
       onToggleRoom,
       openRoomsDropdown: setRoomsDD,
@@ -724,6 +829,7 @@ export function VendorBudgetTable({
       rooms,
       roomNameById,
       paidSumForVendor,
+      paymentsByVendor,
       onCommitEdit,
       onToggleRoom,
       footerBudget,
@@ -858,6 +964,7 @@ export function VendorBudgetTable({
           onClose={() => setRoomsDD(null)}
         />
       )}
+      {paymentsHover && <PaymentsHoverCard state={paymentsHover} />}
     </div>
   )
 }
