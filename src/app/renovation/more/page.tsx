@@ -7,17 +7,44 @@ import {
   ProvidersIcon,
   FilesIcon,
   NeedsIcon,
+  WishlistIcon,
   RoomIcon,
   GearIcon,
 } from '@/components/renovation/RenovationMobileShell'
 
 const sections = [
-  { href: '/renovation/calendar', label: 'Calendar', description: 'Events & schedule', icon: CalendarIcon },
-  { href: '/renovation/providers', label: 'Providers', description: 'Contacts & contractors', icon: ProvidersIcon },
-  { href: '/renovation/files', label: 'Files', description: 'Documents & uploads', icon: FilesIcon },
+  {
+    href: '/renovation/calendar',
+    label: 'Calendar',
+    description: 'Events & schedule',
+    icon: CalendarIcon,
+  },
+  {
+    href: '/renovation/providers',
+    label: 'Providers',
+    description: 'Contacts & contractors',
+    icon: ProvidersIcon,
+  },
+  {
+    href: '/renovation/files',
+    label: 'Files',
+    description: 'Documents & uploads',
+    icon: FilesIcon,
+  },
   { href: '/renovation/needs', label: 'Needs', description: 'Shopping list', icon: NeedsIcon },
+  {
+    href: '/renovation/wishlist',
+    label: 'Wishlist',
+    description: 'Items, links & prices',
+    icon: WishlistIcon,
+  },
   { href: '/renovation/rooms', label: 'Rooms', description: 'Spaces & areas', icon: RoomIcon },
-  { href: '/renovation/settings', label: 'Settings', description: 'Project settings', icon: GearIcon },
+  {
+    href: '/renovation/settings',
+    label: 'Settings',
+    description: 'Project settings',
+    icon: GearIcon,
+  },
   { href: '/', label: 'Property Hunt', description: 'Back to properties', icon: BackIcon },
 ]
 
@@ -32,7 +59,7 @@ export default function MorePage() {
     <div className="animate-fade-in pb-8">
       <h1 className="mb-6 text-[24px] font-bold tracking-tight text-slate-900">More</h1>
       <div className="space-y-2">
-        {sections.map((item) => {
+        {sections.map(item => {
           const Icon = item.icon
           return (
             <Link
@@ -47,8 +74,18 @@ export default function MorePage() {
                 <p className="text-[16px] font-semibold text-slate-900">{item.label}</p>
                 <p className="text-[14px] text-slate-500">{item.description}</p>
               </div>
-              <svg className="h-5 w-5 shrink-0 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg
+                className="h-5 w-5 shrink-0 text-slate-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </Link>
           )
@@ -60,7 +97,13 @@ export default function MorePage() {
 
 function BackIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+    >
       <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
     </svg>
   )

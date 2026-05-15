@@ -20,6 +20,8 @@ import type {
   RenovationCalendarEvent,
   CalendarEventType,
   RenovationVendorPayment,
+  RenovationWishlistItem,
+  RenovationWishlistLink,
 } from '@/types/renovation'
 import { normalizeVendorKey } from '@/lib/renovation-vendor-budget'
 
@@ -204,7 +206,7 @@ function mergeBudgetLineRoomIds(
     list.push(l.room_id)
     byLine.set(l.budget_line_id, list)
   }
-  return lines.map((row) => ({
+  return lines.map(row => ({
     ...row,
     room_ids: byLine.get(row.id) ?? [],
   }))
@@ -221,7 +223,7 @@ export async function listBudgetLines(projectId: string): Promise<RenovationBudg
   const list = (lines || []) as Omit<RenovationBudgetLine, 'room_ids'>[]
   if (list.length === 0) return []
 
-  const ids = list.map((r) => r.id)
+  const ids = list.map(r => r.id)
   const { data: linkRows, error: linkErr } = await supabase
     .from('renovation_budget_line_rooms')
     .select('budget_line_id, room_id')
@@ -231,7 +233,10 @@ export async function listBudgetLines(projectId: string): Promise<RenovationBudg
     console.warn('renovation_budget_line_rooms:', linkErr.message)
     return mergeBudgetLineRoomIds(list, [])
   }
-  return mergeBudgetLineRoomIds(list, (linkRows || []) as { budget_line_id: string; room_id: string }[])
+  return mergeBudgetLineRoomIds(
+    list,
+    (linkRows || []) as { budget_line_id: string; room_id: string }[]
+  )
 }
 
 /** Replace room links for a budget line (empty array clears all). */
@@ -242,9 +247,9 @@ export async function setBudgetLineRooms(budgetLineId: string, roomIds: string[]
     .eq('budget_line_id', budgetLineId)
   if (delErr) throw delErr
   if (roomIds.length === 0) return
-  const { error: insErr } = await supabase.from('renovation_budget_line_rooms').insert(
-    roomIds.map((room_id) => ({ budget_line_id: budgetLineId, room_id }))
-  )
+  const { error: insErr } = await supabase
+    .from('renovation_budget_line_rooms')
+    .insert(roomIds.map(room_id => ({ budget_line_id: budgetLineId, room_id })))
   if (insErr) throw insErr
 }
 
@@ -288,7 +293,11 @@ export function mapExpenseRow(row: RenovationExpense): RenovationExpense {
 }
 
 export async function getExpenseById(id: string): Promise<RenovationExpense | null> {
-  const { data, error } = await supabase.from('renovation_expenses').select('*').eq('id', id).maybeSingle()
+  const { data, error } = await supabase
+    .from('renovation_expenses')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
   if (error) throw error
   if (!data) return null
   return mapExpenseRow(data as RenovationExpense)
@@ -299,7 +308,7 @@ export function expenseIsPlanned(e: RenovationExpense): boolean {
 }
 
 export function sumSpentExpenses(expenses: RenovationExpense[]): number {
-  return expenses.filter((e) => !expenseIsPlanned(e)).reduce((s, e) => s + Number(e.amount), 0)
+  return expenses.filter(e => !expenseIsPlanned(e)).reduce((s, e) => s + Number(e.amount), 0)
 }
 
 export function sumPlannedExpenses(expenses: RenovationExpense[]): number {
@@ -309,7 +318,7 @@ export function sumPlannedExpenses(expenses: RenovationExpense[]): number {
 /** Sum of spent rows linked to a given planned expense id. */
 export function sumSpentLinkedToPlanned(expenses: RenovationExpense[], plannedId: string): number {
   return expenses
-    .filter((e) => !expenseIsPlanned(e) && e.linked_planned_expense_id === plannedId)
+    .filter(e => !expenseIsPlanned(e) && e.linked_planned_expense_id === plannedId)
     .reduce((s, e) => s + Number(e.amount), 0)
 }
 
@@ -362,7 +371,9 @@ export async function createExpense(
 ): Promise<RenovationExpense> {
   const isPlanned = row.is_planned ?? false
   const linkId =
-    isPlanned || row.linked_planned_expense_id === undefined || row.linked_planned_expense_id === null
+    isPlanned ||
+    row.linked_planned_expense_id === undefined ||
+    row.linked_planned_expense_id === null
       ? null
       : row.linked_planned_expense_id
   const { data, error } = await supabase
@@ -415,7 +426,11 @@ export async function deleteExpense(id: string): Promise<void> {
   for (const a of atts) {
     await supabase.storage.from(FILES_BUCKET).remove([a.storage_path])
   }
-  const { data: exp } = await supabase.from('renovation_expenses').select('receipt_storage_path').eq('id', id).maybeSingle()
+  const { data: exp } = await supabase
+    .from('renovation_expenses')
+    .select('receipt_storage_path')
+    .eq('id', id)
+    .maybeSingle()
   const legacyPath = exp?.receipt_storage_path as string | null | undefined
   if (legacyPath) {
     await supabase.storage.from(BUCKET).remove([legacyPath])
@@ -425,12 +440,16 @@ export async function deleteExpense(id: string): Promise<void> {
 }
 
 /** Replace all planned rows for this vendor with a single planned expense of `amount` (0 removes planned). */
-export async function setVendorPlannedTotal(projectId: string, vendorDisplay: string, amount: number): Promise<void> {
+export async function setVendorPlannedTotal(
+  projectId: string,
+  vendorDisplay: string,
+  amount: number
+): Promise<void> {
   const key = normalizeVendorKey(vendorDisplay)
   const all = await listExpenses(projectId)
-  const planned = all.filter((e) => expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
-  const spent = all.filter((e) => !expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
-  const oldPlannedIds = new Set(planned.map((p) => p.id))
+  const planned = all.filter(e => expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const spent = all.filter(e => !expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const oldPlannedIds = new Set(planned.map(p => p.id))
 
   for (const p of planned) await deleteExpense(p.id)
 
@@ -454,11 +473,15 @@ export async function setVendorPlannedTotal(projectId: string, vendorDisplay: st
 }
 
 /** Set total spent for vendor: merges multiple spent rows into one (keeps oldest for attachments). */
-export async function setVendorSpentTotal(projectId: string, vendorDisplay: string, amount: number): Promise<void> {
+export async function setVendorSpentTotal(
+  projectId: string,
+  vendorDisplay: string,
+  amount: number
+): Promise<void> {
   const key = normalizeVendorKey(vendorDisplay)
   const all = await listExpenses(projectId)
-  const spent = all.filter((e) => !expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
-  const planned = all.find((e) => expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const spent = all.filter(e => !expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
+  const planned = all.find(e => expenseIsPlanned(e) && normalizeVendorKey(e.vendor) === key)
   const linkId = planned?.id ?? null
 
   if (amount <= 0) {
@@ -477,20 +500,25 @@ export async function setVendorSpentTotal(projectId: string, vendorDisplay: stri
     return
   }
 
-  const sorted = [...spent].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  const sorted = [...spent].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
   const [keep, ...rest] = sorted
   await updateExpense(keep!.id, { amount, linked_planned_expense_id: linkId })
   for (const r of rest) await deleteExpense(r.id)
 }
 
 /** Ensure at least one expense row exists for this vendor (0₪ planned) so attachments can be stored. */
-export async function ensureVendorExpenseForAttachments(projectId: string, vendorDisplay: string): Promise<string> {
+export async function ensureVendorExpenseForAttachments(
+  projectId: string,
+  vendorDisplay: string
+): Promise<string> {
   const key = normalizeVendorKey(vendorDisplay)
   const all = await listExpenses(projectId)
-  const rows = all.filter((e) => normalizeVendorKey(e.vendor) === key)
-  const spent = rows.find((e) => !expenseIsPlanned(e))
+  const rows = all.filter(e => normalizeVendorKey(e.vendor) === key)
+  const spent = rows.find(e => !expenseIsPlanned(e))
   if (spent) return spent.id
-  const planned = rows.find((e) => expenseIsPlanned(e))
+  const planned = rows.find(e => expenseIsPlanned(e))
   if (planned) return planned.id
   const created = await createExpense(projectId, {
     vendor: vendorDisplay.trim() || null,
@@ -508,13 +536,17 @@ export async function updateVendorExpenseMeta(
 ): Promise<void> {
   const key = normalizeVendorKey(vendorDisplay)
   const all = await listExpenses(projectId)
-  const rows = all.filter((e) => normalizeVendorKey(e.vendor) === key)
+  const rows = all.filter(e => normalizeVendorKey(e.vendor) === key)
   for (const e of rows) {
     await updateExpense(e.id, patch)
   }
 }
 
-async function renameVendorPaymentKeys(projectId: string, fromKey: string, toKey: string): Promise<void> {
+async function renameVendorPaymentKeys(
+  projectId: string,
+  fromKey: string,
+  toKey: string
+): Promise<void> {
   if (fromKey === toKey) return
   const { error } = await supabase
     .from('renovation_vendor_payments')
@@ -524,7 +556,11 @@ async function renameVendorPaymentKeys(projectId: string, fromKey: string, toKey
   if (error) throw error
 }
 
-async function renameVendorBudgetRoomKeys(projectId: string, fromKey: string, toKey: string): Promise<void> {
+async function renameVendorBudgetRoomKeys(
+  projectId: string,
+  fromKey: string,
+  toKey: string
+): Promise<void> {
   if (fromKey === toKey) return
   const { data: fromRows, error: selFromErr } = await supabase
     .from('renovation_vendor_budget_rooms')
@@ -551,19 +587,23 @@ async function renameVendorBudgetRoomKeys(projectId: string, fromKey: string, to
 
   const toAdd = fromRows
     .map((r: { room_id: string }) => r.room_id)
-    .filter((room_id) => !already.has(room_id))
+    .filter(room_id => !already.has(room_id))
   if (toAdd.length === 0) return
-  const { error: insErr } = await supabase.from('renovation_vendor_budget_rooms').insert(
-    toAdd.map((room_id) => ({ project_id: projectId, vendor_key: toKey, room_id }))
-  )
+  const { error: insErr } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .insert(toAdd.map(room_id => ({ project_id: projectId, vendor_key: toKey, room_id })))
   if (insErr) throw insErr
 }
 
-export async function renameVendorAcrossExpenses(projectId: string, fromKey: string, toDisplayName: string): Promise<void> {
+export async function renameVendorAcrossExpenses(
+  projectId: string,
+  fromKey: string,
+  toDisplayName: string
+): Promise<void> {
   const trimmed = toDisplayName.trim()
   const toKey = normalizeVendorKey(trimmed)
   const all = await listExpenses(projectId)
-  const rows = all.filter((e) => normalizeVendorKey(e.vendor) === fromKey)
+  const rows = all.filter(e => normalizeVendorKey(e.vendor) === fromKey)
   for (const e of rows) {
     await updateExpense(e.id, { vendor: trimmed || null })
   }
@@ -573,7 +613,9 @@ export async function renameVendorAcrossExpenses(projectId: string, fromKey: str
 
 export type VendorBudgetRoomLink = { vendor_key: string; room_id: string }
 
-export async function listVendorBudgetRoomLinks(projectId: string): Promise<VendorBudgetRoomLink[]> {
+export async function listVendorBudgetRoomLinks(
+  projectId: string
+): Promise<VendorBudgetRoomLink[]> {
   const { data, error } = await supabase
     .from('renovation_vendor_budget_rooms')
     .select('vendor_key, room_id')
@@ -596,7 +638,11 @@ export function vendorRoomLinksByVendorKey(links: VendorBudgetRoomLink[]): Map<s
   return m
 }
 
-export async function setVendorBudgetRooms(projectId: string, vendorKey: string, roomIds: string[]): Promise<void> {
+export async function setVendorBudgetRooms(
+  projectId: string,
+  vendorKey: string,
+  roomIds: string[]
+): Promise<void> {
   const { error: delErr } = await supabase
     .from('renovation_vendor_budget_rooms')
     .delete()
@@ -604,13 +650,16 @@ export async function setVendorBudgetRooms(projectId: string, vendorKey: string,
     .eq('vendor_key', vendorKey)
   if (delErr) throw new Error(delErr.message)
   if (roomIds.length === 0) return
-  const { error: insErr } = await supabase.from('renovation_vendor_budget_rooms').insert(
-    roomIds.map((room_id) => ({ project_id: projectId, vendor_key: vendorKey, room_id }))
-  )
+  const { error: insErr } = await supabase
+    .from('renovation_vendor_budget_rooms')
+    .insert(roomIds.map(room_id => ({ project_id: projectId, vendor_key: vendorKey, room_id })))
   if (insErr) throw new Error(insErr.message)
 }
 
-export async function deleteVendorBudgetRoomsForVendor(projectId: string, vendorKey: string): Promise<void> {
+export async function deleteVendorBudgetRoomsForVendor(
+  projectId: string,
+  vendorKey: string
+): Promise<void> {
   const { error } = await supabase
     .from('renovation_vendor_budget_rooms')
     .delete()
@@ -627,7 +676,7 @@ export async function listVendorPayments(projectId: string): Promise<RenovationV
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return ((data || []) as RenovationVendorPayment[]).map((row) => ({
+  return ((data || []) as RenovationVendorPayment[]).map(row => ({
     ...row,
     amount: Number(row.amount),
     note: row.note ?? null,
@@ -655,7 +704,9 @@ export async function createVendorPayment(
   return { ...p, amount: Number(p.amount), note: p.note ?? null }
 }
 
-export async function listExpenseAttachmentsForExpense(expenseId: string): Promise<RenovationExpenseAttachment[]> {
+export async function listExpenseAttachmentsForExpense(
+  expenseId: string
+): Promise<RenovationExpenseAttachment[]> {
   const { data, error } = await supabase
     .from('renovation_expense_attachments')
     .select('*')
@@ -664,13 +715,15 @@ export async function listExpenseAttachmentsForExpense(expenseId: string): Promi
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return ((data || []) as RenovationExpenseAttachment[]).map((a) => ({
+  return ((data || []) as RenovationExpenseAttachment[]).map(a => ({
     ...a,
     public_url: renovationFilesPublicUrl(a.storage_path),
   }))
 }
 
-export async function listExpenseAttachmentsForExpenses(expenseIds: string[]): Promise<RenovationExpenseAttachment[]> {
+export async function listExpenseAttachmentsForExpenses(
+  expenseIds: string[]
+): Promise<RenovationExpenseAttachment[]> {
   if (expenseIds.length === 0) return []
   const { data, error } = await supabase
     .from('renovation_expense_attachments')
@@ -679,7 +732,7 @@ export async function listExpenseAttachmentsForExpenses(expenseIds: string[]): P
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return ((data || []) as RenovationExpenseAttachment[]).map((a) => ({
+  return ((data || []) as RenovationExpenseAttachment[]).map(a => ({
     ...a,
     public_url: renovationFilesPublicUrl(a.storage_path),
   }))
@@ -693,7 +746,9 @@ export async function uploadExpenseAttachment(
   const safeName = file.name.replace(/[^\w.\-()\s\u0590-\u05FF]+/g, '_').trim() || 'file'
   const ext = safeName.includes('.') ? safeName.split('.').pop() || 'bin' : 'bin'
   const path = `${projectId}/expense-attachments/${expenseId}/${crypto.randomUUID()}.${ext}`
-  const { error: upErr } = await supabase.storage.from(FILES_BUCKET).upload(path, file, { upsert: false })
+  const { error: upErr } = await supabase.storage
+    .from(FILES_BUCKET)
+    .upload(path, file, { upsert: false })
   if (upErr) throw upErr
 
   const { data, error } = await supabase
@@ -807,11 +862,11 @@ export async function listTasks(projectId: string): Promise<RenovationTask[]> {
   if (error) throw error
   const tasks = (data || []) as RenovationTask[]
   const members = await listTeamMembers(projectId)
-  const memberMap = new Map(members.map((m) => [m.id, m]))
-  const labelMap = await loadTaskLabelIds(tasks.map((t) => t.id))
+  const memberMap = new Map(members.map(m => [m.id, m]))
+  const labelMap = await loadTaskLabelIds(tasks.map(t => t.id))
 
   const rooms = await listRooms(projectId)
-  const roomMap = new Map(rooms.map((r) => [r.id, r]))
+  const roomMap = new Map(rooms.map(r => [r.id, r]))
 
   let providers: RenovationProvider[] = []
   try {
@@ -819,21 +874,21 @@ export async function listTasks(projectId: string): Promise<RenovationTask[]> {
   } catch {
     providers = []
   }
-  const providerMap = new Map(providers.map((p) => [p.id, p]))
+  const providerMap = new Map(providers.map(p => [p.id, p]))
 
-  const taskIds = tasks.map((t) => t.id)
+  const taskIds = tasks.map(t => t.id)
   const subtaskCounts = await loadSubtaskCounts(taskIds)
 
-  return tasks.map((t) => {
+  return tasks.map(t => {
     const counts = subtaskCounts.get(t.id)
     return {
       ...t,
       created_by_member_id: t.created_by_member_id ?? null,
       provider_id: t.provider_id ?? null,
-      assignee: t.assignee_id ? memberMap.get(t.assignee_id) ?? null : null,
-      created_by: t.created_by_member_id ? memberMap.get(t.created_by_member_id) ?? null : null,
-      room: t.room_id ? roomMap.get(t.room_id) ?? null : null,
-      provider: t.provider_id ? providerMap.get(t.provider_id) ?? null : null,
+      assignee: t.assignee_id ? (memberMap.get(t.assignee_id) ?? null) : null,
+      created_by: t.created_by_member_id ? (memberMap.get(t.created_by_member_id) ?? null) : null,
+      room: t.room_id ? (roomMap.get(t.room_id) ?? null) : null,
+      provider: t.provider_id ? (providerMap.get(t.provider_id) ?? null) : null,
       label_ids: labelMap.get(t.id) || [],
       subtask_total: counts?.total ?? 0,
       subtask_done: counts?.done ?? 0,
@@ -878,9 +933,9 @@ export async function createTask(
   if (error) throw error
   const task = data as RenovationTask
   if (row.label_ids?.length) {
-    await supabase.from('renovation_task_labels').insert(
-      row.label_ids.map((label_id) => ({ task_id: task.id, label_id }))
-    )
+    await supabase
+      .from('renovation_task_labels')
+      .insert(row.label_ids.map(label_id => ({ task_id: task.id, label_id })))
   }
   return task
 }
@@ -890,7 +945,16 @@ export async function updateTask(
   updates: Partial<
     Pick<
       RenovationTask,
-      'title' | 'body' | 'status' | 'assignee_id' | 'room_id' | 'provider_id' | 'due_date' | 'start_date' | 'urgency' | 'sort_order'
+      | 'title'
+      | 'body'
+      | 'status'
+      | 'assignee_id'
+      | 'room_id'
+      | 'provider_id'
+      | 'due_date'
+      | 'start_date'
+      | 'urgency'
+      | 'sort_order'
     >
   >
 ): Promise<void> {
@@ -903,7 +967,7 @@ export async function setTaskLabels(taskId: string, labelIds: string[]): Promise
   if (labelIds.length) {
     await supabase
       .from('renovation_task_labels')
-      .insert(labelIds.map((label_id) => ({ task_id: taskId, label_id })))
+      .insert(labelIds.map(label_id => ({ task_id: taskId, label_id })))
   }
 }
 
@@ -915,7 +979,7 @@ export async function deleteTask(id: string): Promise<void> {
 // --- Subtasks ---
 
 async function loadSubtaskCounts(
-  taskIds: string[],
+  taskIds: string[]
 ): Promise<Map<string, { total: number; done: number }>> {
   const map = new Map<string, { total: number; done: number }>()
   if (taskIds.length === 0) return map
@@ -936,7 +1000,9 @@ async function loadSubtaskCounts(
   return map
 }
 
-export async function listSubtasksByProject(projectId: string): Promise<(RenovationSubtask & { task_title?: string })[]> {
+export async function listSubtasksByProject(
+  projectId: string
+): Promise<(RenovationSubtask & { task_title?: string })[]> {
   const { data: taskIds, error: tErr } = await supabase
     .from('renovation_tasks')
     .select('id, title')
@@ -948,13 +1014,16 @@ export async function listSubtasksByProject(projectId: string): Promise<(Renovat
   const { data, error } = await supabase
     .from('renovation_subtasks')
     .select('*')
-    .in('task_id', taskIds.map((t) => t.id))
+    .in(
+      'task_id',
+      taskIds.map(t => t.id)
+    )
     .order('sort_order')
     .order('created_at')
 
   if (error) throw error
-  const taskMap = new Map(taskIds.map((t) => [t.id, t.title]))
-  return ((data || []) as RenovationSubtask[]).map((st) => ({
+  const taskMap = new Map(taskIds.map(t => [t.id, t.title]))
+  return ((data || []) as RenovationSubtask[]).map(st => ({
     ...st,
     task_title: taskMap.get(st.task_id) ?? undefined,
   }))
@@ -974,7 +1043,7 @@ export async function listSubtasks(taskId: string): Promise<RenovationSubtask[]>
 
 export async function createSubtask(
   taskId: string,
-  row: { title: string; assignee_id?: string | null },
+  row: { title: string; assignee_id?: string | null }
 ): Promise<RenovationSubtask> {
   const { data: existing } = await supabase
     .from('renovation_subtasks')
@@ -1002,7 +1071,9 @@ export async function createSubtask(
 
 export async function updateSubtask(
   id: string,
-  updates: Partial<Pick<RenovationSubtask, 'title' | 'is_done' | 'assignee_id' | 'room_id' | 'sort_order'>>,
+  updates: Partial<
+    Pick<RenovationSubtask, 'title' | 'is_done' | 'assignee_id' | 'room_id' | 'sort_order'>
+  >
 ): Promise<void> {
   const { error } = await supabase.from('renovation_subtasks').update(updates).eq('id', id)
   if (error) throw error
@@ -1015,7 +1086,11 @@ export async function deleteSubtask(id: string): Promise<void> {
 
 export async function reorderSubtasks(taskId: string, orderedIds: string[]): Promise<void> {
   const updates = orderedIds.map((id, i) =>
-    supabase.from('renovation_subtasks').update({ sort_order: i }).eq('id', id).eq('task_id', taskId),
+    supabase
+      .from('renovation_subtasks')
+      .update({ sort_order: i })
+      .eq('id', id)
+      .eq('task_id', taskId)
   )
   await Promise.all(updates)
 }
@@ -1081,15 +1156,19 @@ export async function listNeeds(projectId: string): Promise<RenovationNeed[]> {
   if (error) throw error
   const rows = (data || []) as RenovationNeed[]
   const rooms = await listRooms(projectId)
-  const roomMap = new Map(rooms.map((r) => [r.id, r]))
-  return rows.map((n) => ({
+  const roomMap = new Map(rooms.map(r => [r.id, r]))
+  return rows.map(n => ({
     ...n,
     completed: n.completed ?? false,
-    room: n.room_id ? roomMap.get(n.room_id) ?? null : null,
+    room: n.room_id ? (roomMap.get(n.room_id) ?? null) : null,
   }))
 }
 
-export async function createNeed(projectId: string, title: string, roomId?: string | null): Promise<RenovationNeed> {
+export async function createNeed(
+  projectId: string,
+  title: string,
+  roomId?: string | null
+): Promise<RenovationNeed> {
   const { data, error } = await supabase
     .from('renovation_needs')
     .insert({
@@ -1115,6 +1194,167 @@ export async function updateNeed(
 export async function deleteNeed(id: string): Promise<void> {
   const { error } = await supabase.from('renovation_needs').delete().eq('id', id)
   if (error) throw error
+}
+
+// --- Wishlist ---
+
+export type WishlistLinkInput = {
+  label?: string | null
+  url: string
+}
+
+export type WishlistItemInput = {
+  title: string
+  description?: string | null
+  unit_price: number
+  quantity: number
+  sort_order?: number
+  links: WishlistLinkInput[]
+}
+
+function sanitizeWishlistLinks(links: WishlistLinkInput[]) {
+  return links
+    .map((link, index) => ({
+      label: link.label?.trim() || null,
+      url: link.url.trim(),
+      sort_order: index,
+    }))
+    .filter(link => link.url.length > 0)
+}
+
+function normalizeWishlistItem(
+  row: Omit<RenovationWishlistItem, 'links'>
+): Omit<RenovationWishlistItem, 'links'> {
+  return {
+    ...row,
+    unit_price: Number(row.unit_price ?? 0),
+    quantity: Number(row.quantity ?? 0),
+  }
+}
+
+export async function listWishlistItems(projectId: string): Promise<RenovationWishlistItem[]> {
+  const { data, error } = await supabase
+    .from('renovation_wishlist_items')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('sort_order')
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  const items = ((data || []) as Omit<RenovationWishlistItem, 'links'>[]).map(normalizeWishlistItem)
+  const itemIds = items.map(item => item.id)
+  if (itemIds.length === 0) return []
+
+  const { data: linkData, error: linkError } = await supabase
+    .from('renovation_wishlist_links')
+    .select('*')
+    .in('item_id', itemIds)
+    .order('sort_order')
+    .order('created_at', { ascending: true })
+
+  if (linkError) throw linkError
+
+  const linksByItem = new Map<string, RenovationWishlistLink[]>()
+  for (const link of (linkData || []) as RenovationWishlistLink[]) {
+    const list = linksByItem.get(link.item_id) ?? []
+    list.push(link)
+    linksByItem.set(link.item_id, list)
+  }
+
+  return items.map(item => ({
+    ...item,
+    links: linksByItem.get(item.id) ?? [],
+  }))
+}
+
+export async function createWishlistItem(
+  projectId: string,
+  input: WishlistItemInput
+): Promise<RenovationWishlistItem> {
+  const { data, error } = await supabase
+    .from('renovation_wishlist_items')
+    .insert({
+      project_id: projectId,
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      unit_price: input.unit_price,
+      quantity: input.quantity,
+      ...(input.sort_order != null ? { sort_order: input.sort_order } : {}),
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+
+  const item = normalizeWishlistItem(data as Omit<RenovationWishlistItem, 'links'>)
+  const links = await replaceWishlistLinks(item.id, input.links)
+  return { ...item, links }
+}
+
+export async function updateWishlistItem(
+  id: string,
+  input: WishlistItemInput
+): Promise<RenovationWishlistItem> {
+  const { data, error } = await supabase
+    .from('renovation_wishlist_items')
+    .update({
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      unit_price: input.unit_price,
+      quantity: input.quantity,
+      ...(input.sort_order != null ? { sort_order: input.sort_order } : {}),
+    })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+
+  const item = normalizeWishlistItem(data as Omit<RenovationWishlistItem, 'links'>)
+  const links = await replaceWishlistLinks(item.id, input.links)
+  return { ...item, links }
+}
+
+export async function replaceWishlistLinks(
+  itemId: string,
+  links: WishlistLinkInput[]
+): Promise<RenovationWishlistLink[]> {
+  const { error: deleteError } = await supabase
+    .from('renovation_wishlist_links')
+    .delete()
+    .eq('item_id', itemId)
+  if (deleteError) throw deleteError
+
+  const rows = sanitizeWishlistLinks(links).map(link => ({
+    ...link,
+    item_id: itemId,
+  }))
+
+  if (rows.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('renovation_wishlist_links')
+    .insert(rows)
+    .select()
+    .order('sort_order')
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return (data || []) as RenovationWishlistLink[]
+}
+
+export async function deleteWishlistItem(id: string): Promise<void> {
+  const { error } = await supabase.from('renovation_wishlist_items').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function reorderWishlistItems(orderedIds: string[]): Promise<void> {
+  await Promise.all(
+    orderedIds.map((id, sortOrder) =>
+      supabase.from('renovation_wishlist_items').update({ sort_order: sortOrder }).eq('id', id)
+    )
+  )
 }
 
 // --- Service providers ---
@@ -1161,7 +1401,10 @@ export async function createProvider(
 export async function updateProvider(
   id: string,
   updates: Partial<
-    Pick<RenovationProvider, 'name' | 'description' | 'phone' | 'email' | 'additional_info' | 'sort_order'>
+    Pick<
+      RenovationProvider,
+      'name' | 'description' | 'phone' | 'email' | 'additional_info' | 'sort_order'
+    >
   >
 ): Promise<void> {
   const { error } = await supabase.from('renovation_providers').update(updates).eq('id', id)
@@ -1196,14 +1439,14 @@ export async function listCalendarEvents(projectId: string): Promise<RenovationC
   } catch {
     members = []
   }
-  const providerMap = new Map(providers.map((p) => [p.id, p]))
-  const memberMap = new Map(members.map((m) => [m.id, m]))
-  return rows.map((e) => ({
+  const providerMap = new Map(providers.map(p => [p.id, p]))
+  const memberMap = new Map(members.map(m => [m.id, m]))
+  return rows.map(e => ({
     ...e,
     address: e.address ?? null,
     created_by_member_id: e.created_by_member_id ?? null,
-    provider: e.provider_id ? providerMap.get(e.provider_id) ?? null : null,
-    created_by: e.created_by_member_id ? memberMap.get(e.created_by_member_id) ?? null : null,
+    provider: e.provider_id ? (providerMap.get(e.provider_id) ?? null) : null,
+    created_by: e.created_by_member_id ? (memberMap.get(e.created_by_member_id) ?? null) : null,
   }))
 }
 
@@ -1228,7 +1471,7 @@ export async function createCalendarEvent(
   const address = row.address?.trim() || null
   const isAllDay = row.is_all_day
   const eventType = row.event_type
-  const providerId = eventType === 'provider_meeting' ? row.provider_id ?? null : null
+  const providerId = eventType === 'provider_meeting' ? (row.provider_id ?? null) : null
 
   const insert = isAllDay
     ? {
@@ -1260,7 +1503,11 @@ export async function createCalendarEvent(
         ends_at: row.ends_at?.trim() ? row.ends_at : defaultTimedEnd(row.starts_at!),
       }
 
-  const { data, error } = await supabase.from('renovation_calendar_events').insert(insert).select().single()
+  const { data, error } = await supabase
+    .from('renovation_calendar_events')
+    .insert(insert)
+    .select()
+    .single()
 
   if (error) throw error
   return data as RenovationCalendarEvent
@@ -1281,7 +1528,7 @@ function normalizeCalendarBody(raw: string | null | undefined): string | null {
 
 function normalizeTimedEndsAt(
   startsAt: string | null | undefined,
-  endsAt: string | null | undefined,
+  endsAt: string | null | undefined
 ): string {
   const start =
     typeof startsAt === 'string' && startsAt.trim() ? startsAt.trim() : new Date().toISOString()
@@ -1306,10 +1553,10 @@ export async function updateCalendarEvent(
 ): Promise<void> {
   const title = typeof row.title === 'string' ? row.title.trim() : String(row.title ?? '').trim()
   const body = normalizeCalendarBody(row.body)
-  const address = row.address !== undefined ? (row.address?.trim() || null) : undefined
+  const address = row.address !== undefined ? row.address?.trim() || null : undefined
   const isAllDay = row.is_all_day
   const eventType = coerceCalendarEventType(row.event_type)
-  const providerId = eventType === 'provider_meeting' ? row.provider_id ?? null : null
+  const providerId = eventType === 'provider_meeting' ? (row.provider_id ?? null) : null
 
   const baseAllDay = {
     event_type: eventType,
@@ -1369,7 +1616,10 @@ export async function listGalleryTags(projectId: string): Promise<RenovationGall
   return (data || []) as RenovationGalleryTag[]
 }
 
-export async function createGalleryTag(projectId: string, name: string): Promise<RenovationGalleryTag> {
+export async function createGalleryTag(
+  projectId: string,
+  name: string
+): Promise<RenovationGalleryTag> {
   const { data, error } = await supabase
     .from('renovation_gallery_tags')
     .insert({ project_id: projectId, name })
@@ -1412,8 +1662,8 @@ export async function listGalleryItems(projectId: string): Promise<RenovationGal
 
   if (error) throw error
   const items = (data || []) as RenovationGalleryItem[]
-  const tagMap = await loadGalleryTagIds(items.map((i) => i.id))
-  return items.map((i) => ({
+  const tagMap = await loadGalleryTagIds(items.map(i => i.id))
+  return items.map(i => ({
     ...i,
     tag_ids: tagMap.get(i.id) || [],
     public_url: renovationPublicUrl(i.storage_path),
@@ -1445,9 +1695,9 @@ export async function createGalleryItem(
   if (error) throw error
   const item = data as RenovationGalleryItem
   if (row.tag_ids?.length) {
-    await supabase.from('renovation_gallery_item_tags').insert(
-      row.tag_ids.map((tag_id) => ({ gallery_item_id: item.id, tag_id }))
-    )
+    await supabase
+      .from('renovation_gallery_item_tags')
+      .insert(row.tag_ids.map(tag_id => ({ gallery_item_id: item.id, tag_id })))
   }
   return { ...item, public_url: renovationPublicUrl(item.storage_path) }
 }
@@ -1464,7 +1714,7 @@ export async function updateGalleryItem(
     if (tagIds.length) {
       await supabase
         .from('renovation_gallery_item_tags')
-        .insert(tagIds.map((tag_id) => ({ gallery_item_id: id, tag_id })))
+        .insert(tagIds.map(tag_id => ({ gallery_item_id: id, tag_id })))
     }
   }
 }
@@ -1505,7 +1755,10 @@ export async function bulkAddTagToGalleryItems(itemIds: string[], tagId: string)
   if (error) throw error
 }
 
-export async function bulkUpdateGalleryItemsRoom(itemIds: string[], roomId: string | null): Promise<void> {
+export async function bulkUpdateGalleryItemsRoom(
+  itemIds: string[],
+  roomId: string | null
+): Promise<void> {
   if (itemIds.length === 0) return
   const { error } = await supabase
     .from('renovation_gallery_items')
@@ -1534,11 +1787,11 @@ export async function listProjectFiles(projectId: string): Promise<RenovationFil
   if (error) throw error
   const rows = (data || []) as RenovationFile[]
   const rooms = await listRooms(projectId)
-  const roomMap = new Map(rooms.map((r) => [r.id, r]))
-  return rows.map((f) => ({
+  const roomMap = new Map(rooms.map(r => [r.id, r]))
+  return rows.map(f => ({
     ...f,
     public_url: projectFilePublicUrl(f),
-    room: f.room_id ? roomMap.get(f.room_id) ?? null : null,
+    room: f.room_id ? (roomMap.get(f.room_id) ?? null) : null,
   }))
 }
 
@@ -1596,7 +1849,9 @@ export async function uploadProjectFile(
   }
 
   const path = `${projectId}/files/${crypto.randomUUID()}.${ext}`
-  const { error: upErr } = await supabase.storage.from(FILES_BUCKET).upload(path, file, { upsert: false })
+  const { error: upErr } = await supabase.storage
+    .from(FILES_BUCKET)
+    .upload(path, file, { upsert: false })
   if (upErr) throw upErr
 
   const displayName = safeName
@@ -1660,9 +1915,9 @@ export function expensesThisMonth(expenses: RenovationExpense[]): number {
   const y = now.getFullYear()
   const m = now.getMonth()
   return expenses
-    .filter((e) => !expenseIsPlanned(e))
-    .filter((e) => e.expense_date != null && e.expense_date !== '')
-    .filter((e) => {
+    .filter(e => !expenseIsPlanned(e))
+    .filter(e => e.expense_date != null && e.expense_date !== '')
+    .filter(e => {
       const d = new Date(e.expense_date! + 'T12:00:00')
       return d.getFullYear() === y && d.getMonth() === m
     })

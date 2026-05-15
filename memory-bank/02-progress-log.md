@@ -1,5 +1,11 @@
 # Development Progress Log
 
+## May 2026 — renovation wishlist tab
+- **Route:** [`/renovation/wishlist`](src/app/renovation/wishlist/page.tsx) adds a simple renovation wishlist for desired items with title, description, multiple links, unit price, quantity, row total, and page total.
+- **Data:** [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql) creates `renovation_wishlist_items` and `renovation_wishlist_links` with RLS, indexes, and updated-at triggers. Run it in Supabase before using the tab.
+- **App:** [`WishlistView.tsx`](src/components/renovation/views/WishlistView.tsx) renders desktop table-style rows and mobile cards; [`useWishlistPageState.ts`](src/components/renovation/views/useWishlistPageState.ts) owns local state and CRUD via [`renovation.ts`](src/lib/renovation.ts). Totals live in [`renovation-wishlist.ts`](src/lib/renovation-wishlist.ts) with a focused test.
+- **Nav:** Desktop sidebar and mobile More include Wishlist; mobile bottom bar keeps Wishlist under More rather than adding a primary tab.
+
 ## May 2026 — mobile renovation overview: "Left to be paid"
 - [`RenovationDashboardMobile.tsx`](src/components/renovation/views/RenovationDashboardMobile.tsx) shows **Left to be paid** (`remainingAfterPayments` from `useRenovationDashboardPage`) when there is committed spend or recorded payments, aligned with the desktop home budget card.
 

@@ -208,6 +208,29 @@ export interface RenovationNeed {
   room?: RenovationRoom | null
 }
 
+export interface RenovationWishlistLink {
+  id: string
+  item_id: string
+  label: string | null
+  url: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface RenovationWishlistItem {
+  id: string
+  project_id: string
+  title: string
+  description: string | null
+  unit_price: number
+  quantity: number
+  sort_order: number
+  created_at: string
+  updated_at: string
+  links: RenovationWishlistLink[]
+}
+
 export interface RenovationFile {
   id: string
   project_id: string

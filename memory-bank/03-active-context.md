@@ -1,8 +1,8 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation module stable; **vendor budget** uses TanStack Table (`VendorBudgetView`) with incremental save + stable row order; **tasks print** at [`/renovation/tasks/print`](src/app/renovation/tasks/print/page.tsx) for open/in-progress work with optional provider filter (`renovation-tasks-export.ts`).
-**Status**: Apply any pending Supabase SQL from `supabase/renovation/` as needed. Calendar: **FullCalendar v6** (MIT — `@fullcalendar/core`, `react`, `daygrid`, `timegrid`, `interaction`); migrated react-big-calendar → FullCalendar v6 (Mar 2026) → Schedule-X v4 (May 2026, briefly) → **back to FullCalendar v6 (May 2026)** after Schedule-X's premium drag/resize and Temporal round-trips proved unworkable. Drag-to-create, move, and resize are all native FullCalendar; quick-create popover unchanged. Migrations `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`.
+**Priority**: Renovation module stable; **Wishlist** now has a standalone `/renovation/wishlist` tab for desired items, multiple links, unit price × quantity totals, and mobile/desktop navigation. **Vendor budget** uses TanStack Table (`VendorBudgetView`) with incremental save + stable row order; **tasks print** at [`/renovation/tasks/print`](src/app/renovation/tasks/print/page.tsx) for open/in-progress work with optional provider filter (`renovation-tasks-export.ts`).
+**Status**: Apply any pending Supabase SQL from `supabase/renovation/` as needed, including [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql) for the Wishlist tab. Calendar: **FullCalendar v6** (MIT — `@fullcalendar/core`, `react`, `daygrid`, `timegrid`, `interaction`); migrated react-big-calendar → FullCalendar v6 (Mar 2026) → Schedule-X v4 (May 2026, briefly) → **back to FullCalendar v6 (May 2026)** after Schedule-X's premium drag/resize and Temporal round-trips proved unworkable. Drag-to-create, move, and resize are all native FullCalendar; quick-create popover unchanged. Migrations `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`.
 
 ## Comprehensive Feature Review ✅
 **Last Updated**: Current Session
@@ -26,7 +26,7 @@
 5. ✅ **Providers**: Centralized contact database for contractors and service providers.
 6. ✅ **Calendar**: **FullCalendar v6** (MIT — `@fullcalendar/core`, `@fullcalendar/react`, `@fullcalendar/daygrid`, `@fullcalendar/timegrid`, `@fullcalendar/interaction`) with **month / week / day** views. Inner [`RenovationCalendarInner.tsx`](src/components/renovation/RenovationCalendarInner.tsx) wraps `<FullCalendar>` with our header-less config and Google-Calendar-style chrome (custom `dayHeaderContent` two-line headers, Fri–Sat tint via `dayCellClassNames`, `eventContent` chips with RTL-safe `dir="auto"`, indigo today bubble, red now-line). Mapper [`renovation-fullcalendar-map.ts`](src/components/renovation/renovation-fullcalendar-map.ts) emits plain `EventInput`s (no Temporal). Drag-to-create on empty slots opens the inline quick-create popover ([`CalendarQuickCreatePopover.tsx`](src/components/renovation/CalendarQuickCreatePopover.tsx)); event drag/move/resize are FullCalendar-native and persist via `persistCalendarChange`. Tasks render read-only on `due_date`; Israeli holidays via **`@hebcal/core`** ([`israeli-holiday-events.ts`](src/lib/israeli-holiday-events.ts)) emitted as FullCalendar `EventInput[]`.y **not** used.
 7. ✅ **Files**: Documentation hub with multi-file upload, drag-and-drop, and progress tracking.
-8. ✅ **Rooms & Needs**: Space management and items purchasing list.
+8. ✅ **Rooms, Needs & Wishlist**: Space management, apartment needs, and a simple priced wishlist with multiple links per item.
 9. ✅ **Settings**: Project preferences, labels, and team management.
 
 #### Property Hunt (Core Features)
@@ -130,6 +130,7 @@
 - **Dependencies**: Next.js 15, React 19, Tailwind 4; renovation data via `renovation.ts` (no React Query there)
 
 ## Recent Additions (tracked in progress log)
+- **May 2026**: Renovation **Wishlist** tab (`/renovation/wishlist`) with multiple links, unit price × quantity totals, Supabase migration [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql), and focused total-calculation test.
 - **May 2026**: Renovation **tasks print / PDF** page and `renovation-tasks-export` helpers (open & in-progress, subtasks, room grouping, provider filter).
 - **April 2026**: Vendor budget **TanStack Table** redesign, incremental save UX, rooms on budget lines/settings, visibility by profile, room notes TipTap/HTML, calendar day view, hydration fixes, preset avatars, and related entries in [`02-progress-log.md`](memory-bank/02-progress-log.md).
 

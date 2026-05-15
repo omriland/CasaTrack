@@ -22,7 +22,14 @@ export type Database = {
           source: 'Yad2' | 'Friends & Family' | 'Facebook' | 'Madlan' | 'Other'
           property_type: 'New' | 'Existing apartment'
           description: string | null
-          status: 'Seen' | 'Interested' | 'Contacted Realtor' | 'Visited' | 'On Hold' | 'Irrelevant' | 'Purchased'
+          status:
+            | 'Seen'
+            | 'Interested'
+            | 'Contacted Realtor'
+            | 'Visited'
+            | 'On Hold'
+            | 'Irrelevant'
+            | 'Purchased'
           url: string | null
           latitude: number | null
           longitude: number | null
@@ -43,7 +50,14 @@ export type Database = {
           source: 'Yad2' | 'Friends & Family' | 'Facebook' | 'Madlan' | 'Other'
           property_type: 'New' | 'Existing apartment'
           description?: string | null
-          status?: 'Seen' | 'Interested' | 'Contacted Realtor' | 'Visited' | 'On Hold' | 'Irrelevant' | 'Purchased'
+          status?:
+            | 'Seen'
+            | 'Interested'
+            | 'Contacted Realtor'
+            | 'Visited'
+            | 'On Hold'
+            | 'Irrelevant'
+            | 'Purchased'
           url?: string | null
           latitude?: number | null
           longitude?: number | null
@@ -64,7 +78,14 @@ export type Database = {
           source?: 'Yad2' | 'Friends & Family' | 'Facebook' | 'Madlan' | 'Other'
           property_type?: 'New' | 'Existing apartment'
           description?: string | null
-          status?: 'Seen' | 'Interested' | 'Contacted Realtor' | 'Visited' | 'On Hold' | 'Irrelevant' | 'Purchased'
+          status?:
+            | 'Seen'
+            | 'Interested'
+            | 'Contacted Realtor'
+            | 'Visited'
+            | 'On Hold'
+            | 'Irrelevant'
+            | 'Purchased'
           url?: string | null
           latitude?: number | null
           longitude?: number | null
@@ -173,6 +194,70 @@ export type Database = {
           weight?: number
           enabled?: boolean
           preference?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      renovation_wishlist_items: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          description: string | null
+          unit_price: number
+          quantity: number
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          description?: string | null
+          unit_price?: number
+          quantity?: number
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          description?: string | null
+          unit_price?: number
+          quantity?: number
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      renovation_wishlist_links: {
+        Row: {
+          id: string
+          item_id: string
+          label: string | null
+          url: string
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          item_id: string
+          label?: string | null
+          url: string
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          item_id?: string
+          label?: string | null
+          url?: string
+          sort_order?: number
           created_at?: string
           updated_at?: string
         }

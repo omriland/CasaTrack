@@ -27,6 +27,7 @@
 4. **Gallery Integration**: Advanced photo grouping into albums, inline tag creation, lightbox annotations, and bulk actions.
 5. **Provider & File Management**: Seamlessly manage vendors and documentation with drag-and-drop multi-file upload progress parsing.
 6. **Multi-profile Support**: Easily switch active users (`activeProfile`) within teams for isolated action tracking.
+7. **Wishlist**: `/renovation/wishlist` tracks desired items with title, description, multiple links, unit price, amount, and calculated totals.
 
 ### Property Hunt Features
 1. **Property CRUD operations** (Create, Read, Update, Delete)
@@ -132,6 +133,7 @@
 - Password visibility toggle in login form
 
 ## Recent Additions (Latest Session)
+- **Renovation wishlist** (May 2026): Dedicated `/renovation/wishlist` tab for desired items, multiple links, unit price × amount totals, desktop/mobile UI, and SQL [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql).
 - **Renovation tasks print view** (May 2026): Dedicated print/PDF page for active tasks; provider filter; shared export logic in `src/lib/renovation-tasks-export.ts`.
 - **Vendor budget** (April 2026): TanStack Table desktop + mobile list; incremental save UX; stable row order; CSV export — see progress log.
 - **Renovation module** (ongoing): Providers, planned vs spent expenses, **FullCalendar v6** calendar with built-in drag/resize (migration history: react-big-calendar → FullCalendar v6 → Schedule-X v4 → back to FullCalendar v6 in May 2026), mobile/desktop shell split at `md`, profile gate, and related features documented in `02-progress-log.md`.
