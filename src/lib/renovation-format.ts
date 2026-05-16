@@ -1,9 +1,16 @@
+const ilsWholeFormatter = new Intl.NumberFormat('he-IL', {
+  style: 'currency',
+  currency: 'ILS',
+  maximumFractionDigits: 0,
+})
+
 export function formatIls(amount: number): string {
-  return new Intl.NumberFormat('he-IL', {
-    style: 'currency',
-    currency: 'ILS',
-    maximumFractionDigits: 0,
-  }).format(Math.round(amount))
+  return ilsWholeFormatter.format(Math.round(amount))
+}
+
+/** Same output as `formatIls`, split for UI (e.g. smaller currency symbol). */
+export function formatIlsParts(amount: number): Intl.NumberFormatPart[] {
+  return ilsWholeFormatter.formatToParts(Math.round(amount))
 }
 
 export function formatIlsFull(amount: number): string {

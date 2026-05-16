@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useState, type KeyboardEvent } from 'react'
 import { ChevronDown, ExternalLink, Plus, Trash2 } from 'lucide-react'
-import { formatIls } from '@/lib/renovation-format'
+import { formatIls, formatIlsParts } from '@/lib/renovation-format'
 import type { RenovationWishlistItem } from '@/types/renovation'
 import { useWishlistPageState, type WishlistLinkDraft } from './useWishlistPageState'
 
@@ -16,12 +16,30 @@ function linkLabel(link: { label: string | null; url: string }) {
   }
 }
 
-function editableInputClass(extra = '') {
+function editableInputClass(extra = '', opts?: { compact?: boolean }) {
+  const layout = opts?.compact
+    ? 'min-w-0 w-[4.25rem] shrink-0 rounded-none border-0 bg-transparent px-0.5 py-1 text-[13px] text-slate-900 outline-none'
+    : 'w-full rounded-none border-0 bg-transparent px-1.5 py-1 text-[13px] text-slate-900 outline-none'
   return [
-    'w-full rounded-none border-0 bg-transparent px-2 py-2 text-[14px] text-slate-900 outline-none',
+    layout,
     'transition-colors placeholder:text-slate-400 hover:bg-slate-50 focus:bg-indigo-50/60 focus:ring-0',
     extra,
   ].join(' ')
+}
+
+function WishlistIlsAmount({ amount }: { amount: number }) {
+  return formatIlsParts(amount).map((part, i) =>
+    part.type === 'currency' ? (
+      <span
+        key={`${i}-${part.type}`}
+        className="text-[10px] font-semibold leading-none text-slate-500 tabular-nums"
+      >
+        {part.value}
+      </span>
+    ) : (
+      <span key={`${i}-${part.type}`}>{part.value}</span>
+    )
+  )
 }
 
 function commitOnEnter(event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
@@ -70,55 +88,55 @@ function LinksEditor({
   }
 
   return (
-    <div className="border-t border-slate-100 bg-slate-50/70 px-4 py-3">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">Links</p>
+    <div className="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Links</p>
         <button
           type="button"
           onClick={() => setDrafts(prev => [...prev, { label: '', url: '' }])}
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-bold text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50"
         >
           <Plus className="h-3.5 w-3.5" />
           Add link
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {drafts.map((draft, index) => (
-          <div key={index} className="grid grid-cols-[180px_minmax(320px,1fr)_44px] gap-2">
+          <div key={index} className="grid grid-cols-[160px_minmax(240px,1fr)_40px] gap-1.5">
             <input
               dir="auto"
               value={draft.label}
               onChange={event => updateDraft(index, 'label', event.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-start text-[14px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-start text-[13px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               placeholder="Label"
             />
             <input
               dir="ltr"
               value={draft.url}
               onChange={event => updateDraft(index, 'url', event.target.value)}
-              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-[14px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="h-9 rounded-lg border border-slate-200 bg-white px-2.5 text-[13px] outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               placeholder="https://..."
               type="url"
             />
             <button
               type="button"
               onClick={() => removeDraft(index)}
-              className="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
               aria-label="Remove link"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
         ))}
       </div>
 
-      <div className="mt-3 flex justify-end">
+      <div className="mt-2 flex justify-end">
         <button
           type="button"
           onClick={() => void save()}
           disabled={saving}
-          className="min-h-10 rounded-xl bg-slate-900 px-4 text-[13px] font-bold text-white transition hover:bg-slate-700 disabled:opacity-50"
+          className="min-h-9 rounded-lg bg-slate-900 px-3 text-[12px] font-bold text-white transition hover:bg-slate-700 disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save links'}
         </button>
@@ -137,13 +155,13 @@ function LinksCell({
   onToggle: () => void
 }) {
   return (
-    <div className="flex min-h-[44px] w-full items-center gap-1.5 px-2 py-1.5 transition hover:bg-slate-50">
-      <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+    <div className="grid min-h-[36px] w-full grid-cols-[1fr_auto] items-center gap-0.5 px-1.5 py-1 transition hover:bg-slate-50">
+      <div className="flex min-w-0 flex-wrap items-center justify-center gap-0.5">
         {item.links.length === 0 ? (
           <button
             type="button"
             onClick={onToggle}
-            className="rounded-full border border-dashed border-slate-200 px-2 py-1 text-[12px] font-semibold text-slate-400 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
+            className="rounded-full border border-dashed border-slate-200 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400 transition hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600"
           >
             Add links
           </button>
@@ -154,16 +172,16 @@ function LinksCell({
               href={link.url}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex max-w-[150px] items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[12px] font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700"
+              className="inline-flex max-w-[132px] items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 transition hover:bg-indigo-50 hover:text-indigo-700"
               dir="auto"
             >
               <span className="truncate">{linkLabel(link)}</span>
-              <ExternalLink className="h-3 w-3 shrink-0 opacity-60" />
+              <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-60" />
             </a>
           ))
         )}
         {item.links.length > 2 && (
-          <span className="rounded-full bg-slate-100 px-2 py-1 text-[12px] font-semibold text-slate-500">
+          <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-500">
             +{item.links.length - 2}
           </span>
         )}
@@ -171,10 +189,10 @@ function LinksCell({
       <button
         type="button"
         onClick={onToggle}
-        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-self-center rounded-md text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
         aria-label={expanded ? 'Collapse link editor' : 'Edit links'}
       >
-        <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
       </button>
     </div>
   )
@@ -225,10 +243,10 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
   const [expandedLinksId, setExpandedLinksId] = useState<string | null>(null)
   const [focusItemId, setFocusItemId] = useState<string | null>(null)
 
-  const tableWidthClass = mobile ? 'min-w-[980px]' : 'w-full'
+  const tableWidthClass = mobile ? 'min-w-[880px]' : 'w-full'
   const gridColsClass = mobile
-    ? 'grid-cols-[220px_260px_260px_120px_90px_130px_72px]'
-    : 'grid-cols-[minmax(150px,1.15fr)_minmax(170px,1.25fr)_minmax(170px,1fr)_112px_84px_118px_64px]'
+    ? 'grid-cols-[185px_220px_210px_100px_64px_102px_52px]'
+    : 'grid-cols-[minmax(110px,1fr)_minmax(130px,1.05fr)_minmax(130px,0.95fr)_96px_60px_96px_48px]'
 
   if (!project) {
     return (
@@ -246,7 +264,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <header className={mobile ? 'space-y-3' : 'flex items-end justify-between gap-4'}>
         <div>
           <h1
@@ -277,26 +295,26 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
       )}
 
       <div
-        className={`${mobile ? 'overflow-x-auto' : 'overflow-visible'} rounded-2xl border border-slate-200 bg-white shadow-sm`}
+        className={`${mobile ? 'overflow-x-auto' : 'overflow-visible'} rounded-xl border border-slate-200 bg-white shadow-sm`}
       >
         <div className={tableWidthClass}>
           <div
             dir="rtl"
-            className={`grid ${gridColsClass} border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500`}
+            className={`grid ${gridColsClass} border-b border-slate-200 bg-slate-50 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-500`}
           >
-            <div className="px-3 py-2 text-center">Item</div>
-            <div className="px-3 py-2 text-center">Description</div>
-            <div className="px-3 py-2 text-center">Links</div>
-            <div className="px-3 py-2 text-center">Unit price</div>
-            <div className="px-3 py-2 text-center">Amount</div>
-            <div className="px-3 py-2 text-center">Total</div>
-            <div className="px-3 py-2 text-center">Actions</div>
+            <div className="px-2 py-1.5 text-center">Item</div>
+            <div className="px-2 py-1.5 text-center">Description</div>
+            <div className="px-2 py-1.5 text-center">Links</div>
+            <div className="px-2 py-1.5 text-center">Unit price</div>
+            <div className="px-2 py-1.5 text-center">Amount</div>
+            <div className="px-2 py-1.5 text-center">Total</div>
+            <div className="px-2 py-1.5" aria-hidden />
           </div>
 
           {loading ? (
             <div className="space-y-px bg-slate-100">
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-12 animate-pulse bg-white" />
+                <div key={i} className="h-9 animate-pulse bg-white" />
               ))}
             </div>
           ) : items.length === 0 ? (
@@ -335,7 +353,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         }}
                         onBlur={event => void saveItemField(item, 'title', event.target.value)}
                         onKeyDown={commitOnEnter}
-                        className={editableInputClass('font-semibold text-start')}
+                        className={editableInputClass('text-center font-semibold')}
                         placeholder="New item..."
                       />
                       <textarea
@@ -347,7 +365,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         }
                         onKeyDown={commitOnEnter}
                         className={editableInputClass(
-                          'min-h-[44px] resize-none text-start leading-snug'
+                          'min-h-[36px] resize-none text-center leading-snug'
                         )}
                       />
                       <LinksCell
@@ -355,19 +373,32 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         expanded={expanded}
                         onToggle={() => setExpandedLinksId(expanded ? null : item.id)}
                       />
-                      <input
-                        key={`${item.id}-price-${item.unit_price}`}
-                        dir="ltr"
-                        defaultValue={item.unit_price || ''}
-                        onBlur={event => void saveItemField(item, 'unit_price', event.target.value)}
-                        onKeyDown={commitOnEnter}
-                        className={editableInputClass(
-                          'text-right font-[family-name:var(--font-jetbrains-mono)] tabular-nums'
-                        )}
-                        inputMode="decimal"
-                        type="number"
-                        min="0"
-                      />
+                      <div className="flex min-h-[36px] w-full items-center justify-center px-0.5">
+                        <div className="inline-flex max-w-full items-center gap-0.5">
+                          <span
+                            className="select-none font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold leading-none text-slate-500 tabular-nums"
+                            aria-hidden
+                          >
+                            ₪
+                          </span>
+                          <input
+                            key={`${item.id}-price-${item.unit_price}`}
+                            dir="ltr"
+                            defaultValue={item.unit_price || ''}
+                            onBlur={event =>
+                              void saveItemField(item, 'unit_price', event.target.value)
+                            }
+                            onKeyDown={commitOnEnter}
+                            className={editableInputClass(
+                              'text-center font-[family-name:var(--font-jetbrains-mono)] tabular-nums',
+                              { compact: true }
+                            )}
+                            inputMode="decimal"
+                            type="number"
+                            min="0"
+                          />
+                        </div>
+                      </div>
                       <input
                         key={`${item.id}-quantity-${item.quantity}`}
                         dir="ltr"
@@ -375,24 +406,24 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         onBlur={event => void saveItemField(item, 'quantity', event.target.value)}
                         onKeyDown={commitOnEnter}
                         className={editableInputClass(
-                          'text-right font-[family-name:var(--font-jetbrains-mono)] tabular-nums'
+                          'text-center font-[family-name:var(--font-jetbrains-mono)] tabular-nums'
                         )}
                         inputMode="numeric"
                         type="number"
                         min="0"
                         step="1"
                       />
-                      <div className="flex items-center justify-end px-3 font-[family-name:var(--font-jetbrains-mono)] text-[14px] font-bold tabular-nums text-slate-950">
-                        {formatIls(rowTotals[item.id] ?? 0)}
+                      <div className="flex items-center justify-center px-1 font-[family-name:var(--font-jetbrains-mono)] text-[13px] font-bold tabular-nums text-slate-950">
+                        <WishlistIlsAmount amount={rowTotals[item.id] ?? 0} />
                       </div>
-                      <div className="flex items-center justify-end px-2">
+                      <div className="flex items-center justify-center px-1">
                         <button
                           type="button"
                           onClick={() => void remove(item)}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-400 transition hover:bg-rose-50 hover:text-rose-600"
                           aria-label={`Delete ${item.title}`}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
