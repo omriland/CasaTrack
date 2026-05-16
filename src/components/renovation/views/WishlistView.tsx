@@ -28,17 +28,24 @@ function editableInputClass(extra = '', opts?: { compact?: boolean }) {
 }
 
 function WishlistIlsAmount({ amount }: { amount: number }) {
-  return formatIlsParts(amount).map((part, i) =>
-    part.type === 'currency' ? (
-      <span
-        key={`${i}-${part.type}`}
-        className="text-[10px] font-semibold leading-none text-slate-500 tabular-nums"
-      >
-        {part.value}
-      </span>
-    ) : (
-      <span key={`${i}-${part.type}`}>{part.value}</span>
-    )
+  return (
+    <span
+      dir="ltr"
+      className="inline-flex flex-wrap items-baseline justify-center gap-0.5"
+    >
+      {formatIlsParts(amount).map((part, i) =>
+        part.type === 'currency' ? (
+          <span
+            key={`${i}-${part.type}`}
+            className="text-[10px] font-semibold leading-none text-slate-500 tabular-nums"
+          >
+            {part.value}
+          </span>
+        ) : (
+          <span key={`${i}-${part.type}`}>{part.value}</span>
+        )
+      )}
+    </span>
   )
 }
 
