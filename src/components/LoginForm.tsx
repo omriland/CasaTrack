@@ -70,6 +70,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
+                  inputMode="numeric"
                   autoComplete="current-password"
                   required
                   className="w-full px-4 py-3.5 rounded-2xl bg-white border border-[rgba(0,0,0,0.08)] text-black placeholder:text-black/30 font-medium focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/15 transition-all duration-200"

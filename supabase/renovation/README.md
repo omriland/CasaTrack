@@ -8,6 +8,7 @@
 6. Run **`05_expense_attachments.sql`** (multiple attachments per expense).
 7. Run **`06_needs.sql`** (Needs list per project, optional room).
 8. Run **`07_providers.sql`** (Service providers + optional provider on tasks).
+9. Optional later migrations: **`10_calendar_events.sql`** … through **`25_overview_vendor_key.sql`** (pin a Budget-tab row to the renovation overview) as needed — see files in this folder.
 
 If a script fails, read the error; fix any naming conflict and re-run only missing parts.
 

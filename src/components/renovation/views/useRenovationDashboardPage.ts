@@ -22,6 +22,15 @@ import type {
   RenovationVendorPayment,
 } from '@/types/renovation'
 
+/** One Budget-tab vendor row mirrored on the overview (same numbers as that row). */
+export type RenovationOverviewVendorStrip = {
+  vendorLabel: string
+  categoryLabel: string
+  budget: number
+  committed: number
+  paid: number
+}
+
 function eventStartMs(ev: RenovationCalendarEvent): number | null {
   if (!ev.is_all_day && ev.starts_at) {
     const t = new Date(ev.starts_at).getTime()
@@ -82,6 +91,7 @@ export function useRenovationDashboardPage() {
   const [calendarEvents, setCalendarEvents] = useState<RenovationCalendarEvent[]>([])
   const [gallery, setGallery] = useState<RenovationGalleryItem[]>([])
   const [dashLoading, setDashLoading] = useState(false)
+  const [overviewVendorStrip, setOverviewVendorStrip] = useState<RenovationOverviewVendorStrip | null>(null)
 
   const loadDash = useCallback(async () => {
     if (!project) return
@@ -108,20 +118,37 @@ export function useRenovationDashboardPage() {
       setActualColumnTotal(actualTotal)
       setPaidColumnTotal(paidTotal)
       setMonthSpend(expensesThisMonth(ex))
-      
-      const activeVendorKeys = new Set(vendorRows.map(vr => vr.key))
-      
+
+      const ovk = (project.overview_vendor_key ?? '').trim() || null
+      const ovRow = ovk ? vendorRows.find((r) => r.key === ovk) : undefined
+      if (ovRow) {
+        const committed = ovRow.spentTotal > 0 ? ovRow.spentTotal : ovRow.budgetTotal
+        const paid = vp.reduce((s, p) => (p.vendor_key === ovk ? s + Number(p.amount) : s), 0)
+        setOverviewVendorStrip({
+          vendorLabel: ovRow.displayVendor,
+          categoryLabel: ovRow.displayCategory,
+          budget: ovRow.budgetTotal,
+          committed,
+          paid,
+        })
+      } else {
+        setOverviewVendorStrip(null)
+      }
+
+      const activeVendorKeys = new Set(vendorRows.map((vr) => vr.key))
+
       // Sort payments newest first, filter out deleted vendors/empty budget, and limit to 4
       const sortedPayments = [...vp]
-        .filter(p => activeVendorKeys.has(p.vendor_key))
+        .filter((p) => activeVendorKeys.has(p.vendor_key))
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       setRecentPayments(sortedPayments.slice(0, 4))
-      
+
       setTasks(t)
       setCalendarEvents(cal)
       setGallery(g.slice(0, 6))
     } catch (e) {
       console.error(e)
+      setOverviewVendorStrip(null)
     } finally {
       setDashLoading(false)
     }
@@ -208,6 +235,14 @@ export function useRenovationDashboardPage() {
       .slice(0, 5)
   }, [calendarEvents])
 
+  const overviewVendorRemainingVsPlanned = overviewVendorStrip
+    ? overviewVendorStrip.budget - overviewVendorStrip.committed
+    : 0
+  const overviewVendorLeftToPay = overviewVendorStrip
+    ? overviewVendorStrip.committed - overviewVendorStrip.paid
+    : 0
+  const showOverviewVendorStrip = overviewVendorStrip != null
+
   /** Mobile dashboard: calendar events only, within the next 14 days, max 4. */
   const upcomingCalendarEventsTwoWeeks = useMemo(() => {
     const now = new Date()
@@ -262,5 +297,9 @@ export function useRenovationDashboardPage() {
     upcoming,
     upcomingEvents,
     upcomingCalendarEventsTwoWeeks,
+    overviewVendorStrip,
+    overviewVendorRemainingVsPlanned,
+    overviewVendorLeftToPay,
+    showOverviewVendorStrip,
   }
 }

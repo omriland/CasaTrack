@@ -142,6 +142,7 @@ export async function updateProject(
       | 'target_end_date'
       | 'total_budget'
       | 'contingency_amount'
+      | 'overview_vendor_key'
     >
   >
 ): Promise<RenovationProject> {
@@ -231,12 +232,22 @@ export async function listBudgetLines(projectId: string): Promise<RenovationBudg
 
   if (linkErr) {
     console.warn('renovation_budget_line_rooms:', linkErr.message)
-    return mergeBudgetLineRoomIds(list, [])
+    return withBudgetLineFurnishingFlag(mergeBudgetLineRoomIds(list, []))
   }
-  return mergeBudgetLineRoomIds(
-    list,
-    (linkRows || []) as { budget_line_id: string; room_id: string }[]
+  return withBudgetLineFurnishingFlag(
+    mergeBudgetLineRoomIds(
+      list,
+      (linkRows || []) as { budget_line_id: string; room_id: string }[],
+    ),
   )
+}
+
+function withBudgetLineFurnishingFlag(lines: RenovationBudgetLine[]): RenovationBudgetLine[] {
+  return lines.map((row) => ({
+    ...row,
+    furnishing_overview:
+      (row as { furnishing_overview?: boolean }).furnishing_overview === true,
+  }))
 }
 
 /** Replace room links for a budget line (empty array clears all). */
@@ -265,12 +276,19 @@ export async function createBudgetLine(
     .single()
 
   if (error) throw error
-  return { ...(data as Omit<RenovationBudgetLine, 'room_ids'>), room_ids: [] }
+  return {
+    ...(data as Omit<RenovationBudgetLine, 'room_ids'>),
+    room_ids: [],
+    furnishing_overview:
+      (data as { furnishing_overview?: boolean }).furnishing_overview === true,
+  }
 }
 
 export async function updateBudgetLine(
   id: string,
-  updates: Partial<Pick<RenovationBudgetLine, 'category_name' | 'amount_allocated' | 'sort_order'>>
+  updates: Partial<
+    Pick<RenovationBudgetLine, 'category_name' | 'amount_allocated' | 'sort_order' | 'furnishing_overview'>
+  >
 ): Promise<void> {
   const { error } = await supabase.from('renovation_budget_lines').update(updates).eq('id', id)
   if (error) throw error

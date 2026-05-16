@@ -34,6 +34,10 @@ export function RenovationDashboardDesktop() {
     overdue,
     upcoming,
     upcomingEvents,
+    overviewVendorStrip,
+    overviewVendorRemainingVsPlanned,
+    overviewVendorLeftToPay,
+    showOverviewVendorStrip,
   } = useRenovationDashboardPage()
 
   if (loading) return null
@@ -220,6 +224,49 @@ export function RenovationDashboardDesktop() {
                     </div>
                   </div>
                 </div>
+
+                {showOverviewVendorStrip && overviewVendorStrip && (
+                  <div className="mt-6 border-t border-white/10 pt-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                      <div className="min-w-0 space-y-2" dir="auto">
+                        <p className="text-[13px] font-semibold text-slate-200">{overviewVendorStrip.vendorLabel}</p>
+                        {overviewVendorStrip.categoryLabel.trim().length > 0 && (
+                          <p className="text-[12px] font-medium text-slate-400">{overviewVendorStrip.categoryLabel}</p>
+                        )}
+                        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[13px] text-slate-400" dir="ltr">
+                          <span>
+                            <span className="font-medium text-slate-500">Budget</span>{' '}
+                            <span className="font-semibold tabular-nums text-white/90">
+                              {formatIls(overviewVendorStrip.budget)}
+                            </span>
+                          </span>
+                          <span>
+                            <span className="font-medium text-slate-500">Remaining</span>{' '}
+                            <span
+                              className={`font-bold tabular-nums ${overviewVendorRemainingVsPlanned < 0 ? 'text-rose-300' : 'text-white'}`}
+                            >
+                              {formatIls(overviewVendorRemainingVsPlanned)}
+                            </span>
+                          </span>
+                        </div>
+                        {(overviewVendorStrip.paid > 0 || overviewVendorStrip.committed > 0) && (
+                          <div className="space-y-0.5" dir="ltr">
+                            <p className="text-[12px] font-medium text-slate-400">Left to be paid</p>
+                            <p className="text-[12px] font-semibold tabular-nums text-slate-300">
+                              {formatIls(overviewVendorLeftToPay)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <Link
+                        href="/renovation/budget"
+                        className="shrink-0 self-start text-[12px] font-semibold text-indigo-300 underline-offset-2 hover:text-white hover:underline"
+                      >
+                        Change in Budget
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             </section>
           )}

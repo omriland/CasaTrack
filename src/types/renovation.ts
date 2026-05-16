@@ -10,6 +10,8 @@ export interface RenovationProject {
   target_end_date: string | null
   total_budget: number
   contingency_amount: number
+  /** Vendor row key from Budget tab (normalizeVendorKey); requires `25_overview_vendor_key.sql`. */
+  overview_vendor_key?: string | null
   currency: string
   created_at: string
   updated_at: string
@@ -69,6 +71,8 @@ export interface RenovationBudgetLine {
   category_name: string
   amount_allocated: number
   sort_order: number
+  /** When true, this row is the overview strip line (max one per project); see supabase/renovation/24_furnishing_overview_budget_line.sql */
+  furnishing_overview: boolean
   /** Linked via `renovation_budget_line_rooms`; empty = not scoped to specific rooms */
   room_ids: string[]
 }

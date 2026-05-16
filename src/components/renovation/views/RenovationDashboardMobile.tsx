@@ -30,6 +30,10 @@ export function RenovationDashboardMobile() {
     remainingAfterPayments,
     budgetOverAmount,
     upcomingCalendarEventsTwoWeeks,
+    overviewVendorStrip,
+    overviewVendorRemainingVsPlanned,
+    overviewVendorLeftToPay,
+    showOverviewVendorStrip,
   } = useRenovationDashboardPage()
   const { setTaskModalOpen } = useRenovation()
 
@@ -160,6 +164,44 @@ export function RenovationDashboardMobile() {
               )}
               {over && (
                 <p className="text-[14px] font-bold text-rose-600 mt-1">Over budget by {formatIls(budgetOverAmount)}</p>
+              )}
+              {showOverviewVendorStrip && overviewVendorStrip && (
+                <div className="mt-3 border-t border-slate-200/80 pt-3 space-y-2" dir="auto">
+                  <p className="text-[13px] font-bold text-slate-700">{overviewVendorStrip.vendorLabel}</p>
+                  {overviewVendorStrip.categoryLabel.trim().length > 0 && (
+                    <p className="text-[12px] font-medium text-slate-500">{overviewVendorStrip.categoryLabel}</p>
+                  )}
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-slate-600" dir="ltr">
+                    <span>
+                      <span className="text-slate-500 font-medium">Budget</span>{' '}
+                      <span className="font-semibold tabular-nums text-slate-900">
+                        {formatIls(overviewVendorStrip.budget)}
+                      </span>
+                    </span>
+                    <span>
+                      <span className="text-slate-500 font-medium">Remaining</span>{' '}
+                      <span
+                        className={`font-bold tabular-nums ${overviewVendorRemainingVsPlanned < 0 ? 'text-rose-600' : 'text-slate-900'}`}
+                      >
+                        {formatIls(overviewVendorRemainingVsPlanned)}
+                      </span>
+                    </span>
+                  </div>
+                  {(overviewVendorStrip.paid > 0 || overviewVendorStrip.committed > 0) && (
+                    <div className="space-y-0.5" dir="ltr">
+                      <p className="text-[12px] font-medium text-slate-500">Left to be paid</p>
+                      <p className="text-[15px] font-semibold tabular-nums text-slate-700">
+                        {formatIls(overviewVendorLeftToPay)}
+                      </p>
+                    </div>
+                  )}
+                  <Link
+                    href="/renovation/budget"
+                    className="inline-block text-[12px] font-semibold text-indigo-600 underline-offset-2 hover:underline"
+                  >
+                    Change in Budget
+                  </Link>
+                </div>
               )}
               <div className="mt-3 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
                 {spentBarPct > 0 && (

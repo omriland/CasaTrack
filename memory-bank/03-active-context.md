@@ -1,7 +1,7 @@
 # Active Development Context
 
 ## Current Session Focus
-**Priority**: Renovation module stable; **Wishlist** now has a standalone `/renovation/wishlist` tab for desired items, multiple links, unit price × quantity totals, and mobile/desktop navigation. **Vendor budget** uses TanStack Table (`VendorBudgetView`) with incremental save + stable row order; **tasks print** at [`/renovation/tasks/print`](src/app/renovation/tasks/print/page.tsx) for open/in-progress work with optional provider filter (`renovation-tasks-export.ts`).
+**Priority**: Renovation module stable; **Wishlist** `/renovation/wishlist`; **Overview** extra strip = one **Budget** tab vendor row (`overview_vendor_key` + [`25_overview_vendor_key.sql`](supabase/renovation/25_overview_vendor_key.sql)), chosen via row context menu in [`VendorBudgetView.tsx`](src/components/renovation/views/VendorBudgetView.tsx).
 **Status**: Apply any pending Supabase SQL from `supabase/renovation/` as needed, including [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql) for the Wishlist tab. Calendar: **FullCalendar v6** (MIT — `@fullcalendar/core`, `react`, `daygrid`, `timegrid`, `interaction`); migrated react-big-calendar → FullCalendar v6 (Mar 2026) → Schedule-X v4 (May 2026, briefly) → **back to FullCalendar v6 (May 2026)** after Schedule-X's premium drag/resize and Temporal round-trips proved unworkable. Drag-to-create, move, and resize are all native FullCalendar; quick-create popover unchanged. Migrations `10_calendar_events.sql` + optional `11_calendar_address_created_by.sql`.
 
 ## Comprehensive Feature Review ✅

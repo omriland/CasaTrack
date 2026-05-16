@@ -1,6 +1,7 @@
 'use client'
 
 import { VendorDetailDrawer } from '@/components/renovation/VendorDetailDrawer'
+import { useRenovation } from '@/components/renovation/RenovationContext'
 import {
   useCallback,
   useEffect,
@@ -21,6 +22,7 @@ import {
   setVendorBudgetRooms,
   setVendorPlannedTotal,
   setVendorSpentTotal,
+  updateProject,
   updateVendorExpenseMeta,
   vendorRoomLinksByVendorKey,
 } from '@/lib/renovation'
@@ -274,6 +276,9 @@ function ViewPaymentsModal({
 
 export function VendorBudgetView({ projectId }: { projectId: string }) {
   const isMobile = useRenovationMobile()
+  const { project, refresh } = useRenovation()
+  const overviewVendorKey =
+    project?.id === projectId ? (project.overview_vendor_key ?? '').trim() || null : null
 
   const [expenses, setExpenses] = useState<RenovationExpense[]>([])
   const [drafts, setDrafts] = useState<DraftRow[]>([])
@@ -776,6 +781,31 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
               }}
             >
               Add payment
+            </button>
+          )}
+          {menu.row.kind === 'data' && (
+            <button
+              type="button"
+              role="menuitem"
+              className="block w-full px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
+              onClick={async () => {
+                const rw = menu.row
+                if (rw.kind !== 'data') return
+                setMenu(null)
+                try {
+                  const nextKey = overviewVendorKey === rw.model.key ? null : rw.model.key
+                  await updateProject(projectId, { overview_vendor_key: nextKey })
+                  await refresh()
+                  flashSaveAck()
+                } catch (e) {
+                  console.error(e)
+                  alert(
+                    'Could not save overview row. Run supabase/renovation/25_overview_vendor_key.sql in Supabase, then try again.',
+                  )
+                }
+              }}
+            >
+              {overviewVendorKey === menu.row.model.key ? 'Remove from overview' : 'Show on overview'}
             </button>
           )}
           {menu.row.kind === 'data' && (paymentsByVendor.get(menu.row.model.key)?.length ?? 0) > 0 && (

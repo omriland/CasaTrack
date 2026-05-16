@@ -1,5 +1,10 @@
 # Development Progress Log
 
+## May 2026 — renovation overview: Budget-tab row strip
+- **Data:** [`25_overview_vendor_key.sql`](supabase/renovation/25_overview_vendor_key.sql) — `renovation_projects.overview_vendor_key` stores the vendor row key (`normalizeVendorKey`) chosen from the Budget tab.
+- **Budget tab:** [`VendorBudgetView.tsx`](src/components/renovation/views/VendorBudgetView.tsx) row context menu — **Show on overview** / **Remove from overview** — `updateProject` + `refresh()`.
+- **Overview:** [`useRenovationDashboardPage.ts`](src/components/renovation/views/useRenovationDashboardPage.ts) + [`RenovationDashboardDesktop.tsx`](src/components/renovation/views/RenovationDashboardDesktop.tsx) / [`RenovationDashboardMobile.tsx`](src/components/renovation/views/RenovationDashboardMobile.tsx) show that row’s **Budget** (planned sum), **Remaining** (`budget − actual` with same actual rule as the table), and **Left to be paid** (`actual − paid`).
+
 ## May 2026 — renovation wishlist tab
 - **Route:** [`/renovation/wishlist`](src/app/renovation/wishlist/page.tsx) adds a simple renovation wishlist for desired items with title, description, multiple links, unit price, quantity, row total, and page total.
 - **Data:** [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql) creates `renovation_wishlist_items` and `renovation_wishlist_links` with RLS, indexes, and updated-at triggers. Run it in Supabase before using the tab.
