@@ -283,9 +283,6 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
           >
             Wishlist
           </h1>
-          <p className="mt-1 text-[14px] text-slate-500">
-            English interface. Hebrew item text is supported inside the cells.
-          </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
           <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Total</p>

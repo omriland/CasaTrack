@@ -23,6 +23,7 @@ type VendorTableMeta = {
   rooms: RenovationRoom[]
   roomNameById: Map<string, string>
   paidSumForVendor: (key: string) => number
+  isRowPaidInFull: (row: TableRow) => boolean
   paymentsByVendor: Map<string, RenovationVendorPayment[]>
   showPaymentsHover: (info: PaymentsHoverState) => void
   hidePaymentsHover: () => void
@@ -161,9 +162,12 @@ function EditableCell({
 function RoomChips({
   names,
   onClick,
+  muted,
 }: {
   names: string[]
   onClick: (rect: DOMRect) => void
+  /** Softer chips when the row is paid in full (green-dot rows). */
+  muted?: boolean
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const MAX_CHIPS = 2
@@ -184,7 +188,12 @@ function RoomChips({
           {shown.map((name) => (
             <span
               key={name}
-              className="inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700 truncate max-w-[90px]"
+              className={cn(
+                'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium truncate max-w-[90px]',
+                muted
+                  ? 'bg-slate-100 text-slate-600'
+                  : 'bg-indigo-50 text-indigo-700'
+              )}
             >
               {name}
             </span>
@@ -400,7 +409,9 @@ function buildColumns(
                             'min-w-0 flex-1 truncate',
                             isDraft
                               ? 'italic text-slate-500'
-                              : 'font-semibold text-slate-900'
+                              : paidInFull
+                                ? 'font-semibold text-slate-600'
+                                : 'font-semibold text-slate-900'
                           )}
                         >
                           {val}
@@ -435,13 +446,20 @@ function buildColumns(
           const r = row.original
           if (r.kind === 'draft') return <span className="text-slate-400">—</span>
           const val = r.model.displayCategory
+          const paidRow = meta.isRowPaidInFull(r)
           return (
             <EditableCell
               value={val}
               onSave={(v) => void meta.onCommitEdit(r, 'category', v)}
               display={
                 val ? (
-                  <span className="block truncate text-slate-700" dir="auto">
+                  <span
+                    className={cn(
+                      'block truncate',
+                      paidRow ? 'text-slate-600' : 'text-slate-700'
+                    )}
+                    dir="auto"
+                  >
                     {val}
                   </span>
                 ) : undefined
@@ -488,6 +506,7 @@ function buildColumns(
           return (
             <RoomChips
               names={names}
+              muted={meta.isRowPaidInFull(r)}
               onClick={(rect) =>
                 meta.openRoomsDropdown({
                   vendorKey: r.model.key,
@@ -525,6 +544,7 @@ function buildColumns(
             r.kind === 'data' && r.model.budgetTotal > 0
               ? formatIls(r.model.budgetTotal)
               : null
+          const paidRow = r.kind === 'data' && meta.isRowPaidInFull(r)
           return (
             <EditableCell
               value={raw}
@@ -533,7 +553,10 @@ function buildColumns(
                 formatted ? (
                   <span
                     dir="ltr"
-                    className="inline-block w-full text-end font-bold text-amber-950 tabular-nums"
+                    className={cn(
+                      'inline-block w-full text-end font-bold tabular-nums',
+                      paidRow ? 'text-slate-600' : 'text-amber-950'
+                    )}
                   >
                     {formatted}
                   </span>
@@ -597,7 +620,12 @@ function buildColumns(
           const hasReal = m.spentTotal > 0
           const display = hasReal ? m.spentTotal : m.budgetTotal
           const isGhost = !hasReal && m.budgetTotal > 0
+          const paidRow = meta.isRowPaidInFull(r)
           const color = (() => {
+            if (paidRow) {
+              if (isGhost) return 'text-slate-500'
+              return 'text-slate-600'
+            }
             if (isGhost) return 'text-slate-400'
             if (m.budgetTotal <= 0) return 'text-slate-900'
             if (display < m.budgetTotal) return 'text-emerald-600'
@@ -677,6 +705,7 @@ function buildColumns(
             effectiveActual > 0
               ? Math.round((paid / effectiveActual) * 100)
               : 0
+          const paidRow = meta.isRowPaidInFull(r)
           return (
             <span
               dir="ltr"
@@ -699,7 +728,7 @@ function buildColumns(
               onBlur={meta.hidePaymentsHover}
               className={cn(
                 'inline-block w-full cursor-help rounded-sm text-end tabular-nums font-semibold outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/30',
-                paidColorClass(pct)
+                paidRow ? 'text-slate-600' : paidColorClass(pct)
               )}
             >
               {formatIls(paid)} ({pct}%)
@@ -815,6 +844,9 @@ export function VendorBudgetTable({
       rooms,
       roomNameById,
       paidSumForVendor,
+      isRowPaidInFull: (row: TableRow) =>
+        row.kind === 'data' &&
+        isVendorPaidInFull(row.model, paidSumForVendor(row.model.key)),
       paymentsByVendor,
       showPaymentsHover: setPaymentsHover,
       hidePaymentsHover: () => setPaymentsHover(null),
