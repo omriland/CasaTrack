@@ -391,6 +391,20 @@ input[type=number] {
   animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-8px); }
+  30%       { transform: translateX(7px); }
+  45%       { transform: translateX(-6px); }
+  60%       { transform: translateX(5px); }
+  75%       { transform: translateX(-3px); }
+  90%       { transform: translateX(2px); }
+}
+
+.animate-shake {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
 /* Needs list row (Needs.html) */
 @keyframes needs-fade-up {
   from {
