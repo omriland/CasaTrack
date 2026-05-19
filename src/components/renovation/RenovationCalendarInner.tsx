@@ -453,6 +453,7 @@ export function RenovationCalendarInner({
           eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hour12: false }}
           dayMaxEvents={3}
           eventOverlap
+          slotEventOverlap={false}
           selectable
           selectMirror
           editable
