@@ -1,5 +1,5 @@
 export function checkPassword(password: string): boolean {
-  const correctPassword = process.env.NEXT_PUBLIC_AUTH_PASSWORD || 'casa-track-2024'
+  const correctPassword = process.env.NEXT_PUBLIC_AUTH_PASSWORD || '130188tl'
   return password === correctPassword
 }
 

@@ -1226,6 +1226,7 @@ export type WishlistItemInput = {
   description?: string | null
   unit_price: number
   quantity: number
+  purchased?: boolean
   sort_order?: number
   links: WishlistLinkInput[]
 }
@@ -1247,6 +1248,7 @@ function normalizeWishlistItem(
     ...row,
     unit_price: Number(row.unit_price ?? 0),
     quantity: Number(row.quantity ?? 0),
+    purchased: Boolean(row.purchased),
   }
 }
 
@@ -1298,6 +1300,7 @@ export async function createWishlistItem(
       description: input.description?.trim() || null,
       unit_price: input.unit_price,
       quantity: input.quantity,
+      ...(input.purchased != null ? { purchased: input.purchased } : {}),
       ...(input.sort_order != null ? { sort_order: input.sort_order } : {}),
     })
     .select()
@@ -1321,6 +1324,7 @@ export async function updateWishlistItem(
       description: input.description?.trim() || null,
       unit_price: input.unit_price,
       quantity: input.quantity,
+      ...(input.purchased != null ? { purchased: input.purchased } : {}),
       ...(input.sort_order != null ? { sort_order: input.sort_order } : {}),
     })
     .eq('id', id)

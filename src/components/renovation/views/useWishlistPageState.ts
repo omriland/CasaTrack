@@ -76,7 +76,7 @@ export function useWishlistPageState() {
       setItems(await listWishlistItems(project.id))
     } catch (err) {
       console.error(err)
-      setError('Could not load wishlist. Run 23_wishlist.sql in Supabase.')
+      setError('Could not load wishlist. Run 23_wishlist.sql and 26_wishlist_purchased.sql in Supabase.')
     } finally {
       setLoading(false)
     }
@@ -131,6 +131,7 @@ export function useWishlistPageState() {
       description: patch.description ?? item.description,
       unit_price: patch.unit_price ?? item.unit_price,
       quantity: patch.quantity ?? item.quantity,
+      purchased: patch.purchased ?? item.purchased,
       sort_order: patch.sort_order ?? item.sort_order,
       links: patch.links ?? item.links.map(link => ({ label: link.label, url: link.url })),
     }
@@ -243,6 +244,10 @@ export function useWishlistPageState() {
     }
   }
 
+  const togglePurchased = async (item: RenovationWishlistItem) => {
+    await saveItem(item, { purchased: !item.purchased })
+  }
+
   return {
     project,
     items,
@@ -262,5 +267,6 @@ export function useWishlistPageState() {
     createBlankItemAt,
     submit,
     remove,
+    togglePurchased,
   }
 }

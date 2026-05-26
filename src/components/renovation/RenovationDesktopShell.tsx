@@ -10,7 +10,6 @@ import {
   Calendar,
   Phone,
   Image,
-  FileText,
   Star,
   ShoppingCart,
   DoorOpen,
@@ -57,12 +56,6 @@ const nav = [
     label: 'Photos',
     icon: Image,
     match: (p: string) => p.startsWith('/renovation/gallery'),
-  },
-  {
-    href: '/renovation/files',
-    label: 'Files',
-    icon: FileText,
-    match: (p: string) => p.startsWith('/renovation/files'),
   },
   {
     href: '/renovation/needs',

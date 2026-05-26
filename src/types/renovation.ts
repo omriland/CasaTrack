@@ -229,6 +229,7 @@ export interface RenovationWishlistItem {
   description: string | null
   unit_price: number
   quantity: number
+  purchased: boolean
   sort_order: number
   created_at: string
   updated_at: string

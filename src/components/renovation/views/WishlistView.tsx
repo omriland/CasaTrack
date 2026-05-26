@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState, type KeyboardEvent } from 'react'
-import { ChevronDown, ExternalLink, Plus, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { Check, ChevronDown, ExternalLink, Plus, Trash2 } from 'lucide-react'
 import { formatIls, formatIlsParts } from '@/lib/renovation-format'
 import type { RenovationWishlistItem } from '@/types/renovation'
 import { useWishlistPageState, type WishlistLinkDraft } from './useWishlistPageState'
@@ -16,18 +16,30 @@ function linkLabel(link: { label: string | null; url: string }) {
   }
 }
 
-function editableInputClass(extra = '', opts?: { compact?: boolean }) {
+function editableInputClass(
+  extra = '',
+  opts?: { compact?: boolean; purchased?: boolean }
+) {
   const layout = opts?.compact
-    ? 'min-w-0 w-[4.25rem] shrink-0 rounded-none border-0 bg-transparent px-0.5 py-1 text-[13px] text-slate-900 outline-none'
-    : 'w-full rounded-none border-0 bg-transparent px-1.5 py-1 text-[13px] text-slate-900 outline-none'
-  return [
-    layout,
-    'transition-colors placeholder:text-slate-400 hover:bg-slate-50 focus:bg-indigo-50/60 focus:ring-0',
-    extra,
-  ].join(' ')
+    ? 'min-w-0 w-[4.25rem] shrink-0 rounded-none border-0 bg-transparent px-0.5 py-1 text-[13px] outline-none'
+    : 'w-full rounded-none border-0 bg-transparent px-1.5 py-1 text-[13px] outline-none'
+  const tone = opts?.purchased
+    ? 'text-emerald-900 placeholder:text-emerald-600/70 hover:bg-emerald-100/50 focus:bg-emerald-100/70'
+    : 'text-slate-900 placeholder:text-slate-400 hover:bg-slate-50 focus:bg-indigo-50/60'
+  return [layout, 'transition-colors focus:ring-0', tone, extra].join(' ')
 }
 
-function WishlistIlsAmount({ amount }: { amount: number }) {
+function purchasedRowClass(purchased: boolean) {
+  return purchased ? 'bg-emerald-50/80' : 'bg-white'
+}
+
+function WishlistIlsAmount({
+  amount,
+  purchased = false,
+}: {
+  amount: number
+  purchased?: boolean
+}) {
   return (
     <span
       dir="ltr"
@@ -37,7 +49,9 @@ function WishlistIlsAmount({ amount }: { amount: number }) {
         part.type === 'currency' ? (
           <span
             key={`${i}-${part.type}`}
-            className="text-[10px] font-semibold leading-none text-slate-500 tabular-nums"
+            className={`text-[10px] font-semibold leading-none tabular-nums ${
+              purchased ? 'text-emerald-700' : 'text-slate-500'
+            }`}
           >
             {part.value}
           </span>
@@ -156,13 +170,18 @@ function LinksCell({
   item,
   expanded,
   onToggle,
+  purchased,
 }: {
   item: RenovationWishlistItem
   expanded: boolean
   onToggle: () => void
+  purchased: boolean
 }) {
+  const hoverClass = purchased ? 'hover:bg-emerald-100/50' : 'hover:bg-slate-50'
   return (
-    <div className="grid min-h-[36px] w-full grid-cols-[1fr_auto] items-center gap-0.5 px-1.5 py-1 transition hover:bg-slate-50">
+    <div
+      className={`grid min-h-[36px] w-full grid-cols-[1fr_auto] items-center gap-0.5 px-1.5 py-1 transition ${hoverClass}`}
+    >
       <div className="flex min-w-0 flex-wrap items-center justify-center gap-0.5">
         {item.links.length === 0 ? (
           <button
@@ -233,6 +252,8 @@ function InsertRowControl({
   )
 }
 
+type WishlistCtxMenu = { x: number; y: number; itemId: string }
+
 function WishlistTable({ mobile }: { mobile: boolean }) {
   const {
     project,
@@ -246,9 +267,35 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
     saveItemLinks,
     createBlankItemAt,
     remove,
+    togglePurchased,
   } = useWishlistPageState()
   const [expandedLinksId, setExpandedLinksId] = useState<string | null>(null)
   const [focusItemId, setFocusItemId] = useState<string | null>(null)
+  const [ctxMenu, setCtxMenu] = useState<WishlistCtxMenu | null>(null)
+
+  const handleRowContextMenu = useCallback(
+    (event: MouseEvent, itemId: string) => {
+      event.preventDefault()
+      setCtxMenu({ x: event.clientX, y: event.clientY, itemId })
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (!ctxMenu) return
+    const close = (e: globalThis.MouseEvent) => {
+      const el = e.target as HTMLElement
+      if (el.closest('[data-wishlist-menu="1"]')) return
+      setCtxMenu(null)
+    }
+    const t = setTimeout(() => window.addEventListener('mousedown', close), 0)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('mousedown', close)
+    }
+  }, [ctxMenu])
+
+  const ctxItem = ctxMenu ? items.find(item => item.id === ctxMenu.itemId) : null
 
   const tableWidthClass = mobile ? 'min-w-[880px]' : 'w-full'
   const gridColsClass = mobile
@@ -342,9 +389,14 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
               />
               {items.map((item, index) => {
                 const expanded = expandedLinksId === item.id
+                const purchased = item.purchased
                 return (
                   <div key={item.id} className="border-b border-slate-100 last:border-b-0">
-                    <div dir="rtl" className={`grid ${gridColsClass}`}>
+                    <div
+                      dir="rtl"
+                      className={`grid ${gridColsClass} ${purchasedRowClass(purchased)}`}
+                      onContextMenu={event => handleRowContextMenu(event, item.id)}
+                    >
                       <input
                         key={`${item.id}-title-${item.title}`}
                         dir="auto"
@@ -357,7 +409,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         }}
                         onBlur={event => void saveItemField(item, 'title', event.target.value)}
                         onKeyDown={commitOnEnter}
-                        className={editableInputClass('text-center font-semibold')}
+                        className={editableInputClass('text-center font-semibold', { purchased })}
                         placeholder="New item..."
                       />
                       <textarea
@@ -369,18 +421,22 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         }
                         onKeyDown={commitOnEnter}
                         className={editableInputClass(
-                          'min-h-[36px] resize-none text-center leading-snug'
+                          'min-h-[36px] resize-none text-center leading-snug',
+                          { purchased }
                         )}
                       />
                       <LinksCell
                         item={item}
                         expanded={expanded}
+                        purchased={purchased}
                         onToggle={() => setExpandedLinksId(expanded ? null : item.id)}
                       />
                       <div className="flex min-h-[36px] w-full items-center justify-center px-0.5">
                         <div className="inline-flex max-w-full items-center gap-0.5">
                           <span
-                            className="select-none font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold leading-none text-slate-500 tabular-nums"
+                            className={`select-none font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold leading-none tabular-nums ${
+                              purchased ? 'text-emerald-700' : 'text-slate-500'
+                            }`}
                             aria-hidden
                           >
                             ₪
@@ -395,7 +451,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                             onKeyDown={commitOnEnter}
                             className={editableInputClass(
                               'text-center font-[family-name:var(--font-jetbrains-mono)] tabular-nums',
-                              { compact: true }
+                              { compact: true, purchased }
                             )}
                             inputMode="decimal"
                             type="number"
@@ -410,15 +466,20 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                         onBlur={event => void saveItemField(item, 'quantity', event.target.value)}
                         onKeyDown={commitOnEnter}
                         className={editableInputClass(
-                          'text-center font-[family-name:var(--font-jetbrains-mono)] tabular-nums'
+                          'text-center font-[family-name:var(--font-jetbrains-mono)] tabular-nums',
+                          { purchased }
                         )}
                         inputMode="numeric"
                         type="number"
                         min="0"
                         step="1"
                       />
-                      <div className="flex items-center justify-center px-1 font-[family-name:var(--font-jetbrains-mono)] text-[13px] font-bold tabular-nums text-slate-950">
-                        <WishlistIlsAmount amount={rowTotals[item.id] ?? 0} />
+                      <div
+                        className={`flex items-center justify-center px-1 font-[family-name:var(--font-jetbrains-mono)] text-[13px] font-bold tabular-nums ${
+                          purchased ? 'text-emerald-800' : 'text-slate-950'
+                        }`}
+                      >
+                        <WishlistIlsAmount amount={rowTotals[item.id] ?? 0} purchased={purchased} />
                       </div>
                       <div className="flex items-center justify-center px-1">
                         <button
@@ -444,6 +505,52 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
           )}
         </div>
       </div>
+
+      {ctxMenu && ctxItem && (
+        <>
+          <div
+            className="fixed inset-0 z-[270]"
+            onClick={() => setCtxMenu(null)}
+            onContextMenu={event => {
+              event.preventDefault()
+              setCtxMenu(null)
+            }}
+          />
+          <div
+            data-wishlist-menu="1"
+            role="menu"
+            dir="ltr"
+            className="fixed z-[280] min-w-[200px] rounded-xl border border-slate-200 bg-white py-1 shadow-xl text-start"
+            style={{
+              left: Math.min(
+                ctxMenu.x,
+                typeof window !== 'undefined' ? window.innerWidth - 220 : ctxMenu.x
+              ),
+              top: Math.min(
+                ctxMenu.y,
+                typeof window !== 'undefined' ? window.innerHeight - 120 : ctxMenu.y
+              ),
+            }}
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 hover:bg-slate-50"
+              onClick={() => {
+                setCtxMenu(null)
+                void togglePurchased(ctxItem)
+              }}
+            >
+              <Check
+                className={`h-4 w-4 shrink-0 ${
+                  ctxItem.purchased ? 'text-emerald-600' : 'text-slate-400'
+                }`}
+              />
+              {ctxItem.purchased ? 'Mark as not purchased' : 'Mark as purchased'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

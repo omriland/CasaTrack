@@ -1,5 +1,9 @@
 # Development Progress Log
 
+## May 2026 — hide Files tab; login password field
+- **Files:** Removed from desktop sidebar ([`RenovationDesktopShell.tsx`](src/components/renovation/RenovationDesktopShell.tsx)) and mobile More ([`more/page.tsx`](src/app/renovation/more/page.tsx), [`RenovationMobileShell.tsx`](src/components/renovation/RenovationMobileShell.tsx)). `/renovation/files` route unchanged for later re-enable.
+- **Login:** Restored password form in [`LoginForm.tsx`](src/components/LoginForm.tsx) (no numeric keypad). Default password in [`auth.ts`](src/lib/auth.ts): `130188tl`; update `NEXT_PUBLIC_AUTH_PASSWORD` in Netlify/local env if set.
+
 ## May 2026 — renovation overview: Budget-tab row strip
 - **Data:** [`25_overview_vendor_key.sql`](supabase/renovation/25_overview_vendor_key.sql) — `renovation_projects.overview_vendor_key` stores the vendor row key (`normalizeVendorKey`) chosen from the Budget tab.
 - **Budget tab:** [`VendorBudgetView.tsx`](src/components/renovation/views/VendorBudgetView.tsx) row context menu — **Show on overview** / **Remove from overview** — `updateProject` + `refresh()`.
@@ -10,6 +14,10 @@
 - **Data:** [`23_wishlist.sql`](supabase/renovation/23_wishlist.sql) creates `renovation_wishlist_items` and `renovation_wishlist_links` with RLS, indexes, and updated-at triggers. Run it in Supabase before using the tab.
 - **App:** [`WishlistView.tsx`](src/components/renovation/views/WishlistView.tsx) renders desktop table-style rows and mobile cards; [`useWishlistPageState.ts`](src/components/renovation/views/useWishlistPageState.ts) owns local state and CRUD via [`renovation.ts`](src/lib/renovation.ts). Totals live in [`renovation-wishlist.ts`](src/lib/renovation-wishlist.ts) with a focused test.
 - **Nav:** Desktop sidebar and mobile More include Wishlist; mobile bottom bar keeps Wishlist under More rather than adding a primary tab.
+
+## May 2026 — wishlist purchased state
+- **Data:** [`26_wishlist_purchased.sql`](supabase/renovation/26_wishlist_purchased.sql) — `purchased boolean` on `renovation_wishlist_items`.
+- **UI:** Right-click row → **Mark as purchased** / **Mark as not purchased**; purchased rows use emerald background and text in [`WishlistView.tsx`](src/components/renovation/views/WishlistView.tsx).
 
 ## May 2026 — mobile renovation overview: "Left to be paid"
 - [`RenovationDashboardMobile.tsx`](src/components/renovation/views/RenovationDashboardMobile.tsx) shows **Left to be paid** (`remainingAfterPayments` from `useRenovationDashboardPage`) when there is committed spend or recorded payments, aligned with the desktop home budget card.

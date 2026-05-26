@@ -37,7 +37,7 @@ CREATE INDEX idx_properties_coordinates ON properties(latitude, longitude);
 Ensure these environment variables are set in Netlify:
 
 ```
-NEXT_PUBLIC_AUTH_PASSWORD=130188
+NEXT_PUBLIC_AUTH_PASSWORD=130188tl
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_key

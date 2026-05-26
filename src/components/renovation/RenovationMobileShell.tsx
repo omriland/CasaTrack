@@ -39,7 +39,6 @@ const primaryNav = [
 const moreRoutes = [
   '/renovation/providers',
   '/renovation/calendar',
-  '/renovation/files',
   '/renovation/needs',
   '/renovation/wishlist',
   '/renovation/rooms',

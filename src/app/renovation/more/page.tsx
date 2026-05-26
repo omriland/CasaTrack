@@ -5,7 +5,6 @@ import { useRenovationMobile } from '@/components/renovation/RenovationViewportC
 import {
   CalendarIcon,
   ProvidersIcon,
-  FilesIcon,
   NeedsIcon,
   WishlistIcon,
   RoomIcon,
@@ -24,12 +23,6 @@ const sections = [
     label: 'Providers',
     description: 'Contacts & contractors',
     icon: ProvidersIcon,
-  },
-  {
-    href: '/renovation/files',
-    label: 'Files',
-    description: 'Documents & uploads',
-    icon: FilesIcon,
   },
   { href: '/renovation/needs', label: 'Needs', description: 'Shopping list', icon: NeedsIcon },
   {
