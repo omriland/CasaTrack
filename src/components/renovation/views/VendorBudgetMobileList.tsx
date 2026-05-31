@@ -24,6 +24,7 @@ type Props = {
   ) => Promise<void>
   onToggleRoom: (vendorKey: string, roomId: string, checked: boolean) => void
   onAddPayment: (vendorKey: string, displayVendor: string) => void
+  onDeletePayment: (id: string) => Promise<void>
   onViewDetail: (model: VendorBudgetRowModel) => void
   onDeleteRow: (row: TableRow) => void
   onAddRow: () => void
@@ -104,6 +105,7 @@ function VendorDetailSheet({
   onCommitEdit,
   onToggleRoom,
   onAddPayment,
+  onDeletePayment,
   onViewDetail,
   onDelete,
   onClose,
@@ -115,10 +117,26 @@ function VendorDetailSheet({
   onCommitEdit: Props['onCommitEdit']
   onToggleRoom: Props['onToggleRoom']
   onAddPayment: Props['onAddPayment']
+  onDeletePayment: Props['onDeletePayment']
   onViewDetail: Props['onViewDetail']
   onDelete: () => void
   onClose: () => void
 }) {
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
+
+  const handleDeletePayment = async (id: string) => {
+    if (!confirm('Delete this payment?')) return
+    setDeletingPaymentId(id)
+    try {
+      await onDeletePayment(id)
+    } catch (e) {
+      console.error(e)
+      alert('Could not delete payment')
+    } finally {
+      setDeletingPaymentId(null)
+    }
+  }
+
   const isData = row.kind === 'data'
   const model = isData ? row.model : null
   const vendorName =
@@ -223,23 +241,33 @@ function VendorDetailSheet({
                 {payments.map((p, i) => (
                   <div
                     key={p.id}
-                    className="flex items-baseline gap-2 text-[14px]"
+                    className="flex items-center gap-2 text-[14px]"
                     dir="auto"
                   >
-                    <span className="font-bold text-slate-400 tabular-nums">
+                    <span className="font-bold text-slate-400 tabular-nums shrink-0">
                       {i + 1}.
                     </span>
                     <span
                       dir="ltr"
-                      className="font-bold tabular-nums text-slate-900"
+                      className="font-bold tabular-nums text-slate-900 shrink-0"
                     >
                       {formatIls(Number(p.amount))}
                     </span>
                     {p.note?.trim() && (
-                      <span className="text-slate-600 text-[13px]">
+                      <span className="text-slate-600 text-[13px] truncate">
                         {p.note.trim()}
                       </span>
                     )}
+                    <button
+                      type="button"
+                      disabled={deletingPaymentId === p.id}
+                      onClick={() => void handleDeletePayment(p.id)}
+                      className="ml-auto shrink-0 flex items-center justify-center w-8 h-8 rounded-lg text-slate-300 hover:text-rose-500 active:bg-rose-50 transition-colors disabled:opacity-40"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
                 <div className="mt-2 pt-2 border-t border-slate-200 flex justify-between text-[13px]">
@@ -304,6 +332,7 @@ export function VendorBudgetMobileList({
   onCommitEdit,
   onToggleRoom,
   onAddPayment,
+  onDeletePayment,
   onViewDetail,
   onDeleteRow,
   onAddRow,
@@ -517,6 +546,7 @@ export function VendorBudgetMobileList({
           onCommitEdit={onCommitEdit}
           onToggleRoom={onToggleRoom}
           onAddPayment={onAddPayment}
+          onDeletePayment={onDeletePayment}
           onViewDetail={onViewDetail}
           onDelete={() => onDeleteRow(openRowData)}
           onClose={() => setOpenRow(null)}

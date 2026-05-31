@@ -722,6 +722,14 @@ export async function createVendorPayment(
   return { ...p, amount: Number(p.amount), note: p.note ?? null }
 }
 
+export async function deleteVendorPayment(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('renovation_vendor_payments')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function listExpenseAttachmentsForExpense(
   expenseId: string
 ): Promise<RenovationExpenseAttachment[]> {
