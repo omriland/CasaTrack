@@ -12,6 +12,7 @@ import {
 import { useRenovationMobile } from '@/components/renovation/RenovationViewportContext'
 import {
   createVendorPayment,
+  deleteVendorPayment,
   deleteExpense,
   deleteVendorBudgetRoomsForVendor,
   listExpenses,
@@ -211,12 +212,28 @@ function ViewPaymentsModal({
   vendorLabel,
   payments,
   onClose,
+  onDelete,
 }: {
   vendorLabel: string
   payments: RenovationVendorPayment[]
   onClose: () => void
+  onDelete: (id: string) => Promise<void>
 }) {
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const totalPaid = payments.reduce((s, p) => s + Number(p.amount), 0)
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this payment?')) return
+    setDeletingId(id)
+    try {
+      await onDelete(id)
+    } catch (e) {
+      console.error(e)
+      alert('Could not delete payment')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   return (
     <div
@@ -247,15 +264,26 @@ function ViewPaymentsModal({
         {payments.length === 0 ? (
           <p className="mt-4 text-sm text-slate-400 text-center py-6">No payments recorded</p>
         ) : (
-          <div className="mt-4 space-y-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+          <div className="mt-4 space-y-1 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
             {payments.map((p, i) => (
-              <div key={p.id} className="flex items-baseline gap-2 text-[14px]" dir="auto">
-                <span className="font-bold text-slate-400 tabular-nums">{i + 1}.</span>
-                <span dir="ltr" className="font-bold tabular-nums text-slate-900">{formatIls(Number(p.amount))}</span>
-                {p.note?.trim() && <span className="text-slate-600 text-[13px]">{p.note.trim()}</span>}
-                <span className="mr-auto text-[11px] text-slate-400 tabular-nums" dir="ltr">
+              <div key={p.id} className="flex items-center gap-2 text-[14px] py-1" dir="auto">
+                <span className="font-bold text-slate-400 tabular-nums shrink-0">{i + 1}.</span>
+                <span dir="ltr" className="font-bold tabular-nums text-slate-900 shrink-0">{formatIls(Number(p.amount))}</span>
+                {p.note?.trim() && <span className="text-slate-600 text-[13px] truncate">{p.note.trim()}</span>}
+                <span className="mr-auto text-[11px] text-slate-400 tabular-nums shrink-0" dir="ltr">
                   {new Date(p.created_at).toLocaleDateString('he-IL')}
                 </span>
+                <button
+                  type="button"
+                  disabled={deletingId === p.id}
+                  onClick={() => void handleDelete(p.id)}
+                  className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-40"
+                  title="Delete payment"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
@@ -718,6 +746,10 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           onCommitEdit={handleCommitEdit}
           onToggleRoom={toggleVendorRoom}
           onAddPayment={(vk, dv) => setPaymentModal({ vendorKey: vk, displayVendor: dv })}
+          onDeletePayment={async (id) => {
+            await deleteVendorPayment(id)
+            await silentRefreshPayments()
+          }}
           onViewDetail={setDetailVendor}
           onDeleteRow={handleDeleteRow}
           onAddRow={() => addDraftAfter(null)}
@@ -870,6 +902,10 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
           vendorLabel={viewPaymentsModal.displayVendor}
           payments={paymentsByVendor.get(viewPaymentsModal.vendorKey) ?? []}
           onClose={() => setViewPaymentsModal(null)}
+          onDelete={async (id) => {
+            await deleteVendorPayment(id)
+            await silentRefreshPayments()
+          }}
         />
       )}
 
