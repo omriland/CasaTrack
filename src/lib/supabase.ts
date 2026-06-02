@@ -265,6 +265,64 @@ export type Database = {
           updated_at?: string
         }
       }
+      renovation_milestones: {
+        Row: {
+          id: string
+          project_id: string
+          title: string
+          color: string
+          notes: string | null
+          done: boolean
+          start_date: string
+          end_date: string
+          sort_order: number
+          created_by_member_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          project_id: string
+          title: string
+          color?: string
+          notes?: string | null
+          done?: boolean
+          start_date: string
+          end_date: string
+          sort_order?: number
+          created_by_member_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          project_id?: string
+          title?: string
+          color?: string
+          notes?: string | null
+          done?: boolean
+          start_date?: string
+          end_date?: string
+          sort_order?: number
+          created_by_member_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      renovation_milestone_tasks: {
+        Row: {
+          milestone_id: string
+          task_id: string
+        }
+        Insert: {
+          milestone_id: string
+          task_id: string
+        }
+        Update: {
+          milestone_id?: string
+          task_id?: string
+        }
+      }
     }
   }
 }

@@ -9,6 +9,7 @@ import {
   WishlistIcon,
   RoomIcon,
   GearIcon,
+  RoadmapIcon,
 } from '@/components/renovation/RenovationMobileShell'
 
 const sections = [
@@ -17,6 +18,12 @@ const sections = [
     label: 'Calendar',
     description: 'Events & schedule',
     icon: CalendarIcon,
+  },
+  {
+    href: '/renovation/roadmap',
+    label: 'Roadmap',
+    description: 'Milestones timeline',
+    icon: RoadmapIcon,
   },
   {
     href: '/renovation/providers',

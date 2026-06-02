@@ -22,6 +22,7 @@ import type {
   RenovationVendorPayment,
   RenovationWishlistItem,
   RenovationWishlistLink,
+  RenovationMilestone,
 } from '@/types/renovation'
 import { normalizeVendorKey } from '@/lib/renovation-vendor-budget'
 
@@ -68,6 +69,17 @@ export async function getActiveProject(): Promise<RenovationProject | null> {
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data as RenovationProject | null
+}
+
+export async function getProjectById(id: string): Promise<RenovationProject | null> {
+  const { data, error } = await supabase
+    .from('renovation_projects')
+    .select('*')
+    .eq('id', id)
     .maybeSingle()
 
   if (error) throw error
@@ -999,6 +1011,107 @@ export async function setTaskLabels(taskId: string, labelIds: string[]): Promise
 
 export async function deleteTask(id: string): Promise<void> {
   const { error } = await supabase.from('renovation_tasks').delete().eq('id', id)
+  if (error) throw error
+}
+
+// --- Milestones (Roadmap) ---
+
+async function loadMilestoneTaskIds(milestoneIds: string[]): Promise<Map<string, string[]>> {
+  if (milestoneIds.length === 0) return new Map()
+  const { data, error } = await supabase
+    .from('renovation_milestone_tasks')
+    .select('milestone_id, task_id')
+    .in('milestone_id', milestoneIds)
+
+  if (error) throw error
+  const map = new Map<string, string[]>()
+  for (const row of data || []) {
+    const m = row.milestone_id as string
+    const list = map.get(m) || []
+    list.push(row.task_id as string)
+    map.set(m, list)
+  }
+  return map
+}
+
+export async function listMilestones(projectId: string): Promise<RenovationMilestone[]> {
+  const { data, error } = await supabase
+    .from('renovation_milestones')
+    .select('*')
+    .eq('project_id', projectId)
+    .order('start_date')
+    .order('sort_order')
+
+  if (error) throw error
+  const milestones = (data || []) as Omit<RenovationMilestone, 'task_ids'>[]
+  const taskMap = await loadMilestoneTaskIds(milestones.map(m => m.id))
+  return milestones.map(m => ({ ...m, task_ids: taskMap.get(m.id) || [] }))
+}
+
+export async function createMilestone(
+  projectId: string,
+  row: {
+    title: string
+    color?: string
+    notes?: string | null
+    done?: boolean
+    start_date: string
+    end_date: string
+    sort_order?: number
+    created_by_member_id?: string | null
+    task_ids?: string[]
+  }
+): Promise<RenovationMilestone> {
+  const { data, error } = await supabase
+    .from('renovation_milestones')
+    .insert({
+      project_id: projectId,
+      title: row.title,
+      color: row.color ?? '#4f46e5',
+      notes: row.notes ?? null,
+      done: row.done ?? false,
+      start_date: row.start_date,
+      end_date: row.end_date,
+      sort_order: row.sort_order ?? 0,
+      created_by_member_id: row.created_by_member_id ?? null,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  const milestone = data as Omit<RenovationMilestone, 'task_ids'>
+  if (row.task_ids?.length) {
+    await supabase
+      .from('renovation_milestone_tasks')
+      .insert(row.task_ids.map(task_id => ({ milestone_id: milestone.id, task_id })))
+  }
+  return { ...milestone, task_ids: row.task_ids ?? [] }
+}
+
+export async function updateMilestone(
+  id: string,
+  updates: Partial<
+    Pick<
+      RenovationMilestone,
+      'title' | 'color' | 'notes' | 'done' | 'start_date' | 'end_date' | 'sort_order'
+    >
+  >
+): Promise<void> {
+  const { error } = await supabase.from('renovation_milestones').update(updates).eq('id', id)
+  if (error) throw error
+}
+
+export async function setMilestoneTasks(milestoneId: string, taskIds: string[]): Promise<void> {
+  await supabase.from('renovation_milestone_tasks').delete().eq('milestone_id', milestoneId)
+  if (taskIds.length) {
+    await supabase
+      .from('renovation_milestone_tasks')
+      .insert(taskIds.map(task_id => ({ milestone_id: milestoneId, task_id })))
+  }
+}
+
+export async function deleteMilestone(id: string): Promise<void> {
+  const { error } = await supabase.from('renovation_milestones').delete().eq('id', id)
   if (error) throw error
 }
 

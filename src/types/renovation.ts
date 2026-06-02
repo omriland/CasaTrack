@@ -250,3 +250,23 @@ export interface RenovationFile {
   public_url?: string
   room?: RenovationRoom | null
 }
+
+/** A date-range "main item" shown on the renovation Roadmap (Gantt). */
+export interface RenovationMilestone {
+  id: string
+  project_id: string
+  title: string
+  color: string
+  notes: string | null
+  done: boolean
+  /** Inclusive start day, YYYY-MM-DD. */
+  start_date: string
+  /** Inclusive end day, YYYY-MM-DD. */
+  end_date: string
+  sort_order: number
+  created_by_member_id: string | null
+  created_at: string
+  updated_at: string
+  /** Linked task ids (many-to-many). */
+  task_ids: string[]
+}

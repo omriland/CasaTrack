@@ -8,6 +8,7 @@ import {
   DollarSign,
   ClipboardList,
   Calendar,
+  GanttChartSquare,
   Phone,
   Image,
   Star,
@@ -44,6 +45,12 @@ const nav = [
     label: 'Calendar',
     icon: Calendar,
     match: (p: string) => p.startsWith('/renovation/calendar'),
+  },
+  {
+    href: '/renovation/roadmap',
+    label: 'Roadmap',
+    icon: GanttChartSquare,
+    match: (p: string) => p.startsWith('/renovation/roadmap'),
   },
   {
     href: '/renovation/providers',

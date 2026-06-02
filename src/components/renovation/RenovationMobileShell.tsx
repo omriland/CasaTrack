@@ -39,6 +39,7 @@ const primaryNav = [
 const moreRoutes = [
   '/renovation/providers',
   '/renovation/calendar',
+  '/renovation/roadmap',
   '/renovation/needs',
   '/renovation/wishlist',
   '/renovation/rooms',
@@ -340,6 +341,23 @@ function RoomIcon({ className, active }: { className?: string; active?: boolean 
     </svg>
   )
 }
+function RoadmapIcon({ className, active }: { className?: string; active?: boolean }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      strokeWidth={active ? 2.5 : 2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4 6h10M4 12h7M4 18h13M18 4v4m0 0l2-2m-2 2l-2-2"
+      />
+    </svg>
+  )
+}
 function GearIcon({ className, active }: { className?: string; active?: boolean }) {
   return (
     <svg
@@ -359,4 +377,4 @@ function GearIcon({ className, active }: { className?: string; active?: boolean 
   )
 }
 
-export { CalendarIcon, ProvidersIcon, FilesIcon, NeedsIcon, WishlistIcon, RoomIcon, GearIcon }
+export { CalendarIcon, ProvidersIcon, FilesIcon, NeedsIcon, WishlistIcon, RoomIcon, GearIcon, RoadmapIcon }
