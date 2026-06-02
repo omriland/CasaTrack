@@ -98,6 +98,14 @@ export function useWishlistPageState() {
     [items]
   )
 
+  const pendingTotal = useMemo(
+    () =>
+      items
+        .filter(item => !item.purchased)
+        .reduce((sum, item) => sum + (item.unit_price ?? 0) * (item.quantity ?? 0), 0),
+    [items]
+  )
+
   const updateField = (field: keyof Omit<WishlistFormState, 'links'>, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }))
   }
@@ -256,6 +264,7 @@ export function useWishlistPageState() {
     error,
     form,
     summary,
+    pendingTotal,
     rowTotals: summary.rowTotals,
     updateField,
     updateLink,

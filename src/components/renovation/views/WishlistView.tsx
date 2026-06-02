@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import React, { useCallback, useEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { Check, ChevronDown, ExternalLink, Plus, Trash2 } from 'lucide-react'
 import { formatIls, formatIlsParts } from '@/lib/renovation-format'
 import type { RenovationWishlistItem } from '@/types/renovation'
@@ -262,6 +262,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
     saving,
     error,
     summary,
+    pendingTotal,
     rowTotals,
     saveItemField,
     saveItemLinks,
@@ -272,6 +273,8 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
   const [expandedLinksId, setExpandedLinksId] = useState<string | null>(null)
   const [focusItemId, setFocusItemId] = useState<string | null>(null)
   const [ctxMenu, setCtxMenu] = useState<WishlistCtxMenu | null>(null)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressMoved = useRef(false)
 
   const handleRowContextMenu = useCallback(
     (event: MouseEvent, itemId: string) => {
@@ -281,17 +284,50 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
     []
   )
 
+  const handleTouchStart = useCallback(
+    (event: React.TouchEvent<HTMLDivElement>, itemId: string) => {
+      const touch = event.touches[0]
+      longPressMoved.current = false
+      longPressTimer.current = setTimeout(() => {
+        if (!longPressMoved.current) {
+          window.getSelection()?.removeAllRanges()
+          setCtxMenu({ x: touch.clientX, y: touch.clientY, itemId })
+        }
+      }, 500)
+    },
+    []
+  )
+
+  const handleTouchMove = useCallback(() => {
+    longPressMoved.current = true
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
   useEffect(() => {
     if (!ctxMenu) return
-    const close = (e: globalThis.MouseEvent) => {
+    const close = (e: Event) => {
       const el = e.target as HTMLElement
       if (el.closest('[data-wishlist-menu="1"]')) return
       setCtxMenu(null)
     }
-    const t = setTimeout(() => window.addEventListener('mousedown', close), 0)
+    const t = setTimeout(() => {
+      window.addEventListener('mousedown', close)
+      window.addEventListener('touchstart', close)
+    }, 0)
     return () => {
       clearTimeout(t)
       window.removeEventListener('mousedown', close)
+      window.removeEventListener('touchstart', close)
     }
   }, [ctxMenu])
 
@@ -331,11 +367,21 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
             Wishlist
           </h1>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Total</p>
-          <p className="mt-1 font-[family-name:var(--font-jetbrains-mono)] text-[24px] font-bold tabular-nums text-slate-950">
-            {formatIls(summary.total)}
-          </p>
+        <div className="flex gap-3">
+          {mobile && (
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Remaining</p>
+              <p className="mt-1 font-[family-name:var(--font-jetbrains-mono)] text-[24px] font-bold tabular-nums text-slate-950">
+                {formatIls(pendingTotal)}
+              </p>
+            </div>
+          )}
+          <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
+            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Total</p>
+            <p className="mt-1 font-[family-name:var(--font-jetbrains-mono)] text-[24px] font-bold tabular-nums text-slate-950">
+              {formatIls(summary.total)}
+            </p>
+          </div>
         </div>
       </header>
 
@@ -396,6 +442,9 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
                       dir="rtl"
                       className={`grid ${gridColsClass} ${purchasedRowClass(purchased)}`}
                       onContextMenu={event => handleRowContextMenu(event, item.id)}
+                      onTouchStart={event => handleTouchStart(event, item.id)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
                     >
                       <input
                         key={`${item.id}-title-${item.title}`}
