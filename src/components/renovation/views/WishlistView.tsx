@@ -262,7 +262,7 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
     saving,
     error,
     summary,
-    pendingTotal,
+    spentTotal,
     rowTotals,
     saveItemField,
     saveItemLinks,
@@ -370,9 +370,9 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
         <div className="flex gap-3">
           {mobile && (
             <div className="rounded-2xl border border-slate-200 bg-white px-5 py-3 shadow-sm">
-              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Remaining</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Already spent</p>
               <p className="mt-1 font-[family-name:var(--font-jetbrains-mono)] text-[24px] font-bold tabular-nums text-slate-950">
-                {formatIls(pendingTotal)}
+                {formatIls(spentTotal)}
               </p>
             </div>
           )}
