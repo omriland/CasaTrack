@@ -98,10 +98,10 @@ export function useWishlistPageState() {
     [items]
   )
 
-  const pendingTotal = useMemo(
+  const spentTotal = useMemo(
     () =>
       items
-        .filter(item => !item.purchased)
+        .filter(item => item.purchased)
         .reduce((sum, item) => sum + (item.unit_price ?? 0) * (item.quantity ?? 0), 0),
     [items]
   )
@@ -264,7 +264,7 @@ export function useWishlistPageState() {
     error,
     form,
     summary,
-    pendingTotal,
+    spentTotal,
     rowTotals: summary.rowTotals,
     updateField,
     updateLink,
