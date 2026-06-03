@@ -241,23 +241,34 @@ export function RenovationCalendarInner({
   }, [events, tasks, showTasks, cursor])
 
   // Sync `view` and `cursor` imperatively — never rebuild the calendar.
+  //
+  // FullCalendar v6's React adapter renders custom content (event chips, day
+  // headers) via `flushSync` on React 18+. Calling a `CalendarApi` method
+  // (`changeView`/`gotoDate`) directly inside an effect runs that flush while
+  // React is still inside its commit phase, tripping the "flushSync was called
+  // from inside a lifecycle method" warning (fullcalendar/fullcalendar#7448).
+  // Deferring the API calls to a microtask lets the commit finish first.
   useEffect(() => {
-    const api = calendarRef.current?.getApi()
-    if (!api) return
-    if (api.view.type !== FC_VIEW[view]) api.changeView(FC_VIEW[view])
+    queueMicrotask(() => {
+      const api = calendarRef.current?.getApi()
+      if (!api) return
+      if (api.view.type !== FC_VIEW[view]) api.changeView(FC_VIEW[view])
+    })
   }, [view])
 
   useEffect(() => {
-    const api = calendarRef.current?.getApi()
-    if (!api) return
-    const current = api.getDate()
-    if (
-      current.getFullYear() !== cursor.getFullYear() ||
-      current.getMonth() !== cursor.getMonth() ||
-      current.getDate() !== cursor.getDate()
-    ) {
-      api.gotoDate(cursor)
-    }
+    queueMicrotask(() => {
+      const api = calendarRef.current?.getApi()
+      if (!api) return
+      const current = api.getDate()
+      if (
+        current.getFullYear() !== cursor.getFullYear() ||
+        current.getMonth() !== cursor.getMonth() ||
+        current.getDate() !== cursor.getDate()
+      ) {
+        api.gotoDate(cursor)
+      }
+    })
   }, [cursor])
 
   // ------------------------------------------------------------------------
