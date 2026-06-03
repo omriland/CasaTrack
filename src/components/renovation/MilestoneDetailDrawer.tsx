@@ -9,7 +9,7 @@ import {
   updateMilestone,
 } from '@/lib/renovation'
 import { DatePicker } from '@/components/renovation/DatePicker'
-import { MILESTONE_COLORS } from '@/components/renovation/views/roadmap-shared'
+import { MILESTONE_CATEGORIES } from '@/components/renovation/views/roadmap-shared'
 
 interface MilestoneDetailDrawerProps {
   projectId: string
@@ -199,23 +199,30 @@ export function MilestoneDetailDrawer({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] font-semibold text-slate-600">Color</span>
+            <span className="text-[13px] font-semibold text-slate-600">Subject</span>
             <div className="flex flex-wrap gap-2">
-              {MILESTONE_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  className={`h-8 w-8 rounded-full transition-transform ${
-                    color === c
-                      ? 'ring-2 ring-slate-900 ring-offset-2'
-                      : 'hover:scale-110'
-                  }`}
-                  style={{ backgroundColor: c }}
-                  aria-label={`Color ${c}`}
-                  aria-pressed={color === c}
-                />
-              ))}
+              {MILESTONE_CATEGORIES.map((cat) => {
+                const selected = color.toLowerCase() === cat.color.toLowerCase()
+                return (
+                  <button
+                    key={cat.color}
+                    type="button"
+                    onClick={() => setColor(cat.color)}
+                    aria-pressed={selected}
+                    className={`flex items-center gap-2 rounded-full border py-1.5 pl-2 pr-3 text-[13px] font-semibold transition-colors ${
+                      selected
+                        ? 'border-slate-900 bg-slate-900 text-white'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span
+                      className="h-4 w-4 shrink-0 rounded-full ring-1 ring-black/10"
+                      style={{ backgroundColor: cat.color }}
+                    />
+                    <span dir="rtl">{cat.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 

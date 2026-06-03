@@ -7,16 +7,32 @@ export const WORKING_DAYS_PER_WEEK = 5
 /** Default number of weeks shown forward from the current week. */
 export const DEFAULT_HORIZON_WEEKS = 14
 
-export const MILESTONE_COLORS = [
-  '#4f46e5',
-  '#0ea5e9',
-  '#10b981',
-  '#f59e0b',
-  '#ef4444',
-  '#ec4899',
-  '#8b5cf6',
-  '#14b8a6',
+/**
+ * Named subject palette for milestones. Each subject maps to a fixed color, so a
+ * milestone's color encodes its subject (no separate DB column needed).
+ */
+export interface MilestoneCategory {
+  label: string
+  color: string
+}
+
+export const MILESTONE_CATEGORIES: MilestoneCategory[] = [
+  { label: 'הובלות ואספקות', color: '#0ea5e9' },
+  { label: 'תיאומים', color: '#8b5cf6' },
+  { label: 'התקנות', color: '#10b981' },
+  { label: 'עבודות קבלן', color: '#4f46e5' },
+  { label: 'קבלן חיצוני', color: '#f59e0b' },
+  { label: 'הובלה וארגון', color: '#ec4899' },
+  { label: 'אחר', color: '#64748b' },
 ]
+
+/** Flat list of palette colors (e.g. for cycling default colors on new milestones). */
+export const MILESTONE_COLORS = MILESTONE_CATEGORIES.map((c) => c.color)
+
+/** Subject label for a given color, or undefined for legacy/custom colors. */
+export function categoryLabelForColor(color: string): string | undefined {
+  return MILESTONE_CATEGORIES.find((c) => c.color.toLowerCase() === color.toLowerCase())?.label
+}
 
 /** Parse a YYYY-MM-DD string into a local Date (no timezone drift). */
 export function parseYmd(s: string): Date {

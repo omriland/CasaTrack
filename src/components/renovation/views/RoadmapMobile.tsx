@@ -7,6 +7,7 @@ import { listMilestones, listTasks } from '@/lib/renovation'
 import type { RenovationMilestone, RenovationTask } from '@/types/renovation'
 import { MilestoneDetailDrawer } from '@/components/renovation/MilestoneDetailDrawer'
 import {
+  categoryLabelForColor,
   currentWeekStart,
   formatRange,
   MILESTONE_COLORS,
@@ -175,6 +176,7 @@ export function RoadmapMobile() {
               <div className="space-y-2">
                 {g.items.map((m) => {
                   const taskCount = m.task_ids.length
+                  const subject = categoryLabelForColor(m.color)
                   return (
                     <button
                       key={m.id}
@@ -198,6 +200,7 @@ export function RoadmapMobile() {
                         <p className="mt-0.5 text-[13px] text-slate-500">
                           {formatRange(m.start_date, m.end_date)}
                           {taskCount > 0 && ` · ${taskCount} task${taskCount > 1 ? 's' : ''}`}
+                          {subject && ` · ${subject}`}
                         </p>
                       </div>
                       {m.done && (

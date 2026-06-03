@@ -6,6 +6,7 @@ import type { RenovationMilestone } from '@/types/renovation'
 import {
   buildAxis,
   buildWeekHeaders,
+  categoryLabelForColor,
   colForEnd,
   colForStart,
   computeAxisRange,
@@ -456,10 +457,19 @@ export function RoadmapGantt({
                       )}
                     </div>
                     <div
-                      className="pointer-events-none absolute bottom-full left-0 z-[20] mb-1.5 hidden max-w-[320px] truncate whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-[12px] font-semibold text-white shadow-lg group-hover:block"
+                      className="pointer-events-none absolute bottom-full left-0 z-[20] mb-1.5 hidden max-w-[320px] whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-white shadow-lg group-hover:block"
                       dir="auto"
                     >
-                      {m.title}
+                      <span className="block truncate text-[12px] font-semibold">{m.title}</span>
+                      {categoryLabelForColor(m.color) && (
+                        <span className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-300">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: m.color }}
+                          />
+                          <span dir="rtl">{categoryLabelForColor(m.color)}</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

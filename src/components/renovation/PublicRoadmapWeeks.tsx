@@ -5,6 +5,7 @@ import { addDays, format, isSameDay } from 'date-fns'
 import type { RenovationMilestone } from '@/types/renovation'
 import {
   buildWeekHeaders,
+  categoryLabelForColor,
   computeAxisRange,
   currentWeekStart,
   durationLabel,
@@ -88,6 +89,7 @@ export function PublicRoadmapWeeks({ milestones }: { milestones: RenovationMiles
               const startsBefore = parseYmd(m.start_date) < w.start
               const endsAfter = parseYmd(m.end_date) > w.end
               const taskCount = m.task_ids.length
+              const subject = categoryLabelForColor(m.color)
               return (
                 <div
                   key={m.id}
@@ -115,6 +117,15 @@ export function PublicRoadmapWeeks({ milestones }: { milestones: RenovationMiles
                         </span>
                       )}
                     </div>
+                    {subject && (
+                      <span
+                        className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600"
+                        dir="rtl"
+                      >
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: m.color }} />
+                        {subject}
+                      </span>
+                    )}
                     <p className="mt-0.5 text-[13px] text-slate-500">
                       {formatRange(m.start_date, m.end_date)} · {durationLabel(m.start_date, m.end_date)}
                       {taskCount > 0 && ` · ${taskCount} task${taskCount > 1 ? 's' : ''}`}
