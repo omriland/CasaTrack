@@ -11,7 +11,10 @@ import {
   type SortingState,
 } from '@tanstack/react-table'
 import type { RenovationRoom, RenovationVendorPayment } from '@/types/renovation'
-import type { VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
+import {
+  effectiveActualForRow,
+  type VendorBudgetRowModel,
+} from '@/lib/renovation-vendor-budget'
 import type { TableRow } from './vendor-budget-types'
 import { formatIls } from '@/lib/renovation-format'
 import { cn } from '@/utils/common'
@@ -71,13 +74,8 @@ function paidColorClass(pct: number): string {
   return 'text-rose-600'
 }
 
-/** Same basis as Actual / Paid columns: spent if logged, else planned budget. */
-function effectiveActualForRow(m: VendorBudgetRowModel): number {
-  return m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
-}
-
 function isVendorPaidInFull(m: VendorBudgetRowModel, paidSum: number): boolean {
-  const actual = effectiveActualForRow(m)
+  const actual = effectiveActualForRow(m, paidSum)
   if (actual <= 0) return false
   return paidSum >= actual - 0.005
 }
@@ -585,9 +583,10 @@ function buildColumns(
     columnHelper.accessor(
       (row) => {
         if (row.kind !== 'data') return 0
-        return row.model.spentTotal > 0
-          ? row.model.spentTotal
-          : row.model.budgetTotal
+        return effectiveActualForRow(
+          row.model,
+          paidSumRef.current!(row.model.key)
+        )
       },
       {
         id: 'actual',
@@ -617,9 +616,12 @@ function buildColumns(
           }
 
           const m = r.model
+          const paid = meta.paidSumForVendor(m.key)
           const hasReal = m.spentTotal > 0
-          const display = hasReal ? m.spentTotal : m.budgetTotal
-          const isGhost = !hasReal && m.budgetTotal > 0
+          const base = hasReal ? m.spentTotal : m.budgetTotal
+          // Treat paid as the actual when payments exceed the recorded actual.
+          const display = Math.max(base, paid)
+          const isGhost = !hasReal && m.budgetTotal > 0 && paid <= m.budgetTotal
           const paidRow = meta.isRowPaidInFull(r)
           const color = (() => {
             if (paidRow) {
@@ -632,9 +634,7 @@ function buildColumns(
             if (display > m.budgetTotal) return 'text-rose-600'
             return 'text-slate-900'
           })()
-          const raw = hasReal
-            ? String(Math.round(m.spentTotal))
-            : String(Math.round(m.budgetTotal))
+          const raw = String(Math.round(display))
 
           return (
             <EditableCell
@@ -697,10 +697,7 @@ function buildColumns(
           if (paid <= 0)
             return <span className="text-slate-400">—</span>
 
-          const effectiveActual =
-            r.model.spentTotal > 0
-              ? r.model.spentTotal
-              : r.model.budgetTotal
+          const effectiveActual = effectiveActualForRow(r.model, paid)
           const pct =
             effectiveActual > 0
               ? Math.round((paid / effectiveActual) * 100)
@@ -762,9 +759,8 @@ function buildColumns(
         const r = row.original
         if (r.kind !== 'data') return null
         const m = r.model
-        const effectiveActual =
-          m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
         const paid = meta.paidSumForVendor(m.key)
+        const effectiveActual = effectiveActualForRow(m, paid)
         return (
           <VendorBudgetProgressBar
             budget={m.budgetTotal}

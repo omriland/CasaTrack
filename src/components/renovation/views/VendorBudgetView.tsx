@@ -29,6 +29,7 @@ import {
 } from '@/lib/renovation'
 import {
   buildVendorBudgetRows,
+  effectiveActualForRow,
   normalizeVendorKey,
   type VendorBudgetRowModel,
 } from '@/lib/renovation-vendor-budget'
@@ -479,11 +480,11 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
 
   const footerActual = useMemo(
     () =>
-      visibleDataModels.reduce((sum, m) => {
-        const effectiveActual = m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
-        return sum + effectiveActual
-      }, 0),
-    [visibleDataModels]
+      visibleDataModels.reduce(
+        (sum, m) => sum + effectiveActualForRow(m, paidSumForVendor(m.key)),
+        0
+      ),
+    [visibleDataModels, paidSumForVendor]
   )
 
   const footerPaid = useMemo(

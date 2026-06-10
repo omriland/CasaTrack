@@ -13,7 +13,10 @@ import {
   listVendorPayments,
   expensesThisMonth,
 } from '@/lib/renovation'
-import { buildVendorBudgetRows } from '@/lib/renovation-vendor-budget'
+import {
+  buildVendorBudgetRows,
+  effectiveActualForRow,
+} from '@/lib/renovation-vendor-budget'
 import { taskDueCalendarDiffDays } from '@/lib/renovation-format'
 import type {
   RenovationCalendarEvent,
@@ -79,7 +82,8 @@ export function useRenovationDashboardPage() {
   const [contingency, setContingency] = useState('')
   const [creating, setCreating] = useState(false)
   /**
-   * Same as Budget tab footer "Actual": per vendor `spentTotal > 0 ? spentTotal : budgetTotal`, summed.
+   * Same as Budget tab footer "Actual": per vendor effective actual (spent if logged,
+   * else budget, but at least the amount paid), summed.
    * (VendorBudgetView `footerActual` with no room/search filter = all `buildVendorBudgetRows` models.)
    */
   const [actualColumnTotal, setActualColumnTotal] = useState(0)
@@ -105,10 +109,14 @@ export function useRenovationDashboardPage() {
         listVendorPayments(project.id).catch(() => [] as RenovationVendorPayment[]),
       ])
       const vendorRows = buildVendorBudgetRows(ex)
-      const actualTotal = vendorRows.reduce((sum, m) => {
-        const effectiveActual = m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
-        return sum + effectiveActual
-      }, 0)
+      const paidByKey = new Map<string, number>()
+      for (const p of vp) {
+        paidByKey.set(p.vendor_key, (paidByKey.get(p.vendor_key) ?? 0) + Number(p.amount))
+      }
+      const actualTotal = vendorRows.reduce(
+        (sum, m) => sum + effectiveActualForRow(m, paidByKey.get(m.key) ?? 0),
+        0,
+      )
       const vendorKeys = new Set(vendorRows.map((r) => r.key))
       const paidTotal = vp.reduce(
         (s, p) => (vendorKeys.has(p.vendor_key) ? s + Number(p.amount) : s),
@@ -122,8 +130,8 @@ export function useRenovationDashboardPage() {
       const ovk = (project.overview_vendor_key ?? '').trim() || null
       const ovRow = ovk ? vendorRows.find((r) => r.key === ovk) : undefined
       if (ovRow) {
-        const committed = ovRow.spentTotal > 0 ? ovRow.spentTotal : ovRow.budgetTotal
         const paid = vp.reduce((s, p) => (p.vendor_key === ovk ? s + Number(p.amount) : s), 0)
+        const committed = effectiveActualForRow(ovRow, paid)
         setOverviewVendorStrip({
           vendorLabel: ovRow.displayVendor,
           categoryLabel: ovRow.displayCategory,

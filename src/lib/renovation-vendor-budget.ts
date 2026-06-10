@@ -76,6 +76,25 @@ export function buildVendorBudgetRows(expenses: RenovationExpense[]): VendorBudg
   return rows
 }
 
+/** Recorded actual: logged spend if any, else the planned budget as a placeholder. */
+export function baseActualForRow(
+  m: Pick<VendorBudgetRowModel, 'spentTotal' | 'budgetTotal'>
+): number {
+  return m.spentTotal > 0 ? m.spentTotal : m.budgetTotal
+}
+
+/**
+ * Effective actual used for paid %, paid-in-full and totals. You cannot have
+ * paid more than you actually spent, so when payments exceed the recorded
+ * actual we treat the amount paid as the actual.
+ */
+export function effectiveActualForRow(
+  m: Pick<VendorBudgetRowModel, 'spentTotal' | 'budgetTotal'>,
+  paid: number
+): number {
+  return Math.max(baseActualForRow(m), paid)
+}
+
 export type VendorBudgetSortKey = 'vendor' | 'rooms'
 export type VendorBudgetSortDir = 'asc' | 'desc'
 

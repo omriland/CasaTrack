@@ -1,4 +1,7 @@
-import type { VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
+import {
+  effectiveActualForRow,
+  type VendorBudgetRowModel,
+} from '@/lib/renovation-vendor-budget'
 
 export function exportVendorBudgetCsv(
   rows: VendorBudgetRowModel[],
@@ -14,8 +17,8 @@ export function exportVendorBudgetCsv(
       .map((id) => roomNameById.get(id) ?? '')
       .filter(Boolean)
       .join('; ')
-    const effectiveActual = r.spentTotal > 0 ? r.spentTotal : r.budgetTotal
     const paid = paidSumForVendor(r.key)
+    const effectiveActual = effectiveActualForRow(r, paid)
     const pct = effectiveActual > 0 ? Math.round((paid / effectiveActual) * 100) : 0
 
     lines.push(

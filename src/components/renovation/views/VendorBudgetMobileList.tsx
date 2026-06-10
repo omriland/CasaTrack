@@ -2,7 +2,10 @@
 
 import { useCallback, useRef, useState } from 'react'
 import type { RenovationRoom, RenovationVendorPayment } from '@/types/renovation'
-import type { VendorBudgetRowModel } from '@/lib/renovation-vendor-budget'
+import {
+  effectiveActualForRow,
+  type VendorBudgetRowModel,
+} from '@/lib/renovation-vendor-budget'
 import type { TableRow } from './vendor-budget-types'
 import { formatIls } from '@/lib/renovation-format'
 import { cn } from '@/utils/common'
@@ -38,11 +41,6 @@ type Props = {
 
 function rowKey(r: TableRow) {
   return r.kind === 'draft' ? r.draft.localKey : r.model.key
-}
-
-function effectiveActual(r: TableRow): number {
-  if (r.kind !== 'data') return 0
-  return r.model.spentTotal > 0 ? r.model.spentTotal : r.model.budgetTotal
 }
 
 function paidColorClass(pct: number): string {
@@ -151,11 +149,7 @@ function VendorDetailSheet({
   const categoryStr = isData ? (model!.displayCategory ?? '') : ''
   const budgetStr = isData ? String(Math.round(model!.budgetTotal)) : '0'
   const actualStr = isData
-    ? String(
-        Math.round(
-          model!.spentTotal > 0 ? model!.spentTotal : model!.budgetTotal
-        )
-      )
+    ? String(Math.round(effectiveActualForRow(model!, paidSum)))
     : '0'
 
   return (
@@ -375,8 +369,8 @@ export function VendorBudgetMobileList({
         const vendorLabel = isData
           ? m!.displayVendor
           : r.draft.vendorInput.trim() || 'New vendor'
-        const ea = effectiveActual(r)
         const paid = isData ? paidSumForVendor(m!.key) : 0
+        const ea = isData ? effectiveActualForRow(m!, paid) : 0
         const paidPct = ea > 0 ? Math.round((paid / ea) * 100) : 0
         const budget = isData ? m!.budgetTotal : 0
         const roomNames = isData
