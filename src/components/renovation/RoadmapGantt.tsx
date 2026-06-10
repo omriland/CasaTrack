@@ -68,6 +68,38 @@ export function RoadmapGantt({
     dragRef.current = drag
   }, [drag])
 
+  // Touch devices (iPad with finger) have no real hover, so the hover-only
+  // week popovers never appear. Detect coarse/no-hover pointers and switch
+  // those popovers to tap-to-toggle so the behaviour matches a desktop hover.
+  const [coarsePointer, setCoarsePointer] = useState(false)
+  const [openWeek, setOpenWeek] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(hover: none)')
+    const update = () => setCoarsePointer(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  // Close the tapped-open week popover when tapping/scrolling elsewhere.
+  useEffect(() => {
+    if (openWeek === null) return
+    const close = (e: Event) => {
+      const el = e.target as HTMLElement
+      if (el.closest('[data-week-popover="1"]') || el.closest('[data-week-trigger="1"]')) return
+      setOpenWeek(null)
+    }
+    const t = setTimeout(() => {
+      window.addEventListener('pointerdown', close)
+    }, 0)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('pointerdown', close)
+    }
+  }, [openWeek])
+
   const { startSunday, weeks } = useMemo(() => computeAxisRange(milestones), [milestones])
   const cols = useMemo(() => buildAxis(startSunday, weeks), [startSunday, weeks])
   const weekHeaders = useMemo(() => buildWeekHeaders(startSunday, weeks), [startSunday, weeks])
@@ -245,21 +277,33 @@ export function RoadmapGantt({
               {weekHeaders.map((w) => {
                 const items = weekItems.get(w.weekIndex) ?? []
                 const isLastWeeks = w.weekIndex >= weekHeaders.length - 2
+                const weekOpen = openWeek === w.weekIndex
                 return (
                   <div
                     key={w.weekIndex}
+                    data-week-trigger="1"
+                    onClick={
+                      coarsePointer
+                        ? () => setOpenWeek((prev) => (prev === w.weekIndex ? null : w.weekIndex))
+                        : undefined
+                    }
                     className={`group/week relative flex items-center border-l border-slate-200 px-2 ${
-                      w.weekIndex % 2 === 1 ? 'bg-slate-50/70' : ''
-                    }`}
+                      coarsePointer ? 'cursor-pointer' : ''
+                    } ${w.weekIndex % 2 === 1 ? 'bg-slate-50/70' : ''}`}
                     style={{ width: WEEK_W, height: HEADER_H - 26 }}
                   >
-                    <span className="cursor-default text-[12px] font-bold text-slate-600 group-hover/week:text-indigo-600">
+                    <span
+                      className={`cursor-default text-[12px] font-bold group-hover/week:text-indigo-600 ${
+                        weekOpen ? 'text-indigo-600' : 'text-slate-600'
+                      }`}
+                    >
                       {w.label}
                     </span>
                     <div
-                      className={`absolute top-full z-50 mt-1.5 hidden w-72 group-hover/week:block ${
-                        isLastWeeks ? 'right-2' : 'left-2'
-                      }`}
+                      data-week-popover="1"
+                      className={`absolute top-full z-50 mt-1.5 w-72 ${
+                        weekOpen ? 'block' : coarsePointer ? 'hidden' : 'hidden group-hover/week:block'
+                      } ${isLastWeeks ? 'right-2' : 'left-2'}`}
                     >
                       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_40px_-12px_rgba(15,23,42,0.35)]">
                         <div className="flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50 px-3.5 py-2.5">

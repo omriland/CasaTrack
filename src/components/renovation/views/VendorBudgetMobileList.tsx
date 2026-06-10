@@ -45,6 +45,13 @@ function effectiveActual(r: TableRow): number {
   return r.model.spentTotal > 0 ? r.model.spentTotal : r.model.budgetTotal
 }
 
+function paidColorClass(pct: number): string {
+  if (pct >= 100) return 'text-emerald-600'
+  if (pct >= 60) return 'text-blue-600'
+  if (pct >= 30) return 'text-amber-600'
+  return 'text-rose-600'
+}
+
 /* ─── Editable field in bottom sheet ─────────────────────────────────────────── */
 
 function SheetField({
@@ -434,8 +441,11 @@ export function VendorBudgetMobileList({
               )}
             </div>
 
-            {/* Row 2: budget / actual / paid% */}
-            <div className="flex items-baseline gap-4 text-[13px] mb-2" dir="ltr">
+            {/* Row 2: budget / actual / paid */}
+            <div
+              className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[13px] mb-2"
+              dir="ltr"
+            >
               <div>
                 <span className="text-slate-500 mr-1">Budget:</span>
                 <span className="font-bold text-amber-950 tabular-nums">
@@ -449,20 +459,12 @@ export function VendorBudgetMobileList({
                 </span>
               </div>
               {paid > 0 && (
-                <span
-                  className={cn(
-                    'ml-auto font-bold tabular-nums',
-                    paidPct >= 100
-                      ? 'text-emerald-600'
-                      : paidPct >= 60
-                        ? 'text-blue-600'
-                        : paidPct >= 30
-                          ? 'text-amber-600'
-                          : 'text-rose-600'
-                  )}
-                >
-                  {paidPct}%
-                </span>
+                <div className="ml-auto">
+                  <span className="text-slate-500 mr-1">Paid:</span>
+                  <span className={cn('font-bold tabular-nums', paidColorClass(paidPct))}>
+                    {formatIls(paid)} ({paidPct}%)
+                  </span>
+                </div>
               )}
             </div>
 
