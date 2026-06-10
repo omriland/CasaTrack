@@ -95,6 +95,18 @@ export function effectiveActualForRow(
   return Math.max(baseActualForRow(m), paid)
 }
 
+/**
+ * A vendor row counts as fully paid when something is owed (a recorded actual)
+ * and the payments cover it. Unpaid and partially-paid rows are everything else.
+ */
+export function isVendorRowFullyPaid(
+  m: Pick<VendorBudgetRowModel, 'spentTotal' | 'budgetTotal'>,
+  paid: number
+): boolean {
+  const base = baseActualForRow(m)
+  return base > 0 && paid >= base
+}
+
 export type VendorBudgetSortKey = 'vendor' | 'rooms'
 export type VendorBudgetSortDir = 'asc' | 'desc'
 

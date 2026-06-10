@@ -30,6 +30,7 @@ import {
 import {
   buildVendorBudgetRows,
   effectiveActualForRow,
+  isVendorRowFullyPaid,
   normalizeVendorKey,
   type VendorBudgetRowModel,
 } from '@/lib/renovation-vendor-budget'
@@ -409,13 +410,22 @@ export function VendorBudgetView({ projectId }: { projectId: string }) {
       return withRooms
     }
     if (budgetStableKeyOrderRef.current === null) {
-      budgetStableKeyOrderRef.current = withRooms.map((m) => m.key)
-      return withRooms
+      // Default order on load: unpaid / partially-paid rows first, fully-paid
+      // rows sink to the bottom. Within each group the alphabetical order from
+      // buildVendorBudgetRows is preserved (filter is stable).
+      const paidByKey = new Map<string, number>()
+      for (const p of payments) {
+        paidByKey.set(p.vendor_key, (paidByKey.get(p.vendor_key) ?? 0) + Number(p.amount))
+      }
+      const isPaid = (m: VendorBudgetRowModel) => isVendorRowFullyPaid(m, paidByKey.get(m.key) ?? 0)
+      const sorted = [...withRooms.filter((m) => !isPaid(m)), ...withRooms.filter(isPaid)]
+      budgetStableKeyOrderRef.current = sorted.map((m) => m.key)
+      return sorted
     }
     const ordered = applyStableRowOrder(withRooms, budgetStableKeyOrderRef.current)
     budgetStableKeyOrderRef.current = ordered.map((m) => m.key)
     return ordered
-  }, [expenses, vendorRoomMap])
+  }, [expenses, vendorRoomMap, payments])
 
   const roomNameById = useMemo(
     () => new Map(rooms.map((r) => [r.id, r.name])),
