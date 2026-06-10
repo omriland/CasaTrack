@@ -331,7 +331,8 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
     }
   }, [ctxMenu])
 
-  const ctxItem = ctxMenu ? items.find(item => item.id === ctxMenu.itemId) : null
+  const ctxIndex = ctxMenu ? items.findIndex(item => item.id === ctxMenu.itemId) : -1
+  const ctxItem = ctxIndex >= 0 ? items[ctxIndex] : null
 
   const tableWidthClass = mobile ? 'min-w-[880px]' : 'w-full'
   const gridColsClass = mobile
@@ -555,6 +556,18 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
         </div>
       </div>
 
+      {mobile && !loading && items.length > 0 && (
+        <button
+          type="button"
+          onClick={() => void insertRow(items.length)}
+          disabled={saving}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/60 px-4 py-2.5 text-[14px] font-bold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-50"
+        >
+          <Plus className="h-4 w-4" />
+          Add row
+        </button>
+      )}
+
       {ctxMenu && ctxItem && (
         <>
           <div
@@ -581,6 +594,33 @@ function WishlistTable({ mobile }: { mobile: boolean }) {
               ),
             }}
           >
+            <button
+              type="button"
+              role="menuitem"
+              disabled={saving}
+              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+              onClick={() => {
+                setCtxMenu(null)
+                void insertRow(ctxIndex)
+              }}
+            >
+              <Plus className="h-4 w-4 shrink-0 text-indigo-500" />
+              Add row above
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              disabled={saving}
+              className="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-[14px] font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
+              onClick={() => {
+                setCtxMenu(null)
+                void insertRow(ctxIndex + 1)
+              }}
+            >
+              <Plus className="h-4 w-4 shrink-0 text-indigo-500" />
+              Add row below
+            </button>
+            <div className="my-1 h-px bg-slate-100" />
             <button
               type="button"
               role="menuitem"
